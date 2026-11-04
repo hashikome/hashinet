@@ -80,9 +80,13 @@ respects `prefers-reduced-motion`.
 - **Empty states:** keep the frame and say one sentence. A real zero prints as a zero, and a missing
   value as a grey dash.
 
-- **Mark:** the open ring with the ember in its gap. `HashifiMark` draws it in the admin, the ring in
-  the text colour; `public/logo.svg` and the icons are the same mark on a midnight tile, for print and
-  for any surface.
+- **Mark:** the open ring with the ember in its gap, and nothing beside it: no wordmark, no
+  workspace name (owner's decision, 4 November 2026). `HashifiMark` draws it in the admin, the ring in
+  the text colour, with `aria-label="hashifi"`; `public/logo.svg` and the icons are the same mark on a
+  midnight tile, for print and for any surface. A business workspace shows the business's logo and
+  name instead.
+- **Name:** written `hashifi`, lowercase, everywhere a person reads it, including the start of a
+  sentence, as ntumie. is. Never "HashiFi".
 
 ## Do's and Don'ts
 

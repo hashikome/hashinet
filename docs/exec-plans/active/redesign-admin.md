@@ -61,6 +61,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
+- Decision: the logo is the ring alone, with no wordmark and no workspace name beside it; the
+  product is written `hashifi` in all copy. The rename of user-facing copy, emails, page titles and
+  docs prose ships with H1's remaining work; identifiers (`HashifiMark`, package names) keep their
+  code casing.
+  Date/Author: 2026-11-04, owner.
 - Decision: problems get an Issues page, with the open count on its nav item as the notification.
   An issue (a router offline, a router not yet connected) is derived from router state and closes
   itself only when the router is serving and passes its checks; people can say "I'm on it", never
