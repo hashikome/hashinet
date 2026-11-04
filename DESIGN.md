@@ -36,9 +36,13 @@ Role names are the shadcn tokens the components use. Brand colours: midnight `#0
 | `ring` | `#a9530a` | `#f59e2a` | Focus |
 | `chart-1` to `chart-5` | ember, slate, pale ember, midnight, pale slate | the same, lifted | One hue per chart; ember on the main series, deepened to `#c97412` in light for 3:1 |
 
-Status has three meanings, defined once in `lib/status-pill.ts`: ember for alive (online, active,
-paid), red for what needs a human (failed, suspended, revoked), and neutral for everything else, so
-"setting up" is never mistaken for "online". No other status hue exists.
+Status has four meanings, defined once in `lib/status-pill.ts` (owner's decision, 4 November 2026):
+green for done and working (online, serving, active, accepted, paid; `#1d7a45` light, `#5fd08f`
+dark), amber-yellow for waiting on something (setting up, not connected yet, invited, waiting;
+`#8a6a00` text on a `#f4c430` tint, `#f2cf5b` dark), red for what needs a human or has ended
+(offline, failed, expired, revoked), and neutral for everything else. Ember is the brand and the
+action colour, never a status, so a status never reads as a button or a live figure. Each status
+text meets 4.5:1 on its panel in both themes.
 
 The dark theme is midnight, not a neutral dark: a deliberate exception to the usual rule, because
 midnight is the brand's night.
@@ -95,5 +99,5 @@ respects `prefers-reduced-motion`.
 - Do use a role, never a raw colour; a new need is a new role here first.
 - Don't use cream with terracotta, violet or indigo, a tinted sidebar, gradients, glows,
   glass, or a shadow on anything at rest.
-- Don't add a typeface or another status hue.
+- Don't add a typeface or a fifth status hue.
 - Don't fetch anything from another host on the guest portal.
