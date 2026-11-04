@@ -119,7 +119,12 @@ Places, Guests, Business), rendered from the API's capabilities, never from role
 the business's logo and name (HashiFi with the Platform tag for platform staff) and the scope filter
 (all businesses or one; all venues or one; absent with one venue). At the foot, the account menu:
 name and role, the workspaces, Account and security, Sign out, and "Runs on HashiFi". One sign-in
-screen for everyone, named HashiFi with no "staff" or "admin" wording. Below 768px a
+screen for everyone, named HashiFi with no "staff" or "admin" wording. The sign-in is always dark, whatever the
+theme setting: a midnight field, the open ring large in the lower right, and a 420px card (title,
+email, Continue, the terms line, "Need help signing in?" with a link to support), sized one step
+above the admin's controls; no logo in the corner; a footer strip with "Send feedback" and
+"© <year> Shikome Technology Limited | Privacy | Terms". The code and authenticator steps use the
+same frame. Prototype: `ref/hearth-design/prototype/`. Below 768px a
 48px bar and a sheet. Needs business-scopes M2.
 
 **H3, overview and Analytics.** `GET /api/overview` returns what needs attention, the figures with
