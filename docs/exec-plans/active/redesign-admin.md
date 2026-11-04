@@ -61,7 +61,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
-- Decision: business invitations have their own page, Manage → Invitations, so a growing list of
+- Decision: business invitations have their own page, Platform → Invitations beside the audit log, so a growing list of
   businesses never pushes them down.
   Date/Author: 2026-11-04, owner.
 - Decision: the Billing page follows ADR-0013 (per-sale or fixed plan per venue, onboarding and
