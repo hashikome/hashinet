@@ -39,7 +39,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - [ ] H4: lists and forms that work on a phone; named actions; the router edit form.
 - [ ] H5: the captive portal: night top over a white sheet, the logo fallback, the welcome.
 - [ ] H6: the business screens: Team, Packages with CSV import, Business profile, Add a business,
-  Default packages.
+  and the platform's Settings (default packages and default captive portal on one page).
 - [ ] H7: design-audit on the result, findings fixed; `DESIGN.md`, runbooks and CHANGELOG current.
 
 ## Surprises & Discoveries
