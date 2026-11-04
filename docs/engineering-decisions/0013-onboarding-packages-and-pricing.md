@@ -26,13 +26,13 @@ and the guests. Owners are not network technicians, so the team installs it.
      needed), sets up on site and tests that guests get online.
    Routers are sold at their price. The onboarding fee covers travel and time: free in town, charged
    by distance otherwise.
-3. **Two plans per venue**, chosen by the business and changeable monthly:
-   - **Per sale:** 10% of each voucher's price, so a TSh 500 voucher pays TSh 50. No sales, no fee.
-     Volume lowers the rate, as bank transaction fees do: a venue's sales above a monthly threshold
-     pay 5%. The tiers are marginal, like tax bands: only the part above the threshold pays 5%, so
-     selling one more voucher never raises the bill. The threshold is a Defaults figure, proposed at
-     TSh 2,000,000 a month per venue, where 10% equals the fixed plan.
-   - **Fixed:** TSh 200,000 a month per venue, for venues that sell a lot.
+3. **One plan, a percentage of sales, per venue.** 10% of each voucher's price, so a TSh 500
+   voucher pays TSh 50; no sales, no fee. Volume lowers the rate, as bank transaction fees do: a
+   venue's sales above TSh 2,000,000 in a month pay 5%. The bands are marginal, like tax bands: only
+   the part above the threshold pays 5%, so selling one more voucher never raises the bill. A venue
+   selling TSh 4,000,000 pays TSh 300,000. Rates and threshold are Defaults figures. There is no
+   fixed monthly plan: it would charge a venue in a slow month and make every owner compare plans. If
+   large venues object, the answer is a monthly cap per venue, not a second plan.
 4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
    `active`): the price printed on the voucher, which the business sets. What a business charges a
    guest above it is its own.
@@ -45,7 +45,7 @@ and the guests. Owners are not network technicians, so the team installs it.
   port 1, keeping the fixed address as an option, so a router configured at the office works at
   any venue (`apps/api/src/services/router-provision/bootstrap.ts`).
 - Readiness warns about a downstream router that hands out its own addresses.
-- A **Billing** page: per venue, the plan, the month's activated vouchers and their value, the fee,
+- A **Billing** page: per venue, the month's activated vouchers and their value, the fee by band,
   the onboarding and router charges, what is due and how to pay; the platform sees every
   business's. Payment states for an unpaid account are still open.
 - The getting-started checklist follows the package: invitation accepted, package chosen, router
