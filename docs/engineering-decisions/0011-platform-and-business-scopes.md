@@ -88,6 +88,9 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
   names.
 - An owner-only action stays owner-only for managers in the same scope.
 - Every invitation, role change and removal is in the audit log with who did it.
+- An invitation is the only way in, and issuing one creates nothing: a business, its first venue and
+  its owner exist only once the invited owner accepts and names them (business-scopes M3, as
+  Pigfarm's ADR-0012).
 
 ## Evidence
 

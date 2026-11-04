@@ -12,8 +12,9 @@ invites managers to run venues for them and operators to work the counter. Hashi
 owner, managers and operators oversee every business. The rules are
 [ADR-0011](../../engineering-decisions/0011-platform-and-business-scopes.md).
 
-Observable result: the platform owner adds "Neema Hospitality" with two venues and invites Neema as
-its owner. Neema signs in, sees both venues, invites Halima as manager of one venue and Musa as an
+Observable result: the platform owner invites neema@neemahospitality.co.tz to start a business. Neema
+opens the invitation, names Neema Hospitality and its first venue, signs in with a code, asks for a
+second venue, sees both, invites Halima as manager of one venue and Musa as an
 operator there. Halima can change that venue's portal and add a weekend package sold only there, but
 cannot see the other venue or change business-wide prices; Musa can print vouchers and see live
 sessions but not analytics. Every other business is invisible to all three, and a guessed id answers
@@ -124,10 +125,18 @@ autofill (WebAuthn conditional UI). WebAuthn
 needs HTTPS, so local development uses `localhost`. Tests: a platform membership without an
 authenticator reaches only its set-up routes; a recovery code signs in once and removes nothing.
 
-**M3, people.** Invitations: create (only a role below one's own, venues within one's own), email via
-Resend with a code sign-in, accept on first sign-in, revoke, expire after 7 days. Team page per scope.
-Platform staff get "Add a business": name, first venue, owner's email; the owner's invitation goes
-out. The owner's Business profile page sets the name and logo. Every change audited.
+**M3, people.** Invitations are the single way in, as Pigfarm's (its ADR-0012): one role to one
+canonical email. Kinds: a platform role; ownership of a new business; a business role with venues.
+Issuing creates no person, business or venue, only the invitation, its token digest, the email and
+the audit row. The link carries a single-use token in the URL fragment, valid 72 hours; at most one
+pending invitation per email and target, and inviting again supersedes it. Accepting is one screen and
+one transaction: the invitee gives their full name and, for a new business, its name, first venue and
+area and town; the email is never a field. Acceptance creates or resolves the person, the business,
+its venue, default packages and owner membership, or the membership and venues, then marks the
+invitation accepted. It never signs in: the screen goes straight to an email code, as ordinary
+sign-in. Platform staff "Invite a business" from Businesses with only the owner's email; pending
+invitations show there with Resend and Revoke. Team pages list people and pending invitations
+together. The owner's Business profile page sets the logo. Every change audited.
 
 **M4, packages.** Business packages seeded from the platform defaults on creation; venue-limited
 packages for managers; CSV import: parse, validate (name, duration such as `1h`, `24h`, `7d`, devices,
@@ -156,7 +165,9 @@ From the repository root: `bun run db:migrate` (M1), `bun run verify`, `bun run 
   manager, operator, and a manager of another business), every scoped route answers its data, not
   found, or forbidden as the policy says; a guessed id from another business is not found.
 - Invitation tests: no one invites a role at or above their own, or to a venue they do not hold;
-  inviting an existing user adds a membership; expiry and revocation work; the audit log records each.
+  issuing creates nothing but the invitation; acceptance creates the business, venue and owner in one
+  transaction and no session; a forwarded link cannot sign anyone in; inviting an existing user adds a
+  membership; expiry, supersession and revocation work; the audit log records each.
 - Switching tests: a person with a platform and a business membership sees only the active one's
   data; switching to a membership that is not theirs is refused; each switch is audited.
 - CSV import tests: a valid file previews then applies; a bad row names its line and nothing is saved.
