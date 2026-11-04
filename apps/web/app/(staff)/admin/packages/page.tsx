@@ -196,7 +196,7 @@ export default function PackagesPage() {
                         onClick={() => setViewPackage(pkg)}
                         className="flex items-center gap-2 hover:underline underline-offset-4 text-left"
                       >
-                        <Package className="size-4 text-primary" />
+                        <Package className="size-4 text-ember" />
                         <span className="font-medium">{pkg.name}</span>
                       </button>
                     </TableCell>
@@ -205,7 +205,7 @@ export default function PackagesPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Zap className="size-3 text-primary" />
+                        <Zap className="size-3 text-ember" />
                         <span>{pkg.speed} Mbps</span>
                       </div>
                     </TableCell>
@@ -253,7 +253,7 @@ export default function PackagesPage() {
                             className={
                               pkg.isActive
                                 ? "text-amber-800 hover:text-amber-700 hover:bg-amber-500/10 dark:text-amber-400 dark:hover:text-amber-300"
-                                : "text-teal-700 hover:text-teal-700 hover:bg-teal-500/10 dark:text-teal-400 dark:hover:text-teal-300"
+                                : "text-ember hover:text-ember hover:bg-primary/10"
                             }
                           >
                             {togglingId === pkg.id ? (

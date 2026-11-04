@@ -267,7 +267,7 @@ export default function PaymentsPage() {
         <h1 className="text-2xl font-bold text-foreground">Payments</h1>
         <p className="text-muted-foreground">
           Mobile money is not switched on yet. Sell printed vouchers from{" "}
-          <Link href="/admin/vouchers" className="text-primary hover:underline">
+          <Link href="/admin/vouchers" className="text-ember hover:underline">
             Vouchers
           </Link>
           ; each counts as a sale when it is redeemed.
@@ -342,7 +342,7 @@ export default function PaymentsPage() {
             <p className="text-sm text-muted-foreground">
               {view === "owed" ? "Nobody is owed access." : "No payments here yet."}{" "}
               {view === "all" && (
-                <Link href="/admin/vouchers" className="text-primary hover:underline">
+                <Link href="/admin/vouchers" className="text-ember hover:underline">
                   Printed vouchers
                 </Link>
               )}

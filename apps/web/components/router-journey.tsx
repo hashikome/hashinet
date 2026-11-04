@@ -48,8 +48,8 @@ function StageMark({ state }: { state: "done" | "current" | "waiting" }) {
 }
 
 function PhaseMark({ status }: { status: RouterSetupPhase["status"] }) {
-  if (status === "running") return <Loader className="size-4 animate-spin text-primary" />;
-  if (status === "pass") return <Check className="size-4 text-primary" />;
+  if (status === "running") return <Loader className="size-4 animate-spin text-ember" />;
+  if (status === "pass") return <Check className="size-4 text-ember" />;
   if (status === "warn") return <AlertTriangle className="size-4 text-warning" />;
   if (status === "fail") return <X className="size-4 text-destructive" />;
   return <Circle className="size-2 text-muted-foreground" />;

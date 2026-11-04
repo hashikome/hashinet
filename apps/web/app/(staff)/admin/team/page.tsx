@@ -174,13 +174,13 @@ function actionColor(action: string): string {
     case "member_created":
     case "member_activated":
     case "venue_created":
-      return "bg-teal-500/10 text-teal-700 dark:text-teal-400";
+      return "bg-primary/10 text-ember";
     case "member_suspended":
     case "member_deleted":
     case "venue_deleted":
       return "bg-red-500/10 text-red-700 dark:text-red-400";
     case "member_promoted":
-      return "bg-teal-500/10 text-teal-700 dark:text-teal-400";
+      return "bg-primary/10 text-ember";
     case "member_demoted":
       return "bg-amber-500/10 text-amber-800 dark:text-amber-400";
     case "vouchers_generated":
@@ -448,7 +448,7 @@ export default function TeamPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center size-10 rounded-lg bg-primary/10">
-            <Users2 className="size-5 text-primary" />
+            <Users2 className="size-5 text-ember" />
           </div>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
@@ -558,7 +558,7 @@ export default function TeamPage() {
                           >
                             {member.status === "suspended" ? (
                               <>
-                                <CheckCircle2 className="size-4 mr-2 text-teal-700 dark:text-teal-400" />
+                                <CheckCircle2 className="size-4 mr-2 text-ember" />
                                 Activate Account
                               </>
                             ) : (
@@ -570,7 +570,7 @@ export default function TeamPage() {
                           </DropdownMenuItem>
                           {member.role === "manager" && (
                             <DropdownMenuItem onClick={() => setPromoteTarget(member)}>
-                              <ShieldCheck className="size-4 mr-2 text-primary" />
+                              <ShieldCheck className="size-4 mr-2 text-ember" />
                               Promote to Admin
                             </DropdownMenuItem>
                           )}

@@ -31,7 +31,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   showed in Live Sessions.
 - [x] (2026-11-03) Design rounds: ten variations, then Hearth with Night Band's portal, then each
   role's view; chosen by the owner.
-- [ ] H1: tokens, the mark and `DESIGN.md` in Hearth.
+- [x] (2026-11-04) H1: tokens, the mark and `DESIGN.md` in Hearth.
 - [ ] H2: the shell: grouped navigation from capabilities, scope filter, account menu, business head.
 - [ ] H3: the overview as "right now", and the Analytics page, both computed by the API.
 - [ ] H4: lists and forms that work on a phone; named actions; the router edit form.

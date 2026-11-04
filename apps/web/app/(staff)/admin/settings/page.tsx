@@ -66,7 +66,7 @@ export default function SettingsPage() {
             <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
           </div>
           <span
-            className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${isAdmin ? "bg-teal-500/15 text-teal-700 dark:text-teal-400" : "bg-sky-500/15 text-sky-600 dark:text-sky-400"}`}
+            className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${isAdmin ? "bg-primary/15 text-ember" : "bg-sky-500/15 text-sky-600 dark:text-sky-400"}`}
           >
             <ShieldCheck className="size-3" />
             {isAdmin ? "Admin" : "Manager"}
@@ -125,13 +125,13 @@ export default function SettingsPage() {
             onClick={() => setTheme("light")}
             className={`relative rounded-xl border-2 overflow-hidden transition-all ${theme === "light" ? "border-primary shadow-sm" : "border-border hover:border-muted-foreground/40"}`}
           >
-            <div className="bg-[#f8f8f8] p-3 space-y-1.5">
-              <div className="h-2 w-3/4 rounded bg-[#e0e0e0]" />
-              <div className="h-2 w-1/2 rounded bg-[#e8e8e8]" />
-              <div className="h-5 w-full rounded bg-white border border-[#e0e0e0]" />
+            <div className="bg-[#f4f6f8] p-3 space-y-1.5">
+              <div className="h-2 w-3/4 rounded bg-[#dfe3e8]" />
+              <div className="h-2 w-1/2 rounded bg-[#e7ebf0]" />
+              <div className="h-5 w-full rounded bg-white border border-[#dfe3e8]" />
             </div>
             <div
-              className={`py-2 text-xs font-medium flex items-center justify-center gap-1.5 ${theme === "light" ? "text-primary" : "text-muted-foreground"}`}
+              className={`py-2 text-xs font-medium flex items-center justify-center gap-1.5 ${theme === "light" ? "text-ember" : "text-muted-foreground"}`}
             >
               <Sun className="size-3" />
               Light
@@ -149,13 +149,13 @@ export default function SettingsPage() {
             onClick={() => setTheme("dark")}
             className={`relative rounded-xl border-2 overflow-hidden transition-all ${theme === "dark" ? "border-primary shadow-sm" : "border-border hover:border-muted-foreground/40"}`}
           >
-            <div className="bg-[#1c1c1e] p-3 space-y-1.5">
-              <div className="h-2 w-3/4 rounded bg-[#3a3a3c]" />
-              <div className="h-2 w-1/2 rounded bg-[#2c2c2e]" />
-              <div className="h-5 w-full rounded bg-[#2c2c2e] border border-[#3a3a3c]" />
+            <div className="bg-[#0d1b2a] p-3 space-y-1.5">
+              <div className="h-2 w-3/4 rounded bg-[#22384f]" />
+              <div className="h-2 w-1/2 rounded bg-[#1a2f45]" />
+              <div className="h-5 w-full rounded bg-[#1a2f45] border border-[#22384f]" />
             </div>
             <div
-              className={`py-2 text-xs font-medium flex items-center justify-center gap-1.5 ${theme === "dark" ? "text-primary" : "text-muted-foreground"}`}
+              className={`py-2 text-xs font-medium flex items-center justify-center gap-1.5 ${theme === "dark" ? "text-ember" : "text-muted-foreground"}`}
             >
               <Moon className="size-3" />
               Dark
@@ -176,10 +176,10 @@ export default function SettingsPage() {
             <div className="bg-muted p-3 space-y-1.5">
               <div className="h-2 w-3/4 rounded bg-muted" />
               <div className="h-2 w-1/2 rounded bg-muted" />
-              <div className="h-5 w-full rounded bg-muted border border-[#e0e0e0]" />
+              <div className="h-5 w-full rounded bg-muted border border-[#dfe3e8]" />
             </div>
             <div
-              className={`py-2 text-xs font-medium flex items-center justify-center gap-1.5 ${theme === "system" ? "text-primary" : "text-muted-foreground"}`}
+              className={`py-2 text-xs font-medium flex items-center justify-center gap-1.5 ${theme === "system" ? "text-ember" : "text-muted-foreground"}`}
             >
               <Monitor className="size-3" />
               System

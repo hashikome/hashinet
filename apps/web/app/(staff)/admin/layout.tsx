@@ -4,10 +4,10 @@ import { Loader, Menu } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminSidebar } from "@/components/admin-sidebar";
+import { HashifiMark } from "@/components/hashifi-mark";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth-context";
-import { LOGO_SRC } from "@/lib/brand";
 
 function isManagerAllowedRoute(pathname: string) {
   const exact = [
@@ -55,7 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader className="size-8 animate-spin text-primary" />
+        <Loader className="size-8 animate-spin text-ember" />
       </div>
     );
   }
@@ -67,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (user.role === "manager" && !isManagerAllowedRoute(pathname)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader className="size-8 animate-spin text-primary" />
+        <Loader className="size-8 animate-spin text-ember" />
       </div>
     );
   }
@@ -84,8 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <Menu className="size-5" />
           </button>
-          {/* biome-ignore lint/performance/noImgElement: a small static SVG; image optimisation is off (next.config.mjs) */}
-          <img src={LOGO_SRC} alt="" className="size-6" />
+          <HashifiMark className="size-6 text-foreground" />
           <span className="text-sm font-semibold text-foreground">HashiFi</span>
         </header>
         <div className="hidden shrink-0 md:block print:hidden">

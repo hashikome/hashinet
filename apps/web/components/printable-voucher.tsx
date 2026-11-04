@@ -78,14 +78,14 @@ export function PrintableVoucher({
             {settings.ticketTitle}
           </p>
           <div className="flex items-center justify-between">
-            <code className="font-mono text-xl font-bold tracking-tight text-primary">{code}</code>
+            <code className="font-mono text-xl font-bold tracking-tight text-ember">{code}</code>
           </div>
         </div>
 
         <div className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-3">
           <div className="flex justify-between items-start mb-2">
             <p className="text-xs font-bold">{pkg?.name || "Standard WiFi"}</p>
-            <p className="text-xs font-bold text-primary">
+            <p className="text-xs font-bold text-ember">
               TSH {pkg ? Number(pkg.price).toLocaleString() : "---"}
             </p>
           </div>

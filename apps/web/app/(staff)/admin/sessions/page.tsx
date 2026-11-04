@@ -105,7 +105,7 @@ function parseMikrotikUptime(uptime: string): number {
 
 function getSignalInfo(dbm: number | null) {
   if (dbm === null) return { label: "—", color: "text-muted-foreground", bars: 0 };
-  if (dbm >= -50) return { label: "Excellent", color: "text-teal-700", bars: 4 };
+  if (dbm >= -50) return { label: "Excellent", color: "text-ember", bars: 4 };
   if (dbm >= -60) return { label: "Good", color: "text-chart-2", bars: 3 };
   if (dbm >= -70) return { label: "Fair", color: "text-chart-3", bars: 2 };
   return { label: "Weak", color: "text-destructive", bars: 1 };
@@ -254,13 +254,11 @@ export default function SessionsPage() {
                 ) : wsConnected ? (
                   <>
                     <span
-                      className={`size-2 rounded-full animate-pulse ${isPartiallyOnline ? "bg-amber-500" : "bg-teal-500"}`}
+                      className={`size-2 rounded-full animate-pulse ${isPartiallyOnline ? "bg-amber-500" : "bg-primary"}`}
                     />
                     <span
                       className={
-                        isPartiallyOnline
-                          ? "text-amber-800 dark:text-amber-400"
-                          : "text-teal-700 dark:text-teal-400"
+                        isPartiallyOnline ? "text-amber-800 dark:text-amber-400" : "text-ember"
                       }
                     >
                       Live{isPartiallyOnline ? ` (${onlineCount}/${totalCount} routers)` : ""}
@@ -538,7 +536,7 @@ export default function SessionsPage() {
                       <TableCell className="text-center">
                         <Badge variant="secondary" className={getStatusColor(session.status)}>
                           {session.status === "connected" && (
-                            <span className="size-1.5 rounded-full bg-teal-500 animate-pulse mr-1.5" />
+                            <span className="size-1.5 rounded-full bg-primary animate-pulse mr-1.5" />
                           )}
                           {session.status}
                         </Badge>
@@ -592,7 +590,7 @@ export default function SessionsPage() {
                           <span
                             className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusPill.success}`}
                           >
-                            <span className="size-1.5 rounded-full bg-teal-500 animate-pulse" />
+                            <span className="size-1.5 rounded-full bg-primary animate-pulse" />
                             live
                           </span>
                         )}
@@ -607,7 +605,7 @@ export default function SessionsPage() {
                         className={`mt-1.5 ${getStatusColor(selectedSession.status)}`}
                       >
                         {selectedSession.status === "connected" && (
-                          <span className="size-1.5 rounded-full bg-teal-500 animate-pulse mr-1.5" />
+                          <span className="size-1.5 rounded-full bg-primary animate-pulse mr-1.5" />
                         )}
                         {selectedSession.status}
                       </Badge>

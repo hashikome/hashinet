@@ -176,7 +176,7 @@ export function RouterConnectionTest({
               {result.wirelessStack === "none" ? "no radio" : result.wirelessStack}
             </Badge>
             {compat?.ok ? (
-              <Badge className="bg-teal-600 hover:bg-teal-600">
+              <Badge className="bg-primary hover:bg-primary">
                 <CheckCircle2 className="mr-1 size-3" /> Can run the hotspot
               </Badge>
             ) : (

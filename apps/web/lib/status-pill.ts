@@ -1,19 +1,11 @@
 /**
  * One palette for every status pill in the admin UI.
  *
- * This exists because the same six semantic states were spelled out independently on the
- * routers, payments, venues, sessions, vouchers, team, users and packages pages, and no
- * two agreed. The failures that produced were all the same shape:
- *
- *   • `text-teal-700` with no `dark:` counterpart — a dark green on a dark chip,
- *     which is what made the Team page's "Active" unreadable in dark mode.
- *   • `border-teal-200` — a near-white hairline that reads as a light outline ring
- *     once the page behind it is dark.
- *   • `text-*-600` on one page and `text-*-700` on the next for the same status.
+ * Every status in the admin takes its colours from here, so a state reads the same on every page.
  *
  * Each tone is defined once, for both themes:
- *   light — a 12% wash of the hue, 700-weight text (≥4.7:1 on a white card)
- *   dark  — a 15% wash, 300-weight text (≥7:1 on the dark card)
+ *   light — a pale wash of the hue with its dark shade as text (at least 4.5:1 on a white card)
+ *   dark  — a stronger wash with its light shade as text (at least 7:1 on the dark card)
  * plus an inset ring rather than a border, so the chip has an edge in both themes without
  * a light-mode hairline surviving into dark mode.
  *
@@ -22,14 +14,10 @@
  */
 export const statusPill = {
   /** Working as intended — online, active, paid, connected. */
-  success:
-    "bg-teal-500/12 text-teal-700 ring-1 ring-inset ring-teal-600/20 " +
-    "dark:bg-teal-400/15 dark:text-teal-300 dark:ring-teal-400/25",
+  success: "bg-primary/12 text-ember ring-1 ring-inset ring-primary/30 dark:bg-primary/15",
 
-  /** In progress, or fine but worth noticing — provisioning, pending, maintenance. */
-  warning:
-    "bg-amber-500/12 text-amber-700 ring-1 ring-inset ring-amber-600/20 " +
-    "dark:bg-amber-400/15 dark:text-amber-300 dark:ring-amber-400/25",
+  /** In progress, or fine but worth noticing — provisioning, pending, maintenance. Not ember, which means alive. */
+  warning: "bg-secondary text-secondary-foreground ring-1 ring-inset ring-border",
 
   /** Needs a human — failed, terminated, error. */
   danger:

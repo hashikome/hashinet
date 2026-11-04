@@ -316,7 +316,7 @@ export default function UsersPage() {
                       <TableCell className="text-center">
                         <Badge variant="secondary" className={connection.className}>
                           {connection.live && (
-                            <span className="size-1.5 rounded-full bg-teal-500 animate-pulse mr-1.5" />
+                            <span className="size-1.5 rounded-full bg-primary animate-pulse mr-1.5" />
                           )}
                           {connection.label}
                         </Badge>
@@ -384,7 +384,7 @@ export default function UsersPage() {
                       )}
                       <Badge variant="secondary" className={`mt-1.5 ${connection.className}`}>
                         {connection.live && (
-                          <span className="size-1.5 rounded-full bg-teal-500 animate-pulse mr-1.5" />
+                          <span className="size-1.5 rounded-full bg-primary animate-pulse mr-1.5" />
                         )}
                         {connection.label}
                       </Badge>

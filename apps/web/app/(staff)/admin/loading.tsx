@@ -9,7 +9,7 @@ export default function AdminLoading() {
       <div className="relative flex items-center justify-center">
         {/* Glow effect behind the loader */}
         <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl size-16"></div>
-        <div className="relative z-10 text-primary">
+        <div className="relative z-10 text-ember">
           <Helix size="45" speed="2.5" color="currentColor" />
         </div>
       </div>

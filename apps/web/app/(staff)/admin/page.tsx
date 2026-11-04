@@ -220,8 +220,7 @@ export default function DashboardPage() {
                               "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200",
                             used: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-400 border-zinc-200",
                             expired: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-200",
-                            unused:
-                              "bg-teal-500/15 text-teal-700 dark:text-teal-400 border-teal-200",
+                            unused: "bg-primary/15 text-ember border-primary/30",
                             revoked: "bg-muted text-muted-foreground",
                             pending_activation:
                               "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200",
@@ -519,11 +518,8 @@ export default function DashboardPage() {
                     {formatBytes(client.bytesIn)}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge
-                      variant="secondary"
-                      className="bg-teal-500/15 text-teal-700 dark:text-teal-400"
-                    >
-                      <span className="mr-1 inline-block size-1.5 rounded-full bg-teal-500" />
+                    <Badge variant="secondary" className="bg-primary/15 text-ember">
+                      <span className="mr-1 inline-block size-1.5 rounded-full bg-primary" />
                       connected
                     </Badge>
                   </TableCell>

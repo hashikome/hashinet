@@ -22,6 +22,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { HashifiMark } from "@/components/hashifi-mark";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -43,7 +44,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/auth-context";
-import { LOGO_SRC } from "@/lib/brand";
 import { useCapabilities } from "@/lib/capabilities";
 import { cn } from "@/lib/utils";
 
@@ -114,8 +114,7 @@ export function AdminSidebar() {
     <div className="flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-        {/* biome-ignore lint/performance/noImgElement: a small static SVG; image optimisation is off (next.config.mjs) */}
-        <img src={LOGO_SRC} alt="" className="size-9" />
+        <HashifiMark className="size-9 text-foreground" />
         <div>
           <p className="font-semibold text-sm">HashiFi</p>
           <p className="text-xs text-sidebar-foreground/60">Admin Portal</p>

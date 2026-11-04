@@ -69,7 +69,7 @@ export default function SetupAuthenticatorPage() {
   if (!enrollment) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader className="size-8 animate-spin text-primary" />
+        <Loader className="size-8 animate-spin text-ember" />
       </div>
     );
   }
@@ -79,7 +79,7 @@ export default function SetupAuthenticatorPage() {
       <Card className="w-full max-w-md border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="size-5 text-primary" />
+            <ShieldCheck className="size-5 text-ember" />
             Set up your authenticator app
           </CardTitle>
           <CardDescription>

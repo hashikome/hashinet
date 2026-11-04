@@ -302,7 +302,7 @@ export default function CreateVoucherPage() {
                         From this venue&apos;s brand on{" "}
                         <Link
                           href="/admin/portal"
-                          className="text-primary underline-offset-4 hover:underline"
+                          className="text-ember underline-offset-4 hover:underline"
                         >
                           Captive portal
                         </Link>

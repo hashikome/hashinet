@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- HashiFi wears Hashikome's bonfire: midnight ink on mist, ember on the one action and on what is
+  alive, and a new mark, the open ring with the ember in its gap.
 - The deployment stack file is `deploy/docker-stack.yml`, and the release's Docker actions run on
   Node 24 (buildx v4.4.1, login v4.7.0, build-push v7.4.0).
 - Local development uses HashiFi's own ports, each service's default plus HashiFi's +6 offset:

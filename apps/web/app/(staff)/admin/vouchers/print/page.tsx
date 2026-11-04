@@ -87,7 +87,7 @@ function PrintVouchersContent() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Loader className="size-8 animate-spin text-primary mb-4" />
+        <Loader className="size-8 animate-spin text-ember mb-4" />
         <p className="text-muted-foreground">Preparing vouchers for printing...</p>
       </div>
     );
@@ -195,7 +195,7 @@ export default function PrintVouchersPage() {
 function PrintVouchersLoading() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <Loader className="size-8 animate-spin text-primary mb-4" />
+      <Loader className="size-8 animate-spin text-ember mb-4" />
       <p className="text-muted-foreground">Preparing vouchers for printing...</p>
     </div>
   );

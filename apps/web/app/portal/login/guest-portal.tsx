@@ -320,13 +320,13 @@ export function GuestPortal() {
 
   if (screen.kind === "not-on-wifi" && screen.cardHeld) {
     return (
-      <main className="flex min-h-svh items-center bg-teal-900 p-6 text-white">
+      <main className="flex min-h-svh items-center bg-midnight p-6 text-white">
         <div className="mx-auto w-full max-w-md">
           <h1 className="text-2xl font-bold tracking-tight">Your voucher is ready</h1>
           <p className="mt-3 text-lg">Join the venue&apos;s WiFi, then continue.</p>
           <a
             href={TRIGGER_URL}
-            className="mt-6 flex h-14 items-center justify-center rounded-lg bg-white text-lg font-semibold text-teal-900 active:opacity-80"
+            className="mt-6 flex h-14 items-center justify-center rounded-lg bg-white text-lg font-semibold text-midnight active:opacity-80"
           >
             Continue
           </a>
@@ -343,7 +343,7 @@ export function GuestPortal() {
           ? "One moment…"
           : "Join the WiFi network, and this page opens by itself.";
     return (
-      <main className="flex min-h-svh items-center bg-teal-900 p-6 text-white">
+      <main className="flex min-h-svh items-center bg-midnight p-6 text-white">
         <p className="w-full text-center text-lg">{message}</p>
       </main>
     );

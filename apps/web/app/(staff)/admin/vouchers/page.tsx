@@ -380,7 +380,7 @@ export default function VouchersPage() {
                       </TableCell>
                       <TableCell>
                         {voucher.dataLimit < 0 ? (
-                          <span className="text-primary font-medium">Unlimited</span>
+                          <span className="text-ember font-medium">Unlimited</span>
                         ) : (
                           <div className="flex flex-col">
                             <span className="font-medium">{voucher.dataUsed.toFixed(1)} GB</span>
@@ -582,7 +582,7 @@ export default function VouchersPage() {
       {/* Batch Action Bar */}
       {selectedIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className="flex items-center gap-4 bg-[#1f1611] text-white px-6 py-4 rounded-2xl shadow-2xl border border-white/5">
+          <div className="flex items-center gap-4 bg-midnight text-white px-6 py-4 rounded-2xl shadow-2xl border border-white/5">
             <div className="flex items-center gap-2 border-r border-white/10 pr-4">
               <Badge
                 variant="secondary"

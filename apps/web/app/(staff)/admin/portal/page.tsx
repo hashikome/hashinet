@@ -81,9 +81,9 @@ const DEFAULT_FORM: PortalForm = {
   brandName: "",
   headline: "Fast & Reliable WiFi",
   message: "Connect to our secure network and enjoy seamless internet access.",
-  primaryColor: "#0F766E",
-  accentColor: "#134E4A",
-  backgroundColor: "#134E4A",
+  primaryColor: "#F59E2A",
+  accentColor: "#0D1B2A",
+  backgroundColor: "#0D1B2A",
   radius: 18,
   voucherLabel: "Enter your voucher code",
   voucherPrefix: "WIFI",
@@ -94,7 +94,7 @@ const DEFAULT_FORM: PortalForm = {
 };
 
 const colorPresets = [
-  { name: "HashiFi", primary: "#0F766E", accent: "#134E4A", background: "#134E4A" },
+  { name: "HashiFi", primary: "#F59E2A", accent: "#0D1B2A", background: "#0D1B2A" },
   { name: "Signal", primary: "#2563EB", accent: "#10B981", background: "#0F172A" },
   { name: "Coral", primary: "#E11D48", accent: "#0891B2", background: "#18181B" },
   { name: "Forest", primary: "#15803D", accent: "#F59E0B", background: "#102018" },
@@ -151,7 +151,7 @@ function ImageField({
         <p className="text-sm font-medium">{label}</p>
         <p className="text-sm text-muted-foreground">{help}</p>
         <div className="flex items-center gap-3">
-          <label className="cursor-pointer text-sm font-medium text-primary underline-offset-4 hover:underline">
+          <label className="cursor-pointer text-sm font-medium text-ember underline-offset-4 hover:underline">
             {url === null ? "Upload" : "Replace"}
             <input
               type="file"
@@ -380,7 +380,7 @@ export default function PortalPage() {
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold text-foreground">Captive portal</h1>
-              <Badge variant="secondary" className="gap-1 bg-primary/10 text-primary">
+              <Badge variant="secondary" className="gap-1 bg-primary/10 text-ember">
                 <Sparkles className="size-3" />
                 Live preview
               </Badge>
@@ -718,7 +718,7 @@ export default function PortalPage() {
                         Set when generating vouchers.{" "}
                         <Link
                           href="/admin/vouchers/create"
-                          className="text-primary underline-offset-4 hover:underline"
+                          className="text-ember underline-offset-4 hover:underline"
                         >
                           Go to Generate Vouchers →
                         </Link>

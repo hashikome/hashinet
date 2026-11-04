@@ -4,6 +4,7 @@ import { ArrowRight, Loader } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { HashifiMark } from "@/components/hashifi-mark";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,6 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { LOGO_SRC } from "@/lib/brand";
 import { errorMessage } from "@/lib/errors";
 
 const TITLES = {
@@ -118,7 +118,7 @@ export default function LoginPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader className="size-8 animate-spin text-primary" />
+        <Loader className="size-8 animate-spin text-ember" />
       </div>
     );
   }
@@ -129,8 +129,7 @@ export default function LoginPage() {
         {/* Logo and Header */}
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3">
-            {/* biome-ignore lint/performance/noImgElement: a small static SVG; image optimisation is off (next.config.mjs) */}
-            <img src={LOGO_SRC} alt="" className="size-12" />
+            <HashifiMark className="size-12 text-foreground" />
             <h1 className="text-2xl font-bold text-foreground">HashiFi</h1>
           </div>
           <p className="text-muted-foreground">Staff sign-in</p>

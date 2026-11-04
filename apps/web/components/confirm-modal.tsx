@@ -85,7 +85,7 @@ export function ConfirmModal({
           headerBg: "bg-primary/5",
           headerBorder: "border-primary/10",
           iconBg: "bg-primary/10",
-          iconColor: "text-primary",
+          iconColor: "text-ember",
           buttonVariant: "default" as const,
           icon: Info,
         };

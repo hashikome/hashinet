@@ -22,7 +22,7 @@ const STYLES: Record<ReadinessStatus, { icon: typeof CheckCircle2; text: string;
   {
     pass: {
       icon: CheckCircle2,
-      text: "text-teal-700 dark:text-teal-400",
+      text: "text-ember",
       label: "Ready",
     },
     warn: {

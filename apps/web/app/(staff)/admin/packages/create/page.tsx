@@ -87,7 +87,7 @@ function StepIndicator({ step }: { step: number }) {
                 className={cn(
                   "flex items-center justify-center size-9 rounded-full border-2 text-sm font-semibold transition-all duration-200",
                   done && "bg-primary border-primary text-primary-foreground",
-                  active && "border-primary text-primary",
+                  active && "border-primary text-ember",
                   !done && !active && "border-muted-foreground/30 text-muted-foreground/40",
                 )}
               >
@@ -96,7 +96,7 @@ function StepIndicator({ step }: { step: number }) {
               <span
                 className={cn(
                   "text-xs font-medium whitespace-nowrap transition-colors",
-                  active && "text-primary",
+                  active && "text-ember",
                   done && "text-foreground",
                   !done && !active && "text-muted-foreground/40",
                 )}

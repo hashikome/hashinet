@@ -158,7 +158,7 @@ export default function RevenuePage() {
                 <p className="text-2xl font-bold">{loading ? "…" : tsh(summary?.thisMonth ?? 0)}</p>
                 {summary?.monthGrowthPct != null && (
                   <div
-                    className={`flex items-center gap-1 mt-1 text-xs font-medium ${summary.monthGrowthPct >= 0 ? "text-teal-700 dark:text-teal-400" : "text-destructive"}`}
+                    className={`flex items-center gap-1 mt-1 text-xs font-medium ${summary.monthGrowthPct >= 0 ? "text-ember" : "text-destructive"}`}
                   >
                     {summary.monthGrowthPct >= 0 ? (
                       <ArrowUpRight className="size-3" />
@@ -347,7 +347,7 @@ export default function RevenuePage() {
             <div className="space-y-3">
               {byVenue.map((v, i) => (
                 <div key={v.name} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                  <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
+                  <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-ember shrink-0">
                     {i + 1}
                   </div>
                   <span className="flex-1 font-medium">{v.name}</span>
@@ -392,10 +392,7 @@ export default function RevenuePage() {
                     </TableCell>
                     <TableCell>
                       {tx.source !== "cash" ? (
-                        <Badge
-                          variant="secondary"
-                          className="bg-teal-500/15 text-teal-700 dark:text-teal-400 gap-1"
-                        >
+                        <Badge variant="secondary" className="bg-primary/15 text-ember gap-1">
                           <Smartphone className="size-3" /> Mobile Money
                         </Badge>
                       ) : (
