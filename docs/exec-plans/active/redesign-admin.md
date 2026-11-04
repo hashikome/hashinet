@@ -39,7 +39,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - [ ] H4: lists and forms that work on a phone; named actions; the router edit form.
 - [ ] H5: the captive portal: night top over a white sheet, the logo fallback, the welcome.
 - [ ] H6: the business screens: Team, Packages with CSV import, Business profile, Add a business,
-  and the platform's Settings (default packages and default captive portal on one page).
+  and the platform's Defaults (the packages and captive portal every new business starts with).
 - [ ] H7: design-audit on the result, findings fixed; `DESIGN.md`, runbooks and CHANGELOG current.
 
 ## Surprises & Discoveries
@@ -61,7 +61,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
-- Decision: what a business pays HashiFi is billing, not settings. It gets its own Billing page
+- Decision: what a business pays HashiFi is billing, not defaults or settings. It gets its own Billing page
   (the platform's view of every business's charges, and the owner's view of their own) once the
   pricing is decided; until then no screen shows it.
   Date/Author: 2026-11-04, owner.
