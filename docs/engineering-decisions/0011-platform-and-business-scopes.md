@@ -1,6 +1,6 @@
 # ADR-0011: Platform and business scopes, with owners, managers and operators
 
-Status: accepted, 3 November 2026; the second factor is a passkey since 4 November 2026. Replaces the admin and manager roles of ADR-0007, which keeps
+Status: accepted, 3 November 2026; sign-in protection by role settled on 4 November 2026. Replaces the admin and manager roles of ADR-0007, which keeps
 sign-in itself.
 
 ## Context
@@ -69,10 +69,12 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    this role take this action in this scope. The web shows what the API returns and never infers access from
    what it renders (ADR-0003). Better Auth keeps identity and sessions (ADR-0007); memberships hold
    what HashiFi decides.
-9. **Second factor.** A person with any platform membership must add a passkey before reaching
-   anything, whichever membership is active. Others may add one; once added it is required at every
-   sign-in. Losing every passkey means a recovery code, or a platform owner or manager removing the
-   passkey after confirming the person, which signs them out everywhere.
+9. **Sign-in protection** (ADR-0007). Every platform role, and business owners and managers, must
+   have an authenticator app before reaching anything, whichever membership is active: their email
+   code is always followed by its code, unless they sign in with a passkey. Business operators sign in
+   with the email code alone unless they turn the authenticator on. Anyone may add passkeys. Losing
+   the phone means a recovery code, or a platform owner or manager resetting the authenticator after
+   confirming the person, which signs them out everywhere.
 10. **Default packages.** A new business starts with the platform's default packages, which the
     platform owner edits: 1 hour for TSh 500, 1 day for TSh 1,500 and 1 week for TSh 7,000. A
     business can change them, add its own, or import them from a CSV file, shown in full before it

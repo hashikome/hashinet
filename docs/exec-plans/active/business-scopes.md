@@ -113,14 +113,14 @@ audited); `GET /api/me` lists the person's memberships for the account menu. A n
 workspace used last if that membership is still active, otherwise the highest-authority active one
 (ADR-0011, 7); each membership records when it was last used. `venueScope(principal)` returns `{}` for platform roles, `{ businessId }` for a business
 owner, and `{ businessId, id: { in: venueIds } }` otherwise. `@Can(action)` replaces `@Roles`. The
-guard enforces a passkey for anyone holding a platform membership, and for anyone who added one.
+guard enforces the authenticator app for platform roles, owners and managers (ADR-0011, 9).
 
-**M2 also changes the second factor.** Better Auth's two-factor (TOTP) plugin is replaced by its
-passkey plugin (`@better-auth/passkey`, as ntumie.); the baseline has a passkeys table and no
-`two_factors`. Sign-in, as ntumie.'s: email, then a choice of passkey (complete on its own) or an
-emailed code, either of which signs in on its own; a platform membership without a passkey goes to
-adding one, then shows recovery codes once. The email field offers
-passkey autofill (WebAuthn conditional UI). WebAuthn
+**M2 also adds passkeys.** Better Auth's passkey plugin (`@better-auth/passkey`, as ntumie.) joins
+its two-factor plugin. Sign-in: email, then a choice of passkey (complete on its own) or an emailed
+code; after a code, the authenticator code for platform roles, owners, managers and anyone who turned
+it on (ADR-0011, 9); a recovery code signs in on its own. A required authenticator not yet set up is
+set up after the email code, then recovery codes are shown once. The email field offers passkey
+autofill (WebAuthn conditional UI). WebAuthn
 needs HTTPS, so local development uses `localhost`. Tests: a platform membership without a passkey
 reaches only the add-a-passkey routes; a recovery code signs in once and removes nothing.
 
