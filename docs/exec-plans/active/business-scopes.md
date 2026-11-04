@@ -136,7 +136,8 @@ one transaction: the invitee gives their full name and, for a new business, its 
 area and town; the email is never a field. Acceptance creates or resolves the person, the business,
 its venue, default packages and owner membership, or the membership and venues, then marks the
 invitation accepted. It never signs in: the screen goes straight to an email code, as ordinary
-sign-in. Platform staff "Invite a business" from Businesses with only the owner's email; pending
+sign-in, and that code opens the new business's own overview directly, with its getting-ready
+checklist; no welcome screen sits between. Platform staff "Invite a business" from Businesses with only the owner's email; pending
 invitations show there with Resend and Revoke. Team pages list people and pending invitations
 together. The owner's Business profile page sets the logo. Every change audited.
 
