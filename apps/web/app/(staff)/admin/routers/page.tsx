@@ -92,12 +92,10 @@ export default function RoutersPage() {
       </div>
 
       {backlog && (backlog.stuckVouchers > 0 || backlog.unprovisionedPayments > 0) && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-500/10 p-4 text-sm">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-800 dark:text-amber-400" />
+        <div className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/10 p-4 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-ember" />
           <div>
-            <p className="font-medium text-amber-700 dark:text-amber-400">
-              Customers waiting on router confirmation
-            </p>
+            <p className="font-medium text-ember">Customers waiting on router confirmation</p>
             <p className="text-muted-foreground">
               {backlog.stuckVouchers > 0 && (
                 <>

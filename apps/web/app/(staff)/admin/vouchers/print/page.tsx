@@ -111,15 +111,15 @@ function PrintVouchersContent() {
     <div className="min-h-screen bg-muted/30 print:bg-white">
       {/* QR URL warning — shown when portal URL is localhost */}
       {portalIsLocal && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-start gap-3 print:hidden">
-          <TriangleAlert className="size-4 text-amber-800 dark:text-amber-400 mt-0.5 shrink-0" />
-          <p className="text-sm text-amber-800">
+        <div className="bg-primary/10 border-b border-primary/30 px-4 py-3 flex items-start gap-3 print:hidden">
+          <TriangleAlert className="size-4 text-ember mt-0.5 shrink-0" />
+          <p className="text-sm text-ember">
             <strong>QR codes point to localhost</strong> — set{" "}
-            <code className="font-mono text-xs bg-amber-100 px-1 py-0.5 rounded">
+            <code className="font-mono text-xs bg-primary/10 px-1 py-0.5 rounded">
               NEXT_PUBLIC_PORTAL_URL=http://&lt;portal-address&gt;
             </code>{" "}
             in{" "}
-            <code className="font-mono text-xs bg-amber-100 px-1 py-0.5 rounded">.env.local</code>{" "}
+            <code className="font-mono text-xs bg-primary/10 px-1 py-0.5 rounded">.env.local</code>{" "}
             so scanned QR codes reach the right address on the WiFi network.
           </p>
         </div>

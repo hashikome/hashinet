@@ -3,7 +3,6 @@ import { statusPill } from "@/lib/status-pill";
 
 export function routerStatusPill(status: RouterRecord["status"]) {
   if (status === "online") return statusPill.success;
-  if (status === "provisioning") return statusPill.warning;
   if (status === "error") return statusPill.danger;
   return statusPill.neutral;
 }

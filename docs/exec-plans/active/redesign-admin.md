@@ -130,7 +130,10 @@ the same endpoint by capability. Lines, never bars, for time.
 the voucher buttons get names; the router edit form in plain words; the router page shows its model
 and RouterOS version after setup.
 
-**H5, captive portal.** The night top with the logo, venue name and place, over a white sheet with
+**H5, captive portal.** The API becomes the only source of portal defaults (ADR-0003): remove
+`apps/web/lib/portal-defaults.ts` and the portal page's `DEFAULT_FORM`, and have the print and batch
+endpoints return each voucher's resolved brand. Router pages take their colours from the same
+templating as their URLs (`portal-files.ts`), not hand-copied values. The night top with the logo, venue name and place, over a white sheet with
 the welcome ("Karibu. Pull up a seat."), the code field and the button; the packages below. Logo:
 the venue's, else the business's, else HashiFi's. The router's pages stay byte-exact, and the walled
 garden is checked against the script Cloudflare injects into guests' pages.

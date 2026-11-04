@@ -54,7 +54,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDuration } from "@/lib/duration";
 import { portalOrigin } from "@/lib/portal-url";
-import { statusPill } from "@/lib/status-pill";
+import { voucherStatusPill } from "@/lib/status-pill";
 import { formatDate } from "@/lib/utils";
 
 /** A voucher with the fields this page displays. */
@@ -63,26 +63,6 @@ interface VoucherRow extends VoucherListItem {
   dataLimit: number;
   /** Data used, in GB. */
   dataUsed: number;
-}
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case "active":
-      return statusPill.warning;
-    case "used":
-      return statusPill.info;
-    case "expired":
-      return statusPill.danger;
-    case "unused":
-      return statusPill.success;
-    case "revoked":
-      return statusPill.neutral;
-    case "pending_activation":
-      // Redeemed but the router hasn't confirmed it — needs attention if it sticks.
-      return statusPill.accent;
-    default:
-      return statusPill.neutral;
-  }
 }
 
 /** `pending_activation` → "pending router" */
@@ -400,7 +380,7 @@ export default function VouchersPage() {
                         {voucher.expiresAt ? formatDate(voucher.expiresAt, "shortDate") : "Never"}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="secondary" className={getStatusColor(voucher.status)}>
+                        <Badge variant="secondary" className={voucherStatusPill(voucher.status)}>
                           <StatusIcon className="size-3 mr-1" />
                           {formatStatus(voucher.status)}
                         </Badge>
@@ -514,7 +494,7 @@ export default function VouchersPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <Badge variant="secondary" className={getStatusColor(selectedVoucher.status)}>
+                  <Badge variant="secondary" className={voucherStatusPill(selectedVoucher.status)}>
                     {formatStatus(selectedVoucher.status)}
                   </Badge>
                 </div>

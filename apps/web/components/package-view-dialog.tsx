@@ -86,7 +86,7 @@ export function PackageViewDialog({ pkg, onClose }: PackageViewDialogProps) {
               {pkg.isActive ? "Active" : "Inactive"}
             </Badge>
             {throttleEnabled && (
-              <Badge variant="secondary" className={statusPill.warning}>
+              <Badge variant="secondary" className={statusPill.neutral}>
                 Throttled
               </Badge>
             )}

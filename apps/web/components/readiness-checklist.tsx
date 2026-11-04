@@ -27,7 +27,7 @@ const STYLES: Record<ReadinessStatus, { icon: typeof CheckCircle2; text: string;
     },
     warn: {
       icon: AlertTriangle,
-      text: "text-amber-800 dark:text-amber-400",
+      text: "text-ember",
       label: "Heads-up",
     },
     fail: {

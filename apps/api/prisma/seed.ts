@@ -49,23 +49,6 @@ for (const data of PACKAGES) {
   });
 }
 
-if ((await db.portalSetting.count()) === 0) {
-  await db.portalSetting.create({
-    data: {
-      brandName: "HashiFi",
-      headline: "Welcome",
-      message: "Enter your voucher code to get online.",
-      primaryColor: "#F59E2A",
-      accentColor: "#0D1B2A",
-      backgroundColor: "#0D1B2A",
-      voucherLabel: "Voucher code",
-      voucherHelp: "The code is on your printed voucher.",
-      ticketTitle: "Internet Access Voucher",
-      ticketFooter: "Thank you",
-    },
-  });
-}
-
 console.log(
   `Seeded: ${admin.email}, ${manager.email}, venue "${venue.name}", ${PACKAGES.length} packages.`,
 );

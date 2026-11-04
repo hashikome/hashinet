@@ -52,8 +52,8 @@ const METHOD: Record<PaymentRecord["provider"], string> = {
 };
 
 function statusOf(payment: PaymentRecord): { label: string; className: string } {
-  if (payment.owed) return { label: "Access owed", className: "text-warning" };
-  if (payment.status === "paid") return { label: "Paid", className: "text-positive" };
+  if (payment.owed) return { label: "Access owed", className: "text-destructive" };
+  if (payment.status === "paid") return { label: "Paid", className: "text-ember" };
   if (payment.status === "pending") return { label: "Waiting", className: "text-muted-foreground" };
   return { label: "Failed", className: "text-destructive" };
 }

@@ -30,16 +30,15 @@ Role names are the shadcn tokens the components use. Brand colours: midnight `#0
 | `primary` | `#f59e2a` | `#f59e2a` | The one filled button, with `primary-foreground` midnight text (8.1:1) |
 | `ember` | `#a9530a` | `#f6ae52` | Ember as text and small marks: links, live figures. Ember itself is 2.1:1 on white, so never text |
 | `accent` | `#e7ebf0` | `#1a2f45` | Pale area: active nav, hover |
-| `positive`, `warning` | `#a9530a` | `#f6ae52` | Good and needing attention as text: ember means alive |
 | `destructive` | `#c4242a` | `#f2707a` | Failed or destructive: problems are red, never ember |
 | `border` | `#dfe3e8` | `#22384f` | Panel edges |
 | `input` | `#8a94a3` | `#7a8ca0` | Control edges, 3:1 on a panel |
 | `ring` | `#a9530a` | `#f59e2a` | Focus |
 | `chart-1` to `chart-5` | ember, slate, pale ember, midnight, pale slate | the same, lifted | One hue per chart; ember on the main series, deepened to `#c97412` in light for 3:1 |
 
-Status pills are a pale wash with dark text of the same hue (`lib/status-pill.ts`): ember for alive,
-red for problems, and neutral for pending and finished, so "setting up" is not mistaken for "online".
-Red and neutral are the only others; neither is decoration.
+Status has three meanings, defined once in `lib/status-pill.ts`: ember for alive (online, active,
+paid), red for what needs a human (failed, suspended, revoked), and neutral for everything else, so
+"setting up" is never mistaken for "online". No other status hue exists.
 
 The dark theme is midnight, not a neutral dark: a deliberate exception to the usual rule, because
 midnight is the brand's night.

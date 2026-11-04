@@ -9,7 +9,7 @@ export function HashifiMark({ className }: { className?: string }) {
         strokeWidth="3.2"
         strokeLinecap="round"
       />
-      <circle cx="26.4" cy="8.4" r="3" fill="#F59E2A" />
+      <circle cx="26.4" cy="8.4" r="3" className="fill-primary" />
     </svg>
   );
 }

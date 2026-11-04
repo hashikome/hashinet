@@ -64,10 +64,10 @@ export function ConfirmModal({
         };
       case "warning":
         return {
-          headerBg: "bg-amber-500/5",
-          headerBorder: "border-amber-500/10",
-          iconBg: "bg-amber-500/10",
-          iconColor: "text-amber-800",
+          headerBg: "bg-primary/5",
+          headerBorder: "border-primary/30",
+          iconBg: "bg-primary/10",
+          iconColor: "text-ember",
           buttonVariant: "default" as const,
           icon: AlertCircle,
         };

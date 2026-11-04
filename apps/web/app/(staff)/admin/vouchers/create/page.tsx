@@ -242,9 +242,7 @@ export default function CreateVoucherPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {isDirty && (
-              <span className="text-sm text-amber-800 dark:text-amber-400">Unsaved changes</span>
-            )}
+            {isDirty && <span className="text-sm text-ember">Unsaved changes</span>}
             <Button onClick={handleSubmit} disabled={isGenerating || isLoading}>
               {isGenerating ? (
                 <>

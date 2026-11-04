@@ -254,11 +254,7 @@ export default function CreatePackagePage() {
               Step {step} of {STEP_LABELS.length}
             </p>
           </div>
-          {isDirty && (
-            <span className="ml-auto text-sm text-amber-800 dark:text-amber-400">
-              Unsaved changes
-            </span>
-          )}
+          {isDirty && <span className="ml-auto text-sm text-ember">Unsaved changes</span>}
         </div>
 
         <StepIndicator step={step} />
@@ -376,7 +372,7 @@ export default function CreatePackagePage() {
                     Reduce speeds during peak hours or after a data threshold. Both triggers are
                     optional.
                   </CardDescription>
-                  <p className="text-xs text-amber-800 dark:text-amber-400 mt-1">
+                  <p className="text-xs text-ember mt-1">
                     Speed capping requires RouterOS v6.49+ — settings are saved but not applied on
                     older routers.
                   </p>

@@ -109,7 +109,7 @@ function RoleBadge({ role }: { role: TeamMember["role"] }) {
 
 function StatusBadge({ status }: { status: TeamMember["status"] }) {
   if (status === "active") return <Badge className={statusPill.success}>Active</Badge>;
-  if (status === "suspended") return <Badge className={statusPill.warning}>Suspended</Badge>;
+  if (status === "suspended") return <Badge className={statusPill.danger}>Suspended</Badge>;
   return <Badge className={statusPill.neutral}>Inactive</Badge>;
 }
 
@@ -174,17 +174,12 @@ function actionColor(action: string): string {
     case "member_created":
     case "member_activated":
     case "venue_created":
-      return "bg-primary/10 text-ember";
+    case "member_promoted":
+      return "bg-primary/15 text-ember";
     case "member_suspended":
     case "member_deleted":
     case "venue_deleted":
-      return "bg-red-500/10 text-red-700 dark:text-red-400";
-    case "member_promoted":
-      return "bg-primary/10 text-ember";
-    case "member_demoted":
-      return "bg-amber-500/10 text-amber-800 dark:text-amber-400";
-    case "vouchers_generated":
-      return "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400";
+      return "bg-destructive/10 text-destructive";
     default:
       return "bg-muted text-muted-foreground";
   }
@@ -563,7 +558,7 @@ export default function TeamPage() {
                               </>
                             ) : (
                               <>
-                                <Ban className="size-4 mr-2 text-amber-800 dark:text-amber-400" />
+                                <Ban className="size-4 mr-2 text-ember" />
                                 Suspend Account
                               </>
                             )}
@@ -582,7 +577,7 @@ export default function TeamPage() {
                               }}
                               disabled={member.id === user?.id}
                             >
-                              <ArrowDownCircle className="size-4 mr-2 text-amber-800 dark:text-amber-400" />
+                              <ArrowDownCircle className="size-4 mr-2 text-ember" />
                               Demote to Manager
                             </DropdownMenuItem>
                           )}

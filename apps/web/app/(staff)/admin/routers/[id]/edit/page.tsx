@@ -210,9 +210,7 @@ export default function EditRouterPage() {
               </p>
             </div>
           </div>
-          {isDirty && (
-            <span className="text-sm text-amber-800 dark:text-amber-400">Unsaved changes</span>
-          )}
+          {isDirty && <span className="text-sm text-ember">Unsaved changes</span>}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -147,8 +147,8 @@ export function RouterBootstrapDialog({
         {/* space-y-4 replaces the grid `gap-4` these children used to get individually. */}
         <div className="space-y-4 overflow-y-auto pr-1">
           {missing.length > 0 ? (
-            <div className="rounded-md border border-amber-500/50 bg-amber-500/5 p-3 text-sm">
-              <p className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+              <p className="flex items-start gap-2 text-ember">
                 <AlertTriangle className="size-4 shrink-0 mt-0.5" />
                 Fill in {missing.join(", ")} on the form first — the script is built from those
                 values.
@@ -250,7 +250,7 @@ export function RouterBootstrapDialog({
           )}
 
           {result?.warnings.map((w) => (
-            <p key={w} className="text-xs text-amber-800 dark:text-amber-400">
+            <p key={w} className="text-xs text-ember">
               {w}
             </p>
           ))}

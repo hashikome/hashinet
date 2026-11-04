@@ -380,7 +380,7 @@ export default function PortalPage() {
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold text-foreground">Captive portal</h1>
-              <Badge variant="secondary" className="gap-1 bg-primary/10 text-ember">
+              <Badge variant="secondary" className="gap-1 bg-primary/15 text-ember">
                 <Sparkles className="size-3" />
                 Live preview
               </Badge>
@@ -391,9 +391,7 @@ export default function PortalPage() {
           </div>
           {canEdit && (
             <div className="flex items-center gap-3">
-              {isDirty && (
-                <span className="text-sm text-amber-800 dark:text-amber-400">Unsaved changes</span>
-              )}
+              {isDirty && <span className="text-sm text-ember">Unsaved changes</span>}
               <Button onClick={savePortal} disabled={isSaving || !portal.brandName.trim()}>
                 {isSaving ? (
                   <Loader className="mr-2 size-4 animate-spin" />

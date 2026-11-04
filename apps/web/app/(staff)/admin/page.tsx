@@ -40,6 +40,7 @@ import { useRoutersStatus } from "@/hooks/use-routers-status";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { moneyAxis } from "@/lib/chart";
+import { voucherStatusPill } from "@/lib/status-pill";
 import { businessMonthLabel, formatDate } from "@/lib/utils";
 
 function formatBytes(bytes: number) {
@@ -213,22 +214,7 @@ export default function DashboardPage() {
                       {voucher.expiresAt ? formatDate(voucher.expiresAt, "shortDate") : "Never"}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge
-                        className={
-                          {
-                            active:
-                              "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200",
-                            used: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-400 border-zinc-200",
-                            expired: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-200",
-                            unused: "bg-primary/15 text-ember border-primary/30",
-                            revoked: "bg-muted text-muted-foreground",
-                            pending_activation:
-                              "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200",
-                          }[voucher.status] ?? "bg-muted text-muted-foreground"
-                        }
-                      >
-                        {voucher.status}
-                      </Badge>
+                      <Badge className={voucherStatusPill(voucher.status)}>{voucher.status}</Badge>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -458,18 +444,12 @@ export default function DashboardPage() {
               <Loader className="size-4 animate-spin text-muted-foreground" />
             )}
             {!hasOnlineRouter && (
-              <Badge
-                variant="secondary"
-                className="bg-amber-500/15 text-amber-800 dark:text-amber-400"
-              >
+              <Badge variant="secondary" className="bg-primary/15 text-ember">
                 {totalCount > 1 ? "All routers offline" : "Router offline"}
               </Badge>
             )}
             {isPartiallyOnline && (
-              <Badge
-                variant="secondary"
-                className="bg-amber-500/15 text-amber-800 dark:text-amber-400"
-              >
+              <Badge variant="secondary" className="bg-primary/15 text-ember">
                 {onlineCount}/{totalCount} routers online
               </Badge>
             )}

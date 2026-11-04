@@ -55,8 +55,6 @@
   --radius-4xl: var(--radius);
   --color-ember: var(--ember);
   --color-midnight: #0d1b2a;
-  --color-positive: var(--positive);
-  --color-warning: var(--warning);
 }
 
 /* ─── Tokens ─────────────────────────────────────────────────── */
@@ -86,9 +84,6 @@
 
   --ember: #a9530a;
   --destructive: #c4242a;
-  /* Ember is also "good": a green beside it would read as a second brand colour. */
-  --positive: #a9530a;
-  --warning: #a9530a;
 
   --border: #dfe3e8;
   --input: #8a94a3;
@@ -104,14 +99,14 @@
   --radius: 8px;
 
   /* The sidebar is on the page ground; it recedes. */
-  --sidebar: #f4f6f8;
-  --sidebar-foreground: #4e5d6e;
-  --sidebar-primary: #f59e2a;
-  --sidebar-primary-foreground: #0d1b2a;
-  --sidebar-accent: #e7ebf0;
-  --sidebar-accent-foreground: #0d1b2a;
-  --sidebar-border: #dfe3e8;
-  --sidebar-ring: #a9530a;
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--muted-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 /* Midnight, the brand's own night, rather than a neutral dark; elevation by lightness. */
@@ -125,9 +120,6 @@
   --popover: #1a2f45;
   --popover-foreground: #eef1f4;
 
-  --primary: #f59e2a;
-  --primary-foreground: #0d1b2a;
-
   --secondary: #1a2f45;
   --secondary-foreground: #eef1f4;
 
@@ -139,8 +131,6 @@
 
   --ember: #f6ae52;
   --destructive: #f2707a;
-  --positive: #f6ae52;
-  --warning: #f6ae52;
 
   --border: #22384f;
   --input: #7a8ca0;
@@ -152,15 +142,6 @@
   --chart-4: #f2e7d7;
   --chart-5: #5f7285;
   --chart-grid: #1e3246;
-
-  --sidebar: #0d1b2a;
-  --sidebar-foreground: #9daec0;
-  --sidebar-primary: #f59e2a;
-  --sidebar-primary-foreground: #0d1b2a;
-  --sidebar-accent: #1a2f45;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #22384f;
-  --sidebar-ring: #f59e2a;
 }
 
 @layer base {
@@ -190,13 +171,4 @@
       0 4px 12px oklch(0 0 0 / 45%),
       inset 0 1px 0 oklch(1 0 0 / 7%);
   }
-}
-
-/* Hide scrollbar while allowing scrolling */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
 }

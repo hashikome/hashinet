@@ -118,7 +118,7 @@ function getStatusColor(status: SessionRecord["status"]) {
     case "terminated":
       return statusPill.danger;
     case "expired":
-      return statusPill.warning;
+      return statusPill.neutral;
     default:
       return statusPill.neutral;
   }
@@ -246,21 +246,17 @@ export default function SessionsPage() {
               <div className="flex items-center gap-1.5 text-xs font-medium">
                 {!hasOnlineRouter ? (
                   <>
-                    <span className="size-2 rounded-full bg-amber-500" />
-                    <span className="text-amber-800 dark:text-amber-400">
+                    <span className="size-2 rounded-full bg-primary" />
+                    <span className="text-ember">
                       {totalCount > 1 ? "All routers offline" : "Router offline"}
                     </span>
                   </>
                 ) : wsConnected ? (
                   <>
                     <span
-                      className={`size-2 rounded-full animate-pulse ${isPartiallyOnline ? "bg-amber-500" : "bg-primary"}`}
+                      className={`size-2 rounded-full animate-pulse ${isPartiallyOnline ? "bg-primary" : "bg-primary"}`}
                     />
-                    <span
-                      className={
-                        isPartiallyOnline ? "text-amber-800 dark:text-amber-400" : "text-ember"
-                      }
-                    >
+                    <span className={isPartiallyOnline ? "text-ember" : "text-ember"}>
                       Live{isPartiallyOnline ? ` (${onlineCount}/${totalCount} routers)` : ""}
                     </span>
                     {!wsUpdated && <Loader className="size-3 animate-spin text-muted-foreground" />}

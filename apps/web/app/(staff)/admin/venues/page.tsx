@@ -22,7 +22,7 @@ import { statusPill } from "@/lib/status-pill";
 
 const STATUS: Record<VenueRecord["status"], { label: string; pill: string }> = {
   active: { label: "Open", pill: statusPill.success },
-  maintenance: { label: "Under maintenance", pill: statusPill.warning },
+  maintenance: { label: "Under maintenance", pill: statusPill.neutral },
   inactive: { label: "Closed", pill: statusPill.neutral },
 };
 

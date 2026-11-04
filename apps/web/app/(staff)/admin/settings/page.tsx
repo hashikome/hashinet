@@ -66,7 +66,7 @@ export default function SettingsPage() {
             <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
           </div>
           <span
-            className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${isAdmin ? "bg-primary/15 text-ember" : "bg-sky-500/15 text-sky-600 dark:text-sky-400"}`}
+            className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${isAdmin ? "bg-primary/15 text-ember" : "bg-muted text-muted-foreground"}`}
           >
             <ShieldCheck className="size-3" />
             {isAdmin ? "Admin" : "Manager"}
@@ -149,7 +149,7 @@ export default function SettingsPage() {
             onClick={() => setTheme("dark")}
             className={`relative rounded-xl border-2 overflow-hidden transition-all ${theme === "dark" ? "border-primary shadow-sm" : "border-border hover:border-muted-foreground/40"}`}
           >
-            <div className="bg-[#0d1b2a] p-3 space-y-1.5">
+            <div className="bg-midnight p-3 space-y-1.5">
               <div className="h-2 w-3/4 rounded bg-[#22384f]" />
               <div className="h-2 w-1/2 rounded bg-[#1a2f45]" />
               <div className="h-5 w-full rounded bg-[#1a2f45] border border-[#22384f]" />
