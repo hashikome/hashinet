@@ -58,8 +58,9 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
      platform roles, all venues or one inside a business. It narrows the view and grants nothing.
 
    There is one sign-in for everyone, with no workspace to choose on it. A session opens in the
-   person's highest-authority active membership (platform before business, then owner, manager,
-   operator); between equals, the workspace they used last. Switching stays in the account menu.
+   workspace the person used last, if that membership is still active; otherwise in their
+   highest-authority active membership (platform before business, then owner, manager, operator).
+   Switching stays in the account menu.
 
    Nothing from one membership applies while another is active, so platform powers never reach into
    a business view or the reverse. Inviting an email that already signs in adds a membership to that
