@@ -61,7 +61,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
-- Decision: the logo is the ring alone, with no wordmark and no workspace name beside it; the
+- Decision: the logo is the ring alone, with no wordmark; the platform workspace adds a solid
+  `PLATFORM` tag beside it; the
   product is written `hashifi` in all copy. The rename of user-facing copy, emails, page titles and
   docs prose ships with H1's remaining work; identifiers (`HashifiMark`, package names) keep their
   code casing.
