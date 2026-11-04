@@ -33,9 +33,9 @@ already sign people in with Better Auth's email codes.
   ADR-0035). After the email, the person chooses: a passkey, which signs in on its own because the
   device's PIN or biometric is verified by the server (WebAuthn user verification), or an emailed
   code. The same choice is offered for every address, so it reveals no account. The email field also
-  offers saved passkeys through the browser's autofill. For anyone who has a passkey, an email code
-  is followed by the passkey or a single-use recovery code, never a session on its own. An
-  authenticator app would be a second typed code, and a passkey cannot be phished. Recovery codes are
+  offers saved passkeys through the browser's autofill. Either method signs in on its own: a code is
+  never followed by a passkey step (owner's decision, 4 November 2026). An authenticator app would be
+  a second typed code, and a passkey cannot be phished. Recovery codes are
   shown once with the first passkey and never remove one. Who must have a passkey is set by role in
   ADR-0011.
 - **Authentication and authorization stay separate tables.** Better Auth's `users`, `sessions`,
