@@ -97,6 +97,8 @@ do, including Better Auth's tables and the tables that replace `staff`. Producti
 are test data only, so the owner approved dropping everything (4 November 2026): the migrations are
 replaced by one new baseline, and the seed writes realistic invented businesses, people and sales
 in place of `admin@example.com` and `Sim Manager`. Add `Business` (name, logo key, status; the logo stored as ADR-0009 says), `Venue.businessId` (required; drop `operatorId`),
+`Venue.region` (one of Tanzania's 31 regions, a closed list in `@hashifi/types`, chosen, never typed) and
+`Venue.area` (the area or street, typed), so analytics and onboarding travel group venues exactly,
 `Membership` (user id, scope `platform` or `business`, business id when business, role `owner`,
 `manager` or `operator`, status; unique per user and scope), the session's active membership (a
 column on Better Auth's session through its additional fields, or `session_memberships`, whichever
