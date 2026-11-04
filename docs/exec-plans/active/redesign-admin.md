@@ -145,6 +145,9 @@ operators), Packages (the defaults, venue-only packages, CSV import with a previ
 profile (name, logo, each venue's portal), and for platform staff Add a business and Default
 packages. Needs business-scopes M3 to M5.
 
+Every footer and email shows the HashiFi mark and `© <year> Shikome Technology Limited`; the
+captive portal's foot keeps "by HashiFi" as its credit.
+
 **H7, audit.** design-audit `critique` and `audit` at 1280 and 375, light and dark, with real seed
 data; no P0 or P1 left. Then the docs, and the plan folded away.
 
