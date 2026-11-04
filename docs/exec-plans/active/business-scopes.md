@@ -41,6 +41,10 @@ sequence of both plans.
 
 ## Decision Log
 
+- Decision: `uuidv7()` as the database default on every generated key, and one new baseline
+  migration with all data dropped.
+  Rationale: one rule across Hashikome's products; nothing in production is worth preserving.
+  Date/Author: 2026-11-04 / Paul
 - Decision: one sign-in screen for everyone, opening in the last workspace, else the highest
   authority; switching only in the account menu.
   Rationale: one users table means one way in, a choice at sign-in repeats the account menu, and
@@ -82,20 +86,23 @@ Not started.
   plus venues for a business manager or operator. *Owner-only* actions are listed in ADR-0011, 3.
 
 Production holds only test data (one venue, `chr-test`, and test vouchers) and one staff member, the
-platform owner, so the migration maps rows rather than preserving a live tenant.
+platform owner, which are dropped with the old migrations. The platform owner is created again by
+the add-staff command, and `chr-test` re-runs setup.
 
 ## Plan Of Work
 
-**M1, schema.** Add `Business` (name, logo key, status; the logo stored as ADR-0009 says), `Venue.businessId` (required; drop `operatorId`),
+**M1, schema.** Every generated primary key defaults to `uuidv7()` in the database, as Pigfarm's
+do, including Better Auth's tables and the tables that replace `staff`. Production and local data
+are test data only, so the owner approved dropping everything (4 November 2026): the migrations are
+replaced by one new baseline, and the seed writes realistic invented businesses, people and sales
+in place of `admin@example.com` and `Sim Manager`. Add `Business` (name, logo key, status; the logo stored as ADR-0009 says), `Venue.businessId` (required; drop `operatorId`),
 `Membership` (user id, scope `platform` or `business`, business id when business, role `owner`,
 `manager` or `operator`, status; unique per user and scope), the session's active membership (a
 column on Better Auth's session through its additional fields, or `session_memberships`, whichever
 Better Auth supports cleanly), `MembershipVenue` (membership, venue), `Invitation`
 (email, scope, business, role, venues, invited by, expiry, accepted at), and packages owned by a
-business with an optional venue list (`PackageVenue`), plus `PlatformDefaultPackage`. The migration
-creates one business per existing operator (or "Hashikome test" for venues without one), moves each
-venue into it, turns the admin into the platform owner and each manager into an owner of their
-business, and seeds the three default packages. `Staff` is renamed `Membership` in the same release
+business with an optional venue list (`PackageVenue`), plus `PlatformDefaultPackage`. The seed creates the
+platform owner, the default packages and sample businesses. `Staff` is renamed `Membership` in the same release
 (pre-deployment compatibility: no alias).
 
 **M2, access.** `apps/api/src/access/policy.ts`: actions as a closed union (`venue.read`,
@@ -143,8 +150,8 @@ From the repository root: `bun run db:migrate` (M1), `bun run verify`, `bun run 
 
 ## Idempotence And Recovery
 
-The migration runs once and maps existing rows; it is safe against production's test data. Before
-applying it in production, the backup runner's latest snapshot is confirmed in R2.
+The new baseline starts from an empty database. Before dropping production's, the backup runner's
+latest snapshot is confirmed in R2.
 
 ## Artifacts And Notes
 
