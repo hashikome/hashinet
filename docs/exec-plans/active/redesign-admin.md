@@ -61,8 +61,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
-- Decision: business invitations have their own page, Platform → Invitations beside the audit log, so a growing list of
-  businesses never pushes them down.
+- Decision: Invitations is a page for finding and acting on invitations, not for issuing them: every
+  invitation in the viewer's scope (hashifi's team, new businesses, business teams for the platform; the
+  business's for an owner; their venues' for a manager), with Search, Kind and State filters and
+  Resend, Revoke or Invite again. It sits beside the audit log (Platform, or the business's own
+  group). Issuing stays where the grant lives: Invite a business on Businesses, people on Team.
   Date/Author: 2026-11-04, owner.
 - Decision: the Billing page follows ADR-0013 (per-sale or fixed plan per venue, onboarding and
   router charges).
