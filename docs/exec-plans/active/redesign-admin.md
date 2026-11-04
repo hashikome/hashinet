@@ -64,7 +64,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: problems get an Issues page, with the open count on its nav item as the notification.
   An issue (a router offline, a router not yet connected) is derived from router state and closes
   itself only when the router is serving and passes its checks; people can say "I'm on it", never
-  mark it fixed. The overview shows one as a banner and several as one panel of at most three,
+  mark it fixed. Issues are claimed, not assigned: an assignment does not show that anyone has seen
+  the issue, a claim does. The overview shows one as a banner and several as one panel of at most three,
   linking to Issues. Each issue page has what to do, with its actions, the details and its history
   from the audit log. Counts read N/N.
   Date/Author: 2026-11-04, owner.
