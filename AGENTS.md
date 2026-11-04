@@ -63,8 +63,8 @@ the Hearth design ([redesign-admin](docs/exec-plans/active/redesign-admin.md), w
 - Email through Resend. Queues, where needed, are BullMQ on Redis with PostgreSQL
   authoritative.
 - Sign-in is Better Auth inside HashiFi, with email codes
-  ([ADR-0007](docs/engineering-decisions/0007-sign-in-with-better-auth.md)); admins must use an
-  authenticator app. Its tables hold identity and sessions; `staff` holds role, status and venue
+  ([ADR-0007](docs/engineering-decisions/0007-sign-in-with-better-auth.md)); platform staff must add
+  a passkey (the second factor, ADR-0011). Its tables hold identity and sessions; `staff` holds role, status and venue
   scope. Read authorization only from `staff`.
 - Conventional Commits: `feat(api): ...`, `fix(web): ...`, `docs: ...`, `chore: ...`.
 

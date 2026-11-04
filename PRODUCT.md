@@ -136,7 +136,7 @@ real payment and a real message (M8).
 
 | Data | Purpose | Visible to |
 | --- | --- | --- |
-| Memberships | Sign-in (email and one-time code, an authenticator app for platform roles), role, scope, venues | Platform owner and managers; a business's owner and managers for their business |
+| Memberships | Sign-in (email and one-time code, then a passkey for platform roles), role, scope, venues | Platform owner and managers; a business's owner and managers for their business |
 | Devices | A guest device's MAC address, name and type, and its sessions (not a person: one guest can be several devices) | Platform staff; a business's people for their venues |
 | Customers | A paying guest's mobile number, their devices and payments (from M6) | Platform staff; a business's people for their venues |
 | Router credentials | Configuring routers | Encrypted at rest; never returned to clients |

@@ -1,6 +1,7 @@
 # ADR-0007: Sign-in with Better Auth, inside HashiFi
 
-Status: accepted, 29 October 2026; roles moved to ADR-0011 on 3 November 2026. Replaces ADR-0005
+Status: accepted, 29 October 2026; roles moved to ADR-0011 on 3 November 2026; the second factor
+became a passkey on 4 November 2026. Replaces ADR-0005
 (sign-in from a shared Hashikome identity service), now removed; that choice is listed below.
 
 ## Context
@@ -28,8 +29,12 @@ already sign people in with Better Auth's email codes.
 - **Better Auth runs in `apps/api`** with email one-time codes, never links, delivered through
   Resend. No self-registration: a person is invited from a Team page, and only invited people can
   sign in. No passwords.
-- **An authenticator app (TOTP)**, with recovery codes: who must enroll one is set by role in
-  ADR-0011.
+- **A passkey is the second factor**, not an authenticator app: after the email code, one tap with
+  the device's PIN or biometric, verified by the server (WebAuthn user verification), through Better
+  Auth's passkey plugin, as ntumie. does (its ADR-0035). An authenticator app would be a second typed
+  code after the first, and a passkey cannot be phished. Single-use recovery codes, shown once when
+  the first passkey is added, cover a lost device; they never remove a passkey. Who must add one is
+  set by role in ADR-0011.
 - **Authentication and authorization stay separate tables.** Better Auth's `users`, `sessions`,
   `accounts` and `verifications` hold the identity, sessions and codes; memberships hold what
   HashiFi decides: role, scope and venues (ADR-0011), keyed by the user's id. HashiFi code reads
