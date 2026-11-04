@@ -61,6 +61,12 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
+- Decision: business invitations have their own page, Manage → Invitations, so a growing list of
+  businesses never pushes them down.
+  Date/Author: 2026-11-04, owner.
+- Decision: the Billing page follows ADR-0013 (per-sale or fixed plan per venue, onboarding and
+  router charges).
+  Date/Author: 2026-11-04, owner.
 - Decision: the logo is the ring alone, with no wordmark; the platform workspace adds a solid
   `PLATFORM` tag beside it; the
   product is written `hashifi` in all copy. The rename of user-facing copy, emails, page titles and
@@ -75,9 +81,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   linking to Issues. Each issue page has what to do, with its actions, the details and its history
   from the audit log. Counts read N/N.
   Date/Author: 2026-11-04, owner.
-- Decision: what a business pays HashiFi is billing, not defaults or settings. It gets its own Billing page
-  (the platform's view of every business's charges, and the owner's view of their own) once the
-  pricing is decided; until then no screen shows it.
+- Decision: what a business pays hashifi is billing, not defaults or settings: its own Billing page,
+  the platform's view of every business's charges and the owner's view of their own.
   Date/Author: 2026-11-04, owner.
 - Decision (replaced on 2026-11-03 by the Hearth direction below): keep `accent-ladder`, teal and
   Figtree.
