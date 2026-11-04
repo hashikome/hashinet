@@ -81,6 +81,8 @@ respects `prefers-reduced-motion`.
   the pale tint with dark ink. Below 768px it folds into a 48px bar and a sheet.
 - **Figures:** type, not tiles: a label over a value, with no tinted icon.
 - **Tables:** rules and alignment; no zebra, no header band, no uppercase headers.
+- **Placeholders are sample inputs** (`Amina Salum`, `Mahenge Rd, Vijibweni`), never instructions;
+  guidance goes in the hint under the field.
 - **Empty states:** keep the frame and say one sentence. A real zero prints as a zero, and a missing
   value as a grey dash.
 
