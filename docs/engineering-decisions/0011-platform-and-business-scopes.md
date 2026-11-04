@@ -45,7 +45,7 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    business manager or operator reaches only the venues on their membership, at least one. A manager
    may add packages that are sold only at their own venues.
 5. **Platform staff see every business.** Platform roles reach all businesses and venues, narrowing
-   to one with the scope filter at the top of the sidebar, which never changes workspace. Only Hashikome creates businesses and venues and adds routers.
+   to one with the scope filter at the top of the sidebar, which never changes workspace. Only Hashikome invites businesses, creates their further venues, and adds and configures routers: a router is configuration, not something a business types in. A business owner creates their business and first venue only by accepting an invitation.
 6. **Nobody gives more than they have.** A person invites only roles below their own, inside their
    own scope: an owner invites managers and operators, a manager invites operators to their venues.
 7. **One person, one identity, one active membership.** A membership is a role in a scope, plus its
