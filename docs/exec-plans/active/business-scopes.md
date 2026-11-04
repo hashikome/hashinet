@@ -117,8 +117,10 @@ guard enforces a passkey for anyone holding a platform membership, and for anyon
 
 **M2 also changes the second factor.** Better Auth's two-factor (TOTP) plugin is replaced by its
 passkey plugin (`@better-auth/passkey`, as ntumie.); the baseline has a passkeys table and no
-`two_factors`. Sign-in: email code, then the passkey when the person has one or holds a platform
-membership; a first sign-in without one goes to adding it, then shows recovery codes once. WebAuthn
+`two_factors`. Sign-in, as ntumie.'s: email, then a choice of passkey (complete on its own) or an
+emailed code; after a code, the passkey or a recovery code when the person has one; a platform
+membership without one goes to adding it, then shows recovery codes once. The email field offers
+passkey autofill (WebAuthn conditional UI). WebAuthn
 needs HTTPS, so local development uses `localhost`. Tests: a platform membership without a passkey
 reaches only the add-a-passkey routes; an email code alone never grants a session to someone with a
 passkey; a recovery code signs in once and removes nothing.

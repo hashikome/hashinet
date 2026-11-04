@@ -29,12 +29,15 @@ already sign people in with Better Auth's email codes.
 - **Better Auth runs in `apps/api`** with email one-time codes, never links, delivered through
   Resend. No self-registration: a person is invited from a Team page, and only invited people can
   sign in. No passwords.
-- **A passkey is the second factor**, not an authenticator app: after the email code, one tap with
-  the device's PIN or biometric, verified by the server (WebAuthn user verification), through Better
-  Auth's passkey plugin, as ntumie. does (its ADR-0035). An authenticator app would be a second typed
-  code after the first, and a passkey cannot be phished. Single-use recovery codes, shown once when
-  the first passkey is added, cover a lost device; they never remove a passkey. Who must add one is
-  set by role in ADR-0011.
+- **Passkeys, not an authenticator app**, through Better Auth's passkey plugin, as ntumie. does (its
+  ADR-0035). After the email, the person chooses: a passkey, which signs in on its own because the
+  device's PIN or biometric is verified by the server (WebAuthn user verification), or an emailed
+  code. The same choice is offered for every address, so it reveals no account. The email field also
+  offers saved passkeys through the browser's autofill. For anyone who has a passkey, an email code
+  is followed by the passkey or a single-use recovery code, never a session on its own. An
+  authenticator app would be a second typed code, and a passkey cannot be phished. Recovery codes are
+  shown once with the first passkey and never remove one. Who must have a passkey is set by role in
+  ADR-0011.
 - **Authentication and authorization stay separate tables.** Better Auth's `users`, `sessions`,
   `accounts` and `verifications` hold the identity, sessions and codes; memberships hold what
   HashiFi decides: role, scope and venues (ADR-0011), keyed by the user's id. HashiFi code reads
