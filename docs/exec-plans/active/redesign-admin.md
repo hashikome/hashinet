@@ -61,6 +61,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
+- Decision: problems get an Issues page, with the open count on its nav item as the notification.
+  An issue (a router offline, a router not yet connected) is derived from router state and closes
+  itself only when the router is serving and passes its checks; people can say "I'm on it", never
+  mark it fixed. The overview shows one as a banner and several as one panel of at most three,
+  linking to Issues. Each issue page has what to do, with its actions, the details and its history
+  from the audit log. Counts read N/N.
+  Date/Author: 2026-11-04, owner.
 - Decision: what a business pays HashiFi is billing, not defaults or settings. It gets its own Billing page
   (the platform's view of every business's charges, and the owner's view of their own) once the
   pricing is decided; until then no screen shows it.
