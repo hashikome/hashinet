@@ -31,8 +31,7 @@ and the guests. Owners are not network technicians, so the team installs it.
    venue's sales above TSh 2,000,000 in a month pay 5%. The bands are marginal, like tax bands: only
    the part above the threshold pays 5%, so selling one more voucher never raises the bill. A venue
    selling TSh 4,000,000 pays TSh 300,000. Rates and threshold are Defaults figures. There is no
-   fixed monthly plan: it would charge a venue in a slow month and make every owner compare plans. If
-   large venues object, the answer is a monthly cap per venue, not a second plan.
+   fixed monthly plan and no cap: hashifi earns as the business earns, at every size.
 4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
    `active`): the price printed on the voucher, which the business sets. What a business charges a
    guest above it is its own.
