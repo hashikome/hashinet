@@ -61,6 +61,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
+- Decision: what a business pays HashiFi is billing, not settings. It gets its own Billing page
+  (the platform's view of every business's charges, and the owner's view of their own) once the
+  pricing is decided; until then no screen shows it.
+  Date/Author: 2026-11-04, owner.
 - Decision (replaced on 2026-11-03 by the Hearth direction below): keep `accent-ladder`, teal and
   Figtree.
   Rationale then: `DESIGN.md` committed to it, and the audit's problems were structural.
