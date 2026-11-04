@@ -28,6 +28,10 @@ and the guests. Owners are not network technicians, so the team installs it.
    by distance otherwise.
 3. **Two plans per venue**, chosen by the business and changeable monthly:
    - **Per sale:** 10% of each voucher's price, so a TSh 500 voucher pays TSh 50. No sales, no fee.
+     Volume lowers the rate, as bank transaction fees do: a venue's sales above a monthly threshold
+     pay 5%. The tiers are marginal, like tax bands: only the part above the threshold pays 5%, so
+     selling one more voucher never raises the bill. The threshold is a Defaults figure, proposed at
+     TSh 2,000,000 a month per venue, where 10% equals the fixed plan.
    - **Fixed:** TSh 200,000 a month per venue, for venues that sell a lot.
 4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
    `active`): the price printed on the voucher, which the business sets. What a business charges a
