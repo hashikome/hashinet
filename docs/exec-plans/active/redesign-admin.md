@@ -116,7 +116,8 @@ not neutral. Every existing screen takes the new tokens; nothing else changes ye
 Places, Guests, Business), rendered from the API's capabilities, never from role names. At the top,
 the business's logo and name (HashiFi with the Platform tag for platform staff) and the scope filter
 (all businesses or one; all venues or one; absent with one venue). At the foot, the account menu:
-name and role, the workspaces, Account and security, Sign out, and "Runs on HashiFi". Below 768px a
+name and role, the workspaces, Account and security, Sign out, and "Runs on HashiFi". One sign-in
+screen for everyone, named HashiFi with no "staff" or "admin" wording. Below 768px a
 48px bar and a sheet. Needs business-scopes M2.
 
 **H3, overview and Analytics.** `GET /api/overview` returns what needs attention, the figures with

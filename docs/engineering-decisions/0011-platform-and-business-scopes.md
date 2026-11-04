@@ -53,9 +53,13 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    per scope: the platform owner may also own their own business, one person may own two
    businesses, a manager may run venues for two businesses. Switching has two levels:
    - **Workspace,** in the account menu at the foot of the sidebar: which membership the session acts
-     as, the platform or one business. Remembered for the next sign-in; every switch is audited.
+     as, the platform or one business. Every switch is audited.
    - **Scope filter,** at the top of the sidebar: inside the workspace, all businesses or one for
      platform roles, all venues or one inside a business. It narrows the view and grants nothing.
+
+   There is one sign-in for everyone, with no workspace to choose on it. A session opens in the
+   person's highest-authority active membership (platform before business, then owner, manager,
+   operator); between equals, the workspace they used last. Switching stays in the account menu.
 
    Nothing from one membership applies while another is active, so platform powers never reach into
    a business view or the reverse. Inviting an email that already signs in adds a membership to that

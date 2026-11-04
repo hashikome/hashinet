@@ -41,6 +41,10 @@ sequence of both plans.
 
 ## Decision Log
 
+- Decision: one sign-in screen for everyone, opening in the highest authority, last used between
+  equals; switching only in the account menu.
+  Rationale: one users table means one way in, and a choice at sign-in repeats the account menu.
+  Date/Author: 2026-11-04 / Paul
 - Decision: one email per person, several memberships, one active per session (ADR-0011, 7).
   Rationale: the platform owner also owns a business, and people should not keep a second identity
   to change hats; one active membership still keeps every query in one scope.
@@ -97,7 +101,9 @@ business, and seeds the three default packages. `Staff` is renamed `Membership` 
 `voucher.print`, `package.price.set`, `member.invite.manager`, ...), each mapped to the least role per
 scope and whether it is owner-only. `Principal` is built from the session's active membership: membership id, scope, business id,
 role and venue ids. `POST /api/me/membership` switches it (only to one of the person's own,
-audited); `GET /api/me` lists the person's memberships for the account menu. `venueScope(principal)` returns `{}` for platform roles, `{ businessId }` for a business
+audited); `GET /api/me` lists the person's memberships for the account menu. A new session opens in the
+highest-authority active membership, the last used between equals (ADR-0011, 7); each membership
+records when it was last used. `venueScope(principal)` returns `{}` for platform roles, `{ businessId }` for a business
 owner, and `{ businessId, id: { in: venueIds } }` otherwise. `@Can(action)` replaces `@Roles`. The
 guard enforces the authenticator app for anyone holding a platform membership.
 

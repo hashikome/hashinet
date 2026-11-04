@@ -132,7 +132,7 @@ export default function LoginPage() {
             <HashifiMark className="size-12 text-foreground" />
             <h1 className="text-2xl font-bold text-foreground">HashiFi</h1>
           </div>
-          <p className="text-muted-foreground">Staff sign-in</p>
+          <p className="text-muted-foreground">WiFi by the bonfire</p>
         </div>
 
         {/* Login Card */}
