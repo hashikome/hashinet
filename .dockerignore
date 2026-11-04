@@ -9,6 +9,7 @@ apps/api/src/generated
 !**/.env.example
 data
 ref
+prototypes
 docs
 coverage
 **/*.log

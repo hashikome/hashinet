@@ -109,3 +109,6 @@ or discard user data without explicit approval.
 - `ref/` is for disposable, git-ignored references and handoffs
   ([docs/runbooks/reference-context.md](docs/runbooks/reference-context.md)); never secrets,
   personal data or the only copy of a decision.
+- **Screens start as prototypes.** Design new screens and flows as plain HTML in `prototypes/`, testing
+  each view in browser DevTools as you go, and implement only what the owner approved
+  ([prototypes/README.md](prototypes/README.md)). Publish artifacts only when explicitly asked.

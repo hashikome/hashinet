@@ -32,7 +32,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - [x] (2026-11-03) Design rounds: ten variations, then Hearth with Night Band's portal, then each
   role's view; chosen by the owner.
 - [x] (2026-11-04) H1: tokens, the mark and `DESIGN.md` in Hearth.
-- [ ] Full prototype reviewed and approved by the owner (`ref/hearth-design/prototype/`). No schema or
+- [ ] Full prototype reviewed and approved by the owner (`prototypes/hearth-design/prototype/`). No schema or
   screen work starts before this; the finished screens must match it.
 - [ ] H2: the shell: grouped navigation from capabilities, scope filter, account menu, business head.
 - [ ] H3: the overview as "right now", and the Analytics page, both computed by the API.
@@ -126,7 +126,7 @@ Not started for H1 to H7.
 - `apps/web/app/(portal)` and `components/portal-view.tsx`: the captive portal and its preview.
 - `apps/web/public/logo.svg`: the mark; `portal_settings` holds the portal's default brand.
 - `apps/api/src/analytics/`: today's figures; the comparisons and ranges of H3 are new.
-- Design reference: the review pages in git-ignored `ref/hearth-design/` (`round-1-variations/`,
+- Design reference: the review pages in git-ignored `prototypes/hearth-design/` (`round-1-variations/`,
   `round-2-hearth-and-night-band/`, `round-3-roles/`, and `generator/`). The tokens and layouts this
   plan needs are written below, so it stands without them.
 
@@ -150,7 +150,7 @@ theme setting: a midnight field, the open ring large in the lower right, and a 4
 email, Continue, the terms line, "Need help signing in?" with a link to support), sized one step
 above the admin's controls; no logo in the corner; a footer strip with "Send feedback" and
 "© <year> Shikome Technology Limited | Privacy | Terms". The code and passkey steps use the
-same frame. Prototype: `ref/hearth-design/prototype/`. Below 768px a
+same frame. Prototype: `prototypes/hearth-design/prototype/`. Below 768px a
 48px bar and a sheet. Needs business-scopes M2.
 
 **H3, overview and Analytics.** `GET /api/overview` returns what needs attention, the figures with
