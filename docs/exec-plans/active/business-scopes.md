@@ -24,7 +24,7 @@ not found.
 - [x] (2026-11-03) Roles agreed with the owner; ADR-0011 written; ADR-0007 narrowed to sign-in.
 - [ ] M1: schema: businesses, memberships, membership venues, invitations, business packages;
   migration of existing rows.
-- [ ] M2: the access policy and the principal; every service scoped through it.
+- [ ] M2: the access policy and the principal; every service scoped through it; the audit log (ADR-0012).
 - [ ] M3: invitations and the people API for both scopes; adding a business for platform staff.
 - [ ] M4: packages per business, the platform defaults and CSV import.
 - [ ] M5: the business profile: name and logo, stored and served as ADR-0009 says.
@@ -121,8 +121,8 @@ code; after a code, the authenticator code for platform roles, owners, managers 
 it on (ADR-0011, 9); a recovery code signs in on its own. A required authenticator not yet set up is
 set up after the email code, then recovery codes are shown once. The email field offers passkey
 autofill (WebAuthn conditional UI). WebAuthn
-needs HTTPS, so local development uses `localhost`. Tests: a platform membership without a passkey
-reaches only the add-a-passkey routes; a recovery code signs in once and removes nothing.
+needs HTTPS, so local development uses `localhost`. Tests: a platform membership without an
+authenticator reaches only its set-up routes; a recovery code signs in once and removes nothing.
 
 **M3, people.** Invitations: create (only a role below one's own, venues within one's own), email via
 Resend with a code sign-in, accept on first sign-in, revoke, expire after 7 days. Team page per scope.
@@ -137,6 +137,11 @@ deletes.
 **M5, business profile.** The business's name and logo (owner only), the logo through the same
 checks and store as venue brands, and the portal's fallback (venue, business, HashiFi) served by
 the guest brand route. The screens are H2, H5 and H6 of [redesign-admin.md](redesign-admin.md).
+
+**M2 also rebuilds the audit log** (ADR-0012): `audit_logs` with actor, business, venue, typed
+action, category, target, outcome and bounded before/after, written in the change's transaction;
+`GET /api/audit` scoped by the principal with search, action, dates, read events and a cursor.
+Tests: a manager never sees another venue's rows; a failed audit write rolls the change back.
 
 **M2 also returns capabilities.** `GET /api/me` answers the person, their memberships and, for the
 active one, the actions it allows, so the web draws navigation and buttons from them.

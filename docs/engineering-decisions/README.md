@@ -27,3 +27,4 @@ links stay valid.
 | [0008](0008-captive-portal.md) | How a guest reaches the portal, signs in and comes back |
 | [0007](0007-sign-in-with-better-auth.md) | Sign-in with Better Auth, inside HashiFi (replaces 0005) | accepted |
 | [0011](0011-platform-and-business-scopes.md) | Platform and business scopes, with owners, managers and operators | accepted |
+| [0012](0012-audit-log.md) | The audit log, scoped like everything else | accepted |
