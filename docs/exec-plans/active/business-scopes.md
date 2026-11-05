@@ -96,7 +96,7 @@ the add-staff command, and `chr-test` re-runs setup.
 do, including Better Auth's tables and the tables that replace `staff`. Production and local data
 are test data only, so the owner approved dropping everything (4 November 2026): the migrations are
 replaced by one new baseline, and the seed writes realistic invented businesses, people and sales
-in place of `admin@example.com` and `Sim Manager`. Add `Business` (name, logo key, status; the logo stored as ADR-0009 says), `Venue.businessId` (required; drop `operatorId`),
+in place of `admin@example.com` and `Sim Manager`. Add `Business` (name, address, logo key, status; the logo stored as ADR-0009 says), `Venue.businessId` (required; drop `operatorId`),
 `Venue.region` (one of Tanzania's 31 regions, a closed list in `@hashifi/types`, chosen, never typed) and
 `Venue.area` (the area or street, typed), so analytics and onboarding travel group venues exactly,
 `Membership` (user id, scope `platform` or `business`, business id when business, role `owner`,
@@ -133,7 +133,7 @@ Issuing creates no person, business or venue, only the invitation, its token dig
 the audit row. The link carries a single-use token in the URL fragment, valid 72 hours; at most one
 pending invitation per email and target, and inviting again supersedes it. Accepting is one transaction:
 the invitee gives their full name; a new business's owner does so over three steps (their name, mobile
-number and business; the first venue, its region and area; how they would like its router to come, as a
+number, business name and address; the first venue, its region and area; how they would like its router to come, as a
 preference or not sure yet), and nothing is saved until the last. The email is never a field. Acceptance creates or resolves the person, the business,
 its venue, default packages and owner membership, or the membership and venues, then marks the
 invitation accepted. It never signs in: the screen goes straight to an email code, as ordinary

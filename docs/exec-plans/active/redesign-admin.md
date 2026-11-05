@@ -88,8 +88,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   current step beside it: its package (call and confirm, get it paid, schedule; owner and managers)
   and its setup (add the router, install, set up; the whole team, operators included). The venue is
   linked from the header rather than repeated; setups are listed by date, soonest first.
-- Decision: business and venue pages open with a profile column (logo, name, its line, facts and
-  actions) beside their panels. For a business the facts are its owner, what it has paid hashifi in
+- Decision: business and venue pages open with a profile column (logo; name with its address under
+  it, as a venue reads in a table; its venues and how long on hashifi; facts and actions) beside their panels. For a business the facts are its owner, what it has paid hashifi in
   total with what is due now, and its service access; Businesses lists the same total, so the
   biggest customers show at a glance. Amounts are whole shillings (TSh has no cents in use).
 - Decision: someone is responsible for an issue: whoever claims it (Claim, or by acting first), or
