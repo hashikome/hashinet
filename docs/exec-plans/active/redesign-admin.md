@@ -91,6 +91,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   history. Set up again runs the six phases visibly; a clean run folds to one line with Show steps, a
   stopped run stays open on the failed phase.
   Date/Author: 2026-11-05, owner.
+- Decision: the platform has no Live sessions. hashifi runs no router and serves no guests; a venue's
+  guests are seen on that venue's page (device names, a Disconnect for support), and the platform
+  keeps only counts. The platform's Analytics is about hashifi itself: sales across businesses, the
+  fees they bring in (ADR-0013), venues serving, new businesses, and which businesses grow or go
+  quiet; busiest hours and what guests buy stay in each business's own Analytics. A business page
+  shows its figures, venues today, people, details, the month's billing and its recent activity.
+  Date/Author: 2026-11-05, owner.
 - Decision: what a business pays hashifi is billing, not defaults or settings: its own Billing page,
   the platform's view of every business's charges and the owner's view of their own.
   Date/Author: 2026-11-04, owner.
