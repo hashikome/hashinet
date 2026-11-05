@@ -109,7 +109,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   the named period, status and search, and on each bill Remind (email and SMS to its owners) and
   Record payment; each row opens the business. How payments arrive and are matched is still open. Trading figures live in Analytics.
   Billing names whole months; Analytics, for the platform and for businesses, follows Superset: Range
-  (Last, Current, Custom), its Period, and Show (daily, weekly, monthly), narrowed by the scope filter.
+  (Last, Current, Custom), its Period, and Show (hourly for one day, then daily, weekly, monthly),
+  narrowed by the scope filter. The chart's axis spans the whole period and its line stops at now.
   It shows no "on the period before" figures; the line chart carries the comparison.
   Date/Author: 2026-11-05, owner.
 - Decision: what a business pays hashifi is billing, not defaults or settings: its own Billing page,
