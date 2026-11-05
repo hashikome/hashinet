@@ -88,8 +88,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   current step beside it: its package (call and confirm, get it paid, schedule; owner and managers)
   and its setup (add the router, install, set up; the whole team, operators included). The venue is
   linked from the header rather than repeated; setups are listed by date, soonest first.
-- Decision: an issue is assigned to someone (Assign to me, or Who goes when scheduling) and keeps
-  its assignee once resolved; Issues shows an Assigned to column for open and resolved alike. A
+- Decision: someone is responsible for an issue (I'm on it, or Who goes when scheduling) and stays
+  so once it is resolved; Issues shows Started, Completed and Responsible for open and resolved alike. A
   resolved issue keeps its own page at the same address: what happened, in order, with who and when.
 - Decision: a venue's sites are their own table on the venue page, each open before paying or
   blocked for everyone, with who added it, when and why; the business edits it, the platform reads
