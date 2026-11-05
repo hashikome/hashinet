@@ -91,7 +91,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: business and venue pages open with a profile column (logo; name with its address under
   it, as a venue reads in a table; its venues and how long on hashifi; facts and actions) beside their panels. For a business the facts are its owner, what it has paid hashifi in
   total with what is due now, and its service access; Businesses lists the same total, so the
-  biggest customers show at a glance. Amounts are whole shillings (TSh has no cents in use).
+  biggest customers show at a glance. Business, venue and router pages each end with a short History
+  of their latest changes (no sign-ins or code views), linking to the Audit log. Amounts are whole shillings (TSh has no cents in use).
 - Decision: someone is responsible for an issue: whoever claims it (Claim, or by acting first), or
   whom Who goes names when scheduling; the holder can Release or Hand to, and only someone above
   them can Take over, with a reason (ADR-0011, 11). While someone else is
@@ -105,7 +106,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: a router's page follows its state. Setting up, it is the same steps as the business's
   Getting started (add the router and run its script, install, set up, check a phone), each ticking itself. Once
   it has served, a profile card (model and RouterOS, venue, status, internet, hotspot network, added,
-  last set up) sits beside its figures, health checks (with Run checks) and history. Set up again is
+  last set up) sits beside its devices, health checks (with the last check and Run checks) and
+  history; sales stay with the venue. A venue has no router page until one is added. Set up again is
   the card's action and opens the same setup steps for this router: a reset or replaced router runs a
   new script from step 1, which stops the old one; one that still reaches hashifi skips to Set up.
   Cancel leaves the router as it was.
