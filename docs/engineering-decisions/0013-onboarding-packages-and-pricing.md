@@ -18,11 +18,11 @@ and the guests. Owners are not network technicians, so the team installs it.
    own) so the hotspot sees each device. The business's own staff network stays on the ISP router.
    The MikroTik runs RouterOS 7 with the hotspot; any ISP router with an Ethernet port and DHCP works.
 2. **Three onboarding packages**, chosen per venue:
-   - **Existing router:** the business has a compatible MikroTik and ISP router; the team configures
+   - **hashifi Setup:** the business has a compatible MikroTik and ISP router; the team configures
      and sets up on site.
-   - **New router:** the team brings a MikroTik configured at the office and connects it to
+   - **hashifi Router:** the team brings a MikroTik configured at the office and connects it to
      the business's ISP router.
-   - **New router and internet:** the team brings the MikroTik and an ISP router (Vodacom, Yas, Airtel, as
+   - **hashifi Complete:** the team brings the MikroTik and an ISP router (Vodacom, Yas, Airtel, as
      needed), sets up on site and tests that guests get online.
    Routers are sold at their price. The onboarding fee covers travel and time: free in town, charged
    by distance otherwise.
