@@ -141,7 +141,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   each invoice has a Download PDF link. Everything shows once.
   Each business has one row: its fees for the period plus its onboarding charges, which stay on the
   row until paid. Remind and Record payment act on the business, on the row and on its bills page, and
-  a payment settles the oldest invoice first, fees and charges alike.
+  a payment settles the oldest invoice first, fees and charges alike. How payments arrive and are matched is still open. Trading figures live in Analytics.
   Billing names whole months; Analytics, for the platform and for businesses, follows Superset: Range
   (Last, Current, Custom), its Period, and Show (the units below the period, never its own: day,
   hours; week, days; month, weeks or days; quarter and year, months or weeks), opening on the next unit
