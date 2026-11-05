@@ -136,8 +136,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   the named period, status and search, and on each bill Remind (an email form to its owner, sent through Resend with the invoice; no SMS) and
   Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment
   leaves the rest due); each row opens that business's bills, one list of
-  invoices (a month of fees or a venue's onboarding charge, with the month in progress first). A row
-  opens in place with its fees, its payments (date, how, reference, who recorded it), and what is due;
+  issued invoices (a month of fees or a venue's onboarding charge); the month in progress is not one
+  until it closes. A row opens in place as one short invoice: its lines, total, payments and what is due;
   each invoice has a Download PDF link. Everything shows once.
   Each business has one row: its fees for the period plus its onboarding charges, which stay on the
   row until paid. Remind and Record payment act on the business, on the row and on its bills page, and
