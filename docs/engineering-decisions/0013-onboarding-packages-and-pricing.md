@@ -18,11 +18,11 @@ and the guests. Owners are not network technicians, so the team installs it.
    own) so the hotspot sees each device. The business's own staff network stays on the ISP router.
    The MikroTik runs RouterOS 7 with the hotspot; any ISP router with an Ethernet port and DHCP works.
 2. **Three onboarding packages**, chosen per venue:
-   - **Bring your own:** the business has a compatible MikroTik and ISP router; the team configures
+   - **Your own router:** the business has a compatible MikroTik and ISP router; the team configures
      and sets up on site.
-   - **hashifi MikroTik:** the team brings a MikroTik configured at the office and connects it to
+   - **Router supplied:** the team brings a MikroTik configured at the office and connects it to
      the business's ISP router.
-   - **Everything:** the team brings the MikroTik and an ISP router (Vodacom, Yas, Airtel, as
+   - **Router and internet:** the team brings the MikroTik and an ISP router (Vodacom, Yas, Airtel, as
      needed), sets up on site and tests that guests get online.
    Routers are sold at their price. The onboarding fee covers travel and time: free in town, charged
    by distance otherwise.
@@ -32,6 +32,10 @@ and the guests. Owners are not network technicians, so the team installs it.
    and nothing is charged before that, and the team can change the package until the router is added.
    A package says what it includes, never a price or a model: the router that fits depends on the
    venue, so its model and price are agreed on that call, and the model is set when the router is added.
+   Confirming records the package, the router model, the agreed price (router and onboarding
+   together, which goes on the business's bill), the setup date and notes from the call. Each venue
+   being set up is one issue, listed by setup date, and its page holds all of this: the owner's
+   contact and preference, what to cover on the call, and the next step.
 3. **One plan, a percentage of sales, per venue.** 10% of each voucher's price, so a TSh 500
    voucher pays TSh 50; no sales, no fee. Volume lowers the rate, as bank transaction fees do: a
    venue's sales above TSh 2,000,000 in a month pay 5%. The bands are marginal, like tax bands: only
