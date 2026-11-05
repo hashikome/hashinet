@@ -92,7 +92,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   blocked for everyone, with who added it, when and why; the business edits it, the platform reads
   it. Blocking depends on what the router supports, so the dialect probes for it.
 - Decision: a router's page follows its state. Setting up, it is the same steps as the business's
-  Getting started (script at the office, install, set up, check a phone), each ticking itself. Once
+  Getting started (add the router and run its script, install, set up, check a phone), each ticking itself. Once
   it has served, it shows figures, health checks, its details with Set up beside them, and its
   history. Set up again runs the six phases visibly; a clean run folds to one line with Show steps, a
   stopped run stays open on the failed phase.

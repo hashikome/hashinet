@@ -18,10 +18,9 @@ and the guests. Owners are not network technicians, so the team installs it.
    own) so the hotspot sees each device. The business's own staff network stays on the ISP router.
    The MikroTik runs RouterOS 7 with the hotspot; any ISP router with an Ethernet port and DHCP works.
 2. **Three onboarding packages**, chosen per venue:
-   - **Connect:** the venue has a compatible MikroTik and ISP router; the team configures and sets
-     it up on site.
-   - **Install:** the team brings a MikroTik configured at the office and installs it behind the
-     venue's internet router.
+   - **Connect:** the venue has a compatible MikroTik and ISP router; the team sets it up.
+   - **Install:** the team brings the venue a MikroTik, sets it up and installs it behind the
+     venue's internet router. Where the setup script runs, at the office or on site, does not matter.
    - **Launch:** Install, plus a new internet line from a partner seller of the provider. hashifi
      never supplies the line itself: SIM and line registration must be in the business's name, so the
      owner is there on the day to register it with the seller.
