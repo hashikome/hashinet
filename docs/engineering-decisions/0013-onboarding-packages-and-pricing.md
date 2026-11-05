@@ -36,10 +36,13 @@ and the guests. Owners are not network technicians, so the team installs it.
    venue, so its model and price are agreed on that call, and the model is set when the router is added.
    Every venue includes one site open before paying, its business website; each further one is a
    paid add-on (price to be set), and blocking sites is free.
-   Confirming records the package, the router model, the agreed price (router and onboarding
-   together, which goes on the business's bill), the setup date and notes from the call. Each venue
-   being set up is one issue, listed by setup date, and its page holds all of this: the owner's
-   contact and preference, what to cover on the call, and the next step.
+   A venue goes through two issues, one after the other. **Its package**, for the platform's owner
+   and managers only: call the owner, confirm the package, router model, agreed price (router and
+   onboarding together, on the business's bill) and notes; get it paid when there is a charge (only
+   the platform owner records payments); then schedule the setup with a date and, optionally, who
+   goes. **Its setup**, for the whole team, operators included, once scheduled: add the router,
+   install it on the date, set it up and check a phone; it closes when the first guest is online.
+   Issues lists setups by date, soonest first.
 3. **One plan, a percentage of sales, per venue.** 10% of each voucher's price, so a TSh 500
    voucher pays TSh 50; no sales, no fee. Volume lowers the rate, as bank transaction fees do: a
    venue's sales above TSh 2,000,000 in a month pay 5%. The bands are marginal, like tax bands: only

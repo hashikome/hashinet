@@ -84,10 +84,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   one table with Search, Kind and Status (Open by default) filters, each open row with its own
   action. The overview shows one banner: an item's own action when there is one, otherwise "N issues" and a button to the page. Figures are one number with context below, never N/N.
   Date/Author: 2026-11-05, owner.
-  A venue being set up is one issue with its own page: the steps down a rail and the current step
-  beside it across the panel (call the owner and confirm the package, router, agreed price and setup
-  date; add the router; install; set up), the venue
-  linked from the header rather than repeated; confirmed setups are listed soonest first.
+  A venue being set up is two issues in turn, each a page with its steps down a rail and the
+  current step beside it: its package (call and confirm, get it paid, schedule; owner and managers)
+  and its setup (add the router, install, set up; the whole team, operators included). The venue is
+  linked from the header rather than repeated; setups are listed by date, soonest first.
 - Decision: a venue's sites are their own table on the venue page, each open before paying or
   blocked for everyone, with who added it, when and why; the business edits it, the platform reads
   it. Blocking depends on what the router supports, so the dialect probes for it.
