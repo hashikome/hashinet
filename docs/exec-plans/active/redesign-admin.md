@@ -137,11 +137,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment
   leaves the rest due); each row opens that business's bills, one list of
   invoices (a month of fees or a venue's onboarding charge, with the month in progress first). A row
-  opens in place with its fees, its payments (date, how, reference, who recorded it), what is due,
-  Remind and Record payment; each invoice has a Download PDF link. Everything shows once.
-  Below it, **One-off charges**: each venue's agreed onboarding (package, router, amount, Due or
-  Paid), outside the period filter, with Remind and, for the platform owner, Record payment; a row
-  opens the venue's package issue, and the Due figure adds what is owed one-off. How payments arrive and are matched is still open. Trading figures live in Analytics.
+  opens in place with its fees, its payments (date, how, reference, who recorded it), and what is due;
+  each invoice has a Download PDF link. Everything shows once.
+  Each business has one row: its fees for the period plus its onboarding charges, which stay on the
+  row until paid. Remind and Record payment act on the business, on the row and on its bills page, and
+  a payment settles the oldest invoice first, fees and charges alike.
   Billing names whole months; Analytics, for the platform and for businesses, follows Superset: Range
   (Last, Current, Custom), its Period, and Show (the units below the period, never its own: day,
   hours; week, days; month, weeks or days; quarter and year, months or weeks), opening on the next unit
