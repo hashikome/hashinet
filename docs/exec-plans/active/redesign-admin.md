@@ -126,7 +126,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Platform: Team, Invitations, Audit log. Venues is a list to find any venue across businesses, like
   Routers; venues stay read-only for the platform (ADR-0014). A business page holds one table, its
   venues, beside its profile card (with Change service access and Archive). A venue page shows its
-  router on the card and Sales and Sites as tabs, or Getting started while it is set up. Lists end in
+  router, its sales, then its sites with Load more, or Getting started while it is set up. Lists end in
   Load more. Every page keeps to one job, and History is a link on the card that opens the Audit log
   narrowed to that business, venue or router; only issue pages keep their own log. Billing is one page for tracking every business's bills:
   a summary (billed, paid, due, overdue), filters for By (month, quarter, year, custom months) with
