@@ -114,6 +114,12 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   unless it holds a single point, narrowed by the scope filter. The chart's axis spans the whole period and its line stops at now.
   It shows no "on the period before" figures; the line chart carries the comparison.
   Date/Author: 2026-11-05, owner.
+- Decision: Analytics is three pages opening under its menu item, sharing one filter and the scope
+  filter: Usage first (devices, sessions, data, peak hours, busiest venues), Sales, and for the team
+  Reliability (uptime, router drops, failed setups, portal sign-ins). Counts only (ADR-0014); nothing
+  else in the menu nests. Needs measuring before it ships: peak hours, sessions and data from router
+  accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
+  Date/Author: 2026-11-05, owner.
 - Decision: what a business pays hashifi is billing, not defaults or settings: its own Billing page,
   the platform's view of every business's charges and the owner's view of their own.
   Date/Author: 2026-11-04, owner.
