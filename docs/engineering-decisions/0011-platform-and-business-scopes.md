@@ -83,7 +83,9 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
     by Claim or by acting on it; its holder releases it or hands it to a colleague; only someone
     above the holder takes it over, with a reason the holder is told. While it is held, its steps are
     the holder's, except recording a payment, which stays the platform owner's. An issue held
-    with no activity for a day is **stalled**: its status says so and Issues can filter for it; it is
+    with nothing done on it for 24 hours (a claim counts) is **stalled**; a scheduled setup waits
+    for its date instead and stalls only if the date passes before its router reaches hashifi. A
+    stalled issue is flagged: its status says so and Issues can filter for it; it is
     never released by itself. The API names these claim, release, hand
     and take over.
 
