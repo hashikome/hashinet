@@ -107,7 +107,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Getting started (add the router and run its script, install, set up, check a phone), each ticking itself. Once
   it has served, a profile card (model and RouterOS, venue, status, internet, hotspot network, added,
   last set up) sits beside its devices, health checks (with the last check and Run checks) and
-  history; sales stay with the venue. A venue has no router page until one is added. Set up again is
+  history; sales stay with the venue. A venue has no router page until one is added.
+  Getting started is the venue's, on the venue page, since a business can have venues serving while
+  another is being set up. A business page is the same for every business: its notices link to the
+  issue, and its venues table opens each venue. Set up again is
   the card's action and opens the same setup steps for this router: a reset or replaced router runs a
   new script from step 1, which stops the old one; one that still reaches hashifi skips to Set up.
   Cancel leaves the router as it was.
