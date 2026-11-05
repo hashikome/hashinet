@@ -91,8 +91,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: business and venue pages open with a profile column (logo; name with its address under
   it, as a venue reads in a table; its venues and how long on hashifi; facts and actions) beside their panels. For a business the facts are its owner, what it has paid hashifi in
   total with what is due now, and its service access; Businesses lists the same total, so the
-  biggest customers show at a glance. Business, venue and router pages each end with a short History
-  of their latest changes (no sign-ins or code views), linking to the Audit log. Amounts are whole shillings (TSh has no cents in use).
+  biggest customers show at a glance. Amounts are whole shillings (TSh has no cents in use).
 - Decision: someone is responsible for an issue: whoever claims it (Claim, or by acting first), or
   whom Who goes names when scheduling; the holder can Release or Hand to, and only someone above
   them can Take over, with a reason (ADR-0011, 11). While someone else is
@@ -123,12 +122,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   shows its figures, venues today, people, details, the month's billing and its recent activity.
   Date/Author: 2026-11-05, owner.
 - Decision: each platform page is scoped by why the team opens it and what it may do there. The
-  platform menu is Overview, Analytics, Issues; Manage: Businesses, Routers, Defaults, Billing;
-  Platform: Team, Invitations, Audit log. A venue is reached through its business
-  (Businesses / Neema Hospitality / Mama Neema Lodge), so there is no platform Venues page. A business
-  page leads with the business in full (its picture, owner, onboarding, packages, service access, with
-  Change service access and Archive), then its venues with their managers and routers. A venue page holds its details read-only, its router,
-  its managers, and one chart of its sales. Billing is one page for tracking every business's bills:
+  platform menu is Overview, Analytics, Issues; Manage: Businesses, Venues, Routers, Defaults, Billing;
+  Platform: Team, Invitations, Audit log. Venues is a list to find any venue across businesses, like
+  Routers; venues stay read-only for the platform (ADR-0014). A business page holds one table, its
+  venues, beside its profile card (with Change service access and Archive). A venue page shows its
+  router on the card and Sales and Sites as tabs, or Getting started while it is set up. Lists end in
+  Load more. Every page keeps to one job, and History is a link on the card that opens the Audit log
+  narrowed to that business, venue or router; only issue pages keep their own log. Billing is one page for tracking every business's bills:
   a summary (billed, paid, due, overdue), filters for By (month, quarter, year, custom months) with
   the named period, status and search, and on each bill Remind (email and SMS to its owners) and
   Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment

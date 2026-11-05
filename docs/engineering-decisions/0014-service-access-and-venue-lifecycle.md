@@ -71,5 +71,5 @@ and what belongs to the business.
 - The API enforces service access in one policy after authentication and scope (ADR-0003), and the
   router workers stop new vouchers and logins while a business is read-only or suspended.
 - Pages: a business page has Service access (and Archive for the platform owner); a platform venue
-  page is read-only; an owner's Venues page has Add a venue; Issues lists venues waiting for a
+  page is read-only, and its Venues list only finds venues across businesses; an owner's Venues page has Add a venue; Issues lists venues waiting for a
   router with the days left.
