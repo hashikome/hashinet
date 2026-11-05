@@ -110,6 +110,8 @@ respects `prefers-reduced-motion`.
   radio dot.
 - Do frame a needs-you banner with the same 1px `foreground` edge as a selected card; its words and
   pills carry how serious it is, never a red or ember frame.
+- Do keep status pills quiet and smaller than the text beside them: 11.5px on a tint, no outline, and
+  text that reaches 4.5:1 against the tint itself, in both themes.
 - Do keep counts neutral, the Issues count included: red is for a status pill, not a badge.
 - Do give a figure one number and only the context that adds to it: "6" routers online, "1 offline"
   below; never "6/7" or "of 7".
