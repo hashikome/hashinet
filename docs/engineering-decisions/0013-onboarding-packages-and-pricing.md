@@ -28,8 +28,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    one-line summary, so they read the same to an owner and to the team.
    Routers are sold at their price. The onboarding fee covers travel and time: free in town, charged
    by distance otherwise.
-   The owner states a preference, or "not sure yet", when accepting the invitation and when adding a
-   venue. It commits nobody: hashifi's team always calls the owner to go over the venue, how the team
+   The owner states a preference, or "not sure yet", as the first thing after signing in to a new
+   business, and when adding a venue. It commits nobody: hashifi's team always calls the owner to go over the venue, how the team
    will help and what is already there, then confirms the package and its price. No router is added
    and nothing is charged before that, and the team can change the package until the router is added.
    A package says what it includes, never a price or a model: the router that fits depends on the
