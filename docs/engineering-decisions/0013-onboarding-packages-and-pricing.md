@@ -30,6 +30,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    venue. It commits nobody: hashifi's team always calls the owner to go over the venue, how the team
    will help and what is already there, then confirms the package and its price. No router is added
    and nothing is charged before that, and the team can change the package until the router is added.
+   A package says what it includes, never a price or a model: the router that fits depends on the
+   venue, so its model and price are agreed on that call, and the model is set when the router is added.
 3. **One plan, a percentage of sales, per venue.** 10% of each voucher's price, so a TSh 500
    voucher pays TSh 50; no sales, no fee. Volume lowers the rate, as bank transaction fees do: a
    venue's sales above TSh 2,000,000 in a month pay 5%. The bands are marginal, like tax bands: only
