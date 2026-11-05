@@ -76,14 +76,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   docs prose ships with H1's remaining work; identifiers (`HashifiMark`, package names) keep their
   code casing.
   Date/Author: 2026-11-04, owner.
-- Decision: everything that needs someone lives on one **Needs you** page (it replaces Issues), with
+- Decision: everything that needs someone lives on one **Issues** page (an issue is anything that needs an action, not only an error), with
   its open count on the nav item. Router issues are derived from router state and close themselves
   only when the router serves and passes its checks; businesses waiting on the team close when their
   venue's first guest gets online. A router that is not installed yet raises no issue. People say
   "I'm on it" (claimed, never assigned: an assignment does not show anyone has seen it). The page is
   one table with Search, Kind and Status (Open by default) filters, each open row with its own
-  action. The overview shows one banner: an item's own action when there is one, otherwise "N things
-  need you" and a button to the page. Figures are one number with context below, never N/N.
+  action. The overview shows one banner: an item's own action when there is one, otherwise "N issues" and a button to the page. Figures are one number with context below, never N/N.
   Date/Author: 2026-11-05, owner.
 - Decision: a router's page follows its state. Setting up, it is the same steps as the business's
   Getting started (script at the office, install, set up, check a phone), each ticking itself. Once
@@ -99,7 +98,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   shows its figures, venues today, people, details, the month's billing and its recent activity.
   Date/Author: 2026-11-05, owner.
 - Decision: each platform page is scoped by why the team opens it and what it may do there. The
-  platform menu is Overview, Analytics, Needs you; Manage: Businesses, Routers, Defaults, Billing;
+  platform menu is Overview, Analytics, Issues; Manage: Businesses, Routers, Defaults, Billing;
   Platform: Team, Invitations, Audit log. A venue is reached through its business
   (Businesses / Neema Hospitality / Mama Neema Lodge), so there is no platform Venues page. A business
   page leads with the business in full (its picture, owner, onboarding, packages, service access, with

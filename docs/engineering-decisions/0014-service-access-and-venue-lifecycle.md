@@ -45,6 +45,8 @@ and what belongs to the business.
    optional message to the customer; it needs a fresh authenticator code, is written to the audit log
    with the note, and emails the business's owners with the reason in plain words and the message,
    never the note.
+   Recording that a bill was paid is the platform owner's alone for now, so one person keeps the
+   books; managers see every bill and send reminders.
 5. **Archiving closes a business without deleting it.** The platform owner archives a business
    (contract ended, terms broken) by typing its exact name; its owner may close it themselves, which
    archives it too. Archived, it reads as closed, the hotspot is switched off on its routers, and its
@@ -52,7 +54,7 @@ and what belongs to the business.
    as it was.
 6. **A business adds its own venues; there are no empty venues.** The owner adds a venue with its name,
    location and how its router will come (one of ADR-0013's onboarding packages). It starts **Waiting
-   for a router** and lands in Needs you for hashifi's team. Once the team adds and sets up its
+   for a router** and lands in Issues for hashifi's team. Once the team adds and sets up its
    router, it goes live through the usual steps. A venue with no router after **14 days** is removed:
    the owner is warned at day 10, and the removal is audited. The business edits its venues' details
    from then on.
@@ -67,5 +69,5 @@ and what belongs to the business.
 - The API enforces service access in one policy after authentication and scope (ADR-0003), and the
   router workers stop new vouchers and logins while a business is read-only or suspended.
 - Pages: a business page has Service access (and Archive for the platform owner); a platform venue
-  page is read-only; an owner's Venues page has Add a venue; Needs you lists venues waiting for a
+  page is read-only; an owner's Venues page has Add a venue; Issues lists venues waiting for a
   router with the days left.
