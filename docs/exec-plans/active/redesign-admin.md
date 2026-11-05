@@ -98,6 +98,16 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   quiet; busiest hours and what guests buy stay in each business's own Analytics. A business page
   shows its figures, venues today, people, details, the month's billing and its recent activity.
   Date/Author: 2026-11-05, owner.
+- Decision: each platform page is scoped by why the team opens it and what it may do there. The
+  platform menu is Overview, Analytics, Needs you; Manage: Businesses, Billing, Routers, Defaults;
+  Platform: Team, Invitations, Audit log. A venue is reached through its business
+  (Businesses / Neema Hospitality / Mama Neema Lodge), so there is no platform Venues page. A business
+  page holds the business (owner, region, onboarding, service access, with Change service access and
+  Archive), its venues, and its last three bills. A venue page holds its details read-only, its router,
+  its managers, and one chart of its sales. Billing is one page of every business's bill for a month,
+  filtered by month, status and search, each row opening the business; recording payments is still to
+  be designed. Trading figures live in Analytics.
+  Date/Author: 2026-11-05, owner.
 - Decision: what a business pays hashifi is billing, not defaults or settings: its own Billing page,
   the platform's view of every business's charges and the owner's view of their own.
   Date/Author: 2026-11-04, owner.
