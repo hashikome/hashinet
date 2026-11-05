@@ -104,9 +104,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   it. Blocking depends on what the router supports, so the dialect probes for it.
 - Decision: a router's page follows its state. Setting up, it is the same steps as the business's
   Getting started (add the router and run its script, install, set up, check a phone), each ticking itself. Once
-  it has served, it shows figures, health checks, its details with Set up beside them, and its
-  history. Set up again runs the six phases visibly; a clean run folds to one line with Show steps, a
-  stopped run stays open on the failed phase.
+  it has served, a profile card (model and RouterOS, venue, status, internet, hotspot network, added,
+  last set up) sits beside its figures, health checks (with Run checks) and history. Set up again is
+  the card's action and opens the same setup steps for this router: a reset or replaced router runs a
+  new script from step 1, which stops the old one; one that still reaches hashifi skips to Set up.
+  Cancel leaves the router as it was.
   Date/Author: 2026-11-05, owner.
 - Decision: the platform has no Live sessions and no device lists. hashifi runs no router and serves
   no guests; it keeps only counts, and a business sees its own devices. What is the platform's and what
