@@ -26,6 +26,10 @@ and the guests. Owners are not network technicians, so the team installs it.
      needed), sets up on site and tests that guests get online.
    Routers are sold at their price. The onboarding fee covers travel and time: free in town, charged
    by distance otherwise.
+   The owner states a preference, or "not sure yet", when accepting the invitation and when adding a
+   venue. It commits nobody: hashifi's team always calls the owner to go over the venue, how the team
+   will help and what is already there, then confirms the package and its price. No router is added
+   and nothing is charged before that, and the team can change the package until the router is added.
 3. **One plan, a percentage of sales, per venue.** 10% of each voucher's price, so a TSh 500
    voucher pays TSh 50; no sales, no fee. Volume lowers the rate, as bank transaction fees do: a
    venue's sales above TSh 2,000,000 in a month pay 5%. The bands are marginal, like tax bands: only
@@ -47,5 +51,5 @@ and the guests. Owners are not network technicians, so the team installs it.
 - A **Billing** page: per venue, the month's activated vouchers and their value, the fee by band,
   the onboarding and router charges, what is due and how to pay; the platform sees every
   business's. An unpaid account follows ADR-0014's service access.
-- The getting-started checklist follows the package: invitation accepted, package chosen, router
+- The getting-started checklist follows the package: invitation accepted, package confirmed, router
   configured, installed on site, set up, a phone checked.

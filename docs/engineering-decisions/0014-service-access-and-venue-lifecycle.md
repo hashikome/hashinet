@@ -53,8 +53,9 @@ and what belongs to the business.
    data is kept for retention (to be set with the data-retention decision). Restoring brings it back
    as it was.
 6. **A business adds its own venues; there are no empty venues.** The owner adds a venue with its name,
-   location and how its router will come (one of ADR-0013's onboarding packages). It starts **Waiting
-   for a router** and lands in Issues for hashifi's team. Once the team adds and sets up its
+   location and how they would like its router to come (a preference among ADR-0013's onboarding
+   packages, or not sure yet). It starts **Waiting for a router** and lands in Issues for hashifi's
+   team. The team confirms the package with the owner; once it adds and sets up the
    router, it goes live through the usual steps. A venue with no router after **14 days** is removed:
    the owner is warned at day 10, and the removal is audited. The business edits its venues' details
    from then on.
