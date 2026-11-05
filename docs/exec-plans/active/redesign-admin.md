@@ -135,11 +135,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   a summary (billed, paid, due, overdue), filters for By (month, quarter, year, custom months) with
   the named period, status and search, and on each bill Remind (an email form to its owner, sent through Resend with the invoice; no SMS) and
   Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment
-  leaves the rest due); each row opens an invoice, not the business. An invoice is one business's
-  month of fees or one venue's onboarding charge, with its lines, totals, billed-to details, payments
-  (date, how, reference, who recorded it), Remind and Record payment, a Download PDF link, and the
-  business's invoices in one list; the month in
-  progress shows its running fees and is issued when it closes.
+  leaves the rest due); each row opens that business's bills, one list of
+  invoices (a month of fees or a venue's onboarding charge, with the month in progress first). A row
+  opens in place with its fees, its payments (date, how, reference, who recorded it), what is due,
+  Remind and Record payment; each invoice has a Download PDF link. Everything shows once.
   Below it, **One-off charges**: each venue's agreed onboarding (package, router, amount, Due or
   Paid), outside the period filter, with Remind and, for the platform owner, Record payment; a row
   opens the venue's package issue, and the Due figure adds what is owed one-off. How payments arrive and are matched is still open. Trading figures live in Analytics.
