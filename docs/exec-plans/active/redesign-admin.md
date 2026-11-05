@@ -127,7 +127,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Routers; venues stay read-only for the platform (ADR-0014). A business page holds one table, its
   venues, beside its profile card (with Change service access and Archive). A venue page shows its
   router, its sales, then its sites with Load more, or Getting started while it is set up. Lists end in
-  Load more. Every page keeps to one job, and profile cards carry no audit link: the Audit log page filters by business, venue, action and date, and only issue pages keep their own log; a part payment
+  Load more. Every page keeps to one job, and profile cards carry no audit link: the Audit log page filters by business, venue,
+  action and date, and only issue pages keep their own log. Billing is one page for tracking every business's bills:
+  a summary (billed, paid, due, overdue), filters for By (month, quarter, year, custom months) with
+  the named period, status and search, and on each bill Remind (email and SMS to its owners) and
+  Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment
   leaves the rest due); each row opens the business.
   Below it, **One-off charges**: each venue's agreed onboarding (package, router, amount, Due or
   Paid), outside the period filter, with Remind and, for the platform owner, Record payment; a row
