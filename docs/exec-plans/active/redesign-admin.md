@@ -92,6 +92,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   it, as a venue reads in a table; when it joined; facts and actions) beside their panels. For a business the facts are its owner, what it has paid hashifi in
   total with what is due now, and its service access; Businesses lists the same total, so the
   biggest customers show at a glance. Amounts are whole shillings (TSh has no cents in use).
+- Decision: an issue emails the owner from a form on the page, sent by the API through Resend, with
+  replies to the team's support address; it counts as acting on the issue and stays on its log. No
+  mailto links inside the app.
 - Decision: someone is responsible for an issue: whoever claims it (Claim, or by acting first), or
   whom Who goes names when scheduling; the holder can Release or Hand to, and only someone above
   them can Take over, with a reason (ADR-0011, 11). While someone else is
