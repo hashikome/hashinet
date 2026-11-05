@@ -88,8 +88,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   current step beside it: its package (call and confirm, get it paid, schedule; owner and managers)
   and its setup (add the router, install, set up; the whole team, operators included). The venue is
   linked from the header rather than repeated; setups are listed by date, soonest first.
-- Decision: someone is responsible for an issue: whoever first acts on it, or claims it first with
-  I'm on it, or whom Who goes names when scheduling; Take over moves it. While someone else is
+- Decision: someone is responsible for an issue: whoever claims it (Claim, or by acting first), or
+  whom Who goes names when scheduling; the holder can Release or Hand to, and only someone above
+  them can Take over, with a reason (ADR-0011, 11). While someone else is
   responsible, the steps are theirs: others see them read-only and take over to act, except recording
   a payment, which stays the platform owner's. Each step is recorded with who did it, and a resolved issue names who was responsible and who helped. It stays
   so once it is resolved; Issues shows Started, Completed and Responsible for open and resolved alike. A

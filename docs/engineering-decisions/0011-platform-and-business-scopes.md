@@ -79,6 +79,12 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
     platform owner edits: 1 hour for TSh 500, 1 day for TSh 1,500 and 1 week for TSh 7,000. A
     business can change them, add its own, or import them from a CSV file, shown in full before it
     is saved; an import adds and updates by name and never deletes.
+11. **Issues are claimed by rank** (5 November 2026). Anyone in scope claims an issue nobody holds,
+    by Claim or by acting on it; its holder releases it or hands it to a colleague; only someone
+    above the holder takes it over, with a reason the holder is told. While it is held, its steps are
+    the holder's, except recording a payment, which stays the platform owner's. A claim with no
+    activity for a day is flagged, never released by itself. The API names these claim, release, hand
+    and take over.
 
 ## What must hold
 
