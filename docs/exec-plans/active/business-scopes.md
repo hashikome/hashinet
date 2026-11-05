@@ -152,7 +152,8 @@ the guest brand route. The screens are H2, H5 and H6 of [redesign-admin.md](rede
 
 **M2 also rebuilds the audit log** (ADR-0012): `audit_logs` with actor, business, venue, typed
 action, category, target, outcome and bounded before/after, written in the change's transaction;
-`GET /api/audit` scoped by the principal with search, action, dates, read events and a cursor.
+`GET /api/audit` scoped by the principal with search, action, dates and a cursor; read events only
+with `include=reads`.
 Tests: a manager never sees another venue's rows; a failed audit write rolls the change back.
 
 **M2 also returns capabilities.** `GET /api/me` answers the person, their memberships and, for the

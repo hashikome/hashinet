@@ -26,11 +26,13 @@ scope, and HashiFi's team for everything, from evidence rather than prose.
   the scope filter is set; a business owner sees the business; a manager sees their venues; operators
   have no audit log. Platform-only events (a platform member's authenticator reset) belong to no
   business.
-- **Reads that reveal something are recorded** (showing voucher codes, opening the audit log) and
-  hidden by default behind "Include read events".
+- **Reads that reveal something are recorded** (showing voucher codes, opening the audit log) for
+  investigation. They are noise most of the time, so `GET /api/audit` leaves them out unless asked
+  with `include=reads`; the page lists only actions that change something and has no switch for them
+  (owner's decision, 5 November 2026).
 - **One page, `Audit log`:** Timestamp (`YYYY-MM-DD HH:mm:ss`, East Africa Time), Actor with role,
   Action, Target, Outcome, Change. Filters: one Search across those columns, Action, From and To,
-  Include read events, Apply filters, and Clear filters once applied. Cursor pagination with Load
+  Apply filters, and Clear filters once applied. Cursor pagination with Load
   more; the API filters before it paginates. The overview's "Recent activity" is the latest six
   actions from the same API, linking to the page.
 

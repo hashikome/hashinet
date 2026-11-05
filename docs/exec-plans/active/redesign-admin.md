@@ -76,14 +76,21 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   docs prose ships with H1's remaining work; identifiers (`HashifiMark`, package names) keep their
   code casing.
   Date/Author: 2026-11-04, owner.
-- Decision: problems get an Issues page, with the open count on its nav item as the notification.
-  An issue (a router offline, a router not yet connected) is derived from router state and closes
-  itself only when the router is serving and passes its checks; people can say "I'm on it", never
-  mark it fixed. Issues are claimed, not assigned: an assignment does not show that anyone has seen
-  the issue, a claim does. The overview shows one as a banner and several as one panel of at most three,
-  linking to Issues. Each issue page has what to do, with its actions, the details and its history
-  from the audit log. Counts read N/N.
-  Date/Author: 2026-11-04, owner.
+- Decision: everything that needs someone lives on one **Needs you** page (it replaces Issues), with
+  its open count on the nav item. Router issues are derived from router state and close themselves
+  only when the router serves and passes its checks; businesses waiting on the team close when their
+  venue's first guest gets online. A router that is not installed yet raises no issue. People say
+  "I'm on it" (claimed, never assigned: an assignment does not show anyone has seen it). The page is
+  one table with Search, Kind and Status (Open by default) filters, each open row with its own
+  action. The overview shows one banner: an item's own action when there is one, otherwise "N things
+  need you" and a button to the page. Figures are one number with context below, never N/N.
+  Date/Author: 2026-11-05, owner.
+- Decision: a router's page follows its state. Setting up, it is the same steps as the business's
+  Getting started (script at the office, install, set up, check a phone), each ticking itself. Once
+  it has served, it shows figures, health checks, its details with Set up beside them, and its
+  history. Set up again runs the six phases visibly; a clean run folds to one line with Show steps, a
+  stopped run stays open on the failed phase.
+  Date/Author: 2026-11-05, owner.
 - Decision: what a business pays hashifi is billing, not defaults or settings: its own Billing page,
   the platform's view of every business's charges and the owner's view of their own.
   Date/Author: 2026-11-04, owner.

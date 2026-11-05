@@ -12,7 +12,7 @@ before the guest has internet: one job, one large field and one button.
 
 The direction is **Hearth**, from Hashikome's bonfire. Hashikome is the Sukuma bonfire: presence,
 gathering, conversation. HashiFi is the WiFi by that fire, and connecting is joining the circle. Mist
-ground, white panels and midnight ink; ember only on the one action and on what is alive.
+ground, white panels and midnight ink; ember only in the mark, the charts and the sign-in button.
 
 ## Colors
 
@@ -27,9 +27,9 @@ Role names are the shadcn tokens the components use. Brand colours: midnight `#0
 | `foreground` | `#0d1b2a` | `#eef1f4` | Primary text |
 | `muted-foreground` | `#4e5d6e` | `#9daec0` | Secondary text; reaches 4.5:1 on every surface |
 | `muted`, `secondary` | `#edf0f3` | `#1a2f45` | Tone steps, neutral fills |
-| `primary` | `#f59e2a` | `#f59e2a` | The one filled button, with `primary-foreground` midnight text (8.1:1) |
-| `ember` | `#a9530a` | `#f6ae52` | Ember as text and small marks: links, live figures. Ember itself is 2.1:1 on white, so never text |
-| `accent` | `#e7ebf0` | `#1a2f45` | Pale area: active nav, hover |
+| `primary` | `#f59e2a` | `#f59e2a` | The filled button on the midnight sign-in screens, with `primary-foreground` midnight text (8.1:1). In the app the filled button is `foreground` with `background` text, so it inverts in dark mode |
+| `ember` | `#a9530a` | `#f6ae52` | Ember as a small mark in charts and the logo. Ember itself is 2.1:1 on white, so never text |
+| `accent` | `#e7ebf0` | `#1a2f45` | Pale area: the selected fill, hover |
 | `destructive` | `#c4242a` | `#f2707a` | Failed or destructive: problems are red, never ember |
 | `border` | `#dfe3e8` | `#22384f` | Panel edges |
 | `input` | `#8a94a3` | `#7a8ca0` | Control edges, 3:1 on a panel |
@@ -99,7 +99,20 @@ respects `prefers-reduced-motion`.
 
 ## Do's and Don'ts
 
-- Do put ember on data that is alive and the one primary action, and nowhere else.
+- Do put ember in the mark, the charts and the sign-in screens' button, and nowhere else (owner's
+  decision, 5 November 2026). Links, figures and counts are plain ink, so a link is always underlined
+  (a row that opens on click and a button are not links and carry none).
+- Do show selected one way everywhere, quietly: the `accent` fill with `foreground` text at 600 (a
+  menu item, a range button on white), a 1px `foreground` edge with no fill (a card), or a
+  `foreground` mark (a tab's underline, a tick). The current step of a checklist has no fill: its number
+  is ringed in `foreground` and the steps still to come step back (outlined numbers, secondary ink). Selected is never louder than the page's action (owner's decision, 5 November 2026, after
+  ember text, a warm tint and inverted midnight were tried). A card is its own control, with no
+  radio dot.
+- Do frame a needs-you banner with the same 1px `foreground` edge as a selected card; its words and
+  pills carry how serious it is, never a red or ember frame.
+- Do keep counts neutral, the Issues count included: red is for a status pill, not a badge.
+- Do give a figure one number and only the context that adds to it: "6" routers online, "1 offline"
+  below; never "6/7" or "of 7".
 - Do use a role, never a raw colour; a new need is a new role here first.
 - Don't use cream with terracotta, violet or indigo, a tinted sidebar, gradients, glows,
   glass, or a shadow on anything at rest.
