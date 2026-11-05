@@ -137,8 +137,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment
   leaves the rest due); each row opens that business's bills, one list of
   issued invoices (a month of fees or a venue's onboarding charge); the month in progress is not one
-  until it closes. A row opens in place as one short invoice: its lines, total, payments and what is due;
-  each invoice has a Download PDF link. Everything shows once.
+  until it closes. A row opens that invoice's own page, as a business opens a venue: its lines, total,
+  payments and what is due, with a Download PDF link. Everything shows once.
   Each business has one row: its fees for the period plus its onboarding charges, which stay on the
   row until paid. Remind and Record payment act on the business, on the row and on its bills page, and
   a payment settles the oldest invoice first, fees and charges alike. How payments arrive and are matched is still open. Trading figures live in Analytics.
