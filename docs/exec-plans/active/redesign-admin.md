@@ -114,7 +114,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   a summary (billed, paid, due, overdue), filters for By (month, quarter, year, custom months) with
   the named period, status and search, and on each bill Remind (email and SMS to its owners) and
   Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment
-  leaves the rest due); each row opens the business. How payments arrive and are matched is still open. Trading figures live in Analytics.
+  leaves the rest due); each row opens the business.
+  Below it, **One-off charges**: each venue's agreed onboarding (package, router, amount, Due or
+  Paid), outside the period filter, with Remind and, for the platform owner, Record payment; a row
+  opens the venue's package issue, and the Due figure adds what is owed one-off. How payments arrive and are matched is still open. Trading figures live in Analytics.
   Billing names whole months; Analytics, for the platform and for businesses, follows Superset: Range
   (Last, Current, Custom), its Period, and Show (the units below the period, never its own: day,
   hours; week, days; month, weeks or days; quarter and year, months or weeks), opening on the next unit
