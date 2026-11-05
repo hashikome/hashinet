@@ -12,14 +12,14 @@ and the guests. Owners are not network technicians, so the team installs it.
 
 ## Decision
 
-1. **The venue's network.** The ISP router stays as it is and gives the MikroTik its internet on
-   port 1. Guests join the MikroTik's WiFi, or the business's other WiFi routers plugged into the
-   MikroTik's other ports, which must run as access points (bridge mode, no DHCP or NAT of their
+1. **The venue's network.** The ISP router stays as it is and gives the MikroTik router its internet on
+   port 1. Guests join the MikroTik router's WiFi, or the business's other WiFi routers plugged into the
+   MikroTik router's other ports, which must run as access points (bridge mode, no DHCP or NAT of their
    own) so the hotspot sees each device. The business's own staff network stays on the ISP router.
-   The MikroTik runs RouterOS 7 with the hotspot; any ISP router with an Ethernet port and DHCP works.
+   The MikroTik router runs RouterOS 7 with the hotspot; any ISP router with an Ethernet port and DHCP works.
 2. **Three onboarding packages**, chosen per venue:
-   - **Connect:** the venue has a compatible MikroTik and ISP router; the team sets it up.
-   - **Install:** the team brings the venue a MikroTik, sets it up and installs it behind the
+   - **Connect:** the venue has a compatible MikroTik router and ISP router; the team sets it up.
+   - **Install:** the team brings the venue a MikroTik router, sets it up and installs it behind the
      venue's internet router. Where the setup script runs, at the office or on site, does not matter.
    - **Launch:** Install, plus a new internet line from a partner seller of the provider. hashifi
      never supplies the line itself: SIM and line registration must be in the business's name, so the
@@ -54,7 +54,7 @@ and the guests. Owners are not network technicians, so the team installs it.
 
 ## Consequences
 
-- The bootstrap script must take the MikroTik's internet address from the ISP router by DHCP on
+- The bootstrap script must take the MikroTik router's internet address from the ISP router by DHCP on
   port 1, keeping the fixed address as an option, so a router configured at the office works at
   any venue (`apps/api/src/services/router-provision/bootstrap.ts`).
 - Readiness warns about a downstream router that hands out its own addresses.
