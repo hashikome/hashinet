@@ -29,3 +29,4 @@ links stay valid.
 | [0011](0011-platform-and-business-scopes.md) | Platform and business scopes, with owners, managers and operators | accepted |
 | [0012](0012-audit-log.md) | The audit log, scoped like everything else | accepted |
 | [0013](0013-onboarding-packages-and-pricing.md) | Onboarding packages and pricing | accepted |
+| [0014](0014-service-access-and-venue-lifecycle.md) | Service access, archiving, and the venue lifecycle | accepted |

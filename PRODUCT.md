@@ -137,8 +137,8 @@ real payment and a real message (M8).
 | Data | Purpose | Visible to |
 | --- | --- | --- |
 | Memberships | Sign-in (a passkey, or an email code with an authenticator code for platform roles, owners and managers), role, scope, venues | Platform owner and managers; a business's owner and managers for their business |
-| Devices | A guest device's MAC address, name and type, and its sessions (not a person: one guest can be several devices) | Platform staff; a business's people for their venues |
-| Customers | A paying guest's mobile number, their devices and payments (from M6) | Platform staff; a business's people for their venues |
+| Devices | A guest device's MAC address, name and type, and its sessions (not a person: one guest can be several devices) | A business's people for their venues; platform staff see counts only (ADR-0014) |
+| Customers | A paying guest's mobile number, their devices and payments (from M6) | A business's people for their venues; platform staff see counts only (ADR-0014) |
 | Router credentials | Configuring routers | Encrypted at rest; never returned to clients |
 
 Development and tests use invented data only.

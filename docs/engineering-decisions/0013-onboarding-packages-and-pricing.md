@@ -46,6 +46,6 @@ and the guests. Owners are not network technicians, so the team installs it.
 - Readiness warns about a downstream router that hands out its own addresses.
 - A **Billing** page: per venue, the month's activated vouchers and their value, the fee by band,
   the onboarding and router charges, what is due and how to pay; the platform sees every
-  business's. Payment states for an unpaid account are still open.
+  business's. An unpaid account follows ADR-0014's service access.
 - The getting-started checklist follows the package: invitation accepted, package chosen, router
   configured, installed on site, set up, a phone checked.
