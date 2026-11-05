@@ -55,6 +55,11 @@ and the guests. Owners are not network technicians, so the team installs it.
    guest above it is its own.
 5. **VAT** does not apply while hashifi's turnover is under the TSh 200 million registration
    threshold. Revisit when it nears it.
+6. **Invoices are paid in full by their due date.** The business has already collected the money its
+   fee is a share of, so hashifi offers no instalments, and invoices, reminders and any payment link
+   ask for the full amount. Whatever does arrive is recorded as it arrived and settles the oldest
+   invoice first. A part payment does not stop an invoice going overdue, and service access follows
+   the overdue amount as usual (ADR-0014).
 
 ## Consequences
 
