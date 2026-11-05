@@ -92,7 +92,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   it, as a venue reads in a table; when it joined; facts and actions) beside their panels. For a business the facts are its owner, what it has paid hashifi in
   total with what is due now, and its service access; Businesses lists the same total, so the
   biggest customers show at a glance. Amounts are whole shillings (TSh has no cents in use).
-- Decision: an issue emails the owner from a form on the page, sent by the API through Resend, with
+- Decision: every email to an owner, from an issue or a reminder, uses one form on the page, sent by the API through Resend, with
   replies to the team's support address; it counts as acting on the issue and stays on its log. No
   mailto links inside the app.
 - Decision: someone is responsible for an issue: whoever claims it (Claim, or by acting first), or
@@ -133,11 +133,12 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Load more. Every page keeps to one job, and profile cards carry no audit link: the Audit log page filters by business, venue,
   action and date, and only issue pages keep their own log. Billing is one page for tracking every business's bills:
   a summary (billed, paid, due, overdue), filters for By (month, quarter, year, custom months) with
-  the named period, status and search, and on each bill Remind (email and SMS to its owners) and
+  the named period, status and search, and on each bill Remind (an email form to its owner, sent through Resend with the invoice; no SMS) and
   Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment
   leaves the rest due); each row opens an invoice, not the business. An invoice is one business's
   month of fees or one venue's onboarding charge, with its lines, totals, billed-to details, payments
-  (date, how, reference, who recorded it), Remind, Record payment and Download PDF; the month in
+  (date, how, reference, who recorded it), Remind and Record payment, a Download PDF link, and the
+  business's invoices in one list; the month in
   progress shows its running fees and is issued when it closes.
   Below it, **One-off charges**: each venue's agreed onboarding (package, router, amount, Due or
   Paid), outside the period filter, with Remind and, for the platform owner, Record payment; a row
