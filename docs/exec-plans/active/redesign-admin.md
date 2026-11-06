@@ -183,6 +183,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   column. There
   are no alert panels on the overview.
   Date/Author: 2026-11-06, owner.
+- Decision: the API builds every voucher sheet and invoice as a PDF, and the browser only shows or
+  downloads it. No QZ Tray: operators work on phones and it needs a computer. A counter printer waits for
+  the pilot, as a printer that pulls jobs from the server or a tested Bluetooth one, and needs its own
+  voucher layout for a narrow roll.
 - Decision: a printed voucher is 100 by 46mm, twelve to an A4 sheet. A tear-off stub is the counter's
   record: a running number in bold to count by at the top, price, time and devices in the middle, and the code at the bottom. The whole voucher is white, and it prints in colour or in black and white. The guest's card has the venue's name and no WiFi name: a voucher works on any WiFi at its venue (ADR-0015). It has the venue's name at the left end of the top row and its logo at the right, the price, which is
   largest, what it buys, the WiFi to join, the code, and a QR code centred on the right. The
@@ -192,7 +196,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: a venue can hold several MikroTik routers. Venues and overviews read as a count ("2 of 3
   online"), a router's name is its WiFi name, the one guests see in their network list, and nothing is added to
   it. Routers lists every router, Live sessions and Devices gain a Router column where a venue has more
-  than one, the menu says Routers for everyone, and printing picks which router's name a sheet carries. An owner asks for a router
+  than one, the menu says Routers for everyone. An owner asks for a router
   (ADR-0013). Voucher codes use JetBrains Mono: the prototype loads it as it loads Figtree, and the
   real app must self-host it in `apps/web/public/fonts` in place of its system stack.
   Date/Author: 2026-11-06, owner.
