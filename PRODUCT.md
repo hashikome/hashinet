@@ -66,7 +66,7 @@ limit, and is offered at selected venues.
 
 Admins and managers generate vouchers in batches for a package and print them with their price and QR
 codes, to sell for cash. A voucher bought on the portal is the same kind of voucher, issued
-when the payment is confirmed. A voucher belongs to its venue and works on every router there, and its device limit counts the devices online at once; at the limit a new device is refused (ADR-0015). A voucher's lifecycle is `unused → pending_activation → active → expired`, decided by
+when the payment is confirmed. A voucher belongs to its venue and works on every router there, and its device limit counts the devices online at once. After the first device, a voucher needs its switch PIN, shown once at the first sign-in; staff can release a voucher for a guest who lost it (ADR-0015). A voucher's lifecycle is `unused → pending_activation → active → expired`, decided by
 the API and the router.
 
 ### 4.4 Captive portal
