@@ -18,8 +18,10 @@ and what belongs to the business.
    up, check, replace, remove), on Defaults, and on its own team, invitations and audit log. It sees
    a business's owners and managers (name, email, role, venues), its venues, packages and captive
    portal read-only, and the invitations it issues itself (its own team, new businesses' owners). A
-   business's operators, its sign-ins and its own team's invitations are the business's; what anyone did
-   is in the audit log. Of its devices and sessions it sees only counts:
+   business's operators, its sign-ins and its own team's invitations are the business's. The platform's
+   audit log holds what its team and hashifi itself did, and a business owner accepting its invitation;
+   a business's audit log holds everything done in that business, including what the platform did to
+   it, and what a business's people do never reaches the platform's. Of its devices and sessions it sees only counts:
    never a device list, a session or a customer's number. Everything a business
    sells and shows is the business's: its venues' names, locations, open hours and allowed sites, its
    packages and prices, captive portal, vouchers, payments, devices, team and profile.
