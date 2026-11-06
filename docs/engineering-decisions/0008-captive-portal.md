@@ -18,8 +18,10 @@ the router is HTTP, and query strings reach proxy logs.
    in the attempt limits. A guest's page loads no third-party asset.
 2. **The router names itself.** `login.html` is rendered per router and carries its id, served
    at `/portal/hotspot-files/:routerId/:name`. A gateway address cannot identify a router.
-3. **Fragments, not query strings.** The router sends a guest to `/portal/login#router=…`, and a
-   printed QR code is `/portal/login#code=…`. A fragment reaches no server or log. A card scanned
+3. **Fragments, not query strings.** The router sends a guest to `/portal/login#router=…`. A printed
+   QR code joins the venue's open WiFi (a standard `WIFI:` code), the portal opens by itself and the
+   guest enters the code: that replaces the `/portal/login#code=…` QR code described here, which is
+   removed when the vouchers are rebuilt. A fragment reaches no server or log. A card scanned
    with no router context keeps its code in the tab's `sessionStorage` on this origin and asks the
    guest to join the WiFi and continue. Continuing opens a plain http address, carrying no code,
    which the router intercepts and returns with context. That address is not ours, so the code
