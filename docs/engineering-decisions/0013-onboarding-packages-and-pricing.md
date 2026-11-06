@@ -27,7 +27,9 @@ and the guests. Owners are not network technicians, so the team installs it.
    and never counts. Each MikroTik router takes its internet on port 1 from the ISP router, a switch on
    its network, or a line of its own, never from another MikroTik router's ports, which sit behind that
    router's hotspot. An owner adds a router by naming its venue; it then follows the same steps and the same
-   two issues as a new venue, and its WiFi name is set when the router is added at setup.
+   two issues as a new venue, and its WiFi name is set when the router is added at setup. The router is what guests see, so Hashifi
+   matches it: it writes the name at setup, confirms it from the router, and keeps reading it, and a name
+   changed on the router updates Hashifi by itself.
    Every router starts from such a request: the platform has no way to add one without an issue behind it.
    When an owner asks by phone for a router or a venue, the team starts the same request for them, with
    Add a router on Routers or Add a venue on Venues. A new
