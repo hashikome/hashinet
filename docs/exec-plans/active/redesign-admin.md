@@ -196,6 +196,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   (ADR-0013). Voucher codes use JetBrains Mono: the prototype loads it as it loads Figtree, and the
   real app must self-host it in `apps/web/public/fonts` in place of its system stack.
   Date/Author: 2026-11-06, owner.
+- Decision: a business's Payments page shows payments as they come in, to check them, confirm them and
+  record them. Recording a payment and selling a voucher are one step, Sell a voucher (PRODUCT 4.7), from
+  Vouchers, Overview, Today and Payments. The monthly breakdown lives in Sales, and what Hashifi charges in
+  Billing, so Payments keeps only its summary figures.
+  Date/Author: 2026-11-06, owner.
 - Decision: guest limits are measured, not assumed. Before "room for N" means anything, stress-test each
   MikroTik model on a real line with its packages' speed limits: add guests in steps (10, 20, 30, 50),
   some browsing and some streaming, and record each one's speed, page load, processor load and whether
