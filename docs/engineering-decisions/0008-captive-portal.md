@@ -55,6 +55,12 @@ the router is HTTP, and query strings reach proxy logs.
    device that sent traffic while blocked is unblocked, the router takes about 50 seconds to
    accept it again.
 
+10. **A voucher works on every router at its venue.** Vouchers belong to the venue and only the API
+    signs a device in, so the API holds a voucher's time left and its devices wherever the guest is. On
+    another of the venue's routers it puts the voucher there with the time left, reads it back as any
+    new access must, and counts devices across the venue, so one code can never exceed its limit by
+    moving. Each router is its own hotspot, so a device signs in again when it moves.
+
 ## Why not CHAP
 
 Protecting the router's login with CHAP was the planned fix for the code crossing the WiFi in
@@ -74,6 +80,10 @@ request to the outside address; a wrong code; a proxy answering with a page; onl
 destination.
 
 ## What remains open
+
+- A voucher across a venue's routers (decision 10) is decided, not built or tested on real routers:
+  whether a moving device can sign in without its code, and how a session's end is counted when it
+  moves.
 
 - **A MAC address is only a claim.** Anyone on the network can copy one, and with it a device's
   cookie: inherent to hotspot networks. Nothing here treats a MAC as proof of anything else.

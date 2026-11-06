@@ -62,7 +62,8 @@ background photo sits under a 55% black scrim.
 - **Sizes:** page title 24px, section 18px, figure 24px, body 14px, small 12px; nothing under 11px.
   On a phone the portal's body is 16px, so browsers do not zoom on focus.
 - Sentence case, no tracked capitals. Tabular figures on every number in a table or figure, right
-  aligned. Monospace only for voucher codes, IDs and keys.
+  aligned. Monospace only for voucher codes, IDs and keys, in JetBrains Mono, self-hosted beside
+  Figtree, so a code looks the same on every device and on paper.
 
 ## Elevation
 

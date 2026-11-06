@@ -189,6 +189,12 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   QR code signs the guest in once they have joined; they can type the number instead. The logo is optional and changes nothing else: a venue without one, or that
   chooses Hide when printing, gets the same voucher with that end empty. The app's letter tile is never printed.
   Date/Author: 2026-11-06, owner.
+- Decision: a venue can hold several MikroTik routers. Venues and overviews read as a count ("2 of 3
+  online"), Routers lists every router with where it sits, Live sessions and Devices gain a Router column
+  where a venue has more than one, and the menu says Routers for everyone. An owner asks for a router
+  (ADR-0013). Voucher codes use JetBrains Mono: the prototype loads it as it loads Figtree, and the
+  real app must self-host it in `apps/web/public/fonts` in place of its system stack.
+  Date/Author: 2026-11-06, owner.
 - Decision: guest limits are measured, not assumed. Before "room for N" means anything, stress-test each
   MikroTik model on a real line with its packages' speed limits: add guests in steps (10, 20, 30, 50),
   some browsing and some streaming, and record each one's speed, page load, processor load and whether

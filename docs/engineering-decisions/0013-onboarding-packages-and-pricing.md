@@ -22,8 +22,12 @@ and the guests. Owners are not network technicians, so the team installs it.
    in two ways. Access points and extenders carry a MikroTik router's WiFi further and are not routers
    to hashifi: nothing counts them. Adding a router always means another MikroTik router at the same
    venue, such as one for a hotel's restaurant, garden or floors. The ISP router is the business's own
-   and never counts. How a second router is charged and set up, and how a voucher works across a
-   venue's routers, are still open. A second internet line is for later, since setup uses port 1 alone.
+   and never counts. Each MikroTik router takes its internet on port 1 from the ISP router, a switch on
+   its network, or a line of its own, never from another MikroTik router's ports, which sit behind that
+   router's hotspot. An owner asks for a router from the venue or from Routers; it then goes through
+   the same two issues as a new venue. Its router and setup are one one-off charge on the bill, agreed
+   on the call, and nothing else changes: the percentage and the minimum stay per venue, however many
+   routers it has. A voucher works on every router at its venue (ADR-0008).
 2. **Three onboarding packages**, chosen per venue:
    - **Connect:** the venue has a compatible MikroTik router and ISP router; the team sets it up.
    - **Install:** the team brings the venue a MikroTik router, sets it up and installs it behind the
