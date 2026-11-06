@@ -19,8 +19,11 @@ and the guests. Owners are not network technicians, so the team installs it.
    The MikroTik router runs RouterOS 7 with the hotspot; any ISP router with an Ethernet port and DHCP works.
    The ISP router sees one device, so its own limit on WiFi clients does not apply: a venue's limit is
    its line, the MikroTik router's radio and processor, and how many are active at once. A venue grows
-   by adding WiFi routers as access points on one MikroTik router; a second internet line is for later,
-   since setup uses port 1 alone, and a separate building is a separate venue.
+   in two ways. Access points and extenders carry a MikroTik router's WiFi further and are not routers
+   to hashifi: nothing counts them. Adding a router always means another MikroTik router at the same
+   venue, such as one for a hotel's restaurant, garden or floors. The ISP router is the business's own
+   and never counts. How a second router is charged and set up, and how a voucher works across a
+   venue's routers, are still open. A second internet line is for later, since setup uses port 1 alone.
 2. **Three onboarding packages**, chosen per venue:
    - **Connect:** the venue has a compatible MikroTik router and ISP router; the team sets it up.
    - **Install:** the team brings the venue a MikroTik router, sets it up and installs it behind the
