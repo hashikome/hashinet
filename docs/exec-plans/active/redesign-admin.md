@@ -218,7 +218,7 @@ data ember, ember as text `#A9530A`; problems in red, never ember. Dark: midnigh
 `DESIGN.md` rewritten for Hearth, recording the deliberate exception that the dark theme is midnight,
 not neutral. Every existing screen takes the new tokens; nothing else changes yet.
 
-**H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Analytics, Issues; then
+**H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Issues, Analytics; then
 Sales, Manage, Business), rendered from the API's capabilities, never from role names. Groups open
 like Analytics, one at a time, and the group holding the current page opens by itself; operators keep
 a short flat list. At the top,
