@@ -71,6 +71,14 @@ Hashifi, capitalised, in sentences and labels. Lower case only where it is the m
 system: the wordmark, "Runs on hashifi", the portal's signature, the automatic actor in logs, domains,
 addresses and file names.
 
+## Actions and issues
+
+- An action opens a dialog over the page it started from, never a page of its own, and every dialog has one
+  layout: title, a line of context, stacked fields, then Cancel and the action at the bottom right.
+- Anything that calls for someone's action is an issue: it is in Issues, and its notice sits at the top of the
+  page, under the title. Daily operations are not issues; confirming a payment or recording a sale stay as
+  actions on their own page.
+
 ## Order in lists
 
 - **Filters** run Search, then business, venue and region, then kind or role, then status, then dates.
