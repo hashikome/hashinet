@@ -104,7 +104,7 @@ addresses and file names.
   stay there. Area and Region are both columns wherever venues are listed. Cards, lines and subtitles follow the same order, with the business and venue last.
 - Operators and managers work on a phone, often one-handed at a counter, so their screens are designed
   at phone width first; owners and platform staff get a phone that works and a laptop that shines. Anything
-  tapped is at least 44px tall, with 16px text in fields and 15px on buttons, and a form asks only what this sale needs. On a phone Search takes the full width, with filters in two columns below it. A business operator's phone has
+  tapped is at least 44px tall, with 16px text in fields and 15px on buttons, and a form asks only what this sale needs. On a phone Search takes the full width, with filters in two columns below it. Related filters share a row: From and To always sit together, and a filter left alone takes the full row. A business operator's phone has
   bottom tabs: Today, Sessions, Sell, Vouchers, Devices. Their top menu stays for the rest.
 - Dialogs read left to right, with Cancel and the action at the bottom right. Voucher issued is the one
   exception: it is shown to a guest across a counter, so all of it is centred, with Sell another first.
