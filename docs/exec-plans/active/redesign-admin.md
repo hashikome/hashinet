@@ -218,8 +218,9 @@ data ember, ember as text `#A9530A`; problems in red, never ember. Dark: midnigh
 not neutral. Every existing screen takes the new tokens; nothing else changes yet.
 
 **H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Issues, Analytics; then
-Sales, Manage, Business), rendered from the API's capabilities, never from role names. Groups open
-like Analytics, one at a time, and the group holding the current page opens by itself; operators have
+Sales, Manage, Business), rendered from the API's capabilities, never from role names. Analytics
+and the groups open alike, one at a time: opening one closes the other, clicking it again closes it,
+and the one holding the current page opens by itself; operators have
 a short list with no groups. Guests' money is Guest payments, so it does not read as Billing. At the top,
 the business's logo and name (HashiFi with the Platform tag for platform staff) and the scope filter
 (all businesses or one; all venues or one; absent with one venue). At the foot, the account menu:
