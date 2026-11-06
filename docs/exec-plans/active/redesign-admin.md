@@ -67,12 +67,12 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   owner their business's and for a manager their venues'. Issuing stays where the grant lives: Invite a business on Businesses, people on Team, always as
   Invite someone; the form decides which roles the inviter can give.
   Date/Author: 2026-11-04, owner.
-- Decision: a business's owner has their own Billing page, in the Business group, kept as simple as a
+- Decision: a business's owner has their own Billing page, in the top of the menu beside Payments, kept as simple as a
   way to pay their bills: what is due, their rate, how to pay and every invoice, each opening its own
   page, with no Remind or Record payment. What they have spent on hashifi belongs to their own books. SMS credits sit beside it, because they are what a business buys from hashifi, not what it sells guests, and each purchase is an invoice there. Managers and
   operators see neither. Both pages are built to hold the place and get their polish in the business
   owner's review; how to pay uses sample numbers until how payments arrive is settled.
-- Decision: the Billing page follows ADR-0013 (5% of sales, 2.5% above TSh 2M a month per venue, a minimum of TSh 5,000 a
+- Decision: the platform's Payments page and an owner's Billing follow ADR-0013 (5% of sales, 2.5% above TSh 2M a month per venue, a minimum of TSh 5,000 a
   month per serving venue; onboarding and router charges, and one-time extra site slots).
   Date/Author: 2026-11-04, owner.
 - Decision: the logo is the ring alone, with no wordmark; the platform workspace adds a solid
@@ -131,13 +131,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   shows its figures, venues today, people, details, the month's billing and its recent activity.
   Date/Author: 2026-11-05, owner.
 - Decision: each platform page is scoped by why the team opens it and what it may do there. The
-  platform menu is Overview, Issues, Analytics; Manage: Businesses, Venues, Routers, Billing;
+  platform menu is Overview, Issues, Payments, Analytics; Manage: Businesses, Venues, Routers;
   Platform: Defaults, Team, Invitations, Audit log. Venues is a list to find any venue across businesses, like
   Routers; venues stay read-only for the platform (ADR-0014). A business page holds one table, its
   venues, beside its profile card (with Change service access and Archive). A venue page shows its
   router, its sales, then its sites with Load more, or Getting started while it is set up. Lists end in
   Load more. Every page keeps to one job, and profile cards carry no audit link: the Audit log page filters by business, venue,
-  action and date, and only issue pages keep their own log. Billing is one page for tracking every business's bills:
+  action and date, and only issue pages keep their own log. Payments, on the platform, is one page for tracking every business's bills:
   a summary (billed, paid, due, overdue), filters for By (month, quarter, year, custom months) with
   the named period, status and search, and on each bill Remind (an email form to its owner, sent through Resend with the invoice; no SMS) and
   Record payment (an amount, date, method and reference, settling the oldest bill first; a part payment
@@ -150,7 +150,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   and due on the 7th, and an onboarding charge is issued when its package is confirmed and due 7 days
   later, going overdue like any other; the setup is scheduled once it is paid. Remind and Record payment act on the business, on the row and on its bills page, and
   a payment settles the oldest invoice first, fees and charges alike. How payments arrive and are matched is still open. Trading figures live in Analytics.
-  Billing names whole months; Analytics, for the platform and for businesses, follows Superset: Range
+  That page names whole months; Analytics, for the platform and for businesses, follows Superset: Range
   (Last, Current, Custom), its Period, and Show (the units below the period, never its own: day,
   hours; week, days; month, weeks or days; quarter and year, months or weeks), opening on the next unit
   unless it holds a single point, narrowed by the scope filter. The chart's axis spans the whole period and its line stops at now.
@@ -162,8 +162,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   else in the menu nests. Needs measuring before it ships: peak hours, sessions and data from router
   accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
   Date/Author: 2026-11-05, owner.
-- Decision: what a business pays hashifi is billing, not defaults or settings: its own Billing page,
-  the platform's view of every business's charges and the owner's view of their own.
+- Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
+  money coming in: to an owner what guests pay them, to the platform what businesses pay it, every
+  business's charges. Billing is money going out, an owner's view of their own bills.
   Date/Author: 2026-11-04, owner.
 - Decision (replaced on 2026-11-03 by the Hearth direction below): keep `accent-ladder`, teal and
   Figtree.
@@ -219,7 +220,7 @@ data ember, ember as text `#A9530A`; problems in red, never ember. Dark: midnigh
 not neutral. Every existing screen takes the new tokens; nothing else changes yet.
 
 **H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Issues, Vouchers, Payments,
-Analytics; then Manage, with Packages, and Business), rendered from the API's capabilities, never from role names. Analytics
+Billing for owners, Analytics; then Manage, with Packages, and Business), rendered from the API's capabilities, never from role names. Analytics
 and the groups open alike, one at a time: opening one closes the other, clicking it again closes it,
 and the one holding the current page opens by itself; operators have
 a short list with no groups. Payments shows what guests have paid over time, month by month, and an owner also sees hashifi's fee and what they keep; Billing shows what the business pays hashifi. At the top,
