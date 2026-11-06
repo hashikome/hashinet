@@ -178,7 +178,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   owners. They follow the venue in scope: bills and credits belong to the business, so they show only
   with every venue in scope. Each closes itself once dealt with, and every page has Contact support, an
   email form to hashifi that carries the issue and reaches the platform's Issues, where replying closes
-  it. An operator sees vouchers running low on Today. A business's list has no Responsible column. There
+  it. An operator sees vouchers running low on Today. A venue's issues can be claimed and handed between
+  owners and managers, a bill or credits stay the owner's, and someone working alone sees no Responsible
+  column. There
   are no alert panels on the overview.
   Date/Author: 2026-11-06, owner.
 - Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
