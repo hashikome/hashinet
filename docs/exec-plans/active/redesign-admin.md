@@ -183,6 +183,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   column. There
   are no alert panels on the overview.
   Date/Author: 2026-11-06, owner.
+- Decision: a printed voucher is 100 by 54mm, ten to an A4 sheet: a tear-off stub (package, price, sold,
+  code) the counter keeps, and a card with the price largest, what it buys, its code and a QR code that
+  joins the WiFi.
+  Date/Author: 2026-11-06, owner.
 - Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
   money coming in: to an owner what guests pay them, to the platform what businesses pay it, every
   business's charges. Billing is money going out, an owner's view of their own bills.
