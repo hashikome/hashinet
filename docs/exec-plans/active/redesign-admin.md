@@ -221,7 +221,7 @@ not neutral. Every existing screen takes the new tokens; nothing else changes ye
 Sales, Manage, Business), rendered from the API's capabilities, never from role names. Analytics
 and the groups open alike, one at a time: opening one closes the other, clicking it again closes it,
 and the one holding the current page opens by itself; operators have
-a short list with no groups. Guests' money is Guest payments, so it does not read as Billing. At the top,
+a short list with no groups. Payments shows what guests have paid over time, month by month, and an owner also sees hashifi's fee and what they keep; Billing shows what the business pays hashifi. At the top,
 the business's logo and name (HashiFi with the Platform tag for platform staff) and the scope filter
 (all businesses or one; all venues or one; absent with one venue). At the foot, the account menu:
 name and role, the workspaces, Account and security, Sign out, and "Runs on HashiFi". One sign-in
