@@ -39,8 +39,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    paid add-on (price to be set), and blocking sites is free.
    A venue goes through two issues, one after the other. **Its package**, for the platform's owner
    and managers only: call the owner, confirm the package, router model, agreed price (router and
-   onboarding together, on the business's bill) and notes; get it paid when there is a charge (only
-   the platform owner records payments); then schedule the setup with a date and, optionally, who
+   onboarding together, on the business's bill) and notes; get it paid when there is a charge, due 7
+   days after the package is confirmed (only the platform owner records payments); then schedule the setup with a date and, optionally, who
    goes. **Its setup**, for the whole team, operators included, once scheduled: add the router,
    install it on the date, set it up and check a phone; it closes when the first guest is online.
    Issues lists setups by date, soonest first.

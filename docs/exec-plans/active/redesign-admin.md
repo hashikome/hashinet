@@ -140,7 +140,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   until it closes. A row opens that invoice's own page, as a business opens a venue: its lines, total,
   payments and what is due, with a Download PDF link. Everything shows once.
   Each business has one row: its fees for the period plus its onboarding charges, which stay on the
-  row until paid. Remind and Record payment act on the business, on the row and on its bills page, and
+  row until paid. An invoice shows its issued date and due date: a month of fees is issued on the 1st
+  and due on the 7th, and an onboarding charge is issued when its package is confirmed and due 7 days
+  later, going overdue like any other; the setup is scheduled once it is paid. Remind and Record payment act on the business, on the row and on its bills page, and
   a payment settles the oldest invoice first, fees and charges alike. How payments arrive and are matched is still open. Trading figures live in Analytics.
   Billing names whole months; Analytics, for the platform and for businesses, follows Superset: Range
   (Last, Current, Custom), its Period, and Show (the units below the period, never its own: day,
