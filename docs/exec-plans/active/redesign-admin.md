@@ -66,9 +66,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Resend, Revoke or Invite again. A business's invitations sit on its Team page instead, waiting ones
   first, for an owner their business's and for a manager their venues'. Issuing stays where the grant lives: Invite a business on Businesses, people on Team.
   Date/Author: 2026-11-04, owner.
-- Decision: a business's owner has their own Billing page, in the Business group: amount due, next due
-  date, what has been paid, how to pay and every invoice, each opening its own page, with no Remind or
-  Record payment. SMS credits sit beside it, because they are what a business buys from hashifi, not what it sells guests, and each purchase is an invoice there. Managers and
+- Decision: a business's owner has their own Billing page, in the Business group, kept as simple as a
+  way to pay their bills: what is due, their rate, how to pay and every invoice, each opening its own
+  page, with no Remind or Record payment. What they have spent on hashifi belongs to their own books. SMS credits sit beside it, because they are what a business buys from hashifi, not what it sells guests, and each purchase is an invoice there. Managers and
   operators see neither. Both pages are built to hold the place and get their polish in the business
   owner's review; how to pay uses sample numbers until how payments arrive is settled.
 - Decision: the Billing page follows ADR-0013 (5% of sales, 2.5% above TSh 2M a month per venue, a minimum of TSh 5,000 a
