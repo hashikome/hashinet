@@ -40,7 +40,8 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
 3. **What each owner keeps.** The business owner alone invites and removes managers, sets the
    business-wide packages and prices, holds the payout and billing relationship with Hashikome,
    asks for a venue, and closes the business. The platform owner alone invites and removes platform
-   managers, changes platform settings and secrets, sets what businesses pay, and deletes a business.
+   managers, changes platform settings and secrets, sets what businesses pay, and deletes a business. Setting what businesses pay
+   is not recording what they paid: a platform manager records payments and sends reminders.
 4. **Venue scope inside a business.** A business owner reaches every venue of the business. A
    business manager or operator reaches only the venues on their membership, at least one. A manager
    may add packages that are sold only at their own venues. A business has a default set of packages,
