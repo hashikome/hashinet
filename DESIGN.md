@@ -71,8 +71,10 @@ background photo sits under a 55% black scrim.
 - **Columns** read as a sentence about the row: its subject, then the subject's own details, numbers
   included, then what it belongs to, business, venue, then router, and any action last. "Router x running
   RouterOS 7.25 is online with 6 devices, at business y's venue." The word is always Status.
-- A parent is a column, never a line under the row's name. A column or filter with only one possible
-  value is left out.
+- A parent or a place is a column, never a line under the row's name; a model, an owner or an email can
+  stay there. Cards, lines and subtitles follow the same order, with the business and venue last.
+- Every filter has a column to see it in, and both go where they cannot tell anything apart: Business
+  is for the platform alone, and Venue for someone with more than one venue in view.
 
 ## Elevation
 
