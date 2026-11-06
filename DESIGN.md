@@ -98,6 +98,8 @@ addresses and file names.
 - **Columns** read as a sentence about the row: its subject, then the subject's own details, numbers
   included, then what it belongs to, business, venue, then router, and any action last. "Router x running
   RouterOS 7.25 is online with 6 devices, at business y's venue." The word is always Status.
+- Live sessions lists who is online now. Devices lists every device a venue has seen, online first, with
+  its MAC address, last seen, and Block; an offline device can also be removed.
 - A parent or a place is a column, never a line under the row's name; a model, an owner or an email can
   stay there. Area and Region are both columns wherever venues are listed. Cards, lines and subtitles follow the same order, with the business and venue last.
 - Operators and managers work on a phone, often one-handed at a counter, so their screens are designed
