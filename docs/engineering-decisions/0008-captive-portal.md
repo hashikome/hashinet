@@ -20,10 +20,10 @@ the router is HTTP, and query strings reach proxy logs.
    at `/portal/hotspot-files/:routerId/:name`. A gateway address cannot identify a router.
 3. **Fragments, not query strings.** The router sends a guest to `/portal/login#router=…`, and a
    printed QR code is `/portal/login#code=…`. A voucher names the WiFi: the guest joins it, then scans
-   to sign in with nothing to type, or enters the code. The code is 10 digits with no prefix, printed
-   grouped like a phone number; the portal opens the number keypad, groups the digits and signs in on
-   the last one. Ten digits are weaker than letters, so guessing must be limited across devices, not
-   only per device, before they ship (`voucher-codes.ts` still makes the older codes). A fragment reaches no server or log. A card scanned
+   to sign in with nothing to type, or enters the code. The code is 12 digits with no prefix, printed
+   in three groups of four, about as hard to guess as the letters it replaces; the portal opens the
+   number keypad, groups the digits and signs in on the last one (`voucher-codes.ts` still makes the
+   older codes). A fragment reaches no server or log. A card scanned
    with no router context keeps its code in the tab's `sessionStorage` on this origin and asks the
    guest to join the WiFi and continue. Continuing opens a plain http address, carrying no code,
    which the router intercepts and returns with context. That address is not ours, so the code
