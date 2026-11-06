@@ -46,14 +46,14 @@ and the guests. Owners are not network technicians, so the team installs it.
    goes. **Its setup**, for the whole team, operators included, once scheduled: add the router,
    install it on the date, set it up and check a phone; it closes when the first guest is online.
    Issues lists setups by date, soonest first.
-3. **One plan, a percentage of sales, per venue.** 10% of each voucher's price, so a TSh 500
-   voucher pays TSh 50, with a minimum of TSh 5,000 a month per venue: a venue that sells little or
-   nothing still pays for the infrastructure it uses, and a venue selling TSh 50,000 or more a month
+3. **One plan, a percentage of sales, per venue.** 5% of each voucher's price, so a TSh 500
+   voucher pays TSh 25, with a minimum of TSh 5,000 a month per venue: a venue that sells little or
+   nothing still pays for the infrastructure it uses, and a venue selling TSh 100,000 or more a month
    never meets the minimum. The minimum counts from the first full month after setup, and only while
    a router is serving. Volume lowers the rate, as bank transaction fees do: a
-   venue's sales above TSh 2,000,000 in a month pay 5%. The bands are marginal, like tax bands: only
-   the part above the threshold pays 5%, so selling one more voucher never raises the bill. A venue
-   selling TSh 4,000,000 pays TSh 300,000. Rates, threshold and minimum are Defaults figures. There is
+   venue's sales above TSh 1,500,000 in a month pay 2.5%. The bands are marginal, like tax bands: only
+   the part above the threshold pays 2.5%, so selling one more voucher never raises the bill. A venue
+   selling TSh 4,000,000 pays TSh 137,500. Rates, threshold and minimum are Defaults figures. There is
    no cap and no plan to choose: above the minimum, hashifi earns as the business earns, at every size.
 4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
    `active`): the price printed on the voucher, which the business sets. What a business charges a
