@@ -21,7 +21,10 @@ and what belongs to the business.
    business's operators, its sign-ins and its own team's invitations are the business's. The platform's
    audit log holds what its team and hashifi itself did, and a business owner accepting its invitation;
    a business's audit log holds everything done in that business, including what the platform did to
-   it, and what a business's people do never reaches the platform's. Of its devices and sessions it sees only counts:
+   it, and what a business's people do never reaches the platform's. hashifi's team never signs in as a
+   business or views its pages as it: when an issue needs what happened inside a business, its owner
+   exports the audit log and sends it over, and the team reads the server's logs (ADR-0002) to debug.
+   Of its devices and sessions it sees only counts:
    never a device list, a session or a customer's number. Everything a business
    sells and shows is the business's: its venues' names, locations, open hours and allowed sites, its
    packages and prices, captive portal, vouchers, payments, devices, team and profile.
