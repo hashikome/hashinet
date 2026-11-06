@@ -85,6 +85,10 @@ destination.
   whether a moving device can sign in without its code, and how a session's end is counted when it
   moves.
 
+- **The portal's scan icon** opens the camera where the page can use it. Apple's captive sheet cannot,
+  by design, so an iPhone is sent to its camera app, which opens the QR code's link in the browser.
+  Whether Android's captive sheet allows a camera is untested. Check in M8.
+
 - **A MAC address is only a claim.** Anyone on the network can copy one, and with it a device's
   cookie: inherent to hotspot networks. Nothing here treats a MAC as proof of anything else.
 - **RouterOS 6 is unproven.** The probe decides per board; only 7.25 has been run.
