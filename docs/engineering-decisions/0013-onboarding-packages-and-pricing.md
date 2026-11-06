@@ -59,7 +59,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    fee is a share of, so hashifi offers no instalments, and invoices, reminders and any payment link
    ask for the full amount. Whatever does arrive is recorded as it arrived and settles the oldest
    invoice first. A part payment does not stop an invoice going overdue, and service access follows
-   the overdue amount as usual (ADR-0014).
+   the overdue amount as usual (ADR-0014). Only fees count: an overdue onboarding charge holds back that
+   venue's setup and leaves service access alone.
 
 ## Consequences
 
