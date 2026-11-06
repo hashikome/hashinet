@@ -39,7 +39,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - [ ] H4: lists and forms that work on a phone; named actions; the router edit form.
 - [ ] H5: the captive portal: night top over a white sheet, the logo fallback, the welcome.
 - [ ] H6: the business screens: Team, Packages with CSV import, Settings, Account and security, Add a business,
-  and the platform's Defaults (the fees, packages and captive portal every new business starts with).
+  and the platform's Settings (the fees, packages and captive portal every new business starts with).
 - [ ] H7: design-audit on the result, findings fixed; `DESIGN.md`, runbooks and CHANGELOG current.
 
 ## Surprises & Discoveries
@@ -132,7 +132,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-05, owner.
 - Decision: each platform page is scoped by why the team opens it and what it may do there. The
   platform menu is Overview, Issues, Payments, Analytics; Manage: Businesses, Venues, Routers;
-  Platform: Defaults, Team, Invitations, Audit log. Venues is a list to find any venue across businesses, like
+  Platform: Team, Invitations, Audit log; Settings: Fees, Packages, Captive portal (themes, layout and messages). Venues is a list to find any venue across businesses, like
   Routers; venues stay read-only for the platform (ADR-0014). A business page holds one table, its
   venues, beside its profile card (with Change service access and Archive). A venue page shows its
   router, its sales, then its sites with Load more, or Getting started while it is set up. Lists end in

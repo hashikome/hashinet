@@ -15,7 +15,7 @@ and what belongs to the business.
 
 1. **What the platform does, and what the business does.** hashifi's team acts on businesses
    (invite, onboarding package, billing, service access, archive), on routers (add, configure, set
-   up, check, replace, remove), on Defaults, and on its own team, invitations and audit log. It sees
+   up, check, replace, remove), on Settings, and on its own team, invitations and audit log. It sees
    a business's owners and managers (name, email, role, venues), its venues, packages and captive
    portal read-only, and the invitations it issues itself (its own team, new businesses' owners). A
    business's operators, its sign-ins and its own team's invitations are the business's. The platform's

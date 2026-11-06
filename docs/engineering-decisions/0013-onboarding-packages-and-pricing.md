@@ -1,7 +1,7 @@
 # ADR-0013: Onboarding packages and pricing
 
 Status: accepted, 4 November 2026, by the owner. Figures are starting points, set in the platform's
-Defaults; the model is the decision.
+Settings; the model is the decision.
 
 ## Context
 
@@ -53,7 +53,7 @@ and the guests. Owners are not network technicians, so the team installs it.
    a router is serving. Volume lowers the rate, as bank transaction fees do: a
    venue's sales above TSh 2,000,000 in a month pay 2.5%. The bands are marginal, like tax bands: only
    the part above the threshold pays 2.5%, so selling one more voucher never raises the bill. A venue
-   selling TSh 4,000,000 pays TSh 150,000. Rates, threshold and minimum are Defaults figures. There is
+   selling TSh 4,000,000 pays TSh 150,000. Rates, threshold and minimum are figures in the platform's Settings. There is
    no cap and no plan to choose: above the minimum, hashifi earns as the business earns, at every size.
 4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
    `active`): the price printed on the voucher, which the business sets. What a business charges a
