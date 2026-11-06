@@ -108,9 +108,9 @@ addresses and file names.
   bottom tabs: Today, Sessions, Sell, Vouchers, Devices. Their top menu stays for the rest.
 - Dialogs read left to right, with Cancel and the action at the bottom right. Voucher issued is the one
   exception: it is shown to a guest across a counter, so all of it is centred, with Sell another first.
-- Save closes the form it saves: at the end of the form, at the right, inside its panel, never in the page
-  head. What adds to a list stays at the head of the list. Buttons at the right on a laptop stay at the right
-  on a phone.
+- Save closes the form it saves: at the end of the form, on its left edge, inside its panel, never in the
+  page head. What adds to a list stays at the head of the list. Buttons at the right on a laptop stay at the
+  right on a phone.
 - A row with one or two actions shows them as buttons. Three or more fold into one Actions button, with a
   danger action last and on its own. No select-all and top bar until a list needs the same action on many
   rows at once.
