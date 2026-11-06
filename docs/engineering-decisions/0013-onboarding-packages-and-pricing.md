@@ -83,7 +83,10 @@ and the guests. Owners are not network technicians, so the team installs it.
 6. **Invoices are paid in full by their due date.** The business has already collected the money its
    fee is a share of, so hashifi offers no instalments, and invoices, reminders and any payment link
    ask for the full amount. Each business is reminded on its own when its bill is due, by email and,
-   once set up, by SMS; staff remind one business as a follow-up, never all at once. Whatever does arrive is recorded as it arrived and settles the oldest
+   once set up, by SMS; staff remind one business as a follow-up, never all at once.
+   Confirming a package with a charge emails its invoice to the owner at once, and the setup issue can
+   record the payment or remind without leaving it. With online payments, a payment against the
+   invoice's control number closes that step by itself. Whatever does arrive is recorded as it arrived and settles the oldest
    invoice first. A part payment does not stop an invoice going overdue, and service access follows
    the overdue amount as usual (ADR-0014). Only fees count: they pay for service already used, while a one-off
    payment, such as an onboarding charge or an extra site, comes before what it buys, so leaving it
