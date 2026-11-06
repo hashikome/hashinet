@@ -64,8 +64,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: Invitations is the platform's page for finding and acting on invitations, not for issuing
   them: hashifi's team, new businesses and business teams, with Search, Kind and State filters and
   Resend, Revoke or Invite again. A business's invitations sit on its Team page instead, waiting ones
-  first, for an owner their business's and for a manager their venues'. It sits beside the audit log (Platform, or the business's own
-  group). Issuing stays where the grant lives: Invite a business on Businesses, people on Team.
+  first, for an owner their business's and for a manager their venues'. Issuing stays where the grant lives: Invite a business on Businesses, people on Team.
   Date/Author: 2026-11-04, owner.
 - Decision: a business's owner has their own Billing page, in the Business group: amount due, next due
   date, what has been paid, how to pay and every invoice, each opening its own page, with no Remind or
