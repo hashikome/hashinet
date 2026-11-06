@@ -21,7 +21,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    its line, the MikroTik router's radio and processor, and how many are active at once. A venue grows
    in two ways. Access points and extenders carry a MikroTik router's WiFi further and are not routers
    to hashifi: nothing counts them. Adding a router always means another MikroTik router at the same
-   venue, such as one for a hotel's restaurant, garden or floors. The ISP router is the business's own
+   venue, such as one for a hotel's restaurant, garden or floors. A router's name is its WiFi name, the
+   one guests see in their network list and the one a voucher tells them to join. The ISP router is the business's own
    and never counts. Each MikroTik router takes its internet on port 1 from the ISP router, a switch on
    its network, or a line of its own, never from another MikroTik router's ports, which sit behind that
    router's hotspot. An owner asks for a router from the venue or from Routers; it then goes through
