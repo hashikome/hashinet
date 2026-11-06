@@ -86,13 +86,14 @@ addresses and file names.
   included, then what it belongs to, business, venue, then router, and any action last. "Router x running
   RouterOS 7.25 is online with 6 devices, at business y's venue." The word is always Status.
 - A parent or a place is a column, never a line under the row's name; a model, an owner or an email can
-  stay there. Area is a column, and Region one only where the venues in view differ by it. Cards, lines and subtitles follow the same order, with the business and venue last.
+  stay there. Area and Region are both columns wherever venues are listed. Cards, lines and subtitles follow the same order, with the business and venue last.
 - A row's action sits at its right edge. With four columns or fewer the subject takes the spare width, so
   the row's details stay together at the right instead of drifting apart.
-- Every filter has a column to see it in, and both go where they cannot tell anything apart: Business
-  is for the platform alone, Venue for someone with more than one venue in view, and a filter whose
-  rows hold only one value is left out. A screen shows the same columns in every scope, less what a
-  role may not see; a platform operator has no Payments, so no money appears anywhere for them.
+- Columns follow scope, never today's rows. A column goes only if this person can never see it, as money
+  for a platform operator, or if the workspace already says it, as Business for an owner or Venue for
+  someone with one venue. Otherwise it stays, even if every row reads the same today.
+- Every list keeps Search, however short it is today: lists grow. A filter has a column to see it in, and
+  a dropdown shows once it can narrow the list, so it appears when a second value does.
 
 ## Elevation
 
