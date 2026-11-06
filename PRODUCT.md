@@ -107,7 +107,8 @@ a sale for the venue's figures. They suit different places, and a venue can use 
 - **Self-service on the portal (the default).** The guest picks a package and pays with their
   mobile number. When the payment is confirmed, HashiFi issues a voucher and logs **the device
   that paid** straight in: no code to type. The code is also **shown on screen with a Copy
-  button**, so the guest can keep it elsewhere, and sent to the phone number by SMS. Either copy
+  button**, so the guest can keep it elsewhere, and sent to the phone number by SMS if the business
+  has bought SMS credits (ADR-0013). Either copy
   is the receipt and the way to add a second device (within the package's limit) or reconnect;
   the screen copy is what makes a failed SMS harmless. The code is shown only to the portal
   session that made the payment, and that session can show it again until the voucher expires.
@@ -116,7 +117,7 @@ a sale for the venue's figures. They suit different places, and a venue can use 
   unreachable is retried until the guest has access, and is shown as access owed until then.
 - **Assisted sale.** A manager or admin records a payment (cash or mobile money) against the
   guest's phone number; HashiFi issues the voucher, shows it on the sale screen (to read out or
-  copy), and sends it to that phone by SMS, or the manager prints it. The fullest record: who paid, how, at which venue, for which voucher. Suits
+  copy), and sends it to that phone by SMS if the business has credits, or the manager prints it. The fullest record: who paid, how, at which venue, for which voucher. Suits
   regulars.
 - **Pre-printed cards.** Vouchers printed in batches are stock at a known price per venue,
   handed over for cash with no phone number or typing: the fastest, for a busy venue. A card

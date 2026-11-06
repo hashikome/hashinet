@@ -2,7 +2,8 @@
 
 Status: accepted, 31 October 2026, as proved against test doubles and the router sim. Held: HashiFi
 launches on printed vouchers, and this turns on with the providers' credentials. Real mobile money
-and SMS have not run yet.
+and SMS have not run yet. ADR-0013 makes SMS something a business buys, so point 7 applies only to a
+business with credits.
 
 ## Context
 

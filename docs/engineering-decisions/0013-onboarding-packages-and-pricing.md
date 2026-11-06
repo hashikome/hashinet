@@ -36,7 +36,7 @@ and the guests. Owners are not network technicians, so the team installs it.
    A package says what it includes, never a price or a model: the router that fits depends on the
    venue, so its model and price are agreed on that call, and the model is set when the router is added.
    Every venue includes one site open before paying, its business website; each further one takes
-   a slot paid for once (TSh 10,000 as a working figure; the price is still to be confirmed), issued
+   a slot paid for once, TSh 10,000, issued
    when the site is added, due 7 days later, and the site opens once it is paid. A paid slot stays
    with the venue if its site is removed. Blocking sites is free.
    A venue goes through two issues, one after the other. **Its package**, for the platform's owner
@@ -51,9 +51,9 @@ and the guests. Owners are not network technicians, so the team installs it.
    nothing still pays for the infrastructure it uses, and a venue selling TSh 100,000 or more a month
    never meets the minimum. The minimum counts from the first full month after setup, and only while
    a router is serving. Volume lowers the rate, as bank transaction fees do: a
-   venue's sales above TSh 1,500,000 in a month pay 2.5%. The bands are marginal, like tax bands: only
+   venue's sales above TSh 2,000,000 in a month pay 2.5%. The bands are marginal, like tax bands: only
    the part above the threshold pays 2.5%, so selling one more voucher never raises the bill. A venue
-   selling TSh 4,000,000 pays TSh 137,500. Rates, threshold and minimum are Defaults figures. There is
+   selling TSh 4,000,000 pays TSh 150,000. Rates, threshold and minimum are Defaults figures. There is
    no cap and no plan to choose: above the minimum, hashifi earns as the business earns, at every size.
 4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
    `active`): the price printed on the voucher, which the business sets. What a business charges a
@@ -67,6 +67,14 @@ and the guests. Owners are not network technicians, so the team installs it.
    the overdue amount as usual (ADR-0014). Only fees count: they pay for service already used, while a one-off
    payment, such as an onboarding charge or an extra site, comes before what it buys, so leaving it
    unpaid only holds that back and leaves service access alone.
+7. **SMS is the business's choice and its cost.** The fee includes no messages: a business that wants
+   codes sent by SMS buys credits in advance, per message with a minimum purchase (price and minimum
+   to be set). Without credits the code still appears on screen, so no guest is stranded. This narrows
+   ADR-0010, which sends a code by SMS on every payment.
+8. **Collecting payments online costs the business per sale,** on top of its fee, set from Snippe's
+   rates once they are known. Whether hashifi holds the money and pays businesses out, or each
+   business has its own payment account, is open: it depends on what Snippe offers and on what holding
+   other businesses' money requires in Tanzania. Printed vouchers stay at the plain fee.
 
 ## Consequences
 
