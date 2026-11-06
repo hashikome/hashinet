@@ -61,10 +61,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
-- Decision: Invitations is a page for finding and acting on invitations, not for issuing them: every
-  invitation in the viewer's scope (hashifi's team, new businesses, business teams for the platform; the
-  business's for an owner; their venues' for a manager), with Search, Kind and State filters and
-  Resend, Revoke or Invite again. It sits beside the audit log (Platform, or the business's own
+- Decision: Invitations is the platform's page for finding and acting on invitations, not for issuing
+  them: hashifi's team, new businesses and business teams, with Search, Kind and State filters and
+  Resend, Revoke or Invite again. A business's invitations sit on its Team page instead, waiting ones
+  first, for an owner their business's and for a manager their venues'. It sits beside the audit log (Platform, or the business's own
   group). Issuing stays where the grant lives: Invite a business on Businesses, people on Team.
   Date/Author: 2026-11-04, owner.
 - Decision: a business's owner has their own Billing page, in the Business group: amount due, next due
@@ -131,8 +131,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   shows its figures, venues today, people, details, the month's billing and its recent activity.
   Date/Author: 2026-11-05, owner.
 - Decision: each platform page is scoped by why the team opens it and what it may do there. The
-  platform menu is Overview, Analytics, Issues; Manage: Businesses, Venues, Routers, Defaults, Billing;
-  Platform: Team, Invitations, Audit log. Venues is a list to find any venue across businesses, like
+  platform menu is Overview, Issues, Analytics; Manage: Businesses, Venues, Routers, Billing;
+  Platform: Defaults, Team, Invitations, Audit log. Venues is a list to find any venue across businesses, like
   Routers; venues stay read-only for the platform (ADR-0014). A business page holds one table, its
   venues, beside its profile card (with Change service access and Archive). A venue page shows its
   router, its sales, then its sites with Load more, or Getting started while it is set up. Lists end in
@@ -220,8 +220,8 @@ not neutral. Every existing screen takes the new tokens; nothing else changes ye
 
 **H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Issues, Analytics; then
 Sales, Manage, Business), rendered from the API's capabilities, never from role names. Groups open
-like Analytics, one at a time, and the group holding the current page opens by itself; operators keep
-a short flat list. At the top,
+like Analytics, one at a time, and the group holding the current page opens by itself; operators have
+a short list with no groups. Guests' money is Guest payments, so it does not read as Billing. At the top,
 the business's logo and name (HashiFi with the Platform tag for platform staff) and the scope filter
 (all businesses or one; all venues or one; absent with one venue). At the foot, the account menu:
 name and role, the workspaces, Account and security, Sign out, and "Runs on HashiFi". One sign-in
