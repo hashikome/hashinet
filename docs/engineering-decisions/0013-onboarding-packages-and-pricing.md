@@ -56,8 +56,9 @@ and the guests. Owners are not network technicians, so the team installs it.
    selling TSh 4,000,000 pays TSh 150,000. Rates, threshold and minimum are figures in the platform's Settings. There is
    no cap and no plan to choose: above the minimum, hashifi earns as the business earns, at every size.
 4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
-   `active`): the price printed on the voucher, which the business sets. What a business charges a
-   guest above it is its own.
+   `active`): the price printed on the voucher, which the business sets. Every printed voucher shows
+   its price, so a guest can see when they are asked for more. What a business charges a guest above
+   it is its own.
 5. **VAT** does not apply while hashifi's turnover is under the TSh 200 million registration
    threshold. Revisit when it nears it.
 6. **Invoices are paid in full by their due date.** The business has already collected the money its

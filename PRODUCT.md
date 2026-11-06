@@ -64,7 +64,7 @@ limit, and is offered at selected venues.
 
 ### 4.3 Vouchers
 
-Admins and managers generate vouchers in batches for a package and print them with QR
+Admins and managers generate vouchers in batches for a package and print them with their price and QR
 codes, to sell for cash. A voucher bought on the portal is the same kind of voucher, issued
 when the payment is confirmed. A voucher's lifecycle is `unused → pending_activation → active → expired`, decided by
 the API and the router.
