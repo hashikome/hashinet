@@ -38,7 +38,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - [ ] H3: the overview as "right now", and the Analytics page, both computed by the API.
 - [ ] H4: lists and forms that work on a phone; named actions; the router edit form.
 - [ ] H5: the captive portal: night top over a white sheet, the logo fallback, the welcome.
-- [ ] H6: the business screens: Team, Packages with CSV import, Defaults, Settings, Add a business,
+- [ ] H6: the business screens: Team, Packages with CSV import, Defaults, Settings, Account and security, Add a business,
   and the platform's Defaults (the packages and captive portal every new business starts with).
 - [ ] H7: design-audit on the result, findings fixed; `DESIGN.md`, runbooks and CHANGELOG current.
 
@@ -164,7 +164,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-05, owner.
 - Decision: a business has Defaults too, what every new venue starts with, as the platform's says what
   every new business starts with; it sits in Manage for owners of several venues. There is no Profile
-  page: a business's name, address and logo are on the owner's Settings page, beside their account.
+  page: a business's name, address and logo are on its Settings page in the Business group, for owners,
+  apart from the person signed in, whose Account and security stays in the account menu.
   Date/Author: 2026-11-06, owner.
 - Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
   money coming in: to an owner what guests pay them, to the platform what businesses pay it, every
