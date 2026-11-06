@@ -114,6 +114,8 @@ addresses and file names.
 - Save closes the form it saves: at the end of the form, on its left edge, inside its panel, never in the
   page head. What adds to a list stays at the head of the list. Buttons at the right on a laptop stay at the
   right on a phone.
+- Steps stay short: one line of what to do, and a link to its how-to on the Help page, where the
+  downloads, commands and fixes live. Help is in the platform team's menu.
 - A row with one or two actions shows them as buttons. Three or more fold into one Actions button, with a
   danger action last and on its own. No select-all and top bar until a list needs the same action on many
   rows at once.
