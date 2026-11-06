@@ -132,7 +132,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-05, owner.
 - Decision: each platform page is scoped by why the team opens it and what it may do there. The
   platform menu is Overview, Issues, Payments, Analytics; Manage: Businesses, Venues, Routers;
-  Platform: Team, Invitations, Audit log; Settings: Fees, Packages, Captive portal (themes, layout and messages). Venues is a list to find any venue across businesses, like
+  Platform: Team, Invitations, Audit log; Settings: Fees, Packages, Captive portal (themes, layout and messages; a venue takes the platform's theme choices and default layout, and its business can choose its own). Venues is a list to find any venue across businesses, like
   Routers; venues stay read-only for the platform (ADR-0014). A business page holds one table, its
   venues, beside its profile card (with Change service access and Archive). A venue page shows its
   router, its sales, then its sites with Load more, or Getting started while it is set up. Lists end in
