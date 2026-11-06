@@ -17,6 +17,10 @@ and the guests. Owners are not network technicians, so the team installs it.
    MikroTik router's other ports, which must run as access points (bridge mode, no DHCP or NAT of their
    own) so the hotspot sees each device. The business's own staff network stays on the ISP router.
    The MikroTik router runs RouterOS 7 with the hotspot; any ISP router with an Ethernet port and DHCP works.
+   The ISP router sees one device, so its own limit on WiFi clients does not apply: a venue's limit is
+   its line, the MikroTik router's radio and processor, and how many are active at once. A venue grows
+   by adding WiFi routers as access points on one MikroTik router; a second internet line is for later,
+   since setup uses port 1 alone, and a separate building is a separate venue.
 2. **Three onboarding packages**, chosen per venue:
    - **Connect:** the venue has a compatible MikroTik router and ISP router; the team sets it up.
    - **Install:** the team brings the venue a MikroTik router, sets it up and installs it behind the

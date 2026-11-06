@@ -188,6 +188,12 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   largest, what it buys, the WiFi to join, the code, and a QR code centred on the right. The
   QR code signs the guest in once they have joined; they can type the number instead.
   Date/Author: 2026-11-06, owner.
+- Decision: guest limits are measured, not assumed. Before "room for N" means anything, stress-test each
+  MikroTik model on a real line with its packages' speed limits: add guests in steps (10, 20, 30, 50),
+  some browsing and some streaming, and record each one's speed, page load, processor load and whether
+  sign-in still works. The limit is where speeds fall below what is promised; until then the number on
+  the router page is a sample.
+  Date/Author: 2026-11-06, owner.
 - Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
   money coming in: to an owner what guests pay them, to the platform what businesses pay it, every
   business's charges. Billing is money going out, an owner's view of their own bills.
