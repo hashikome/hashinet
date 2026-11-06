@@ -59,7 +59,8 @@ background photo sits under a 55% black scrim.
   Chosen by measurement: it has true tabular figures, which DM Sans does not.
 - **Never a system font by design.** One exists only as the metric-adjusted fallback if the file
   fails to load.
-- **Sizes:** page title 24px, section 18px, figure 24px, body 14px, small 12px; nothing under 11px.
+- **Sizes:** page title 24px (22px on a profile card), section 15px, figure 25px, body 13.5px, secondary
+  13px, small 12px, pills 11.5px; nothing under 11px.
   On a phone the portal's body is 16px, so browsers do not zoom on focus.
 - Sentence case, no tracked capitals. Tabular figures on every number in a table or figure, right
   aligned. Monospace only for voucher codes, IDs and keys, in JetBrains Mono, self-hosted beside
@@ -79,8 +80,12 @@ addresses and file names.
 - A page is for what has steps to follow, a preview or a result to check: getting a venue online, setting up
   a router, printing vouchers, importing packages. Settings pages are forms by nature. So a long flow starts
   with a short popup that collects the basics, and its steps then have a page.
-- A profile card's actions act on its subject. An action that adds to a list sits at the top of that list.
-- A page for one thing keeps to it: a profile card, then its own panels, in every scope. What belongs
+- A profile card's actions act on its subject. An action that adds to a list sits at the head of that
+  list's own page, as Invite a business does, and never inside a detail page's panel. Add a venue and Add a
+  router are the same words in the same place for an owner and for the platform; on the platform each
+  starts a request taken down from an owner's call.
+- A page for one thing keeps to it: a profile card, then its own panels, in every scope. There is one venue
+  page, not one per role: each role sees the same page with what it has. What belongs
   elsewhere is a link. A venue links to its routers and its captive portal.
 - Anything that calls for someone's action is an issue: it is in Issues, and its notice sits at the top of the
   page, under the title. Daily operations are not issues; confirming a payment or recording a sale stay as
@@ -98,7 +103,7 @@ addresses and file names.
   the row's details stay together at the right instead of drifting apart.
 - Columns follow scope, never today's rows. A column goes only if this person can never see it, as money
   for a platform operator, or if the workspace already says it, as Business for an owner or Venue for
-  someone with one venue. Otherwise it stays, even if every row reads the same today. Router stays:
+  a manager or operator of one venue. An owner keeps Venue, as they can add another. Otherwise it stays, even if every row reads the same today. Router stays:
   its name is its WiFi name, which has nothing to do with the venue's.
 - Every list keeps Search, however short it is today: lists grow. A filter has a column to see it in, and
   a dropdown shows once it can narrow the list, so it appears when a second value does.

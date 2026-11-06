@@ -29,7 +29,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    router's hotspot. An owner adds a router by naming its venue; it then follows the same steps and the same
    two issues as a new venue, and its WiFi name is set when the router is added at setup.
    Every router starts from such a request: the platform has no way to add one without an issue behind it.
-   When an owner asks by phone for a router or a venue, the team starts the same request for them. A new
+   When an owner asks by phone for a router or a venue, the team starts the same request for them, with
+   Add a router on Routers or Add a venue on Venues. A new
    business still comes only by invitation. Replacing a router that failed is Set up again, not a new router. Its router and setup are one one-off charge on the bill, agreed
    on the call, and nothing else changes: the percentage and the minimum stay per venue, however many
    routers it has. A voucher works on every router at its venue (ADR-0008).
