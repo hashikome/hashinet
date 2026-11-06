@@ -73,8 +73,13 @@ addresses and file names.
 
 ## Actions and issues
 
-- An action opens a dialog over the page it started from, never a page of its own, and every dialog has one
-  layout: title, a line of context, stacked fields, then Cancel and the action at the bottom right.
+- A quick action opens a dialog over the page it started from: recording a payment, selling a voucher, adding a
+  site, buying credits, adding a package, editing a venue. Every dialog has one layout: title, a line of
+  context, stacked fields, then Cancel and the action at the bottom right. No form sits on a page waiting.
+- A multi-step action with instructions keeps its page: adding a venue or a router, printing vouchers,
+  importing packages. Settings pages are forms by nature.
+- A page for one thing keeps to it: a profile card, then its own panels, in every scope. What belongs
+  elsewhere is a link. A venue links to its routers and its captive portal.
 - Anything that calls for someone's action is an issue: it is in Issues, and its notice sits at the top of the
   page, under the title. Daily operations are not issues; confirming a payment or recording a sale stay as
   actions on their own page.
