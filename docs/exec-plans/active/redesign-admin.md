@@ -202,6 +202,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Vouchers, Overview, Today and Payments. Past months open by the Month filter; trends live in Sales, and what
   Hashifi charges in Billing.
   Date/Author: 2026-11-06, owner.
+- Decision: adding a venue takes its name and location in a popup. The venue then opens on the same Getting
+  started steps a new business sees, where the owner chooses how its router comes, so there is one workflow.
+  Date/Author: 2026-11-06, owner.
 - Decision: guest limits are measured, not assumed. Before "room for N" means anything, stress-test each
   MikroTik model on a real line with its packages' speed limits: add guests in steps (10, 20, 30, 50),
   some browsing and some streaming, and record each one's speed, page load, processor load and whether

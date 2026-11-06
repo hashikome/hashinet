@@ -74,10 +74,11 @@ addresses and file names.
 ## Actions and issues
 
 - A short form opens a dialog over the page it started from: recording a payment, selling a voucher, adding a
-  site, buying credits, adding a package, editing a venue, the team recording a router. Every dialog has one layout: title, a line of
+  site, buying credits, adding a package, adding or editing a venue, the team recording a router. Every dialog has one layout: title, a line of
   context, stacked fields, then Cancel and the action at the bottom right. No form sits on a page waiting.
-- A page is for what has steps to follow, a preview or a result to check: setting up a router, adding a
-  venue, printing vouchers, importing packages. Settings pages are forms by nature.
+- A page is for what has steps to follow, a preview or a result to check: getting a venue online, setting up
+  a router, printing vouchers, importing packages. Settings pages are forms by nature. So a long flow starts
+  with a short popup that collects the basics, and its steps then have a page.
 - A page for one thing keeps to it: a profile card, then its own panels, in every scope. What belongs
   elsewhere is a link. A venue links to its routers and its captive portal.
 - Anything that calls for someone's action is an issue: it is in Issues, and its notice sits at the top of the
