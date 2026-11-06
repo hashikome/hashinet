@@ -69,8 +69,10 @@ and the guests. Owners are not network technicians, so the team installs it.
    unpaid only holds that back and leaves service access alone.
 7. **SMS is the business's choice and its cost.** The fee includes no messages: a business that wants
    codes sent by SMS buys credits in advance, TSh 30 a message, at least 1,000 at a time (TSh 30,000).
-   Credits arrive once the purchase is paid, and it is a one-off charge. Without credits the code
-   still appears on screen, so no guest is stranded. This narrows
+   Credits arrive once the purchase is paid, and it is a one-off charge. Only packages of a day or
+   longer send a code by SMS: on an hourly package the message costs more than the sale earns and the
+   guest is gone before they need it. Without credits, or on a shorter package, the code still appears
+   on screen, so no guest is stranded. This narrows
    ADR-0010, which sends a code by SMS on every payment.
 8. **Collecting payments online costs the business per sale,** on top of its fee: Snippe's 2.5% of
    each successful payment, so an online sale costs 7.5% in all. Snippe holds the money in escrow and
