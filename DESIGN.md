@@ -76,7 +76,7 @@ addresses and file names.
 
 - A short form opens a dialog over the page it started from: recording a payment, selling a voucher, adding a
   site, buying credits, adding a package, adding or editing a venue, the team recording a router. Every dialog has one layout: title, a line of
-  context, stacked fields, then Cancel and the action at the bottom right. No form sits on a page waiting.
+  context, stacked fields, then the action and Cancel at the left. No form sits on a page waiting.
 - A page is for what has steps to follow, a preview or a result to check: getting a venue online, setting up
   a router, printing vouchers, importing packages. Settings pages are forms by nature. So a long flow starts
   with a short popup that collects the basics, and its steps then have a page.
