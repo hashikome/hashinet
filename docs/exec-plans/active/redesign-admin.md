@@ -69,7 +69,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-04, owner.
 - Decision: a business's owner has their own Billing page, in the top of the menu beside Payments, kept as simple as a
   way to pay their bills: what is due, their rate, how to pay and every invoice, each opening its own
-  page, with no Remind or Record payment. What they have spent on hashifi belongs to their own books. SMS credits sit beside it, because they are what a business buys from hashifi, not what it sells guests, and each purchase is an invoice there. Managers and
+  page, with no Remind or Record payment. What they have spent on hashifi belongs to their own books. Services holds what an owner opts into from hashifi: SMS credits, where each purchase is an invoice, and Online payments. Managers and
   operators see neither. Both pages are built to hold the place and get their polish in the business
   owner's review; how to pay uses sample numbers until how payments arrive is settled.
 - Decision: the platform's Payments page and an owner's Billing follow ADR-0013 (5% of sales, 2.5% above TSh 2M a month per venue, a minimum of TSh 5,000 a
@@ -236,7 +236,7 @@ data ember, ember as text `#A9530A`; problems in red, never ember. Dark: midnigh
 not neutral. Every existing screen takes the new tokens; nothing else changes yet.
 
 **H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Issues, Vouchers, Payments,
-Billing for owners, Analytics; then Manage, Business and Settings), rendered from the API's capabilities, never from role names. Analytics
+Billing for owners, Analytics; then Manage, Services for owners, Business and Settings), rendered from the API's capabilities, never from role names. Analytics
 and the groups open alike, one at a time: opening one closes the other, clicking it again closes it,
 and the one holding the current page opens by itself; operators have
 a short list with no groups. Payments shows what guests have paid over time, month by month, and an owner also sees hashifi's fee and what they keep; Billing shows what the business pays hashifi. At the top,
