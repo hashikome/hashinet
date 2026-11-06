@@ -185,7 +185,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-06, owner.
 - Decision: a printed voucher is 100 by 54mm, ten to an A4 sheet. A dark tear-off stub is the counter's
   record: package, price, code, sold. The guest's card has the venue across the top, the price largest
-  with what it buys under it, the WiFi to join, and on a tone block a QR code with its number below. The
+  with what it buys under it, the WiFi to join, and a QR code with its number below. The
   QR code signs the guest in once they have joined; they can type the number instead.
   Date/Author: 2026-11-06, owner.
 - Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
