@@ -26,8 +26,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    the venue's name: naming it after the venue helps guests, but nothing requires it. The ISP router is the business's own
    and never counts. Each MikroTik router takes its internet on port 1 from the ISP router, a switch on
    its network, or a line of its own, never from another MikroTik router's ports, which sit behind that
-   router's hotspot. An owner asks for a router from the venue or from Routers; it then goes through
-   the same two issues as a new venue. Its router and setup are one one-off charge on the bill, agreed
+   router's hotspot. An owner adds a router by naming its venue; it then follows the same steps and the same
+   two issues as a new venue, and its WiFi name is set when the router is added at setup. Its router and setup are one one-off charge on the bill, agreed
    on the call, and nothing else changes: the percentage and the minimum stay per venue, however many
    routers it has. A voucher works on every router at its venue (ADR-0008).
 2. **Three onboarding packages**, chosen per venue:

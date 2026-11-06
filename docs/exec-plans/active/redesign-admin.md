@@ -204,6 +204,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-06, owner.
 - Decision: adding a venue takes its name and location in a popup. The venue then opens on the same Getting
   started steps a new business sees, where the owner chooses how its router comes, so there is one workflow.
+  Adding a router is the same journey: its venue in a popup, then the same steps; its WiFi name comes at setup.
   Date/Author: 2026-11-06, owner.
 - Decision: guest limits are measured, not assumed. Before "room for N" means anything, stress-test each
   MikroTik model on a real line with its packages' speed limits: add guests in steps (10, 20, 30, 50),
