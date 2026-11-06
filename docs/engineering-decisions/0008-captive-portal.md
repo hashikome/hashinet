@@ -55,7 +55,7 @@ the router is HTTP, and query strings reach proxy logs.
    device that sent traffic while blocked is unblocked, the router takes about 50 seconds to
    accept it again.
 
-10. **A voucher works on every router at its venue.** Vouchers belong to the venue and only the API
+10. **A voucher works on every router at its venue** (how it is limited: ADR-0015). Vouchers belong to the venue and only the API
     signs a device in, so the API holds a voucher's time left and its devices wherever the guest is. On
     another of the venue's routers it puts the voucher there with the time left, reads it back as any
     new access must, and counts devices across the venue, so one code can never exceed its limit by

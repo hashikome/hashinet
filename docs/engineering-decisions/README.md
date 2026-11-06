@@ -30,3 +30,4 @@ links stay valid.
 | [0012](0012-audit-log.md) | The audit log, scoped like everything else | accepted |
 | [0013](0013-onboarding-packages-and-pricing.md) | Onboarding packages and pricing | accepted |
 | [0014](0014-service-access-and-venue-lifecycle.md) | Service access, archiving, and the venue lifecycle | accepted |
+| [0015](0015-voucher-online-limit-through-radius.md) | A voucher is limited by the devices online at once, through RADIUS | accepted |

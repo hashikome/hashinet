@@ -184,7 +184,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   are no alert panels on the overview.
   Date/Author: 2026-11-06, owner.
 - Decision: a printed voucher is 100 by 46mm, twelve to an A4 sheet. A tear-off stub is the counter's
-  record: a running number in bold to count by at the top, price, time and devices in the middle, and the code at the bottom. The whole voucher is white, and it prints in colour or in black and white. The guest's card has the venue's name, with the router's name as the WiFi to join lower down. It has the venue's name at the left end of the top row and its logo at the right, the price, which is
+  record: a running number in bold to count by at the top, price, time and devices in the middle, and the code at the bottom. The whole voucher is white, and it prints in colour or in black and white. The guest's card has the venue's name and no WiFi name: a voucher works on any WiFi at its venue (ADR-0015). It has the venue's name at the left end of the top row and its logo at the right, the price, which is
   largest, what it buys, the WiFi to join, the code, and a QR code centred on the right. The
   QR code signs the guest in once they have joined; they can type the number instead. The logo is optional and changes nothing else: a venue without one, or that
   chooses Hide when printing, gets the same voucher with that end empty. The app's letter tile is never printed.
