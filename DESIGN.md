@@ -91,7 +91,8 @@ addresses and file names.
   the row's details stay together at the right instead of drifting apart.
 - Columns follow scope, never today's rows. A column goes only if this person can never see it, as money
   for a platform operator, or if the workspace already says it, as Business for an owner or Venue for
-  someone with one venue. Otherwise it stays, even if every row reads the same today.
+  someone with one venue. Otherwise it stays, even if every row reads the same today. Router stays:
+  its name is its WiFi name, which has nothing to do with the venue's.
 - Every list keeps Search, however short it is today: lists grow. A filter has a column to see it in, and
   a dropdown shows once it can narrow the list, so it appears when a second value does.
 
