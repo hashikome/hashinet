@@ -69,7 +69,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-04, owner.
 - Decision: a business's owner has their own Billing page, in the Business group: amount due, next due
   date, what has been paid, how to pay and every invoice, each opening its own page, with no Remind or
-  Record payment. SMS credits sit under Sales, and each purchase is an invoice there. Managers and
+  Record payment. SMS credits sit beside it, because they are what a business buys from hashifi, not what it sells guests, and each purchase is an invoice there. Managers and
   operators see neither. Both pages are built to hold the place and get their polish in the business
   owner's review; how to pay uses sample numbers until how payments arrive is settled.
 - Decision: the Billing page follows ADR-0013 (5% of sales, 2.5% above TSh 2M a month per venue, a minimum of TSh 5,000 a
