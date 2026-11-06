@@ -100,6 +100,9 @@ addresses and file names.
   RouterOS 7.25 is online with 6 devices, at business y's venue." The word is always Status.
 - A parent or a place is a column, never a line under the row's name; a model, an owner or an email can
   stay there. Area and Region are both columns wherever venues are listed. Cards, lines and subtitles follow the same order, with the business and venue last.
+- A row with one or two actions shows them as buttons. Three or more fold into one Actions button, with a
+  danger action last and on its own. No select-all and top bar until a list needs the same action on many
+  rows at once.
 - A row's action sits at its right edge. With four columns or fewer the subject takes the spare width, so
   the row's details stay together at the right instead of drifting apart.
 - Columns follow scope, never today's rows. A column goes only if this person can never see it, as money
