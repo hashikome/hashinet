@@ -86,7 +86,8 @@ addresses and file names.
   starts a request taken down from an owner's call.
 - A page for one thing keeps to it: a profile card, then its own panels, in every scope. There is one venue
   page, not one per role: each role sees the same page with what it has. What belongs
-  elsewhere is a link. A venue links to its routers and its captive portal.
+  elsewhere is a link. A venue links to its routers and its captive portal. A card names its nearest parent and
+  no further: a router shows its venue, and the venue shows its business.
 - Anything that calls for someone's action is an issue: it is in Issues, and its notice sits at the top of the
   page, under the title. Daily operations are not issues; confirming a payment or recording a sale stay as
   actions on their own page.
