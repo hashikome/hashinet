@@ -68,13 +68,14 @@ and the guests. Owners are not network technicians, so the team installs it.
    payment, such as an onboarding charge or an extra site, comes before what it buys, so leaving it
    unpaid only holds that back and leaves service access alone.
 7. **SMS is the business's choice and its cost.** The fee includes no messages: a business that wants
-   codes sent by SMS buys credits in advance, per message with a minimum purchase (price and minimum
-   to be set). Without credits the code still appears on screen, so no guest is stranded. This narrows
+   codes sent by SMS buys credits in advance, TSh 30 a message, at least 1,000 at a time (TSh 30,000).
+   Without credits the code still appears on screen, so no guest is stranded. This narrows
    ADR-0010, which sends a code by SMS on every payment.
-8. **Collecting payments online costs the business per sale,** on top of its fee, set from Snippe's
-   rates once they are known. Whether hashifi holds the money and pays businesses out, or each
-   business has its own payment account, is open: it depends on what Snippe offers and on what holding
-   other businesses' money requires in Tanzania. Printed vouchers stay at the plain fee.
+8. **Collecting payments online costs the business per sale,** on top of its fee: Snippe's 2.5% of
+   each successful payment, so an online sale costs 7.5% in all. Snippe holds the money in escrow and
+   charges TSh 1,500 a payout. Who bears that, how often businesses are paid out, and whether hashifi
+   may direct payouts from that escrow to other businesses are open. Printed vouchers stay at the
+   plain fee.
 
 ## Consequences
 
