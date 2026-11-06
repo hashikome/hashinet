@@ -116,7 +116,7 @@ a sale for the venue's figures. They suit different places, and a venue can use 
   hour with nobody acting for the guest. A payment that succeeds while the router is
   unreachable is retried until the guest has access, and is shown as access owed until then.
 - **Assisted sale.** Anyone at the counter sells a voucher in one step: they record a payment (cash or
-  mobile money), with the guest's phone number if they have it; HashiFi issues the voucher, shows it on the sale screen (to read out or
+  mobile money), with the guest's phone number if they have it; HashiFi issues the voucher, shows it on the sale screen as a QR code the guest scans and as a code (to type or
   copy), and sends it to that phone by SMS on a package of a day or longer if the business has credits, or the manager prints it. The fullest record: who paid, how, at which venue, for which voucher. Suits
   regulars. An operator's sale issues at once and waits in Payments for an owner or manager to
   confirm the money.

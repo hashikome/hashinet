@@ -19,7 +19,7 @@ the router is HTTP, and query strings reach proxy logs.
 2. **The router names itself.** `login.html` is rendered per router and carries its id, served
    at `/portal/hotspot-files/:routerId/:name`. A gateway address cannot identify a router.
 3. **Fragments, not query strings.** The router sends a guest to `/portal/login#router=…`, and a
-   printed QR code is `/portal/login#code=…`. A voucher names the WiFi: the guest joins it, then scans
+   printed QR code is `/portal/login#code=…`. The guest joins the venue's WiFi, then scans
    to sign in with nothing to type, or enters the code. The code is 12 digits with no prefix, printed
    in three groups of four, about as hard to guess as the letters it replaces; the portal opens the
    number keypad, groups the digits and signs in on the last one (`voucher-codes.ts` still makes the
