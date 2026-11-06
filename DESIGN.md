@@ -79,6 +79,7 @@ addresses and file names.
 - A page is for what has steps to follow, a preview or a result to check: getting a venue online, setting up
   a router, printing vouchers, importing packages. Settings pages are forms by nature. So a long flow starts
   with a short popup that collects the basics, and its steps then have a page.
+- A profile card's actions act on its subject. An action that adds to a list sits at the top of that list.
 - A page for one thing keeps to it: a profile card, then its own panels, in every scope. What belongs
   elsewhere is a link. A venue links to its routers and its captive portal.
 - Anything that calls for someone's action is an issue: it is in Issues, and its notice sits at the top of the
