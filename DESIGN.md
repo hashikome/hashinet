@@ -102,7 +102,8 @@ addresses and file names.
   stay there. Area and Region are both columns wherever venues are listed. Cards, lines and subtitles follow the same order, with the business and venue last.
 - Operators and managers work on a phone, often one-handed at a counter, so their screens are designed
   at phone width first; owners and platform staff get a phone that works and a laptop that shines. Anything
-  tapped is at least 44px tall, and a form asks only what this sale needs.
+  tapped is at least 44px tall, and a form asks only what this sale needs. A business operator's phone has
+  bottom tabs: Today, Sessions, Sell, Vouchers, Devices. Their top menu stays for the rest.
 - A row with one or two actions shows them as buttons. Three or more fold into one Actions button, with a
   danger action last and on its own. No select-all and top bar until a list needs the same action on many
   rows at once.
