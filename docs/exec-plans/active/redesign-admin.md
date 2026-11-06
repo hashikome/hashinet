@@ -162,10 +162,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   else in the menu nests. Needs measuring before it ships: peak hours, sessions and data from router
   accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
   Date/Author: 2026-11-05, owner.
-- Decision: a business has Defaults too, what every new venue starts with, as the platform's says what
-  every new business starts with; it sits in Manage for owners of several venues. There is no Profile
-  page: a business's name, address and logo are on its Settings page in the Business group, for owners,
-  apart from the person signed in, whose Account and security stays in the account menu.
+- Decision: owners have a Settings section of their own, which managers and operators never see, and
+  which will grow: General (the business's name, address and logo, replacing Profile), Defaults (what
+  every new venue starts with, for owners of several venues) and Captive portal. It stands apart from
+  the person signed in, whose Account and security stays in the account menu. A manager keeps Captive
+  portal in Manage, for their own venues.
   Date/Author: 2026-11-06, owner.
 - Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
   money coming in: to an owner what guests pay them, to the platform what businesses pay it, every
@@ -225,7 +226,7 @@ data ember, ember as text `#A9530A`; problems in red, never ember. Dark: midnigh
 not neutral. Every existing screen takes the new tokens; nothing else changes yet.
 
 **H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Issues, Vouchers, Payments,
-Billing for owners, Analytics; then Manage, with Packages, and Business), rendered from the API's capabilities, never from role names. Analytics
+Billing for owners, Analytics; then Manage, with Packages, Business and, for owners, Settings), rendered from the API's capabilities, never from role names. Analytics
 and the groups open alike, one at a time: opening one closes the other, clicking it again closes it,
 and the one holding the current page opens by itself; operators have
 a short list with no groups. Payments shows what guests have paid over time, month by month, and an owner also sees hashifi's fee and what they keep; Billing shows what the business pays hashifi. At the top,
