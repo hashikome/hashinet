@@ -218,8 +218,10 @@ data ember, ember as text `#A9530A`; problems in red, never ember. Dark: midnigh
 `DESIGN.md` rewritten for Hearth, recording the deliberate exception that the dark theme is midnight,
 not neutral. Every existing screen takes the new tokens; nothing else changes yet.
 
-**H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Analytics; then Selling,
-Manage, Guests, Business), rendered from the API's capabilities, never from role names. At the top,
+**H2, shell.** The sidebar in groups (unlabelled: Overview, Live sessions, Analytics, Issues; then
+Sales, Manage, Business), rendered from the API's capabilities, never from role names. Groups open
+like Analytics, one at a time, and the group holding the current page opens by itself; operators keep
+a short flat list. At the top,
 the business's logo and name (HashiFi with the Platform tag for platform staff) and the scope filter
 (all businesses or one; all venues or one; absent with one venue). At the foot, the account menu:
 name and role, the workspaces, Account and security, Sign out, and "Runs on HashiFi". One sign-in
