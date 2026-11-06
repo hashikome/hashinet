@@ -172,6 +172,12 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   and captive portal, with no device counts; the router page shows the count and links to Devices,
   scoped to it. The platform sees the count only, so it has no link (ADR-0014).
   Date/Author: 2026-11-06, owner.
+- Decision: Issues is a business's centre too: anything that needs someone becomes an issue, shown on
+  the overview as the platform's are, and is worked from its own page. Router issues reach everyone
+  with Issues; vouchers running low reach owners and managers; SMS credits running low and bills reach
+  owners. Each closes itself once dealt with, and every page has Contact support, an email form to
+  hashifi that carries the issue. There are no alert panels on the overview.
+  Date/Author: 2026-11-06, owner.
 - Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
   money coming in: to an owner what guests pay them, to the platform what businesses pay it, every
   business's charges. Billing is money going out, an owner's view of their own bills.
