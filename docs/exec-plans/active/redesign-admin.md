@@ -165,8 +165,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: Settings is its own section, apart from the person signed in, whose Account and security
   stays in the account menu, and it will grow: General (the business's name, address and logo, for
   owners, replacing Profile), Packages and Captive portal, which managers see for their own venues.
-  There is no business Defaults page: what new venues start with is what is sold at all venues on
-  Packages, and New venues on Captive portal. Manage is Venues, Routers, Devices.
+  There is no business Defaults page: Packages has All venues, the default set new venues start with,
+  and each venue's own version from the same picker, showing each price as default, its own, not sold
+  there or only there; Captive portal has New venues. Manage is Venues, Routers, Devices.
 - Decision: devices connect to a router, not a venue. A venue shows its details, sales, sites, router
   and captive portal, with no device counts; the router page shows the count and links to Devices,
   scoped to it. The platform sees the count only, so it has no link (ADR-0014).

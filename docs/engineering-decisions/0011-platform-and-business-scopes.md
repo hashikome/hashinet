@@ -43,7 +43,10 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    managers, changes platform settings and secrets, sets what businesses pay, and deletes a business.
 4. **Venue scope inside a business.** A business owner reaches every venue of the business. A
    business manager or operator reaches only the venues on their membership, at least one. A manager
-   may add packages that are sold only at their own venues.
+   may add packages that are sold only at their own venues. A business has a default set of packages,
+   and a venue follows it until its owner gives that venue its own price or stops selling a package
+   there; a change to a default price never touches a venue with its own, and a printed voucher keeps
+   the price on it.
 5. **Platform staff see every business.** Platform roles reach all businesses and venues, narrowing
    to one with the scope filter at the top of the sidebar, which never changes workspace. Only Hashikome invites businesses and adds and configures routers: a router is configuration, not something a business types in. A business owner creates their business and first venue only by accepting an invitation, and adds further venues themselves, each waiting for a router (ADR-0014). Platform staff see a business's devices and sessions only as counts (ADR-0014).
 6. **Nobody gives more than they have.** A person invites only roles below their own, inside their
