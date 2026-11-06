@@ -106,6 +106,8 @@ addresses and file names.
   at phone width first; owners and platform staff get a phone that works and a laptop that shines. Anything
   tapped is at least 44px tall, with 16px text in fields and 15px on buttons, and a form asks only what this sale needs. On a phone a detail page shows its issues above the profile card. On a phone Search takes the full width, with filters in two columns below it. Related filters share a row: From and To always sit together, and a filter left alone takes the full row. A business operator's phone has
   bottom tabs: Today, Sessions, Sell, Vouchers, Devices. Their top menu stays for the rest.
+- A form's main button stays greyed until its required fields are filled; it never answers with an
+  error. Optional fields say so in their hint.
 - Buttons that finish a form sit on its left edge, in a dialog or on a page, with the main action first and
   Cancel next. Buttons that start something, like Invite or Add a router, stay at the right. Voucher issued is
   the one exception: it is shown to a guest across a counter, so all of it is centred, with Sell another first.
