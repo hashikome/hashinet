@@ -68,9 +68,9 @@ background photo sits under a 55% black scrim.
 ## Order in lists
 
 - **Filters** run Search, then business, venue and region, then kind or role, then status, then dates.
-- **Columns** start with the row's own subject. Business comes before venue, and venue before router.
-  Lists of things (businesses, venues, routers, devices) put status before their numbers; lists of
-  records (invoices, payments, vouchers, invitations) end with it. The word is always Status.
+- **Columns** read as a sentence about the row: its subject, then the subject's own details, numbers
+  included, then what it belongs to, business, venue, then router, and any action last. "Router x running
+  RouterOS 7.25 is online with 6 devices, at business y's venue." The word is always Status.
 - A parent is a column, never a line under the row's name. A column or filter with only one possible
   value is left out.
 
