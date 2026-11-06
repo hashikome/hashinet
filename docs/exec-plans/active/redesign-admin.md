@@ -214,7 +214,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Rationale: Cloudflare ends a request at about 100 seconds, and a result held in a dialog is lost
   on refresh. The API owns the workflow (ADR-0003), so the page only reads it.
   Date/Author: 2026-11-01 / Claude
-- Decision: a venue is a name, one location, its allowed sites and a status.
+- Decision: a venue is a name, a region from the closed list of 31, a typed area, its allowed sites and a
+  status (superseding one location of 1 and 3 November; `Venue.location` splits as business-scopes plans).
   Rationale: nothing else was used; a town and an address are the same answer to "where". Production
   held only test data, so dropping the columns discarded nothing of value.
   Date/Author: 2026-11-01 and 2026-11-03 / Paul

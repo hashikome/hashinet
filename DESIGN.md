@@ -65,6 +65,12 @@ background photo sits under a 55% black scrim.
   aligned. Monospace only for voucher codes, IDs and keys, in JetBrains Mono, self-hosted beside
   Figtree, so a code looks the same on every device and on paper.
 
+## The name in copy
+
+Hashifi, capitalised, in sentences and labels. Lower case only where it is the mark or a name in a
+system: the wordmark, "Runs on hashifi", the portal's signature, the automatic actor in logs, domains,
+addresses and file names.
+
 ## Order in lists
 
 - **Filters** run Search, then business, venue and region, then kind or role, then status, then dates.
@@ -72,9 +78,11 @@ background photo sits under a 55% black scrim.
   included, then what it belongs to, business, venue, then router, and any action last. "Router x running
   RouterOS 7.25 is online with 6 devices, at business y's venue." The word is always Status.
 - A parent or a place is a column, never a line under the row's name; a model, an owner or an email can
-  stay there. Cards, lines and subtitles follow the same order, with the business and venue last.
+  stay there. Area is a column, and Region one only where the venues in view differ by it. Cards, lines and subtitles follow the same order, with the business and venue last.
 - Every filter has a column to see it in, and both go where they cannot tell anything apart: Business
-  is for the platform alone, and Venue for someone with more than one venue in view.
+  is for the platform alone, Venue for someone with more than one venue in view, and a filter whose
+  rows hold only one value is left out. A screen shows the same columns in every scope, less what a
+  role may not see; a platform operator has no Payments, so no money appears anywhere for them.
 
 ## Elevation
 
