@@ -65,6 +65,15 @@ background photo sits under a 55% black scrim.
   aligned. Monospace only for voucher codes, IDs and keys, in JetBrains Mono, self-hosted beside
   Figtree, so a code looks the same on every device and on paper.
 
+## Order in lists
+
+- **Filters** run Search, then business, venue and region, then kind or role, then status, then dates.
+- **Columns** start with the row's own subject. Business comes before venue, and venue before router.
+  Lists of things (businesses, venues, routers, devices) put status before their numbers; lists of
+  records (invoices, payments, vouchers, invitations) end with it. The word is always Status.
+- A parent is a column, never a line under the row's name. A column or filter with only one possible
+  value is left out.
+
 ## Elevation
 
 Flat. A panel is a 1px `border` on the ground, and nothing at rest has a shadow. Only what truly
