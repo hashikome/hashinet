@@ -35,8 +35,10 @@ and the guests. Owners are not network technicians, so the team installs it.
    and nothing is charged before that, and the team can change the package until the router is added.
    A package says what it includes, never a price or a model: the router that fits depends on the
    venue, so its model and price are agreed on that call, and the model is set when the router is added.
-   Every venue includes one site open before paying, its business website; each further one is a
-   paid add-on (price to be set), and blocking sites is free.
+   Every venue includes one site open before paying, its business website; each further one takes
+   a slot paid for once (TSh 10,000 as a working figure; the price is still to be confirmed), issued
+   when the site is added, due 7 days later, and the site opens once it is paid. A paid slot stays
+   with the venue if its site is removed. Blocking sites is free.
    A venue goes through two issues, one after the other. **Its package**, for the platform's owner
    and managers only: call the owner, confirm the package, router model, agreed price (router and
    onboarding together, on the business's bill) and notes; get it paid when there is a charge, due 7
@@ -45,11 +47,14 @@ and the guests. Owners are not network technicians, so the team installs it.
    install it on the date, set it up and check a phone; it closes when the first guest is online.
    Issues lists setups by date, soonest first.
 3. **One plan, a percentage of sales, per venue.** 10% of each voucher's price, so a TSh 500
-   voucher pays TSh 50; no sales, no fee. Volume lowers the rate, as bank transaction fees do: a
+   voucher pays TSh 50, with a minimum of TSh 5,000 a month per venue: a venue that sells little or
+   nothing still pays for the infrastructure it uses, and a venue selling TSh 50,000 or more a month
+   never meets the minimum. The minimum counts from the first full month after setup, and only while
+   a router is serving. Volume lowers the rate, as bank transaction fees do: a
    venue's sales above TSh 2,000,000 in a month pay 5%. The bands are marginal, like tax bands: only
    the part above the threshold pays 5%, so selling one more voucher never raises the bill. A venue
-   selling TSh 4,000,000 pays TSh 300,000. Rates and threshold are Defaults figures. There is no
-   fixed monthly plan and no cap: hashifi earns as the business earns, at every size.
+   selling TSh 4,000,000 pays TSh 300,000. Rates, threshold and minimum are Defaults figures. There is
+   no cap and no plan to choose: above the minimum, hashifi earns as the business earns, at every size.
 4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
    `active`): the price printed on the voucher, which the business sets. What a business charges a
    guest above it is its own.
