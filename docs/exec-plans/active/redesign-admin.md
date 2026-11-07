@@ -38,7 +38,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - [ ] H3: the overview as "right now", and the Analytics page, both computed by the API.
 - [ ] H4: lists and forms that work on a phone; named actions; the router edit form.
 - [ ] H5: the captive portal: night top over a white sheet, the logo fallback, the welcome.
-- [ ] H6: the business screens: Team, Packages with CSV import, Settings, Account and security, Add a business,
+- [ ] H6: the business screens: Team, Packages with a CSV export, Settings, Account and security, Add a business,
   and the platform's Settings (the fees, packages and captive portal every new business starts with).
 - [ ] H7: design-audit on the result, findings fixed; `DESIGN.md`, runbooks and CHANGELOG current.
 
@@ -309,7 +309,7 @@ the venue's, else the business's, else HashiFi's. The router's pages stay byte-e
 garden is checked against the script Cloudflare injects into guests' pages.
 
 **H6, business screens.** Team (invite a manager or an operator to chosen venues; managers invite
-operators), Packages (the defaults, venue-only packages, CSV import with a preview), Business
+operators), Packages (the defaults, venue-only packages, a CSV export; no import, as a business has only a handful), Business
 profile (name, logo, each venue's portal), and for platform staff Add a business and Default
 packages. Needs business-scopes M3 to M5.
 

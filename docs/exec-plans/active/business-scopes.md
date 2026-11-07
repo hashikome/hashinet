@@ -27,7 +27,7 @@ not found.
   migration of existing rows.
 - [ ] M2: the access policy and the principal; every service scoped through it; the audit log (ADR-0012).
 - [ ] M3: invitations and the people API for both scopes; adding a business for platform staff.
-- [ ] M4: packages per business, the platform defaults and CSV import.
+- [ ] M4: packages per business, the platform defaults and a CSV export.
 - [ ] M5: the business profile: name and logo, stored and served as ADR-0009 says.
 - [ ] M6: live acceptance against production with a test business, once the Hearth screens exist.
 
@@ -144,9 +144,8 @@ invitations show there with Resend and Revoke. Team pages list people and pendin
 together. The owner's Business profile page sets the logo. Every change audited.
 
 **M4, packages.** Business packages seeded from the platform defaults on creation; venue-limited
-packages for managers; CSV import: parse, validate (name, duration such as `1h`, `24h`, `7d`, devices,
-price in TSh, venues as `all` or names), return a preview of adds and updates, apply on confirm; no
-deletes.
+packages for managers; a CSV export of every package, its price and where it is sold. No import: a
+business has a handful of packages, and Add a package covers them (owner's decision, 7 November 2026).
 
 **M5, business profile.** The business's name and logo (owner only), the logo through the same
 checks and store as venue brands, and the portal's fallback (venue, business, HashiFi) served by
@@ -176,7 +175,7 @@ From the repository root: `bun run db:migrate` (M1), `bun run verify`, `bun run 
   membership; expiry, supersession and revocation work; the audit log records each.
 - Switching tests: a person with a platform and a business membership sees only the active one's
   data; switching to a membership that is not theirs is refused; each switch is audited.
-- CSV import tests: a valid file previews then applies; a bad row names its line and nothing is saved.
+- CSV export test: every package, price and venue appears once, in the documented columns.
 - Live: a test business in production walks the Purpose's story end to end.
 
 ## Idempotence And Recovery
