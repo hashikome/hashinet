@@ -174,7 +174,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
   Date/Author: 2026-11-05, owner.
 - Decision: online payments, end to end (7 November 2026). An owner asks from Online payments with a
-  form: where payouts go (mobile money number, or bank and account number) and the name on that
+  form: where payouts go (a bank account first and by default, its bank and account number; or a
+  mobile money number, kept only if the provider pays out to one, to confirm) and the name on that
   account; the business's TIN, its licence or registration certificate, and the owner's national ID
   (NIDA) number; and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
   the page shows "Waiting for Hashifi", what was sent, and Change details. The platform's row opens a
