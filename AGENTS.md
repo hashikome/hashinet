@@ -97,7 +97,8 @@ or discard user data without explicit approval.
   ([ADR-0008](docs/engineering-decisions/0008-captive-portal.md)): the router accepts no login
   from the network, so never enable an http login method.
 - **Time:** stored in UTC; business days are calculated in `Africa/Dar_es_Salaam`.
-- **Copy:** mobile money is "mobile money" and "mobile number"; never name a provider. The device
+- **Copy:** mobile money is "mobile money" and "mobile number" in what guests and staff read; never name
+  the payment company behind it. An owner choosing where payouts go picks a named network. The device
   hashifi runs on is a "MikroTik router", never a bare "MikroTik".
 - **Personal data:** real people's data stays out of the repository, `ref/` and logs.
   Development uses seeded, invented data only.
