@@ -183,8 +183,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   review: what they sent (the licence to view, the ID masked to its last four digits), three checks
   (the account is in the business's or owner's name, the TIN and licence name the same business, the
   ID is the owner's), then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
-  fees, what waits for payout and when, what was paid out, the payouts (amount, payout fee, received,
-  reference) and the payout details with Change, which pauses payouts until the new details are
+  fees, what waits for payout and when, what was paid out, the latest three payouts with All payouts, a
+  table with search, Month and Status filters and Load more, where each payout opens its statement
+  like an invoice (the week of online sales and how many vouchers, less 7.5%, less the payout fee, what
+  was sent, to which account, with its reference and a PDF) and the payout details with Change, which pauses payouts until the new details are
   checked; the platform sees the same for the business, with Turn off. What the provider requires to
   pay a business out is to confirm with it (ADR-0013, 8); these fields are the expected set.
 - Decision: the platform has a Services section too (7 November 2026), beside Settings, for owners and
