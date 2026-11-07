@@ -142,8 +142,12 @@ addresses and file names.
   stay there. Region and Area, in that order, are both columns wherever businesses or venues are listed. Cards, lines and subtitles follow the same order, with the business and venue last.
 - Operators and managers work on a phone, often one-handed at a counter, so their screens are designed
   at phone width first; owners and platform staff get a phone that works and a laptop that shines. Anything
-  tapped is at least 44px tall, with 16px text in fields and 15px on buttons, and a form asks only what this sale needs. On a phone a detail page shows its issues above the profile card. On a phone Search takes the full width, with filters in two columns below it. Related filters share a row: From and To always sit together, and a filter left alone takes the full row. A business operator's phone has
-  bottom tabs: Today, Sessions, Sell, Vouchers, Devices. Their top menu stays for the rest.
+  tapped is at least 44px tall, with 16px text in fields and 15px on buttons, and a form asks only what this sale needs. On a phone a detail page shows its issues above the profile card. On a phone Search takes the full width, with filters in two columns below it. Related filters share a row: From and To always sit together, and a filter left alone takes the full row. On a phone, anyone in a
+  business working at one serving venue has bottom tabs: Overview (Today for an operator), Sessions,
+  Sell, Vouchers, Devices. An operator always has them; an owner or manager once their view is one
+  venue, picked in the scope filter or because it is their only one. With all venues in view, or a
+  venue still setting up, there are none. The top menu stays for the rest, and the page's own Sell
+  button hides while the tabs show.
 - A form's main button stays greyed until its required fields are filled; it never answers with an
   error. Optional fields say so in their hint.
 - Buttons that finish a form sit on its left edge, in a dialog or on a page, with the main action first and
