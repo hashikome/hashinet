@@ -225,7 +225,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   owners, replacing Profile), Packages and Captive portal, which managers see for their own venues.
   There is no business Defaults page: Packages has All venues, the default set new venues start with,
   and each venue's own version from the same picker, showing each price as default, its own, not sold
-  there or only there; Captive portal has New venues. Manage is Venues, Routers, Devices for every owner, one venue or several, so an owner can always reach their venue and ask for another; a manager's is Router, Devices.
+  there or only there. Each package of the business, and each venue-only one, has Edit (name, time,
+  devices, price) and Remove, which asks first; a package removed or changed leaves vouchers already
+  printed or sold as they were, and its sales stay in the figures (7 November 2026). Captive portal has New venues. Manage is Venues, Routers, Devices for every owner, one venue or several, so an owner can always reach their venue and ask for another; a manager's is Router, Devices.
 - Decision: devices connect to a router, not a venue. A venue shows its details, sales, sites, router
   and captive portal, with no device counts; the router page shows the count and links to Devices,
   scoped to it. The platform sees the count only, so it has no link (ADR-0014).
