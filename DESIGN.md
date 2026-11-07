@@ -116,6 +116,8 @@ addresses and file names.
   right on a phone.
 - Steps stay short: one line of what to do, and a link to its how-to on the Help page, where the
   downloads, commands and fixes live. Help is in the platform team's menu.
+- An overview shows three rows of each list, what needs a look first, and links to the full page; the
+  list's own page shows the rest.
 - Load more appears only when a page of 25 is full. A list that fits, or a search with a few results,
   shows none.
 - A row with one or two actions shows them as buttons. Three or more fold into one Actions button, with a
