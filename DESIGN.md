@@ -165,6 +165,10 @@ addresses and file names.
 - Emails, phone numbers, account numbers, references and voucher codes copy when clicked, with a dotted
   underline and a copy cursor. Emailing or calling someone is an explicit button (Email Neema, Call Baraka),
   only where that is the step; every email goes out through the one shared email form.
+- An action that can't be taken back (end, block, revoke, remove, turn off, archive) asks first, in one
+  shared dialog: a question naming the thing ("Revoke the invitation to halima@…?"), one sentence on
+  what happens and what stays, then a red button that names the action ("Revoke invitation", never
+  "Yes" or "OK") beside Cancel, which has the focus. Actions that are easily undone don't ask.
 - A row with one or two actions shows them as buttons. Three or more fold into one Actions button, with a
   danger action last and on its own. No select-all and top bar until a list needs the same action on many
   rows at once.
