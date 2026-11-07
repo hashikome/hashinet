@@ -71,8 +71,10 @@ say what to do in plain terms; the bonfire stays in the welcome and the brand, n
 
 The journey: on the voucher path, a wrong code keeps what was typed; a voucher at its device limit asks
 for its switch PIN to move here; a scan opens the camera where the page can: a tall live view with a
-square to aim at whose corners breathe while it looks and turn green with "Voucher found" when it reads
-one, the torch only where the phone lets a web page use it, and "Enter the code instead" always below. If
+square to aim at whose corners breathe while it looks, the torch only where the phone lets a web page use
+it, and "Enter the code instead" always below. A read is not announced: it goes straight to signing in, or
+to what stands in the way (the voucher has run out: buy more time or scan another; it is in use: its
+switch PIN moves it here). If
 the camera is blocked it says how to allow it; where the page cannot open it at all (an iPhone's sign-in
 sheet), it says to use the camera app. On the buy path, Pay waits on the phone's approval and moves on by itself; a failed
 payment says nothing was taken. Join the WiFi, Move it here and Pay stay greyed until their field is
