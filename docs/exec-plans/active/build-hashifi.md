@@ -733,12 +733,26 @@ access is granted. Printed vouchers sold for cash stay a supported path alongsid
   that session, until the voucher expires) and on the staff sale screen. A failed SMS (the
   provider reports a failure or the confirmation is overdue) is therefore harmless; the screen
   says it was not delivered and to keep the code shown, and contact the venue if both are lost.
+- **Payouts to businesses** (ADR-0013, 8), recorded by the API, never typed in: a weekly job checks
+  the Snippe balance and the payout fee (`/v1/payouts/fee`), then sends each business with TSh 20,000
+  or more waiting a payout (`POST /v1/payouts/send`) to its checked bank account or mobile money
+  number, and marks it "on its way". The signed, idempotent webhooks `payout.completed`,
+  `payout.failed` and `payout.reversed` mark it paid (with the provider's reference), failed or
+  reversed; a failed or reversed payout raises a platform issue, whose Retry sends it again. A daily
+  job fetches any payout still on its way (`GET /v1/payouts/{ref}`) in case a webhook never came.
+  Each payout is a statement of a week's online sales, less 7.5%, less the payout fee. To confirm
+  with Snippe before building: that HashiFi may pay out from its account to its businesses' accounts
+  (and what Snippe checks about who receives), whether the payout fee is the flat TSh 1,500 or what
+  the fee lookup returns, the minimum (TSh 5,000 in its client libraries), and whether payouts go to
+  mobile money or only to bank accounts. Endpoint names come from Snippe's client libraries; its
+  payouts page was not reachable on 7 November 2026, so check them against its API reference.
 - Acceptance: on the router sim, each path gets the guest online and into the venue's figures:
   a payment through Snippe's sandbox logs the paying device in and sends the code; an assisted
   sale sends or prints it; a pre-printed card is counted when redeemed. A replayed or unsigned
   webhook changes nothing; a paid-but-unprovisioned payment is retried and recovers; with SMS
   failing, the paying device still gets online, its screen still shows the code to copy, and
-  another session cannot see it.
+  another session cannot see it. In Snippe's test environment, a payout goes out weekly and is
+  marked paid by its webhook; a failed one raises an issue, and Retry recovers it.
 
 ### M7 Release pipeline and deployment
 

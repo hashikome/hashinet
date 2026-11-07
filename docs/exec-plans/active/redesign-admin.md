@@ -186,7 +186,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   fees, what waits for payout and when, what was paid out, the latest three payouts with All payouts, a
   table with search, Month and Status filters and Load more, where each payout opens its statement
   like an invoice (the week of online sales and how many vouchers, less 7.5%, less the payout fee, what
-  was sent, to which account, with its reference and a PDF) and the payout details with Change, which pauses payouts until the new details are
+  was sent, to which account, with its reference and a PDF). A payout's status is the provider's:
+  On its way, Paid, Failed or Reversed; a failed or reversed one says why, tells the owner to check
+  their details, and is a platform issue with Retry payout, which shows paid only once confirmed and the payout details with Change, which pauses payouts until the new details are
   checked; the platform sees the same for the business, with Turn off. What the provider requires to
   pay a business out is to confirm with it (ADR-0013, 8); these fields are the expected set.
 - Decision: the platform has a Services section too (7 November 2026), beside Settings, for owners and
