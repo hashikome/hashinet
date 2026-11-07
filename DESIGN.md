@@ -80,7 +80,10 @@ sheet), it says to use the camera app. On the buy path, Pay waits on the phone's
 payment says nothing was taken. Join the WiFi, Move it here and Pay stay greyed until their field is
 complete. When a venue asks guests to accept terms, it writes them in its portal settings,
 and a line under Join the WiFi and Pay links to them: "By joining, you accept the venue's terms." Signing in shows the code and nothing else; the code gets a Copy button only where the guest
-needs it: when the sign-in fails, and on the online page beside the switch PIN, shown once.
+needs it: when the sign-in fails, and on the online page, where one button copies the code and the
+switch PIN together and asks the guest to keep both, since the PIN shows only once. The printed
+voucher says what to do in order (join our WiFi, then scan or enter this code) and asks the guest
+to keep nothing.
 
 ## Typography
 
