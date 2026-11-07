@@ -188,7 +188,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   checked; the platform sees the same for the business, with Turn off. What the provider requires to
   pay a business out is to confirm with it (ADR-0013, 8); these fields are the expected set.
 - Decision: the platform has a Services section too (7 November 2026), beside Settings, for owners and
-  managers: Online payments lists every business as Asked, On or Off (asked first), with its venues,
+  managers: Online payments lists the businesses that asked, are on, or used it before (an Off one
+  keeps its sales and payouts; one that never asked is not listed), asked first, with its venues,
   online sales this month and last payout, Turn on for one that asked and Turn off for one that is on;
   SMS credits lists credits left, sent this month, how long they last at this month's rate and the last
   purchase, with those waiting for payment and those running low first, and Record payment on an unpaid
