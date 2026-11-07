@@ -61,13 +61,20 @@ printed voucher. The whole page is one colour with the action button filled, and
 faint in the bottom corner, as on sign-in. Every page fits one phone screen, the signature included;
 fields and buttons are 44px.
 
-Themes are a page colour and a button colour. The defaults are Midnight and ember (the default),
-Midnight and white, and White (a white page with the app's midnight button). A business can pick its own
-two colours. Everything else is worked out from the two: text is midnight or off-white, whichever reads
+Themes are a page colour and a button colour. There are three: Midnight and ember (the default), White
+(a white page with the app's midnight button), and Your colours, which starts at wine `#7A1F2B` and gold
+`#F2C14E` for a business to change to its own. Everything else is worked out from the two: text is midnight or off-white, whichever reads
 on the page (black or white on a mid-tone page where neither reaches 4.5:1), secondary text is the
 softest grey that still reads at 4.5:1, field edges and the chosen package reach 3:1, and the button's
 text is midnight or white. A button colour too close to the page colour is flagged. The portal's words
 say what to do in plain terms; the bonfire stays in the welcome and the brand, not in instructions.
+
+The journey: on the voucher path, a wrong code keeps what was typed; a voucher at its device limit asks
+for its switch PIN to move here; a scan opens the camera where the page can, and otherwise says to use
+the camera app. On the buy path, Pay waits on the phone's approval and moves on by itself; a failed
+payment says nothing was taken. Join the WiFi, Move it here and Pay stay greyed until their field is
+complete. Signing in shows the code and nothing else; the code gets a Copy button only where the guest
+needs it: when the sign-in fails, and on the online page beside the switch PIN, shown once.
 
 ## Typography
 
