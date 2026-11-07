@@ -120,8 +120,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   resolved issue keeps its own page at the same address: what happened, in order, with who and when.
 - Decision: a venue's sites are their own table on the venue page, each open before paying or
   blocked for everyone, with who added it, when and why; the business edits it, the platform reads
-  it. Blocking depends on what the router supports, so the dialect probes for it. An extra site shows
-  what its slot cost and waits for payment before it opens; each slot has its own invoice on the bill.
+  it. Blocking depends on what the router supports, so the dialect probes for it. An extra site says
+  what its slot costs before it is added ("Add and pay TSh 10,000"), then goes straight to its own
+  invoice with how to pay, and waits for payment before it opens; while it waits, its row has Pay,
+  which opens that invoice. Blocking a site is free (7 November 2026).
 - Decision: a router's page follows its state. Setting up, it is the same steps as the business's
   Getting started (add the router and run its script, install, set up, check a phone), each ticking itself. Once
   it has served, a profile card (model and RouterOS, venue, status, internet, hotspot network, added,
