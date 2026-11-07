@@ -294,8 +294,9 @@ name and role, the workspaces, Account and security, Sign out, and "Runs on Hash
 screen for everyone, named HashiFi with no "staff" or "admin" wording. The sign-in is always dark, whatever the
 theme setting: a midnight field, the open ring large in the lower right, and a 420px card (title,
 email, Continue, the terms line, "Need help signing in?" with Contact support), sized one step
-above the admin's controls; no logo in the corner; a footer strip with "Send feedback" and
-"© <year> Shikome Technology Limited | Privacy | Terms" on every step, stacked on a phone. The code and passkey steps use the
+above the admin's controls; no logo in the corner; a footer strip with
+"© <year> Shikome Technology Limited" on the left and the links Privacy, Terms and Send feedback together
+on the right, on every step; on a phone the links come first and the copyright closes the page. The code and passkey steps use the
 same frame. Prototype: `prototypes/hearth-design/prototype/`. Below 768px a
 48px bar and a sheet. Needs business-scopes M2.
 
