@@ -174,8 +174,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
   Date/Author: 2026-11-05, owner.
 - Decision: online payments, end to end (7 November 2026). An owner asks from Online payments with a
-  one-page form in three sections, each titled on the left with its fields on the right: the business
-  first (its type as two cards, one per line, then that type's documents in one column), then where
+  one-page form in four sections, each titled on the left with its fields on the right: You first (the
+  owner verified once and kept on their account: the sign-in email, already verified; the national ID
+  checked by an identity provider, to choose (Snippe uses Veriff, which takes a photo of the ID and a
+  selfie; a NIDA database check would need neither); the mobile number by an SMS code), then the business (its type as two cards, one per line, then that type's documents in one column), then where
   payouts go (a bank account first and by default, its bank and account number; or a
   mobile money network, picked from the networks the platform supports, and number, kept only if
   the provider pays out to one, to confirm) and the name on that
@@ -183,12 +185,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   proprietor, who may be informal: personal TIN and its certificate, and a business licence in their
   own name from the Tausi portal if they have one; a registered company: BRELA number with its Certificate of
   Incorporation, business licence, and TIN with its certificate; only these two: individuals and
-  companies; NGOs are added if Hashifi ever serves them), and the owner's national ID
-  (NIDA) number for every type; and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
+  companies; NGOs are added if Hashifi ever serves them); and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
   the page says "We're checking your details", when they asked and that the owner is emailed once it is on, then what was sent and Change details. The platform's row opens a
-  review: what they sent (each certificate to view, the ID masked to its last four digits), three checks
+  review: what they sent (each certificate to view, and the owner shown as verified), three checks
   (the account is in the business's or owner's name, the documents name the same business, with the TIN
-  given, the ID is the owner's); a manager reviews and approves. View on each document opens that
+  given); a manager reviews and approves. View on each document opens that
   uploaded file (an image or PDF preview, with Open original), then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
   fees, what waits for payout and when, what was paid out, the latest three payouts with All payouts, a
   table with search, Month and Status filters and Load more, where each payout opens its statement
@@ -216,6 +217,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   codes, opens "Confirm it's you" first: a code from the current app, or "Lost your old phone? Use a
   recovery code" (or the passkey, when there is one). Adding a passkey opens the browser's
   own prompt; nothing of ours.
+- Decision: General is one Business profile section (7 November 2026): the logo with Replace, the
+  business name, then Region (a select) and Area or street apart, as at the invitation; the address
+  goes on invoices.
 - Decision: Settings is its own section, apart from the person signed in, whose Account and security
   stays in the account menu, and it will grow: General (the business's name, address and logo, for
   owners, replacing Profile), Packages and Captive portal, which managers see for their own venues.
