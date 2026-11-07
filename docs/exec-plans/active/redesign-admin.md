@@ -175,7 +175,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-05, owner.
 - Decision: online payments, end to end (7 November 2026). An owner asks from Online payments with a
   form: where payouts go (a bank account first and by default, its bank and account number; or a
-  mobile money number, kept only if the provider pays out to one, to confirm) and the name on that
+  mobile money network, picked from the networks the platform supports, and number, kept only if
+  the provider pays out to one, to confirm) and the name on that
   account; the business's TIN, its licence or registration certificate, and the owner's national ID
   (NIDA) number; and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
   the page shows "Waiting for Hashifi", what was sent, and Change details. The platform's row opens a
