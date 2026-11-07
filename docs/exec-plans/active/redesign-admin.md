@@ -177,14 +177,16 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   form: where payouts go (a bank account first and by default, its bank and account number; or a
   mobile money network, picked from the networks the platform supports, and number, kept only if
   the provider pays out to one, to confirm) and the name on that
-  account; the business's TIN with its TIN certificate, its Certificate of Incorporation from BRELA (or, for a
-  business that is not a company, its BRELA business name registration), and the owner's national ID
-  (NIDA) number; and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
+  account; its business type and that type's documents, as the payment provider verifies them (a sole
+  proprietor: TIN and TIN certificate; a registered company: BRELA number with its Certificate of
+  Incorporation, business licence, and TIN with its certificate; an NGO: registration number and
+  certificate), and the owner's national ID
+  (NIDA) number for every type; and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
   the page says "We're checking your details", when they asked and that the owner is emailed once it is on, then what was sent and Change details. The platform's row opens a
   review: what they sent (each certificate to view, the ID masked to its last four digits), three checks
-  (the account is in the business's or owner's name, the TIN certificate and the BRELA certificate name
-  the same business, with the TIN the request gives, the ID is the owner's); a manager reviews and approves. View on the TIN
-  certificate or the BRELA certificate opens that uploaded file (an image or PDF preview, with Open original), then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
+  (the account is in the business's or owner's name, the documents name the same business, with the TIN
+  given (for an NGO, its registration certificate names it), the ID is the owner's); a manager reviews and approves. View on each document opens that
+  uploaded file (an image or PDF preview, with Open original), then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
   fees, what waits for payout and when, what was paid out, the latest three payouts with All payouts, a
   table with search, Month and Status filters and Load more, where each payout opens its statement
   like an invoice (the week of online sales and how many vouchers, less 7.5%, less the payout fee, what
