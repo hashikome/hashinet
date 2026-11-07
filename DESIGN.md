@@ -78,7 +78,8 @@ switch PIN moves it here). If
 the camera is blocked it says how to allow it; where the page cannot open it at all (an iPhone's sign-in
 sheet), it says to use the camera app. On the buy path, Pay waits on the phone's approval and moves on by itself; a failed
 payment says nothing was taken. Join the WiFi, Move it here and Pay stay greyed until their field is
-complete. Signing in shows the code and nothing else; the code gets a Copy button only where the guest
+complete. When a venue asks guests to accept terms, it writes them in its portal settings,
+and a line under Join the WiFi and Pay links to them: "By joining, you accept the venue's terms." Signing in shows the code and nothing else; the code gets a Copy button only where the guest
 needs it: when the sign-in fails, and on the online page beside the switch PIN, shown once.
 
 ## Typography
