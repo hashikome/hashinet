@@ -169,9 +169,14 @@ addresses and file names.
   shared dialog: a question naming the thing ("Revoke the invitation to halima@…?"), one sentence on
   what happens and what stays, then a red button that names the action ("Revoke invitation", never
   "Yes" or "OK") beside Cancel, which has the focus. Actions that are easily undone don't ask.
-- A row with one or two actions shows them as buttons. Three or more fold into one Actions button, with a
-  danger action last and on its own. No select-all and top bar until a list needs the same action on many
-  rows at once.
+- A row with one or two actions shows them as quiet buttons: text that takes a background on hover, never
+  outlined or red in the row, so a long list doesn't shout (Download PDF, End session, Release). Three or
+  more fold into one Actions button, with a danger action last and on its own. Red is kept for the
+  button that confirms.
+- Where a list needs the same action on many rows (Devices: Block, Remove), the rows take checkboxes
+  instead of per-row buttons, with a select-all on the list's title; ticking any turns the title into
+  "3 selected" with the actions and Clear beside it, and each action confirms with the count
+  ("Block 3 devices?"). An action shows only if it applies to every ticked row.
 - A row's action sits at its right edge. With four columns or fewer the subject takes the spare width, so
   the row's details stay together at the right instead of drifting apart.
 - Columns follow scope, never today's rows. A column goes only if this person can never see it, as money
