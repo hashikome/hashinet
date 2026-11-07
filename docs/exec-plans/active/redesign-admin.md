@@ -173,6 +173,18 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   else in the menu nests. Needs measuring before it ships: peak hours, sessions and data from router
   accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
   Date/Author: 2026-11-05, owner.
+- Decision: online payments, end to end (7 November 2026). An owner asks from Online payments with a
+  form: where payouts go (mobile money number, or bank and account number) and the name on that
+  account; the business's TIN, its licence or registration certificate, and the owner's national ID
+  (NIDA) number; and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
+  the page shows "Waiting for Hashifi", what was sent, and Change details. The platform's row opens a
+  review: what they sent (the licence to view, the ID masked to its last four digits), three checks
+  (the account is in the business's or owner's name, the TIN and licence name the same business, the
+  ID is the owner's), then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
+  fees, what waits for payout and when, what was paid out, the payouts (amount, payout fee, received,
+  reference) and the payout details with Change, which pauses payouts until the new details are
+  checked; the platform sees the same for the business, with Turn off. What the provider requires to
+  pay a business out is to confirm with it (ADR-0013, 8); these fields are the expected set.
 - Decision: the platform has a Services section too (7 November 2026), beside Settings, for owners and
   managers: Online payments lists every business as Asked, On or Off (asked first), with its venues,
   online sales this month and last payout, Turn on for one that asked and Turn off for one that is on;
