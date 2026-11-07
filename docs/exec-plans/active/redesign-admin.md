@@ -217,6 +217,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   codes, opens "Confirm it's you" first: a code from the current app, or "Lost your old phone? Use a
   recovery code" (or the passkey, when there is one). Adding a passkey opens the browser's
   own prompt; nothing of ours.
+- Decision: the captive portal settings show the settings on the left and a phone preview on the right
+  (below them on a phone); a picker above the phone, grouped by path (voucher, buying, signing in and
+  after) with previous and next, chooses which of its 17 pages it shows, and the phone can be tapped
+  through too (7 November 2026).
 - Decision: General is one Business profile section (7 November 2026): the logo with Replace, the
   business name, then Region (a select) and Area or street apart, as at the invitation; the address
   goes on invoices.
