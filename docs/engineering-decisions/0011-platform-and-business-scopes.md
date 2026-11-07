@@ -39,7 +39,7 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
      live sessions, devices and the day's cash.
 3. **What each owner keeps.** The business owner alone invites and removes managers, sets the
    business-wide packages and prices, holds the payout and billing relationship with Hashikome,
-   asks for a venue, and closes the business. The platform owner alone invites and removes platform
+   adds venues (ADR-0014), and closes the business. The platform owner alone invites and removes platform
    managers, changes platform settings and secrets, sets what businesses pay, and deletes a business. Setting what businesses pay
    is not recording what they paid: a platform manager records payments and sends reminders. The
    captive portal's defaults (its themes, which page opens first, the logo and the wording) are not
