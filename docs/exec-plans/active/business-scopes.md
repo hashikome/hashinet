@@ -123,12 +123,12 @@ its two-factor plugin. Sign-in: email, then a choice of passkey (complete on its
 code; after a code, the authenticator code for platform roles, owners, managers and anyone who turned
 it on (ADR-0011, 9); a recovery code signs in on its own. Protection (an authenticator or a passkey) is
 set up from Account and security. A session from an email code alone, for a role that needs protection,
-reaches only Account and security, except a business owner's within 7 days of their membership
-starting, which can do the onboarding steps but not start serving or sell (ADR-0011, 9). Setting up the
+reaches only Account and security, except a business owner's or manager's within 7 days of
+their membership starting, which can get set up but not start serving or sell (ADR-0011, 9). Setting up the
 authenticator shows recovery codes once. The email field offers passkey
 autofill (WebAuthn conditional UI). WebAuthn
 needs HTTPS, so local development uses `localhost`. Tests: a platform membership without protection
-reaches only Account and security; an unprotected owner onboards but cannot serve or sell, and after 7
+reaches only Account and security; an unprotected owner or manager gets set up but cannot serve or sell, and after 7
 days reaches only Account and security; a recovery code signs in once and removes nothing.
 
 **M3, people.** Invitations are the single way in, as Pigfarm's (its ADR-0012): one role to one

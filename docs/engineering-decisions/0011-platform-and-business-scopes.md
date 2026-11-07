@@ -81,9 +81,9 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    own. Both are set up from Account and security, not during sign-in (7 November 2026). Only a session
    signed in with one of them can act; a session from an email code alone reaches only Account and
    security, so an email account that is taken over can do no harm. Until a person has one: platform
-   staff and business managers reach only Account and security; a business owner can do the
-   onboarding steps for 7 days, but no venue starts serving and nothing is sold, and after the 7 days
-   only Account and security opens. Setting up the authenticator shows the recovery codes once. Business operators sign in
+   staff reach only Account and security; a business's owner or manager can get set up for 7 days
+   (onboarding, packages, portal, team), but no venue starts serving and nothing is sold, and after
+   the 7 days only Account and security opens. Setting up the authenticator shows the recovery codes once. Business operators sign in
    with the email code alone unless they turn the authenticator on. Anyone may add passkeys. Losing
    the phone means a recovery code, or a platform owner or manager resetting the authenticator after
    confirming the person, which signs them out everywhere.
