@@ -41,7 +41,9 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    business-wide packages and prices, holds the payout and billing relationship with Hashikome,
    asks for a venue, and closes the business. The platform owner alone invites and removes platform
    managers, changes platform settings and secrets, sets what businesses pay, and deletes a business. Setting what businesses pay
-   is not recording what they paid: a platform manager records payments and sends reminders.
+   is not recording what they paid: a platform manager records payments and sends reminders. The
+   captive portal's defaults (its themes, which page opens first, the logo and the wording) are not
+   sensitive, so a platform manager changes them too (7 November 2026).
 4. **Venue scope inside a business.** A business owner reaches every venue of the business. A
    business manager or operator reaches only the venues on their membership, at least one. A manager
    may add packages that are sold only at their own venues. A business has a default set of packages,
@@ -81,8 +83,8 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    confirming the person, which signs them out everywhere.
 10. **Default packages.** A new business starts with the platform's default packages, which the
     platform owner edits: 1 hour for TSh 500, 1 day for TSh 1,500 and 1 week for TSh 7,000. A
-    business can change them, add its own, or import them from a CSV file, shown in full before it
-    is saved; an import adds and updates by name and never deletes.
+    business can change them, add its own, or export them as a CSV file; there is no import, since a
+    business has too few packages for one (7 November 2026).
 11. **Issues are claimed by rank** (5 November 2026). Anyone in scope claims an issue nobody holds,
     by Claim or by acting on it; its holder releases it or hands it to a colleague; only someone
     above the holder takes it over, with a reason the holder is told. While it is held, its steps are
