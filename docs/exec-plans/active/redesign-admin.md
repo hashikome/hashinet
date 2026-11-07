@@ -191,7 +191,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   managers: Online payments lists the businesses that asked, are on, or used it before (an Off one
   keeps its sales and payouts; one that never asked is not listed), asked first, with its venues,
   online sales this month and last payout, Turn on for one that asked and Turn off for one that is on;
-  SMS credits lists credits left, sent this month, how long they last at this month's rate and the last
+  SMS credits lists the businesses that have bought credits or have a purchase waiting for
+  payment (one that never bought is not listed), with credits left, sent this month, how long they last at this month's rate and the last
   purchase, with those waiting for payment and those running low first, and Record payment on an unpaid
   purchase. Each has its figures and a Status filter; prices stay on Fees, and a business's request to
   turn on online payments still raises an issue. Platform operators have neither page.
