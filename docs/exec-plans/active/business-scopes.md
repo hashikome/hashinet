@@ -119,7 +119,10 @@ owner, and `{ businessId, id: { in: venueIds } }` otherwise. `@Can(action)` repl
 guard enforces the authenticator app for platform roles, owners and managers (ADR-0011, 9).
 
 **M2 also adds passkeys.** Better Auth's passkey plugin (`@better-auth/passkey`, as ntumie.) joins
-its two-factor plugin. Sign-in: email, then a choice of passkey (complete on its own) or an emailed
+its two-factor plugin. Registration and sign-in request `userVerification: "required"`, and
+verification sets `requireUserVerification: true`, so a passkey is two factors (possession and the
+device unlock) whichever authenticator holds it: the platform's, a phone's, or a password manager such
+as 1Password (ADR-0011, 9). Sign-in: email, then a choice of passkey (complete on its own) or an emailed
 code; after a code, the authenticator code for platform roles, owners, managers and anyone who turned
 it on (ADR-0011, 9); a recovery code signs in on its own. Protection (an authenticator or a passkey) is
 set up from Account and security. A session from an email code alone, for a role that needs protection,
@@ -127,7 +130,7 @@ reaches only Account and security, except a business owner's or manager's within
 their membership starting, which can get set up but not start serving or sell (ADR-0011, 9). Setting up the
 authenticator shows recovery codes once. The email field offers passkey
 autofill (WebAuthn conditional UI). WebAuthn
-needs HTTPS, so local development uses `localhost`. Tests: a platform membership without protection
+needs HTTPS, so local development uses `localhost`. Tests: a passkey assertion without the user-verified flag is rejected; a platform membership without protection
 reaches only Account and security; an unprotected owner or manager gets set up but cannot serve or sell, and after 7
 days reaches only Account and security; a recovery code signs in once and removes nothing.
 
