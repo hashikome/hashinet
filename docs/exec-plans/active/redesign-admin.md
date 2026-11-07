@@ -178,7 +178,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Recovery codes) and Appearance (Theme). Each setting is a row: its name and state on the left, its
   action on the right. Setting up or replacing the authenticator is a dialog over the page: the QR code
   centred, the setup key behind "Unable to scan?", a code to verify, then the recovery codes to save
-  (Download, Print, Copy, then "I have saved my recovery codes"). Adding a passkey opens the browser's
+  (Download, Print, Copy, then "I have saved my recovery codes"). Replacing it, or making new
+  codes, opens "Confirm it's you" first: a code from the current app, or "Lost your old phone? Use a
+  recovery code" (or the passkey, when there is one). Adding a passkey opens the browser's
   own prompt; nothing of ours.
 - Decision: Settings is its own section, apart from the person signed in, whose Account and security
   stays in the account menu, and it will grow: General (the business's name, address and logo, for
