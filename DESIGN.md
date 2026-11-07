@@ -154,6 +154,9 @@ addresses and file names.
   list's own page shows the rest.
 - Load more appears only when a page of 25 is full. A list that fits, or a search with a few results,
   shows none.
+- Emails, phone numbers, account numbers, references and voucher codes copy when clicked, with a dotted
+  underline and a copy cursor. Emailing or calling someone is an explicit button (Email Neema, Call Baraka),
+  only where that is the step; every email goes out through the one shared email form.
 - A row with one or two actions shows them as buttons. Three or more fold into one Actions button, with a
   danger action last and on its own. No select-all and top bar until a list needs the same action on many
   rows at once.

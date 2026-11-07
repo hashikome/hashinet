@@ -99,7 +99,16 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   biggest customers show at a glance. Amounts are whole shillings (TSh has no cents in use).
 - Decision: every email to an owner, from an issue or a reminder, uses one form on the page, sent by the API through Resend, with
   replies to the team's support address; it counts as acting on the issue and stays on its log. No
-  mailto links inside the app.
+  mailto links anywhere, sign-in included: Contact support and Send feedback there open the same form,
+  which also asks for the sender's email (7 November 2026). The form is one shared component, as Record
+  payment is, backed by one API endpoint.
+- Decision: email addresses, phone numbers, business and account numbers, payment references and voucher
+  codes are information: clicking one copies it. Only a step whose job is to reach someone has an
+  explicit Email {name} or Call {name} button; no number is a tel link (7 November 2026).
+- Decision: the signed-out forms (Contact support and Send feedback on sign-in and recovery) verify with
+  Cloudflare Turnstile, as namestarlit.com's contact forms do: the public site key renders in the form,
+  the API checks the token with the secret (a Docker secret) and the request's hostname, and sends with
+  Reply-To set to the visitor's validated address. Signed-in forms need no check.
 - Decision: someone is responsible for an issue: whoever claims it (Claim, or by acting first), or
   whom Who goes names when scheduling; the holder can Release or Hand to, and only someone above
   them can Take over, with a reason (ADR-0011, 11). While someone else is
