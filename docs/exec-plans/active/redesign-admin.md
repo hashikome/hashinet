@@ -108,7 +108,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: the signed-out forms (Contact support and Send feedback on sign-in and recovery) verify with
   Cloudflare Turnstile, as namestarlit.com's contact forms do: the public site key renders in the form,
   the API checks the token with the secret (a Docker secret) and the request's hostname, and sends with
-  Reply-To set to the visitor's validated address. Signed-in forms need no check.
+  Reply-To set to the visitor's validated address. The widget is Cloudflare's own and is not designed
+  here: dark theme, flexible size, appearance interaction-only, so most people see nothing and the rare
+  one asked to click gets Cloudflare's box above Send. Signed-in forms need no check.
 - Decision: someone is responsible for an issue: whoever claims it (Claim, or by acting first), or
   whom Who goes names when scheduling; the holder can Release or Hand to, and only someone above
   them can Take over, with a reason (ADR-0011, 11). While someone else is
