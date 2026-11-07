@@ -51,6 +51,12 @@ Each venue can set its own colours, logo and background (ADR-0009), with HashiFi
 on a midnight field. Text colours are computed from them, so any choice stays readable, and a
 background photo sits under a 55% black scrim.
 
+The guest portal is the sign-in screen's look on a venue's colours: the field, a card one tone step up
+with a hairline edge, the action filled, the fire arc in the corner. Every other colour on it (ink, muted
+text, lines, field edges, errors) is worked out from the field and the action, never a fixed grey. The
+platform's themes come from the brand palette only: Midnight and ember (the default), Midnight and sand,
+Sand, and Mist and ember. A business can add its own.
+
 ## Typography
 
 - **Figtree everywhere:** the admin, the guest portal and the router's pages. A variable font
