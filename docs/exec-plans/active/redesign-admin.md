@@ -173,6 +173,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   else in the menu nests. Needs measuring before it ships: peak hours, sessions and data from router
   accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
   Date/Author: 2026-11-05, owner.
+- Decision: Account and security is one column of three sections (7 November 2026): Profile (name;
+  the sign-in email shown, not editable), Sign-in (Passkeys with each one listed, Authenticator app,
+  Recovery codes) and Appearance (Theme). Each setting is a row: its name and state on the left, its
+  action on the right. Setting up or replacing the authenticator is a dialog over the page: the QR code
+  centred, the setup key behind "Unable to scan?", a code to verify, then the recovery codes to save
+  (Download, Print, Copy, then "I have saved my recovery codes"). Adding a passkey opens the browser's
+  own prompt; nothing of ours.
 - Decision: Settings is its own section, apart from the person signed in, whose Account and security
   stays in the account menu, and it will grow: General (the business's name, address and logo, for
   owners, replacing Profile), Packages and Captive portal, which managers see for their own venues.
