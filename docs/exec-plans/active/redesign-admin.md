@@ -180,13 +180,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   account; its business type and that type's documents, as the payment provider verifies them (a sole
   proprietor, who may be informal: personal TIN and its certificate, and a business licence in their
   own name from the Tausi portal if they have one; a registered company: BRELA number with its Certificate of
-  Incorporation, business licence, and TIN with its certificate; an NGO: registration number and
-  certificate, which registrar and documents the provider accepts to confirm), and the owner's national ID
+  Incorporation, business licence, and TIN with its certificate; only these two: individuals and
+  companies; NGOs are added if Hashifi ever serves them), and the owner's national ID
   (NIDA) number for every type; and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
   the page says "We're checking your details", when they asked and that the owner is emailed once it is on, then what was sent and Change details. The platform's row opens a
   review: what they sent (each certificate to view, the ID masked to its last four digits), three checks
   (the account is in the business's or owner's name, the documents name the same business, with the TIN
-  given (for an NGO, its registration certificate names it), the ID is the owner's); a manager reviews and approves. View on each document opens that
+  given, the ID is the owner's); a manager reviews and approves. View on each document opens that
   uploaded file (an image or PDF preview, with Open original), then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
   fees, what waits for payout and when, what was paid out, the latest three payouts with All payouts, a
   table with search, Month and Status filters and Load more, where each payout opens its statement
