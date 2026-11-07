@@ -51,13 +51,23 @@ Each venue can set its own colours, logo and background (ADR-0009), with HashiFi
 on a midnight field. Text colours are computed from them, so any choice stays readable, and a
 background photo sits under a 55% black scrim.
 
-The guest portal has the venue's field across the top, with its logo, name and place, and a white sheet
-over it holding the form; the action button takes the venue's action colour. The sheet uses the light
-theme's tokens (`card`, `foreground`, `muted-foreground`, `border`, `input`, `destructive`); the top takes
-the dark theme's ink on a dark field and the light theme's on a light one; the button's text is midnight
-or white, whichever reads. The platform's themes come from the brand palette only: Midnight and ember
-(the default), Midnight and sand, Sand, and Mist and ember. A business can add its own. The portal's
-words say what to do in plain terms; the bonfire stays in the welcome and the brand, not in instructions.
+The guest portal is two pages that link to each other: the voucher page (scan the QR code or enter
+the code, then Join the WiFi; under "No voucher?", a link to buy time) and the buy page (choose a package,
+enter the mobile number, Pay; under "Have a voucher?", a link to the voucher page). A venue chooses which
+opens first: the voucher page where it sells printed vouchers, the buy page where guests buy on the
+portal. After paying, the guest lands on the voucher page with the paid code entered, signing in. The
+venue's name and place sit at the top left and its logo, which is optional, at the top right, as on the
+printed voucher. The whole page is one colour with the action button filled, and the hashifi arc sits
+faint in the bottom corner, as on sign-in. Every page fits one phone screen, the signature included;
+fields and buttons are 44px.
+
+Themes are a page colour and a button colour. The defaults are Midnight and ember (the default),
+Midnight and white, and White (a white page with the app's midnight button). A business can pick its own
+two colours. Everything else is worked out from the two: text is midnight or off-white, whichever reads
+on the page (black or white on a mid-tone page where neither reaches 4.5:1), secondary text is the
+softest grey that still reads at 4.5:1, field edges and the chosen package reach 3:1, and the button's
+text is midnight or white. A button colour too close to the page colour is flagged. The portal's words
+say what to do in plain terms; the bonfire stays in the welcome and the brand, not in instructions.
 
 ## Typography
 
