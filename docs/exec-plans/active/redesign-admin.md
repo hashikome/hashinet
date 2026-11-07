@@ -174,7 +174,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
   Date/Author: 2026-11-05, owner.
 - Decision: online payments, end to end (7 November 2026). An owner asks from Online payments with a
-  form: where payouts go (a bank account first and by default, its bank and account number; or a
+  one-page form in three sections, each titled on the left with its fields on the right: the business
+  first (its type as two cards, one per line, then that type's documents in one column), then where
+  payouts go (a bank account first and by default, its bank and account number; or a
   mobile money network, picked from the networks the platform supports, and number, kept only if
   the provider pays out to one, to confirm) and the name on that
   account; its business type and that type's documents, as the payment provider verifies them (a sole
