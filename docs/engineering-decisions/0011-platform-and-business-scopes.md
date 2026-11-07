@@ -75,12 +75,15 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    this role take this action in this scope. The web shows what the API returns and never infers access from
    what it renders (ADR-0003). Better Auth keeps identity and sessions (ADR-0007); memberships hold
    what HashiFi decides.
-9. **Sign-in protection** (ADR-0007). Every platform role, and business owners and managers, must
-   have an authenticator app, whichever membership is active: once it is on, their email code is
-   always followed by its code, unless they sign in with a passkey. It is set up from Account and
-   security, not during sign-in (7 November 2026): a person who has none yet signs in with the email
-   code, sees a notice counting down 7 days, and after that reaches only Account and security until
-   it is on. Setting it up shows the recovery codes once; passkeys are added there too. Business operators sign in
+9. **Sign-in protection** (ADR-0007). Every platform role, and business owners and managers, protect
+   their sign-in with an authenticator app or a passkey, whichever membership is active: once the
+   authenticator is on, their email code is always followed by its code, and a passkey signs in on its
+   own. Both are set up from Account and security, not during sign-in (7 November 2026). Only a session
+   signed in with one of them can act; a session from an email code alone reaches only Account and
+   security, so an email account that is taken over can do no harm. Until a person has one: platform
+   staff and business managers reach only Account and security; a business owner can do the
+   onboarding steps for 7 days, but no venue starts serving and nothing is sold, and after the 7 days
+   only Account and security opens. Setting up the authenticator shows the recovery codes once. Business operators sign in
    with the email code alone unless they turn the authenticator on. Anyone may add passkeys. Losing
    the phone means a recovery code, or a platform owner or manager resetting the authenticator after
    confirming the person, which signs them out everywhere.

@@ -121,13 +121,15 @@ guard enforces the authenticator app for platform roles, owners and managers (AD
 **M2 also adds passkeys.** Better Auth's passkey plugin (`@better-auth/passkey`, as ntumie.) joins
 its two-factor plugin. Sign-in: email, then a choice of passkey (complete on its own) or an emailed
 code; after a code, the authenticator code for platform roles, owners, managers and anyone who turned
-it on (ADR-0011, 9); a recovery code signs in on its own. A required authenticator not yet set up is
-set up from Account and security, within 7 days of the membership starting; until then the email code
-alone signs in, with a notice under the overview's title, and afterwards only Account and security opens.
-Setting it up shows recovery codes once. The email field offers passkey
+it on (ADR-0011, 9); a recovery code signs in on its own. Protection (an authenticator or a passkey) is
+set up from Account and security. A session from an email code alone, for a role that needs protection,
+reaches only Account and security, except a business owner's within 7 days of their membership
+starting, which can do the onboarding steps but not start serving or sell (ADR-0011, 9). Setting up the
+authenticator shows recovery codes once. The email field offers passkey
 autofill (WebAuthn conditional UI). WebAuthn
-needs HTTPS, so local development uses `localhost`. Tests: a required membership without an
-authenticator reaches everything for 7 days, then only Account and security; a recovery code signs in once and removes nothing.
+needs HTTPS, so local development uses `localhost`. Tests: a platform membership without protection
+reaches only Account and security; an unprotected owner onboards but cannot serve or sell, and after 7
+days reaches only Account and security; a recovery code signs in once and removes nothing.
 
 **M3, people.** Invitations are the single way in, as Pigfarm's (its ADR-0012): one role to one
 canonical email. Kinds: a platform role; ownership of a new business; a business role with venues.
