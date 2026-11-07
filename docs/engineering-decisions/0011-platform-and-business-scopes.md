@@ -43,7 +43,7 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    managers, changes platform settings and secrets, sets what businesses pay, and deletes a business. Setting what businesses pay
    is not recording what they paid: a platform manager records payments and sends reminders. The
    captive portal's defaults (its themes, which page opens first, the logo and the wording) are not
-   sensitive, so a platform manager changes them too (7 November 2026). Turning online payments on or off for one
+   sensitive, so a platform manager changes them too (7 November 2026), as with the default packages. Turning online payments on or off for one
    business is a platform manager's job as well; pausing a service for every business stays the
    platform owner's.
 4. **Venue scope inside a business.** A business owner reaches every venue of the business. A
@@ -96,7 +96,7 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    the phone means a recovery code, or a platform owner or manager resetting the authenticator after
    confirming the person, which signs them out everywhere.
 10. **Default packages.** A new business starts with the platform's default packages, which the
-    platform owner edits: 1 hour for TSh 500, 1 day for TSh 1,500 and 1 week for TSh 7,000. A
+    platform owner and managers edit (7 November 2026; a change reaches only businesses added after it): 1 hour for TSh 500, 1 day for TSh 1,500 and 1 week for TSh 7,000. A
     business can change them, add its own, or export them as a CSV file; there is no import, since a
     business has too few packages for one (7 November 2026).
 11. **Issues are claimed by rank** (5 November 2026). Anyone in scope claims an issue nobody holds,
