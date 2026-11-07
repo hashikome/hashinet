@@ -182,10 +182,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   the page says "We're checking your details", when they asked and that the owner is emailed once it is on, then what was sent and Change details. The platform's row opens a
   review: what they sent (the licence to view, the ID masked to its last four digits), three checks
   (the account is in the business's or owner's name, the TIN certificate shows the same number and it
-  and the licence name the same business, the ID is the owner's), with Compare documents: the request's business,
-  TIN, owner and account name across the top, and the TIN certificate and licence side by side, each a
-  preview of the uploaded file (image or PDF) with Open original. The prototype draws their fields;
-  reading them automatically (OCR) is not in the first version, then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
+  and the licence name the same business, the ID is the owner's); a manager reviews and approves. View on the TIN
+  certificate or the licence opens that uploaded file (an image or PDF preview, with Open original), then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
   fees, what waits for payout and when, what was paid out, the latest three payouts with All payouts, a
   table with search, Month and Status filters and Load more, where each payout opens its statement
   like an invoice (the week of online sales and how many vouchers, less 7.5%, less the payout fee, what
