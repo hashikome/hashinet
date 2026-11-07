@@ -298,7 +298,13 @@ theme setting: a midnight field, the open ring large in the lower right, and a 4
 email, Continue, the terms line, "Need help signing in?" with Contact support), sized one step
 above the admin's controls; no logo in the corner; a footer strip with
 "© <year> Shikome Technology Limited" on the left and the links Privacy, Terms and Send feedback together
-on the right, on every step; on a phone the links come first and the copyright closes the page. The code and passkey steps use the
+on the right, on every step; on a phone the links come first and the copyright closes the page. The
+terms of service and privacy notice are stand-in drafts in the prototype (`terms.html`, `privacy.html`),
+written from what the product does; before launch a lawyer reviews them against Tanzania's Personal Data
+Protection Act, and the points they mark "to confirm" are decided: company registration and address,
+registration with the Personal Data Protection Commission, the hosting provider and where data lives,
+retention for guests' sessions, invoices and closed businesses, VAT, notice periods, router warranty,
+and the liability cap. The code and passkey steps use the
 same frame. Prototype: `prototypes/hearth-design/prototype/`. Below 768px a
 48px bar and a sheet. Needs business-scopes M2.
 
