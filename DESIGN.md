@@ -70,8 +70,11 @@ text is midnight or white. A button colour too close to the page colour is flagg
 say what to do in plain terms; the bonfire stays in the welcome and the brand, not in instructions.
 
 The journey: on the voucher path, a wrong code keeps what was typed; a voucher at its device limit asks
-for its switch PIN to move here; a scan opens the camera where the page can, and otherwise says to use
-the camera app. On the buy path, Pay waits on the phone's approval and moves on by itself; a failed
+for its switch PIN to move here; a scan opens the camera where the page can: a tall live view with a
+square to aim at whose corners breathe while it looks and turn green with "Voucher found" when it reads
+one, the torch only where the phone lets a web page use it, and "Enter the code instead" always below. If
+the camera is blocked it says how to allow it; where the page cannot open it at all (an iPhone's sign-in
+sheet), it says to use the camera app. On the buy path, Pay waits on the phone's approval and moves on by itself; a failed
 payment says nothing was taken. Join the WiFi, Move it here and Pay stay greyed until their field is
 complete. Signing in shows the code and nothing else; the code gets a Copy button only where the guest
 needs it: when the sign-in fails, and on the online page beside the switch PIN, shown once.
