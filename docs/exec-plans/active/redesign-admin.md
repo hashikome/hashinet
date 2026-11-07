@@ -179,7 +179,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   the provider pays out to one, to confirm) and the name on that
   account; the business's TIN, its licence or registration certificate, and the owner's national ID
   (NIDA) number; and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
-  the page shows "Waiting for Hashifi", what was sent, and Change details. The platform's row opens a
+  the page says "We're checking your details", when they asked and that the owner is emailed once it is on, then what was sent and Change details. The platform's row opens a
   review: what they sent (the licence to view, the ID masked to its last four digits), three checks
   (the account is in the business's or owner's name, the TIN and licence name the same business, the
   ID is the owner's), then Turn on, or Ask for changes by email. Once on, the owner sees online sales,
