@@ -76,8 +76,11 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    what it renders (ADR-0003). Better Auth keeps identity and sessions (ADR-0007); memberships hold
    what HashiFi decides.
 9. **Sign-in protection** (ADR-0007). Every platform role, and business owners and managers, must
-   have an authenticator app before reaching anything, whichever membership is active: their email
-   code is always followed by its code, unless they sign in with a passkey. Business operators sign in
+   have an authenticator app, whichever membership is active: once it is on, their email code is
+   always followed by its code, unless they sign in with a passkey. It is set up from Account and
+   security, not during sign-in (7 November 2026): a person who has none yet signs in with the email
+   code, sees a notice counting down 7 days, and after that reaches only Account and security until
+   it is on. Setting it up shows the recovery codes once; passkeys are added there too. Business operators sign in
    with the email code alone unless they turn the authenticator on. Anyone may add passkeys. Losing
    the phone means a recovery code, or a platform owner or manager resetting the authenticator after
    confirming the person, which signs them out everywhere.

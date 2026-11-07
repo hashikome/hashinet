@@ -122,10 +122,12 @@ guard enforces the authenticator app for platform roles, owners and managers (AD
 its two-factor plugin. Sign-in: email, then a choice of passkey (complete on its own) or an emailed
 code; after a code, the authenticator code for platform roles, owners, managers and anyone who turned
 it on (ADR-0011, 9); a recovery code signs in on its own. A required authenticator not yet set up is
-set up after the email code, then recovery codes are shown once. The email field offers passkey
+set up from Account and security, within 7 days of the membership starting; until then the email code
+alone signs in, with a notice under the overview's title, and afterwards only Account and security opens.
+Setting it up shows recovery codes once. The email field offers passkey
 autofill (WebAuthn conditional UI). WebAuthn
-needs HTTPS, so local development uses `localhost`. Tests: a platform membership without an
-authenticator reaches only its set-up routes; a recovery code signs in once and removes nothing.
+needs HTTPS, so local development uses `localhost`. Tests: a required membership without an
+authenticator reaches everything for 7 days, then only Account and security; a recovery code signs in once and removes nothing.
 
 **M3, people.** Invitations are the single way in, as Pigfarm's (its ADR-0012): one role to one
 canonical email. Kinds: a platform role; ownership of a new business; a business role with venues.
