@@ -47,6 +47,10 @@ text meets 4.5:1 on its panel in both themes.
 The dark theme is midnight, not a neutral dark: a deliberate exception to the usual rule, because
 midnight is the brand's night.
 
+The theme setting is Light, Dark or System, and System is the default: it follows the device, and
+changes with it. A signed-in person's choice wins from then on. The sign-in screens are always dark,
+and everything they open (Contact support, Send feedback) is dark with them.
+
 Each venue can set its own colours, logo and background (ADR-0009), with HashiFi's defaults of ember
 on a midnight field. Text colours are computed from them, so any choice stays readable, and a
 background photo sits under a 55% black scrim.
