@@ -51,11 +51,13 @@ Each venue can set its own colours, logo and background (ADR-0009), with HashiFi
 on a midnight field. Text colours are computed from them, so any choice stays readable, and a
 background photo sits under a 55% black scrim.
 
-The guest portal is the sign-in screen's look on a venue's colours: the field, a card one tone step up
-with a hairline edge, the action filled, the fire arc in the corner. Every other colour on it (ink, muted
-text, lines, field edges, errors) is worked out from the field and the action, never a fixed grey. The
-platform's themes come from the brand palette only: Midnight and ember (the default), Midnight and sand,
-Sand, and Mist and ember. A business can add its own.
+The guest portal has the venue's field across the top, with its logo, name and place, and a white sheet
+over it holding the form; the action button takes the venue's action colour. The sheet uses the light
+theme's tokens (`card`, `foreground`, `muted-foreground`, `border`, `input`, `destructive`); the top takes
+the dark theme's ink on a dark field and the light theme's on a light one; the button's text is midnight
+or white, whichever reads. The platform's themes come from the brand palette only: Midnight and ember
+(the default), Midnight and sand, Sand, and Mist and ember. A business can add its own. The portal's
+words say what to do in plain terms; the bonfire stays in the welcome and the brand, not in instructions.
 
 ## Typography
 
