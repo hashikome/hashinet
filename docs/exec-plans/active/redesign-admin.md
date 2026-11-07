@@ -173,6 +173,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   else in the menu nests. Needs measuring before it ships: peak hours, sessions and data from router
   accounting; tunnel drops and outage length from the tunnel; portal sign-in attempts and why they fail.
   Date/Author: 2026-11-05, owner.
+- Decision: the platform has a Services section too (7 November 2026), beside Settings, for owners and
+  managers: Online payments lists every business as Asked, On or Off (asked first), with its venues,
+  online sales this month and last payout, Turn on for one that asked and Turn off for one that is on;
+  SMS credits lists credits left, sent this month, how long they last at this month's rate and the last
+  purchase, with those waiting for payment and those running low first, and Record payment on an unpaid
+  purchase. Each has its figures and a Status filter; prices stay on Fees, and a business's request to
+  turn on online payments still raises an issue. Platform operators have neither page.
 - Decision: Account and security is one column of three sections (7 November 2026): Profile (name;
   the sign-in email shown, not editable), Sign-in (Passkeys with each one listed, Authenticator app,
   Recovery codes) and Appearance (Theme). Each setting is a row: its name and state on the left, its

@@ -43,7 +43,9 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    managers, changes platform settings and secrets, sets what businesses pay, and deletes a business. Setting what businesses pay
    is not recording what they paid: a platform manager records payments and sends reminders. The
    captive portal's defaults (its themes, which page opens first, the logo and the wording) are not
-   sensitive, so a platform manager changes them too (7 November 2026).
+   sensitive, so a platform manager changes them too (7 November 2026). Turning online payments on or off for one
+   business is a platform manager's job as well; pausing a service for every business stays the
+   platform owner's.
 4. **Venue scope inside a business.** A business owner reaches every venue of the business. A
    business manager or operator reaches only the venues on their membership, at least one. A manager
    may add packages that are sold only at their own venues. A business has a default set of packages,
