@@ -304,7 +304,7 @@ and RouterOS version after setup.
 `apps/web/lib/portal-defaults.ts` and the portal page's `DEFAULT_FORM`, and have the print and batch
 endpoints return each voucher's resolved brand. Router pages take their colours from the same
 templating as their URLs (`portal-files.ts`), not hand-copied values. The night top with the logo, venue name and place, over a white sheet with
-the welcome ("Karibu. Pull up a seat."), "Enter the code on your voucher to get online.", the code field and the button; the packages below. Logo:
+the welcome ("Karibu. Pull up a seat."), "Scan the QR code on your voucher, or enter its code.", the code field and the button; the packages below. Logo:
 the venue's, else the business's, else HashiFi's. The router's pages stay byte-exact, and the walled
 garden is checked against the script Cloudflare injects into guests' pages.
 
