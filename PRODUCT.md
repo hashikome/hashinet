@@ -19,9 +19,10 @@ get a printed voucher instead.
 | User | Context and goals |
 | --- | --- |
 | Platform owner, manager, operator | Hashikome running HashiFi: create businesses and their venues, add and set up routers, onboard and support owners. The owner alone manages platform managers, settings and what businesses pay |
-| Business owner | Sells their WiFi at one or more venues: packages and prices, captive portal, analytics, their team. Asks Hashikome for another venue |
-| Business manager | Runs the venues the owner gave them, with the owner's powers there, except what the owner keeps |
-| Business operator | Works the counter at their venues: vouchers, live sessions, devices, the day's cash |
+| Business owner | Accountable for the business, which sells WiFi at one or more venues: packages and prices, captive portal, analytics, their team. Alone invites business managers, sets business-wide prices, pays Hashikome, holds the payout account, adds venues and closes the business |
+| Business manager | Manages the whole business, across every venue, in the owner's place, except what the owner keeps |
+| Venue manager | Runs the venues they are assigned, one or a few, day to day |
+| Venue operator | Works the counter at their venues: vouchers, live sessions, devices, the day's cash |
 | Guest | Joins a venue's WiFi on a phone, often on a slow link, and wants to get online quickly |
 
 A business is the tenant and owns its venues; roles and what each owner keeps are in

@@ -84,7 +84,7 @@ Not started.
 - `apps/api/src/team/`, `apps/api/src/staff/add-staff.cli.ts`: adding people today (admins only).
 - `packages/types`: `StaffRole` and the principal as the web reads them.
 - Terms: a *scope* is the platform or one business. A *membership* is a person's role in a scope,
-  plus venues for a business manager or operator. *Owner-only* actions are listed in ADR-0011, 3.
+  plus venues for a venue manager or venue operator (ADR-0011, 2, as clarified 11 November 2026). *Owner-only* actions are listed in ADR-0011, 3.
 
 Production holds only test data (one venue, `chr-test`, and test vouchers) and one staff member, the
 platform owner, which are dropped with the old migrations. The platform owner is created again by
@@ -100,7 +100,7 @@ in place of `admin@example.com` and `Sim Manager`. Add `Business` (name, address
 `Venue.region` (one of Tanzania's 31 regions, a closed list in `@hashifi/types`, chosen, never typed) and
 `Venue.area` (the area or street, typed), so analytics and onboarding travel group venues exactly,
 `Membership` (user id, scope `platform` or `business`, business id when business, role `owner`,
-`manager` or `operator`, status; unique per user and scope), the session's active membership (a
+`manager` or `operator` at the platform, and `owner`, `business_manager`, `venue_manager` or `venue_operator` in a business, status; unique per user and scope), the session's active membership (a
 column on Better Auth's session through its additional fields, or `session_memberships`, whichever
 Better Auth supports cleanly), `MembershipVenue` (membership, venue), `Invitation`
 (email, scope, business, role, venues, invited by, expiry, accepted at), and packages owned by a

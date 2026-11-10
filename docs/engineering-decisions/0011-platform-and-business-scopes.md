@@ -29,26 +29,30 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
 1. **Two scopes.** The *platform* is Hashikome running HashiFi. A *business* is the tenant: it owns
    one or more venues, and every venue belongs to exactly one business. Packages, vouchers, sessions,
    devices, payments and brands are reached through their venue's business.
-2. **The same three roles in each scope.**
-   - **Owner** decides. The platform owner owns HashiFi; a business owner owns all of their venues.
-   - **Manager** runs things for the owner, with the owner's powers inside their scope, except what
-     the owner keeps (below). A platform manager runs businesses, venues, routers and onboarding; a
-     business manager runs the venues they were given.
-   - **Operator** does the daily work. A platform operator supports businesses: connection checks,
-     setup help, looking things up. A business operator works the counter at their venues: vouchers,
-     live sessions, devices and the day's cash.
-3. **What each owner keeps.** The business owner alone invites and removes managers, sets the
-   business-wide packages and prices, holds the payout and billing relationship with Hashikome,
-   adds venues (ADR-0014), and closes the business. The platform owner alone invites and removes platform
+2. **Roles at each level** (business roles clarified 11 November 2026; they need not mirror the
+   platform's one for one).
+   - **Platform:** the **owner** decides for HashiFi; a **manager** runs businesses, venues, routers
+     and onboarding in the owner's place, except what the owner keeps (below); an **operator**
+     supports businesses: connection checks, setup help, looking things up.
+   - **Business:** the **owner** is accountable for the business; a **business manager** manages the
+     whole business, across every venue, in the owner's place, except what the owner keeps.
+   - **Venue:** a **venue manager** runs the venues they are assigned, one or a few, day to day; a
+     **venue operator** works the counter there: vouchers, live sessions, devices and the day's cash.
+     Anyone covering every venue is a business manager, not a venue manager of each.
+3. **What each owner keeps.** The business owner alone invites and removes business managers, sets
+   the business-wide packages and prices, holds the payout and billing relationship with Hashikome
+   (paying its bills, SMS credits, online payments and the payout account), adds venues (ADR-0014),
+   and closes the business (confirmed 11 November 2026). A business manager does everything else
+   across the business, including inviting venue managers and operators. The platform owner alone invites and removes platform
    managers, changes platform settings and secrets, sets what businesses pay, and deletes a business. Setting what businesses pay
    is not recording what they paid: a platform manager records payments and sends reminders. The
    captive portal's defaults (its themes, which page opens first, the logo and the wording) are not
    sensitive, so a platform manager changes them too (7 November 2026), as with the default packages. Turning online payments on or off for one
    business is a platform manager's job as well; pausing a service for every business stays the
    platform owner's.
-4. **Venue scope inside a business.** A business owner reaches every venue of the business. A
-   business manager or operator reaches only the venues on their membership, at least one. A manager
-   may add packages that are sold only at their own venues. A business has a default set of packages,
+4. **Venue scope inside a business.** A business owner and a business manager reach every venue of
+   the business. A venue manager or venue operator reaches only the venues on their membership, at
+   least one. A venue manager may add packages that are sold only at their own venues. A business has a default set of packages,
    and a venue follows it until its owner gives that venue its own price or stops selling a package
    there; a change to a default price never touches a venue with its own, and a printed voucher keeps
    the price on it.
