@@ -24,7 +24,11 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
   commit, which **must not reach `main` on GitHub before stage 3 is done**: every push to `main`
   releases.
 - [ ] Stage 3, by the owner, outside the repository (see Concrete Steps).
-- [ ] Stage 4, in other repositories: handbook, workspace, infra (each its own commit and rules).
+- [x] (2026-11-11) Stage 4, in other repositories, current docs only: handbook `55d0f88` (the
+  chapter moves to `docs/hashinet/`; source and site checks pass), workspace `0640684`, ntumie
+  `280d0d8`, pigfarm `34c2892`. Left: workspace `backlog/README.md` and `brand/README.md`, which
+  hold another session's uncommitted edits; infra, whose backup job changes at the cutover (stage 3,
+  step 8); completed workspace plans, which are history.
 - [ ] Stage 5: push, release, check, then retire the old database, volume, secrets and bucket with the
   owner's go.
 - [ ] Stage 6, by the owner: rename the local folder and move Claude's memory directory with it.
@@ -108,7 +112,9 @@ Stage 6, by the owner, when no session is open in the folder:
     mv ~/Person/stack/hashikome/hashifi ~/Person/stack/hashikome/hashinet
     mv ~/.claude/projects/-home-ns-Person-stack-hashikome-hashifi ~/.claude/projects/-home-ns-Person-stack-hashikome-hashinet
 
-`mv` keeps the git-ignored `prototypes/` and `ref/`; a fresh clone would lose them.
+`mv` keeps the git-ignored `prototypes/` and `ref/`; a fresh clone would lose them. Then change
+`hashikome/hashifi` to `hashikome/hashinet` in `~/Person/stack/docs/local-port-registry.md`, and
+remove the old local volume with `docker volume rm hashifi_postgres-data`.
 
 ## Validation And Acceptance
 
