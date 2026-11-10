@@ -172,7 +172,8 @@ addresses and file names.
 - A row with one or two actions shows them as quiet buttons: text that takes a background on hover, never
   outlined or red in the row, so a long list doesn't shout (Download PDF, End session, Release). Three or
   more fold into one Actions button, with a danger action last and on its own. Red is kept for the
-  button that confirms.
+  button that confirms. On a touch screen, which has no hover, row actions keep a light outline so they
+  still read as buttons.
 - Where a list needs the same action on many rows (Devices: Block, Remove), the rows take checkboxes
   instead of per-row buttons, with a select-all on the list's title; ticking any turns the title into
   "3 selected" with the actions and Clear beside it, and each action confirms with the count
