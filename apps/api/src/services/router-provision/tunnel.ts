@@ -58,7 +58,7 @@ export function tunnelLines(tunnel: ManagementTunnel): string[] {
   const former = FORMER_TUNNEL_INTERFACE;
   return [
     // RouterOS keeps the address and peer on a renamed interface, so the tunnel stays up.
-    `:if ([:len [/interface wireguard find where name="${former}"]] > 0 && [:len [/interface wireguard find where name="${iface}"]] = 0) do={/interface wireguard set [find where name="${former}"] name=${iface}}`,
+    `:if (([:len [/interface wireguard find where name="${former}"]] > 0) && ([:len [/interface wireguard find where name="${iface}"]] = 0)) do={/interface wireguard set [find where name="${former}"] name=${iface}}`,
     `:if ([:len [/interface wireguard find where name="${iface}"]] = 0) do={/interface wireguard add name=${iface} private-key="${privateKey}"} else={/interface wireguard set [find where name="${iface}"] private-key="${privateKey}"}`,
     `:if ([:len [/ip address find where address="${tunnel.routerAddress}" interface=${iface}]] = 0) do={/ip address add address=${tunnel.routerAddress} interface=${iface}}`,
     // Two statements, not one add-or-set: repeating every parameter in both branches overran the

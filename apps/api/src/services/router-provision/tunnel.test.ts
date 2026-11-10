@@ -87,7 +87,7 @@ describe("the bootstrap brings the management tunnel up", () => {
   test("is safe to paste twice: each tunnel statement checks first or only sets values", () => {
     for (const line of statements.filter((l) => l.includes(TUNNEL_INTERFACE))) {
       expect(
-        line.startsWith(":if ([:len [") || line.startsWith("/interface wireguard peers set"),
+        /^:if \(+\[:len \[/.test(line) || line.startsWith("/interface wireguard peers set"),
       ).toBe(true);
     }
   });

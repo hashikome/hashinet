@@ -31,12 +31,15 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
   `280d0d8`, pigfarm `34c2892`. Left: workspace `backlog/README.md` and `brand/README.md`, which
   hold another session's uncommitted edits; infra, whose backup job changes at the cutover (stage 3,
   step 8); completed workspace plans, which are history.
-- [ ] Stage 5: push, release, check, then retire the old database, volume, secrets and bucket with the
+- [ ] Stage 5: push stages 1 and 2 together (stage 1 alone would break production: the web image
+  already calls `hashinet-api`), release, check, then retire the old database, volume, secrets and bucket with the
   owner's go.
 - [ ] Stage 6, by the owner: rename the local folder and move Claude's memory directory with it.
 
 ## Surprises & Discoveries
 
+- RouterOS wants each part of an `&&` condition in its own parentheses, so the rename statement is
+  `:if (([:len ...] > 0) && ([:len ...] = 0))`; the paste-twice test accepts that form.
 - Routers carry one name of ours: the WireGuard management interface `hashifi-mgmt`
   (`apps/api/src/services/router-provision/tunnel.ts`). Provisioning tags its other objects
   `wbs:<step>`, which do not change. The router API user is per router (`routers.api_username`); only
