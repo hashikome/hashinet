@@ -4,7 +4,7 @@ import { ArrowRight, Loader } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { HashifiMark } from "@/components/hashifi-mark";
+import { HashiNetMark } from "@/components/hashinet-mark";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -129,8 +129,8 @@ export default function LoginPage() {
         {/* Logo and Header */}
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3">
-            <HashifiMark className="size-12 text-foreground" />
-            <h1 className="text-2xl font-bold text-foreground">HashiFi</h1>
+            <HashiNetMark className="size-12 text-foreground" />
+            <h1 className="text-2xl font-bold text-foreground">HashiNet</h1>
           </div>
           <p className="text-muted-foreground">WiFi by the bonfire</p>
         </div>

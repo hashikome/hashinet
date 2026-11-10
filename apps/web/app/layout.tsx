@@ -11,7 +11,7 @@ const figtree = localFont({
   variable: "--font-figtree",
 });
 
-export const metadata: Metadata = { title: "HashiFi" };
+export const metadata: Metadata = { title: "HashiNet" };
 
 export default function RootLayout({
   children,

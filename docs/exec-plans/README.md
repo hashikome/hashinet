@@ -24,4 +24,5 @@ A plan must make sense with `ref/` empty while it runs.
 
 | Plan | Status |
 | --- | --- |
-| [active/build-hashifi.md](active/build-hashifi.md) | M1 to M5 done; M6 built, awaiting provider accounts |
+| [active/build-hashinet.md](active/build-hashinet.md) | M1 to M5 done; M6 built, awaiting provider accounts |
+| [active/rename-to-hashinet.md](active/rename-to-hashinet.md) | The repository renamed; the deployment waits on the owner's production steps |

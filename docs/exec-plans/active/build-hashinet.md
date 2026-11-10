@@ -1,4 +1,4 @@
-# Adopt the earlier billing system as HashiFi
+# Adopt the earlier billing system as HashiNet
 
 This ExecPlan is a living document. Maintain it according to `PLANS.md`. Keep `Progress`,
 `Surprises & Discoveries`, `Decision Log` and `Outcomes & Retrospective` current as work
@@ -6,10 +6,10 @@ proceeds.
 
 ## Purpose / Big Picture
 
-Build HashiFi on the Hashikome stack, deployed through
+Build HashiNet on the Hashikome stack, deployed through
 the shared platform. When done, an admin onboards a reset MikroTik through the generated
 bootstrap script and automated setup, generates vouchers for a package, and a phone on that
-router's WiFi reaches the HashiFi portal, redeems a voucher and browses until the voucher
+router's WiFi reaches the HashiNet portal, redeems a voucher and browses until the voucher
 expires. The API runs as NestJS on Bun with Prisma and the shared PostgreSQL 18, the portal
 and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Dokploy.
 
@@ -23,14 +23,14 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
 - [x] (2026-10-28) NestJS 12.3.2 smoke-tested on Bun 1.4.4: dependency injection, decorators
   and routing work.
 - [x] (2026-10-28) Starting code in `45ebd53`; repository scaffolded from the
-  Hashikome template; FSL-1.1-ALv2; packages renamed `@hashifi/api` and `@hashifi/web`; pnpm
+  Hashikome template; FSL-1.1-ALv2; packages renamed `@hashinet/api` and `@hashinet/web`; pnpm
   and npm files removed.
 - [x] (2026-10-28) M1 Toolchain and name. One root `bun.lock` (Bun 1.4.4 isolated installs);
   every dependency on its newest stable release, pinned; Biome replaces Prettier and ESLint;
-  `@hashifi/types` carries the API's JSON contract; unused code removed (the v0 starter
+  `@hashinet/types` carries the API's JSON contract; unused code removed (the v0 starter
   dashboard and its components, 36 unused UI and hook files, 30 unused dependencies, Vercel
   Analytics, `next-maps`, `dotenv`, `tsx`); TypeScript 7 in both apps with type errors failing
-  the build; no `any` or `!` in kept code; HashiFi naming throughout; `ENCRYPTION_KEY` required.
+  the build; no `any` or `!` in kept code; HashiNet naming throughout; `ENCRYPTION_KEY` required.
   `bun run verify` passes: 170/170 tests, both typechecks, lint, format, web build.
 - [x] (2026-10-29) M2 Router sim on CHR. Done apart from what needs hardware (M8).
   - [x] (2026-10-29) Router sim: `bun run router-sim` boots RouterOS 7.25 CHR in QEMU and runs onboarding
@@ -73,7 +73,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
     PostgreSQL, recovering with it), background jobs as wide events (`src/jobs/`).
   - Services on Prisma: `RouterAccess`, `SecretBox` (AES-256-GCM), `AuditLog`, `RouterSync`,
     `VoucherExpiry`, `VoucherReconciler`, `LiveMonitor`, `PrismaRouterStore`,
-    `TunnelAllocator`; serializers to `@hashifi/types` (`src/serializers/`); business-day
+    `TunnelAllocator`; serializers to `@hashinet/types` (`src/serializers/`); business-day
     helpers (`src/analytics/`); an idempotent invented seed.
   - The earlier Express app is removed; M4 ports each route from commit
     (`git show 45ebd53:apps/api/src/routes/<name>.ts`).
@@ -81,7 +81,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
   - [x] (2026-10-29) Schema: Better Auth's tables, `staff` sharing the user's id, `devices`
     (`2602b08`); a per-person sign-in code budget table.
   - [x] (2026-10-29) Sign-in (ADR-0007), `src/auth/`: Better Auth 1.7.14 mounted at
-    `/api/auth` ahead of Nest's body parser, with only the routes HashiFi uses reachable
+    `/api/auth` ahead of Nest's body parser, with only the routes HashiNet uses reachable
     (code request, code sign-in, session, sign-out, authenticator enrollment and checks).
     Email codes keyed by an HMAC, five attempts, ten minutes, sent only to active staff and in
     the background, so a stranger's email gets the same answer in the same time; PostgreSQL
@@ -196,7 +196,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
     shares included, which the earlier code reported for everyone) and no revenue; the
     monthly trend, top venues and `/api/revenue/*` are admin-only. Money is two-decimal text;
     the transaction list carries the payment's provider reference or the card's batch prefix,
-    never a phone number. Shapes are new (`@hashifi/types`); the web's dashboard, analytics
+    never a phone number. Shapes are new (`@hashinet/types`); the web's dashboard, analytics
     and revenue pages follow in the web pass.
     Acceptance: `analytics.integration.test.ts` (an October across two venues: four kinds that
     count and four that must not; a card redeemed at 21:30 UTC on 30 September counts in
@@ -221,7 +221,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
     their own routes; promoting frees the venues and the staff guard then requires an
     authenticator; suspending deletes the person's sessions; another admin resets a lost
     authenticator (removes it, signs the person out). Nobody changes their own role, status or
-    authenticator, or removes themselves (409 `NOT_ON_YOURSELF`); HashiFi keeps an active admin
+    authenticator, or removes themselves (409 `NOT_ON_YOURSELF`); HashiNet keeps an active admin
     (409 `LAST_ADMIN`), checked under a lock on every admin row taken in one order, because
     through the API it can only be broken by two admins acting on each other at once. Each
     change is audited and the person emailed (`team-emails.ts`, plain text, no sign-in links).
@@ -258,7 +258,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
     `twoFactorEnrollmentRequired`. `PUT /api/me` changes one's own name. Checked in headless
     Chrome: an admin held at setup, enrolled, reaching `/admin`; a second browser asked for both
     codes; no API errors but the 401 from `/api/me` before signing in.
-  - [x] (2026-10-30) Web pass, the rest: every admin page reads `@hashifi/types` through
+  - [x] (2026-10-30) Web pass, the rest: every admin page reads `@hashinet/types` through
     `lib/api.ts`, and the hand-written `lib/types.ts` is gone. Saving a router now comes before
     its script; a venue save leaves its operator alone; package and router edits send the
     whole record, keeping what the form does not show; Payments is removed until M6 gives it an
@@ -285,7 +285,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
     applied, health, portal, font and the guest proxy answering; `tooling/release.test.ts`.
   - [ ] The platform side: Dokploy stacks, database, secrets, DNS, and the management tunnel.
 - [ ] M6 Mobile-money payments and customers (ADR-0010). Built and accepted on test doubles, and
-  held behind credentials: HashiFi launches on printed vouchers.
+  held behind credentials: HashiNet launches on printed vouchers.
   - [x] (2026-10-31) Self-service purchase, the paying device signed in, the code shown to that
     session and sent by SMS, signed webhooks, reconciliation, access owed, assisted sales, and
     the Payments and Customers screens. Acceptance: `payments.integration.test.ts` (21 tests),
@@ -296,7 +296,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
   in development, served from the portal's origin, the real portal as the Portal Pages preview,
   and printed cards and prefixes by venue. `backgroundStyle` is dropped.
   Acceptance: `brand.integration.test.ts`, `brand-store.test.ts`, and a browser walk of upload,
-  preview, guest page and printed card; upload, serve and removal against the real `hashifi`
+  preview, guest page and printed card; upload, serve and removal against the real `hashinet`
   bucket, with a key limited to it and refused at the backups bucket.
 - [x] (2026-10-30) Sign-in moved to the API, closing M5's open findings. The hotspot is
   `login-by=mac-cookie` alone, and `/ip hotspot active login` is probed and required. No response
@@ -429,7 +429,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
   `prisma generate` (run on install) needs no database, as a fresh clone and CI require.
 - Observation: Better Auth 1.7's two-factor gate only covers password-style sign-ins, and its
   after-hook handler receives the hook input rather than the endpoint context, so Pigfarm's
-  1.6 wrapper (overriding `getSignedCookie`) failed with a 500. HashiFi widens the gate's
+  1.6 wrapper (overriding `getSignedCookie`) failed with a 500. HashiNet widens the gate's
   matcher and hands it the request headers without the trust-device cookie.
   Evidence: `apps/api/src/auth/create-auth.ts` (`withEmailCodeGate`).
 - Observation: the per-person code budget, first checked in the send callback, let anyone
@@ -453,7 +453,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
   came back on a router not reset first, after this was added. The test now clears them.
 - Observation: Prisma queries are lazy thenables, which `expect(...).rejects` does not accept;
   the integration tests await them through a helper.
-- Observation: from the Pigfarm session (2026-10-29), for when HashiFi adds BullMQ: BullMQ
+- Observation: from the Pigfarm session (2026-10-29), for when HashiNet adds BullMQ: BullMQ
   6.5.1 or later; `autoReconnect: false` on producer clients built with
   `createBunRedisClient` (on Bun 1.4.4 they otherwise reconnect without calling `onclose`);
   re-attach listeners in a `duplicate()` wrapper; no unbounded retries. Workers keep
@@ -504,19 +504,19 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
   Date/Author: 2026-10-28 / Paul, Claude
 - Decision: the repository stays private until M5's security fixes land.
   Rationale: the findings above describe exploitable defects; the code is published once
-  they are fixed. The earlier code is HashiFi's to change or delete.
+  they are fixed. The earlier code is HashiNet's to change or delete.
   Date/Author: 2026-10-28 / Paul
-- Decision: the repository goes public when HashiFi is ready to deploy, not when M5 lands.
+- Decision: the repository goes public when HashiNet is ready to deploy, not when M5 lands.
   Date/Author: 2026-10-30 / Paul
-- Decision: production is `hashifi.hashikome.com`, one host for staff and guests, matching
+- Decision: production is `hashinet.hashikome.com`, one host for staff and guests, matching
   `soko.hashikome.com`. It goes into printed QR codes and router allowed lists, so it stays.
   Date/Author: 2026-10-31 / Paul
 - Decision: routers reach the platform at `wg.hashikome.com:51820`, a name not tied to one product.
   Date/Author: 2026-10-31 / Paul
-- Decision: every push to `main` deploys while HashiFi is in development; releases can be made
+- Decision: every push to `main` deploys while HashiNet is in development; releases can be made
   manual later. Deploying starts once `DEPLOY_ENABLED` is set.
   Date/Author: 2026-10-31 / Paul
-- Decision: HashiFi launches on printed vouchers. Mobile money, assisted sales and SMS are held
+- Decision: HashiNet launches on printed vouchers. Mobile money, assisted sales and SMS are held
   until Snippe and BRIQ credentials exist, and turn on with them, so production no longer needs
   either. Live acceptance on hardware waits for the MikroTik device.
   Date/Author: 2026-10-31 / Paul
@@ -524,12 +524,12 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
   Date/Author: 2026-10-31 / Claude
 - Decision: venues brand themselves, with images in R2 (ADR-0009). This supersedes "no uploaded
   branding" below: Paul reversed it on seeing Portal Pages, because a guest should see the venue,
-  not HashiFi. No logo or background returns to PostgreSQL.
+  not HashiNet. No logo or background returns to PostgreSQL.
   Date/Author: 2026-10-31 / Paul, Claude
 - Decision: the API alone signs devices in, and the router accepts no login from the network,
   instead of adding CHAP to the router's login. CHAP would leave the router taking guesses, and a
   captured exchange could be brute forced offline; this closes both open findings
-  (ADR-0008). HashiFi is unreleased, so workflows are replaced when a better one exists.
+  (ADR-0008). HashiNet is unreleased, so workflows are replaced when a better one exists.
   Date/Author: 2026-10-30 / Paul, Claude
 - Decision: email through Resend; BullMQ on Redis where a queue is needed, or a better tool
   with its reason recorded.
@@ -542,7 +542,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
 - Decision: no `any` or `undefined` in types; absence is `null`.
   Rationale: [ADR-0004](../../engineering-decisions/0004-types-without-any-or-undefined.md).
   Date/Author: 2026-10-28 / Paul
-- Decision: staff sign in with Better Auth inside HashiFi, as in ntumie. and Pigfarm; the shared
+- Decision: staff sign in with Better Auth inside HashiNet, as in ntumie. and Pigfarm; the shared
   identity service (the earlier decision, 2026-10-28) is deferred until a concrete
   cross-product need. M4 no longer waits on a workspace plan.
   Rationale: [ADR-0007](../../engineering-decisions/0007-sign-in-with-better-auth.md): only a
@@ -559,7 +559,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
   M3: Prisma schema and migrations on PostgreSQL 18, the NestJS shell (entrypoint, LogTape and
   Sentry, configuration with `_FILE` secrets, `PrismaService`), the kept services (router
   provisioning, sync, reconciliation, expiry, live monitor, credentials, audit) moved onto Prisma
-  as providers, and one serializer layer to `@hashifi/types`. M4: each Express route ported
+  as providers, and one serializer layer to `@hashinet/types`. M4: each Express route ported
   straight to a NestJS module and deleted with its Drizzle code. Between them the old Express
   server does not run against a database.
   Rationale: porting the 5.5k lines of route queries to Prisma in M3 and again to NestJS in M4
@@ -575,10 +575,10 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
   Rationale: the bootstrap script is regenerated (it is safe to paste twice); fresh keys each
   time would orphan the key already on the router.
   Date/Author: 2026-10-29 / Claude (advisor review)
-- Decision: no uploaded branding. HashiFi's logo and any images ship with the web in
+- Decision: no uploaded branding. HashiNet's logo and any images ship with the web in
   `apps/web/public/` (`LOGO_SRC`); the portal settings keep wording, colours and voucher
   defaults only, and the earlier logo, background and letter-mark fields are removed.
-  Rationale: HashiFi is used as it is, not resold to venues to brand, so upload, storage and
+  Rationale: HashiNet is used as it is, not resold to venues to brand, so upload, storage and
   backup of images would serve nobody. Briefly stored in PostgreSQL before the owner ruled
   that media must not live in the database, and then that the uploads are not needed.
   Date/Author: 2026-10-30 / Paul
@@ -612,7 +612,7 @@ Not started beyond the import and scaffold.
 Done (see Progress). One root `bun.lock`; Biome replaces Prettier; root scripts from the template made real.
 Dependencies moved to the newest stable releases and pinned (check `npm view <pkg>
 dist-tags`: Prisma's `latest` is a release candidate at the time of writing, so 7.10.1).
-Every "WiFi Billing" and `wifi_billing`/`wifibilling` name becomes HashiFi (UI strings,
+Every "WiFi Billing" and `wifi_billing`/`wifibilling` name becomes HashiNet (UI strings,
 cookie and database names, demo addresses, router pages). In the web: remove
 `@vercel/analytics`, replace the `next-maps` GitHub dependency, fix the Recharts error and
 drop `typescript.ignoreBuildErrors`. `bun run verify` passes, with the 170 existing tests.
@@ -641,7 +641,7 @@ Done (see Progress). The original scope, kept for reference: port the schema to
 - `CONVERT_TZ`/`DATE_FORMAT` in `routes/analytics.ts` (27 and 15 uses) and
   `onDuplicateKeyUpdate` (4 uses) become PostgreSQL equivalents;
 - the UTC-on-disk, Dar es Salaam-calendar rule.
-- `apps/api/src/db/schema.ts` is the source for `@hashifi/types`' record types: keep them
+- `apps/api/src/db/schema.ts` is the source for `@hashinet/types`' record types: keep them
   identical as the Prisma models are written.
 
 A fresh migration history starts at the Prisma baseline; Drizzle and `drizzle/` are removed.
@@ -679,7 +679,7 @@ member emails to lower-case, voucher batch prefixes and the portal's `voucherPre
 upper-case.
 Totals and derived figures the admin pages compute today move into the responses, and the API
 enforces every rule the web pre-checks (the package price and throttle rules). The NestJS DTOs
-implement `@hashifi/types`, which grows to the whole contract, and `apps/web/lib/types.ts` (the
+implement `@hashinet/types`, which grows to the whole contract, and `apps/web/lib/types.ts` (the
 stale hand-written copy) is deleted; raw `fetch` moves into one client module. `RosRow`
 (`Record<string, string | undefined>`) becomes a `null`-returning accessor at the RouterOS
 boundary (ADR-0004). Email moves to Resend. The vendor's OTP login, sessions and mailer are not
@@ -701,7 +701,7 @@ follows, with findings fixed or recorded.
 ### M6 Mobile-money payments (Snippe) and customers
 
 Selected by the owner, 29 October 2026, who is obtaining the Snippe API: self-service purchase
-is the default way in and the reason HashiFi exists, so it ships in the first release rather
+is the default way in and the reason HashiNet exists, so it ships in the first release rather
 than after it. Gate: the portal works (M5) and a Snippe account exists; it needs no physical
 router, because the router sim and Snippe's test environment prove it. Guests buy a package on
 the portal with mobile money, and a voucher is issued and confirmed by the router before
@@ -725,7 +725,7 @@ access is granted. Printed vouchers sold for cash stay a supported path alongsid
   against a phone number, the voucher sent or printed; and pre-printed cards recorded as cash
   sales when redeemed, unsold cards as stock.
 - Voucher delivery to phones by SMS through BRIQ, the messaging provider chosen as
-  cross-product work ([workspace brief](https://github.com/hashikome/workspace/blob/main/backlog/messaging-delivery.md); Pigfarm will use it too). HashiFi depends on a small
+  cross-product work ([workspace brief](https://github.com/hashikome/workspace/blob/main/backlog/messaging-delivery.md); Pigfarm will use it too). HashiNet depends on a small
   sending interface, not the provider's API, and confirms delivery through BRIQ's signed,
   retried webhooks. **SMS only:** a guest asking for WiFi usually has no data, so WhatsApp and
   email cannot reach them; SMS reaches any phone with signal. The code is always also shown on
@@ -741,7 +741,7 @@ access is granted. Printed vouchers sold for cash stay a supported path alongsid
   reversed; a failed or reversed payout raises a platform issue, whose Retry sends it again. A daily
   job fetches any payout still on its way (`GET /v1/payouts/{ref}`) in case a webhook never came.
   Each payout is a statement of a week's online sales, less 7.5%, less the payout fee. To confirm
-  with Snippe before building: that HashiFi may pay out from its account to its businesses' accounts
+  with Snippe before building: that HashiNet may pay out from its account to its businesses' accounts
   (and what Snippe checks about who receives), whether the payout fee is the flat TSh 1,500 or what
   the fee lookup returns, the minimum (TSh 5,000 in its client libraries), and whether payouts go to
   mobile money or only to bank accounts. Endpoint names come from Snippe's client libraries; its
@@ -798,7 +798,7 @@ from a fresh database.
 
 ## Artifacts And Notes
 
-- Archives: `../workspace/inbox/hashifi/` (local, not in Git). sha256:
+- Archives: `../workspace/inbox/hashinet/` (local, not in Git). sha256:
   backend `ba99c1e6addfe7e25ade005ace0d6923415711e95f004394d1eecfc634414a2e`, frontend
   `35d85a47dfea041e9fcc30d596c097f308660212035bf0fb6232dac23cab45f5`. The backend archive's
   `database-backups/` and `uploads/` hold third parties' personal data: delete them from the

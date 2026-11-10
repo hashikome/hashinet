@@ -1,4 +1,4 @@
-import type { GuestContext, GuestSession, RedeemResult } from "@hashifi/types";
+import type { GuestContext, GuestSession, RedeemResult } from "@hashinet/types";
 import {
   Body,
   Controller,

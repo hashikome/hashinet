@@ -18,7 +18,7 @@ const server = Bun.serve({
 
 afterAll(() => server.stop(true));
 
-const sender = new BriqSmsSender("key", "app", "HASHIFI", `http://127.0.0.1:${server.port}`);
+const sender = new BriqSmsSender("key", "app", "HASHINET", `http://127.0.0.1:${server.port}`);
 const message = { to: "+255712345678", text: "Your code" };
 
 describe("BriqSmsSender", () => {
@@ -32,7 +32,7 @@ describe("BriqSmsSender", () => {
     expect(request?.body).toEqual({
       content: "Your code",
       recipients: ["+255712345678"],
-      sender_id: "HASHIFI",
+      sender_id: "HASHINET",
     });
   });
 

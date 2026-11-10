@@ -18,7 +18,7 @@ interface AuditEntry {
 
 /** The internal audit trail (docs/SECURITY.md): who did what to which record. */
 export class AuditLog {
-  private readonly logger = getLogger(["hashifi", "audit"]);
+  private readonly logger = getLogger(["hashinet", "audit"]);
 
   constructor(private readonly db: PrismaClient) {}
 

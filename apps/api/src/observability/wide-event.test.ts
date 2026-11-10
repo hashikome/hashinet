@@ -47,7 +47,7 @@ describe("wide events", () => {
 
   test("a plain logger's message and properties are redacted before any sink", async () => {
     const { getLogger } = await import("@logtape/logtape");
-    getLogger(["hashifi", "router-sync"]).error("Push to {router} failed: {error}", {
+    getLogger(["hashinet", "router-sync"]).error("Push to {router} failed: {error}", {
       router: "home",
       error: "RouterOS rejected /ip/hotspot/user/add =name=SIMRX2PJH",
     });

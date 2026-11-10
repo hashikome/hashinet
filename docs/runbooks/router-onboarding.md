@@ -5,7 +5,7 @@ model; the system detects the board and adapts.
 
 ```
 1. Reset the router
-2. Add the router in HashiFi and save it
+2. Add the router in HashiNet and save it
 3. Open its bootstrap script → paste it into the router
 4. Set up router
 5. Check a phone

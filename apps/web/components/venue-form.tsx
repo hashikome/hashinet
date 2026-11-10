@@ -1,6 +1,6 @@
 "use client";
 
-import type { VenueRecord, VenueResponse, VenueStatus } from "@hashifi/types";
+import type { VenueRecord, VenueResponse, VenueStatus } from "@hashinet/types";
 import { ArrowLeft, Loader } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

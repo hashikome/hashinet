@@ -51,7 +51,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Observation: Cloudflare adds a bot-detection script and a hidden link to any text/html it serves,
   so a router's portal page arrived about 1.1 KB larger than rendered and setup refused it.
   Evidence: 8,057 bytes rendered, 9,171 on the router; `__CF$cv$params` in the body. Guests' pages on
-  `hashifi.hashikome.com` get the same treatment, which the walled garden must be checked against.
+  `hashinet.hashikome.com` get the same treatment, which the walled garden must be checked against.
 - Observation: seven venue fields are read only by the form and its serializer.
   Evidence: road, street, ward, district, postal code, latitude and longitude, by search of the code.
 
@@ -62,14 +62,14 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 ## Decision Log
 
 - Decision: Invitations is the platform's page for finding and acting on invitations, not for issuing
-  them: hashifi's team and new businesses' owners, with Search, Kind and State filters and
+  them: HashiNet's team and new businesses' owners, with Search, Kind and State filters and
   Resend, Revoke or Invite again. A business has the same page, beside Team and the audit log, for an
   owner their business's and for a manager their venues'. Issuing stays where the grant lives: Invite a business on Businesses, people on Team, always as
   Invite someone; the form decides which roles the inviter can give.
   Date/Author: 2026-11-04, owner.
 - Decision: a business's owner has their own Billing page, in the top of the menu beside Payments, kept as simple as a
   way to pay their bills: what is due, their rate, how to pay and every invoice, each opening its own
-  page, with no Remind or Record payment. What they have spent on hashifi belongs to their own books. Services holds what an owner opts into from hashifi: SMS credits, where each purchase is an invoice, and Online payments. Managers and
+  page, with no Remind or Record payment. What they have spent on HashiNet belongs to their own books. Services holds what an owner opts into from HashiNet: SMS credits, where each purchase is an invoice, and Online payments. Managers and
   operators see neither. Both pages are built to hold the place and get their polish in the business
   owner's review; how to pay uses sample numbers until how payments arrive is settled.
 - Decision: the platform's Payments page and an owner's Billing follow ADR-0013 (5% of sales, 2.5% above TSh 2M a month per venue, a minimum of TSh 5,000 a
@@ -77,8 +77,8 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Date/Author: 2026-11-04, owner.
 - Decision: the logo is the ring alone, with no wordmark; the platform workspace adds a solid
   `PLATFORM` tag beside it; the
-  product is written `hashifi` in all copy. The rename of user-facing copy, emails, page titles and
-  docs prose ships with H1's remaining work; identifiers (`HashifiMark`, package names) keep their
+  product is written `hashinet` in all copy. The rename of user-facing copy, emails, page titles and
+  docs prose ships with H1's remaining work; identifiers (`HashiNetMark`, package names) keep their
   code casing.
   Date/Author: 2026-11-04, owner.
 - Decision: everything that needs someone lives on one **Issues** page (an issue is anything that needs an action, not only an error), with
@@ -94,7 +94,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   and its setup (add the router, install, set up; the whole team, operators included). The venue is
   linked from the header rather than repeated; setups are listed by date, soonest first.
 - Decision: business and venue pages open with a profile column (logo; name with its address under
-  it, as a venue reads in a table; when it joined; facts and actions) beside their panels. For a business the facts are its owner, what it has paid hashifi in
+  it, as a venue reads in a table; when it joined; facts and actions) beside their panels. For a business the facts are its owner, what it has paid HashiNet in
   total with what is due now, and its service access; Businesses lists the same total, so the
   biggest customers show at a glance. Amounts are whole shillings (TSh has no cents in use).
 - Decision: every email to an owner, from an issue or a reminder, uses one form on the page, sent by the API through Resend, with
@@ -133,12 +133,12 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   another is being set up. A business page is the same for every business: its notices link to the
   issue, and its venues table opens each venue. Set up again is
   the card's action and opens the same setup steps for this router: a reset or replaced router runs a
-  new script from step 1, which stops the old one; one that still reaches hashifi skips to Set up.
+  new script from step 1, which stops the old one; one that still reaches HashiNet skips to Set up.
   Cancel leaves the router as it was.
   Date/Author: 2026-11-05, owner.
-- Decision: the platform has no Live sessions and no device lists. hashifi runs no router and serves
+- Decision: the platform has no Live sessions and no device lists. HashiNet runs no router and serves
   no guests; it keeps only counts, and a business sees its own devices. What is the platform's and what
-  is the business's is ADR-0014. The platform's Analytics is about hashifi itself: sales across businesses, the
+  is the business's is ADR-0014. The platform's Analytics is about HashiNet itself: sales across businesses, the
   fees they bring in (ADR-0013), venues serving, new businesses, and which businesses grow or go
   quiet; busiest hours and what guests buy stay in each business's own Analytics. A business page
   shows its figures, venues today, people, details, the month's billing and its recent activity.
@@ -187,7 +187,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   proprietor, who may be informal: personal TIN and its certificate, and a business licence in their
   own name from the Tausi portal if they have one; a registered company: BRELA number with its Certificate of
   Incorporation, business licence, and TIN with its certificate; only these two: individuals and
-  companies; NGOs are added if Hashifi ever serves them); and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While Hashifi checks,
+  companies; NGOs are added if HashiNet ever serves them); and agreeing to 7.5% a sale and weekly payouts less TSh 1,500. While HashiNet checks,
   the page says "We're checking your details", when they asked and that the owner is emailed once it is on, then what was sent and Change details. The platform's row opens a
   review: what they sent (each certificate to view, and the owner shown as verified), three checks
   (the account is in the business's or owner's name, the documents name the same business, with the TIN
@@ -246,7 +246,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   with Issues; vouchers running low reach owners and managers; SMS credits running low and bills reach
   owners. They follow the venue in scope: bills and credits belong to the business, so they show only
   with every venue in scope. Each closes itself once dealt with, and every page has Contact support, an
-  email form to hashifi that carries the issue and reaches the platform's Issues, where replying closes
+  email form to HashiNet that carries the issue and reaches the platform's Issues, where replying closes
   it. An operator sees vouchers running low on Today. A venue's issues can be claimed and handed between
   owners and managers, a bill or credits stay the owner's, and someone working alone sees no Responsible
   column. There
@@ -273,7 +273,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   table with its actions. It shows payments as they come in, to check them, confirm them and record them.
   Recording a payment and selling a voucher are one step, Sell a voucher (PRODUCT 4.7), from
   Vouchers, Overview, Today and Payments. Past months open by the Month filter; trends live in Sales, and what
-  Hashifi charges in Billing.
+  HashiNet charges in Billing.
   Date/Author: 2026-11-06, owner.
 - Decision: adding a venue takes its name and location in a popup. The venue then opens on the same Getting
   started steps a new business sees, where the owner chooses how its router comes, so there is one workflow.
@@ -285,7 +285,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   sign-in still works. The limit is where speeds fall below what is promised; until then the number on
   the router page is a sample.
   Date/Author: 2026-11-06, owner.
-- Decision: what a business pays hashifi is its own page, not defaults or settings. Payments is always
+- Decision: what a business pays HashiNet is its own page, not defaults or settings. Payments is always
   money coming in: to an owner what guests pay them, to the platform what businesses pay it, every
   business's charges. Billing is money going out, an owner's view of their own bills.
   Date/Author: 2026-11-04, owner.
@@ -347,11 +347,11 @@ not neutral. Every existing screen takes the new tokens; nothing else changes ye
 Billing for owners, Analytics; then Manage, Services for owners, Business and Settings), rendered from the API's capabilities, never from role names. Analytics
 and the groups open alike, one at a time: opening one closes the other, clicking it again closes it,
 and the one holding the current page opens by itself; operators have
-a short list with no groups. Payments shows what guests have paid over time, month by month, and an owner also sees hashifi's fee and what they keep; Billing shows what the business pays hashifi. At the top,
-the business's logo and name (HashiFi with the Platform tag for platform staff) and the scope filter
+a short list with no groups. Payments shows what guests have paid over time, month by month, and an owner also sees HashiNet's fee and what they keep; Billing shows what the business pays HashiNet. At the top,
+the business's logo and name (HashiNet with the Platform tag for platform staff) and the scope filter
 (all businesses or one; all venues or one; absent with one venue). At the foot, the account menu:
-name and role, the workspaces, Account and security, Sign out, and "Runs on HashiFi". One sign-in
-screen for everyone, named HashiFi with no "staff" or "admin" wording. The sign-in is always dark, whatever the
+name and role, the workspaces, Account and security, Sign out, and "Runs on HashiNet". One sign-in
+screen for everyone, named HashiNet with no "staff" or "admin" wording. The sign-in is always dark, whatever the
 theme setting: a midnight field, the open ring large in the lower right, and a 420px card (title,
 email, Continue, the terms line, "Need help signing in?" with Contact support), sized one step
 above the admin's controls; no logo in the corner; a footer strip with
@@ -381,7 +381,7 @@ and RouterOS version after setup.
 endpoints return each voucher's resolved brand. Router pages take their colours from the same
 templating as their URLs (`portal-files.ts`), not hand-copied values. The night top with the logo, venue name and place, over a white sheet with
 the welcome ("Karibu. Pull up a seat."), "Scan the QR code on your voucher, or enter its code.", the code field and the button; the packages below. Logo:
-the venue's, else the business's, else HashiFi's. The router's pages stay byte-exact, and the walled
+the venue's, else the business's, else HashiNet's. The router's pages stay byte-exact, and the walled
 garden is checked against the script Cloudflare injects into guests' pages.
 
 **H6, business screens.** Team (the owner invites business managers; the owner and business managers
@@ -389,8 +389,8 @@ invite venue managers and venue operators to chosen venues; venue managers invit
 profile (name, logo, each venue's portal), and for platform staff Add a business and Default
 packages. Needs business-scopes M3 to M5.
 
-Every footer and email shows the HashiFi mark and `© <year> Shikome Technology Limited`; the
-captive portal's foot keeps "by HashiFi" as its credit.
+Every footer and email shows the HashiNet mark and `© <year> Shikome Technology Limited`; the
+captive portal's foot keeps "by HashiNet" as its credit.
 
 **H7, audit.** design-audit `critique` and `audit` at 1280 and 375, light and dark, with real seed
 data; no P0 or P1 left. Then the docs, and the plan folded away.
@@ -423,7 +423,7 @@ Each milestone ships on its own; H1 is token-only and reverts with one commit.
 ## Interfaces And Dependencies
 
 `Capabilities` and `Principal` (business-scopes M2), and the overview and analytics shapes (H3), in
-`@hashifi/types`.
+`@hashinet/types`.
 
 ## Deferred
 

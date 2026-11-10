@@ -1,4 +1,4 @@
-import type { GuestContext } from "@hashifi/types";
+import type { GuestContext } from "@hashinet/types";
 import type { CSSProperties, FormEvent } from "react";
 import { LOGO_SRC } from "@/lib/brand";
 import { formatDuration } from "@/lib/duration";

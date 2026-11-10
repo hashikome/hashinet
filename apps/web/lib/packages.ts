@@ -1,4 +1,4 @@
-import type { PackageRecord } from "@hashifi/types";
+import type { PackageRecord } from "@hashinet/types";
 
 /** A package as `PUT /api/packages/:id` takes it: updates replace the whole package. */
 export function packageBody(pkg: PackageRecord) {

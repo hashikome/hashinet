@@ -1,10 +1,10 @@
-# @hashifi/api
+# @hashinet/api
 
-The HashiFi API: venues, routers, packages, vouchers, sessions, analytics and the captive
+The HashiNet API: venues, routers, packages, vouchers, sessions, analytics and the captive
 portal, plus the MikroTik provisioning that makes them real on a router.
 
 NestJS on Bun with Prisma and PostgreSQL 18; the
-[build plan](../../docs/exec-plans/active/build-hashifi.md) tracks the port.
+[build plan](../../docs/exec-plans/active/build-hashinet.md) tracks the port.
 
 ## Commands
 

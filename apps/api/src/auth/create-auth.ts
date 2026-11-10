@@ -39,7 +39,7 @@ export type Auth = ReturnType<typeof createAuth>;
 export function createAuth({ config, db, email }: AuthDependencies) {
   const otpKey = config.auth.secret;
   return betterAuth({
-    appName: "HashiFi",
+    appName: "HashiNet",
     baseURL: config.appUrl,
     basePath: AUTH_BASE_PATH,
     secret: config.auth.secret,
@@ -96,7 +96,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           if (!(await maySendSignInCode(db, address))) return ctx.json({ success: true });
         }
         if (ctx.path.startsWith("/two-factor/verify-") && ctx.body?.trustDevice === true) {
-          // HashiFi trusts no device to skip the authenticator (withEmailCodeGate).
+          // HashiNet trusts no device to skip the authenticator (withEmailCodeGate).
           return { context: { body: { ...ctx.body, trustDevice: false } } };
         }
         if (ctx.path === "/two-factor/enable") {
@@ -126,7 +126,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           void email.send(signInCodeEmail(address, otp)).catch(captureFailure);
         },
       }),
-      withEmailCodeGate(twoFactor({ issuer: "HashiFi", allowPasswordless: true })),
+      withEmailCodeGate(twoFactor({ issuer: "HashiNet", allowPasswordless: true })),
     ],
   });
 }

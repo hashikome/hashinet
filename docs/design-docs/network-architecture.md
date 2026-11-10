@@ -1,24 +1,24 @@
-# HashiFi Network Architecture Reference
+# HashiNet Network Architecture Reference
 
-HashiFi is viable, but the access-control logic should not depend on the basic router supplied by an ISP. Routers commonly provided by ISPs such as Vodacom, Tigo/Yas, and Airtel are best treated as internet uplinks. They usually expose basic WiFi and device-management settings, but they should not be assumed to support a custom captive portal, router API, RADIUS accounting, per-session expiry, or reliable per-user firewall control.
+HashiNet is viable, but the access-control logic should not depend on the basic router supplied by an ISP. Routers commonly provided by ISPs such as Vodacom, Tigo/Yas, and Airtel are best treated as internet uplinks. They usually expose basic WiFi and device-management settings, but they should not be assumed to support a custom captive portal, router API, RADIUS accounting, per-session expiry, or reliable per-user firewall control.
 
 ## Core Assumption
 
-HashiFi should control a dedicated gateway or hotspot router placed behind the ISP router.
+HashiNet should control a dedicated gateway or hotspot router placed behind the ISP router.
 
 ```text
 Internet / SIM / Fiber
         |
 ISP router from Vodacom, Tigo/Yas, Airtel, etc.
         |
-HashiFi-controlled router or gateway
+HashiNet-controlled router or gateway
         |
 Guest WiFi / access points
         |
 Customers
 ```
 
-The ISP router provides internet access. The HashiFi-controlled router enforces subscriptions, redirects unauthenticated users, tracks sessions, and permits or blocks traffic.
+The ISP router provides internet access. The HashiNet-controlled router enforces subscriptions, redirects unauthenticated users, tracks sessions, and permits or blocks traffic.
 
 ## What Works With Basic ISP Routers
 
@@ -32,7 +32,7 @@ That approach is limited:
 - Admins may need to rotate passwords manually.
 - There is little or no integration with payments, subscriptions, or per-router analytics.
 
-This can be useful for a very small demo, but it is not enough for the full HashiFi model.
+This can be useful for a very small demo, but it is not enough for the full HashiNet model.
 
 ## Required Router Capabilities
 
@@ -61,19 +61,19 @@ Other viable options:
 
 ## Bridge Mode And Double NAT
 
-The cleanest setup is for the ISP router to run in bridge mode or IP passthrough mode, allowing the HashiFi-controlled router to become the main gateway.
+The cleanest setup is for the ISP router to run in bridge mode or IP passthrough mode, allowing the HashiNet-controlled router to become the main gateway.
 
 ```text
-ISP modem/bridge -> HashiFi router -> Guest WiFi
+ISP modem/bridge -> HashiNet router -> Guest WiFi
 ```
 
-Bridge mode is helpful but not mandatory. If the ISP router does not support bridge mode, HashiFi can still work behind it:
+Bridge mode is helpful but not mandatory. If the ISP router does not support bridge mode, HashiNet can still work behind it:
 
 ```text
-ISP router NAT -> HashiFi router NAT -> Guest WiFi
+ISP router NAT -> HashiNet router NAT -> Guest WiFi
 ```
 
-This double-NAT setup is usually acceptable for customer browsing, messaging, streaming, and normal app use. It can complicate inbound port forwarding, remote administration, VPN hosting, and services hosted inside the premises. To avoid those problems, the HashiFi backend should be cloud-hosted and the router should initiate outbound connections to it.
+This double-NAT setup is usually acceptable for customer browsing, messaging, streaming, and normal app use. It can complicate inbound port forwarding, remote administration, VPN hosting, and services hosted inside the premises. To avoid those problems, the HashiNet backend should be cloud-hosted and the router should initiate outbound connections to it.
 
 ## Captive Portal Flow
 
@@ -81,13 +81,13 @@ The recommended MVP flow:
 
 1. Customer connects to the guest WiFi.
 2. The router blocks normal internet access for unauthenticated clients.
-3. The router redirects the customer to the HashiFi portal.
-4. HashiFi validates a subscription, voucher, payment, or QR token.
-5. HashiFi authorizes the router session.
+3. The router redirects the customer to the HashiNet portal.
+4. HashiNet validates a subscription, voucher, payment, or QR token.
+5. HashiNet authorizes the router session.
 6. The router allows internet access for the permitted duration.
 7. The router enforces expiry, optional speed limits, and device/session limits.
 
-The QR code should normally open the HashiFi portal or encode a subscription/voucher token. It should not only contain the shared WiFi password if the goal is enforceable access control.
+The QR code should normally open the HashiNet portal or encode a subscription/voucher token. It should not only contain the shared WiFi password if the goal is enforceable access control.
 
 ## Device Locking Caveat
 
@@ -106,9 +106,9 @@ Recommended approach:
 Start with MikroTik as the first supported router target:
 
 - Use MikroTik hotspot/captive portal features.
-- Use HashiFi for subscription, voucher, QR, payment, and admin logic.
+- Use HashiNet for subscription, voucher, QR, payment, and admin logic.
 - Use RADIUS or MikroTik API for authorization and accounting.
-- Host the HashiFi backend in the cloud.
+- Host the HashiNet backend in the cloud.
 - Let each router call outward to the backend to avoid inbound networking issues.
 
 This keeps the first implementation practical while still leaving room to support OpenWrt, UniFi, Omada, pfSense, or OPNsense later.

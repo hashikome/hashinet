@@ -16,7 +16,7 @@ import {
 import type { RouterAccess } from "./router-credentials.js";
 
 // Voucher codes are credentials: logs name the session or router, never the code.
-const logger = getLogger(["hashifi", "live-monitor"]);
+const logger = getLogger(["hashinet", "live-monitor"]);
 
 export const POLL_INTERVAL_MS = 5_000;
 export const HEALTH_CHECK_INTERVAL_MS = 60_000;

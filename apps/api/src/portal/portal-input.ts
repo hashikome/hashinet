@@ -1,9 +1,9 @@
-import type { PortalSettingsRecord } from "@hashifi/types";
+import type { PortalSettingsRecord } from "@hashinet/types";
 import { z } from "zod";
 
-/** The HashiFi default, until an admin saves another; a venue may set its own. */
+/** The HashiNet default, until an admin saves another; a venue may set its own. */
 export const DEFAULT_PORTAL_SETTINGS: PortalSettingsRecord = {
-  brandName: "HashiFi",
+  brandName: "HashiNet",
   headline: "Welcome to fast WiFi",
   message: "Enter your voucher code to get online.",
   primaryColor: "#F59E2A",

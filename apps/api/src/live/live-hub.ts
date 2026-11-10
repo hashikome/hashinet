@@ -1,6 +1,6 @@
 import type { IncomingMessage, Server } from "node:http";
 import type { Duplex } from "node:stream";
-import type { LiveMessage } from "@hashifi/types";
+import type { LiveMessage } from "@hashinet/types";
 import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } from "@nestjs/common";
 import { fromNodeHeaders } from "better-auth/node";
 import { type WebSocket, WebSocketServer } from "ws";

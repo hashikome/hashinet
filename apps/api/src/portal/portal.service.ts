@@ -1,4 +1,4 @@
-import type { PortalSettingsRecord } from "@hashifi/types";
+import type { PortalSettingsRecord } from "@hashinet/types";
 import { Injectable } from "@nestjs/common";
 import { AuditLog } from "../audit/audit-log.js";
 import type { StaffPrincipal } from "../auth/staff-guard.js";
@@ -8,8 +8,8 @@ import type { RequestOrigin } from "../venues/venues.service.js";
 import { DEFAULT_PORTAL_SETTINGS, type PortalInput } from "./portal-input.js";
 
 /**
- * The HashiFi default: what a guest sees at a venue with no branding of its own (`BrandService`).
- * Its logo is HashiFi's, and ships with the web.
+ * The HashiNet default: what a guest sees at a venue with no branding of its own (`BrandService`).
+ * Its logo is HashiNet's, and ships with the web.
  */
 @Injectable()
 export class PortalService {

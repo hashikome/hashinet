@@ -3,8 +3,8 @@ WORKDIR /app
 COPY . .
 RUN bun install --frozen-lockfile
 # Fixed at build: staff and guests reach the API on the page's own origin, through the proxy.
-ENV NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_API_URL= API_INTERNAL_URL=http://hashifi-api:8080
-RUN bun run --filter @hashifi/web build
+ENV NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_API_URL= API_INTERNAL_URL=http://hashinet-api:8080
+RUN bun run --filter @hashinet/web build
 
 FROM oven/bun:1.4.4
 WORKDIR /app

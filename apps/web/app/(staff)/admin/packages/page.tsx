@@ -1,6 +1,6 @@
 "use client";
 
-import type { PackageList, PackageRecord } from "@hashifi/types";
+import type { PackageList, PackageRecord } from "@hashinet/types";
 import {
   Clock,
   Eye,

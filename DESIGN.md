@@ -1,17 +1,17 @@
-# HashiFi design
+# HashiNet design
 
 > The visual system and tokens, written for DESIGN.md-aware tools. Tokens live in
 > `apps/web/app/globals.css`; components use the roles, never raw colours.
 
 ## Overview
 
-HashiFi has two surfaces. The **admin** is a working tool for owners and venue staff, used in short
+HashiNet has two surfaces. The **admin** is a working tool for owners and venue staff, used in short
 checks and longer sessions on a laptop or a phone: quiet, flat and exact, with the product's own
 data doing the talking. The **guest portal** is a single small page on a cheap phone on a slow link,
 before the guest has internet: one job, one large field and one button.
 
 The direction is **Hearth**, from Hashikome's bonfire. Hashikome is the Sukuma bonfire: presence,
-gathering, conversation. HashiFi is the WiFi by that fire, and connecting is joining the circle. Mist
+gathering, conversation. HashiNet is the WiFi by that fire, and connecting is joining the circle. Mist
 ground, white panels and midnight ink; ember only in the mark, the charts and the sign-in button.
 
 ## Colors
@@ -51,7 +51,7 @@ The theme setting is Light, Dark or System, and System is the default: it follow
 changes with it. A signed-in person's choice wins from then on. The sign-in screens are always dark,
 and everything they open (Contact support, Send feedback) is dark with them.
 
-Each venue can set its own colours, logo and background (ADR-0009), with HashiFi's defaults of ember
+Each venue can set its own colours, logo and background (ADR-0009), with HashiNet's defaults of ember
 on a midnight field. Text colours are computed from them, so any choice stays readable, and a
 background photo sits under a 55% black scrim.
 
@@ -61,7 +61,7 @@ enter the mobile number, Pay; under "Have a voucher?", a link to the voucher pag
 opens first: the voucher page where it sells printed vouchers, the buy page where guests buy on the
 portal. After paying, the guest lands on the voucher page with the paid code entered, signing in. The
 venue's name and place sit at the top left and its logo, which is optional, at the top right, as on the
-printed voucher. The whole page is one colour with the action button filled, and the hashifi arc sits
+printed voucher. The whole page is one colour with the action button filled, and the HashiNet arc sits
 faint in the bottom corner, as on sign-in. Every page fits one phone screen, the signature included;
 fields and buttons are 44px.
 
@@ -106,8 +106,8 @@ to keep nothing.
 
 ## The name in copy
 
-Hashifi, capitalised, in sentences and labels. Lower case only where it is the mark or a name in a
-system: the wordmark, "Runs on hashifi", the portal's signature, the automatic actor in logs, domains,
+HashiNet, capitalised, in sentences and labels. Lower case only where it is the mark or a name in a
+system: the wordmark, "Runs on hashinet", the portal's signature, the automatic actor in logs, domains,
 addresses and file names.
 
 ## Actions and issues
@@ -213,12 +213,12 @@ respects `prefers-reduced-motion`.
 
 - **Mark:** the open ring with the ember in its gap, with no wordmark (owner's decision, 4 November
   2026). In the platform workspace a solid `PLATFORM` tag sits beside it, the text colour as its
-  ground so it inverts in dark mode, telling the platform apart from a business that uses the ring. `HashifiMark` draws it in the admin, the ring in
-  the text colour, with `aria-label="hashifi"`; `public/logo.svg` and the icons are the same mark on a
+  ground so it inverts in dark mode, telling the platform apart from a business that uses the ring. `HashiNetMark` draws it in the admin, the ring in
+  the text colour, with `aria-label="hashinet"`; `public/logo.svg` and the icons are the same mark on a
   midnight tile, for print and for any surface. A business workspace shows the business's logo and
   name instead.
-- **Name:** written `hashifi`, lowercase, everywhere a person reads it, including the start of a
-  sentence, as ntumie. is. Never "HashiFi".
+- **Name:** HashiNet in sentences and labels; `hashinet`, lowercase, only as the wordmark and as a
+  name in a system (see Copy). Never "Hashinet" or "HashiFi".
 
 ## Do's and Don'ts
 

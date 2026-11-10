@@ -1,12 +1,12 @@
 # Deployment
 
-Every push to `main` is verified, built into images and deployed, for as long as HashiFi is in
+Every push to `main` is verified, built into images and deployed, for as long as HashiNet is in
 development. To make it manual, replace `push` with `workflow_dispatch` in
 `.github/workflows/release.yml`.
 
-Production is `hashifi.hashikome.com`: one host, on the shared Dokploy platform
+Production is `hashinet.hashikome.com`: one host, on the shared Dokploy platform
 ([infra](https://github.com/hashikome/infra/blob/main/docs/dokploy-release.md)). Traefik sends
-`/api/`, `/ws/`, `/webhooks/` and `/portal/hotspot-files/` to `hashifi-api`, and the rest to `web`.
+`/api/`, `/ws/`, `/webhooks/` and `/portal/hotspot-files/` to `hashinet-api`, and the rest to `web`.
 
 ## What a release does
 
@@ -22,15 +22,15 @@ Production is `hashifi.hashikome.com`: one host, on the shared Dokploy platform
 
 Once, before setting `DEPLOY_ENABLED`:
 
-- Two Dokploy Stacks, raw source with auto-deploy off: `hashifi-xxxxxx` (`deploy/docker-stack.yml`)
-  and `hashifi-release-xxxxxx` (`deploy/docker-stack.migrate.yml`), named in `deploy/release.json`,
+- Two Dokploy Stacks, raw source with auto-deploy off: `hashinet-xxxxxx` (`deploy/docker-stack.yml`)
+  and `hashinet-release-xxxxxx` (`deploy/docker-stack.migrate.yml`), named in `deploy/release.json`,
   each with the inputs in
   the stack section of `.env.example`.
 - A database and roles on the shared PostgreSQL, and the Docker secrets it names.
-- DNS: `hashifi.hashikome.com` proxied, and `wg.hashikome.com` DNS-only, since Cloudflare's proxy
+- DNS: `hashinet.hashikome.com` proxied, and `wg.hashikome.com` DNS-only, since Cloudflare's proxy
   does not carry WireGuard.
 - Email sends from `no-reply@notify.hashikome.com` with the shared Hashikome Resend key, as Soko
-  does; HashiFi holds it as its own Docker secret.
+  does; HashiNet holds it as its own Docker secret.
 - In GitHub: an environment `production` with the secret `DOKPLOY_API_KEY`, and the variables
   `DOKPLOY_REGISTRY_ID` and `DEPLOY_ENABLED`.
 - Uptime Kuma monitors on `/api/health` and `/portal/login`.
@@ -42,7 +42,7 @@ and they turn on ([ADR-0010](../engineering-decisions/0010-payments-and-sms.md))
 
 ## The management tunnel
 
-The `hashifi-tunnel` service in the stack (`apps/tunnel`) is the platform's end of the routers' tunnels
+The `hashinet-tunnel` service in the stack (`apps/tunnel`) is the platform's end of the routers' tunnels
 ([ADR-0006](../engineering-decisions/0006-router-management-tunnel.md)). It runs on the host's
 network with `NET_ADMIN`, creates `wg0` at `10.88.0.1` and listens on `wg.hashikome.com:51820`, so the API needs
 no capability: its traffic to a router leaves through the host and is masqueraded on `wg0`, and the

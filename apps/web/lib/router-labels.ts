@@ -1,4 +1,4 @@
-import type { RouterRecord, RouterStage } from "@hashifi/types";
+import type { RouterRecord, RouterStage } from "@hashinet/types";
 import { statusPill } from "@/lib/status-pill";
 
 export function routerStatusPill(status: RouterRecord["status"]) {

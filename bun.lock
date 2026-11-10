@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "hashifi",
+      "name": "hashinet",
       "devDependencies": {
         "@biomejs/biome": "2.6.3",
         "@types/bun": "1.4.4",
@@ -11,10 +11,10 @@
       },
     },
     "apps/api": {
-      "name": "@hashifi/api",
+      "name": "@hashinet/api",
       "version": "0.1.0",
       "dependencies": {
-        "@hashifi/types": "workspace:*",
+        "@hashinet/types": "workspace:*",
         "@logtape/logtape": "2.4.2",
         "@logtape/sentry": "2.4.2",
         "@nestjs/common": "12.3.2",
@@ -45,7 +45,7 @@
       },
     },
     "apps/tunnel": {
-      "name": "@hashifi/tunnel",
+      "name": "@hashinet/tunnel",
       "version": "0.0.0",
       "devDependencies": {
         "@types/bun": "1.4.4",
@@ -53,10 +53,10 @@
       },
     },
     "apps/web": {
-      "name": "@hashifi/web",
+      "name": "@hashinet/web",
       "version": "0.1.0",
       "dependencies": {
-        "@hashifi/types": "workspace:*",
+        "@hashinet/types": "workspace:*",
         "class-variance-authority": "0.7.1",
         "clsx": "2.1.1",
         "cmdk": "1.1.1",
@@ -87,7 +87,7 @@
       },
     },
     "packages/types": {
-      "name": "@hashifi/types",
+      "name": "@hashinet/types",
       "version": "0.1.0",
       "devDependencies": {
         "typescript": "7.0.2",
@@ -215,13 +215,13 @@
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.12", "", {}, "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="],
 
-    "@hashifi/api": ["@hashifi/api@workspace:apps/api"],
+    "@hashinet/api": ["@hashinet/api@workspace:apps/api"],
 
-    "@hashifi/tunnel": ["@hashifi/tunnel@workspace:apps/tunnel"],
+    "@hashinet/tunnel": ["@hashinet/tunnel@workspace:apps/tunnel"],
 
-    "@hashifi/types": ["@hashifi/types@workspace:packages/types"],
+    "@hashinet/types": ["@hashinet/types@workspace:packages/types"],
 
-    "@hashifi/web": ["@hashifi/web@workspace:apps/web"],
+    "@hashinet/web": ["@hashinet/web@workspace:apps/web"],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 

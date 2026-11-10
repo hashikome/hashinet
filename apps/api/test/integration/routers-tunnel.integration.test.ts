@@ -30,7 +30,7 @@ describe("bootstrap with the management tunnel", () => {
         venueId: venue.id,
         name: "Lobby",
         ipAddress: "192.168.0.161",
-        apiUsername: "hashifi",
+        apiUsername: "hashinet",
       },
     });
 

@@ -98,7 +98,7 @@ const schema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32, "must be at least 32 characters (openssl rand -hex 32)"),
   TRUSTED_PROXIES: z.string().default(""),
   RESEND_API_KEY: z.string().min(1).nullable().default(null),
-  EMAIL_FROM: z.string().min(3).default("HashiFi <no-reply@hashikome.com>"),
+  EMAIL_FROM: z.string().min(3).default("HashiNet <no-reply@hashikome.com>"),
   EMAIL_OUTBOX_DIR: z.string().min(1).default(DEFAULT_OUTBOX_DIR),
   SNIPPE_API_KEY: z.string().min(1).nullable().default(null),
   SNIPPE_WEBHOOK_SECRET: z.string().min(1).nullable().default(null),

@@ -1,4 +1,4 @@
-import type { Capabilities } from "@hashifi/types";
+import type { Capabilities } from "@hashinet/types";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 

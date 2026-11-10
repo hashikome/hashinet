@@ -22,7 +22,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { HashifiMark } from "@/components/hashifi-mark";
+import { HashiNetMark } from "@/components/hashinet-mark";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -114,9 +114,9 @@ export function AdminSidebar() {
     <div className="flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-        <HashifiMark className="size-9 text-foreground" />
+        <HashiNetMark className="size-9 text-foreground" />
         <div>
-          <p className="font-semibold text-sm">HashiFi</p>
+          <p className="font-semibold text-sm">HashiNet</p>
           <p className="text-xs text-sidebar-foreground/60">Admin Portal</p>
         </div>
       </div>

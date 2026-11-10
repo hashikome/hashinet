@@ -1,6 +1,6 @@
 "use client";
 
-import type { RouterRecord, RouterResponse, VenueList, VenueRecord } from "@hashifi/types";
+import type { RouterRecord, RouterResponse, VenueList, VenueRecord } from "@hashinet/types";
 import {
   AlertCircle,
   ArrowLeft,

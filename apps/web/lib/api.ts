@@ -1,4 +1,4 @@
-import type { ApiError } from "@hashifi/types";
+import type { ApiError } from "@hashinet/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4006";
 
@@ -58,7 +58,7 @@ async function upload<T>(path: string, file: File): Promise<T> {
   return parsed as T;
 }
 
-/** The one way the web reaches the API. Response types come from `@hashifi/types`. */
+/** The one way the web reaches the API. Response types come from `@hashinet/types`. */
 export const api = {
   get: <T>(path: string) => request<T>("GET", path, null),
   post: <T>(path: string, body: unknown = {}) => request<T>("POST", path, body),

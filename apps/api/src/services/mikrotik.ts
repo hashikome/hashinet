@@ -3,7 +3,7 @@ import { RouterOSAPI } from "routeros";
 import { minutesToRosUptime } from "../utils/duration.js";
 import { toRows } from "./router-provision/ros-client.js";
 
-const logger = getLogger(["hashifi", "router"]);
+const logger = getLogger(["hashinet", "router"]);
 
 export type MikroTikConn = RouterOSAPI;
 
@@ -397,7 +397,7 @@ export async function disconnectHotspotDevice(
   }
 }
 
-/** The comment that marks a block as HashiFi's, so hand-made bindings are never touched. */
+/** The comment that marks a block as HashiNet's, so hand-made bindings are never touched. */
 const BLOCK_COMMENT = "wbs:device-block";
 
 /** Refuses a device at the router: no login of any kind works while the binding exists. */

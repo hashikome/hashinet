@@ -21,7 +21,7 @@ completes, its lasting content is folded into the design documents and ADRs, its
 into CHANGELOG.md, and the plan is removed
 ([docs/exec-plans/README.md](docs/exec-plans/README.md#when-a-plan-completes)).
 
-HashiFi appears in the shared Hashikome workspace as one row that points here; the
+HashiNet appears in the shared Hashikome workspace as one row that points here; the
 workspace holds no copy of this product's plans. Where each kind of document goes:
 
 - a problem or idea not yet ready to implement, and accepted technical debt:

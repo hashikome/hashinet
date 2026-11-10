@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readSecret, requireSecret } from "./secret.js";
 
-const dir = mkdtempSync(join(tmpdir(), "hashifi-secret-"));
+const dir = mkdtempSync(join(tmpdir(), "hashinet-secret-"));
 const file = join(dir, "db");
 writeFileSync(file, "postgresql://from-file\n");
 

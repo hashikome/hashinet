@@ -41,7 +41,7 @@ export class R2BrandStore implements BrandStore {
   }
 }
 
-/** Development and tests: a folder under `data/`, so nobody needs a bucket to run HashiFi. */
+/** Development and tests: a folder under `data/`, so nobody needs a bucket to run HashiNet. */
 export class DiskBrandStore implements BrandStore {
   constructor(private readonly dir: string) {}
 

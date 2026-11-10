@@ -2,7 +2,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import { BUSINESS_TIME_ZONE } from "./business-day.js";
 
 /**
- * HashiFi's one definition of revenue, as a SQL CTE named `revenue_events`
+ * HashiNet's one definition of revenue, as a SQL CTE named `revenue_events`
  * (id, source, amount, occurred_at, venue_id, package_id, reference):
  *
  * - every paid payment, when it was paid, by provider (a staff-recorded `manual` payment is

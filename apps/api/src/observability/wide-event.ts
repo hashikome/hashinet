@@ -85,7 +85,7 @@ export class WideEvent {
         });
       }
       this.emitted = true;
-      const logger = getLogger(["hashifi", "event"]);
+      const logger = getLogger(["hashinet", "event"]);
       const record = { event: this.name, ...this.snapshot() };
       if (outcome === "success") logger.info(this.name, record);
       else logger.error(this.name, record);

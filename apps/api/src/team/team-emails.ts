@@ -17,14 +17,14 @@ export function teamEmail(
   context: { name: string; role: "admin" | "manager"; signInUrl: string; newEmail: string | null },
 ): EmailMessage {
   const hello = `Hello ${context.name},`;
-  const ask = "If this is unexpected, contact a HashiFi admin.";
+  const ask = "If this is unexpected, contact a HashiNet admin.";
   const signIn = `Sign in at ${context.signInUrl} with this email address; a code is sent each time.`;
   const role = context.role === "admin" ? "an admin" : "a venue manager";
   const bodies: Record<typeof kind, { subject: string; lines: string[] }> = {
     welcome: {
-      subject: "You have been added to HashiFi",
+      subject: "You have been added to HashiNet",
       lines: [
-        `You have been added to HashiFi as ${role}.`,
+        `You have been added to HashiNet as ${role}.`,
         signIn,
         ...(context.role === "admin"
           ? ["As an admin you will set up an authenticator app at your first sign-in."]
@@ -32,17 +32,17 @@ export function teamEmail(
       ],
     },
     suspended: {
-      subject: "Your HashiFi account is suspended",
-      lines: ["Your HashiFi account has been suspended and you have been signed out.", ask],
+      subject: "Your HashiNet account is suspended",
+      lines: ["Your HashiNet account has been suspended and you have been signed out.", ask],
     },
     reactivated: {
-      subject: "Your HashiFi account is active again",
-      lines: ["Your HashiFi account has been reactivated.", signIn],
+      subject: "Your HashiNet account is active again",
+      lines: ["Your HashiNet account has been reactivated.", signIn],
     },
     role_changed: {
-      subject: "Your HashiFi role has changed",
+      subject: "Your HashiNet role has changed",
       lines: [
-        `You are now ${role} in HashiFi.`,
+        `You are now ${role} in HashiNet.`,
         ...(context.role === "admin"
           ? ["Set up an authenticator app at your next sign-in; admins must use one."]
           : []),
@@ -50,11 +50,11 @@ export function teamEmail(
       ],
     },
     removed: {
-      subject: "You have been removed from HashiFi",
-      lines: ["Your HashiFi account has been removed and you can no longer sign in.", ask],
+      subject: "You have been removed from HashiNet",
+      lines: ["Your HashiNet account has been removed and you can no longer sign in.", ask],
     },
     authenticator_reset: {
-      subject: "Your HashiFi authenticator app was reset",
+      subject: "Your HashiNet authenticator app was reset",
       lines: [
         "An admin reset your authenticator app and signed you out everywhere.",
         "Set up an authenticator app again at your next sign-in.",
@@ -62,9 +62,9 @@ export function teamEmail(
       ],
     },
     email_changed: {
-      subject: "Your HashiFi sign-in email has changed",
+      subject: "Your HashiNet sign-in email has changed",
       lines: [
-        `Your HashiFi sign-in email is now ${context.newEmail ?? "a new address"}; this address no longer signs in.`,
+        `Your HashiNet sign-in email is now ${context.newEmail ?? "a new address"}; this address no longer signs in.`,
         ask,
       ],
     },

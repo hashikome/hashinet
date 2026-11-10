@@ -1,7 +1,7 @@
 import { Prisma } from "../generated/prisma/client.js";
 
 /**
- * HashiFi stores instants in UTC and reports by the business's calendar: a day in
+ * HashiNet stores instants in UTC and reports by the business's calendar: a day in
  * Africa/Dar_es_Salaam (UTC+3, no daylight saving) runs from 21:00 UTC to 21:00 UTC. Both the
  * database grouping and the application use this zone name, never a fixed offset.
  */

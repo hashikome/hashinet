@@ -6,7 +6,7 @@ import type {
   GuestPaymentStatus,
   PaymentRecord,
   SaleResult,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import {
   BadGatewayException,
   BadRequestException,

@@ -1,4 +1,4 @@
-import type { SessionList, SessionResponse } from "@hashifi/types";
+import type { SessionList, SessionResponse } from "@hashinet/types";
 import { Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
 import { CurrentStaff, type StaffPrincipal } from "../auth/staff-guard.js";
 import { idParam, Origin } from "../http/request-origin.js";

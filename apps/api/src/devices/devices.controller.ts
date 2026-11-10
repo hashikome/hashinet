@@ -1,4 +1,4 @@
-import type { DeviceList, DeviceResponse } from "@hashifi/types";
+import type { DeviceList, DeviceResponse } from "@hashinet/types";
 import { Body, Controller, Delete, Get, HttpCode, Param, Put, Query } from "@nestjs/common";
 import { CurrentStaff, Roles, type StaffPrincipal } from "../auth/staff-guard.js";
 import { idParam, Origin } from "../http/request-origin.js";

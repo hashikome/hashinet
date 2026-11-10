@@ -5,7 +5,7 @@ import type {
   RevenueByVenue,
   RevenueSummary,
   RevenueTransactions,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import {
   ArrowDownRight,
   ArrowUpRight,

@@ -75,18 +75,18 @@ const FORWARD = { api: 18728, ssh: 18022, winbox: 18291 } as const;
 /** The host side of 10.0.2.2:4006, where the router fetches its portal pages. */
 const BACKEND_PORT = 4006;
 const BACKEND_URL = `http://${LAN.gatewayIp}:${BACKEND_PORT}`;
-const API_USER = "hashifi";
+const API_USER = "hashinet";
 /**
  * The sim's own database on the compose.yml PostgreSQL, migrated by the real migrations. From
  * inside the hub container the host's loopback is not reachable, so the hub joins the compose
  * network and reaches PostgreSQL by its container name.
  */
-const SIM_DATABASE = "hashifi_sim";
-const COMPOSE_NETWORK = "hashifi_default";
+const SIM_DATABASE = "hashinet_sim";
+const COMPOSE_NETWORK = "hashinet_default";
 function simDatabaseUrl(): string {
   return IN_HUB
-    ? `postgresql://hashifi:hashifi@hashifi-postgres:5432/${SIM_DATABASE}`
-    : `postgresql://hashifi:hashifi@127.0.0.1:5438/${SIM_DATABASE}`;
+    ? `postgresql://hashinet:hashinet@hashinet-postgres:5432/${SIM_DATABASE}`
+    : `postgresql://hashinet:hashinet@127.0.0.1:5438/${SIM_DATABASE}`;
 }
 const API_PORT = 8728;
 /** The guest VM, fixed by a static lease while the demo runs. */
@@ -104,7 +104,7 @@ const TUNNEL = {
   prefix: 24,
   port: 51820,
 } as const;
-const HUB = { container: "hashifi-router-sim-hub", image: "hashifi-router-sim-hub:1" } as const;
+const HUB = { container: "hashinet-router-sim-hub", image: "hashinet-router-sim-hub:1" } as const;
 /** Set when this process runs inside the hub container, on the platform side of the tunnel. */
 const IN_HUB = process.env.SIM_IN_HUB === "1";
 
@@ -176,7 +176,7 @@ async function up(): Promise<void> {
   run([
     "qemu-system-x86_64",
     "-name",
-    "hashifi-router-sim",
+    "hashinet-router-sim",
     "-enable-kvm",
     "-m",
     "256",
@@ -231,10 +231,10 @@ async function reset(): Promise<void> {
     Bun.spawnSync([
       "docker",
       "exec",
-      "hashifi-postgres",
+      "hashinet-postgres",
       "dropdb",
       "-U",
-      "hashifi",
+      "hashinet",
       "--if-exists",
       "--force",
       SIM_DATABASE,
@@ -368,7 +368,7 @@ async function resetToNoDefaults(serial: SerialConsole, adminPassword: string): 
 }
 
 /**
- * Onboards the sim from a script downloaded from a real HashiFi, as an operator would paste it.
+ * Onboards the sim from a script downloaded from a real HashiNet, as an operator would paste it.
  * The script holds the router's credentials and tunnel key, so nothing from it is printed.
  */
 async function importScript(): Promise<void> {
@@ -402,7 +402,7 @@ async function bootstrap(): Promise<void> {
 
   // Step 2: paste the generated bootstrap script, one statement at a time.
   const { script, resolved } = buildBootstrapScript({
-    routerName: "hashifi-sim",
+    routerName: "hashinet-sim",
     ipAddress: LAN.routerIp,
     lanPrefix: LAN.prefix,
     gatewayIp: LAN.gatewayIp,
@@ -502,12 +502,12 @@ function ensureSimDatabase(): void {
   const exists = Bun.spawnSync([
     "docker",
     "exec",
-    "hashifi-postgres",
+    "hashinet-postgres",
     "psql",
     "-U",
-    "hashifi",
+    "hashinet",
     "-d",
-    "hashifi",
+    "hashinet",
     "-tAc",
     `SELECT 1 FROM pg_database WHERE datname = '${SIM_DATABASE}'`,
   ]);
@@ -515,7 +515,7 @@ function ensureSimDatabase(): void {
     throw new Error("PostgreSQL is not running: start it with `bun run infra:up`.");
   }
   if (exists.stdout.toString().trim() !== "1") {
-    run(["docker", "exec", "hashifi-postgres", "createdb", "-U", "hashifi", SIM_DATABASE]);
+    run(["docker", "exec", "hashinet-postgres", "createdb", "-U", "hashinet", SIM_DATABASE]);
   }
   const migrate = Bun.spawnSync(["bun", "--bun", "prisma", "migrate", "deploy"], {
     cwd: join(ROOT, "apps", "api"),
@@ -548,7 +548,7 @@ async function simServices(state: SimState): Promise<SimServices> {
   const access = new SimRouterAccess(box, API_PORT, 10);
   const sync = new RouterSync(db, access, new AuditLog(db));
   const fields = {
-    name: "hashifi-sim",
+    name: "hashinet-sim",
     ipAddress: LAN.routerIp,
     apiUsername: API_USER,
     apiPasswordEncrypted: box.seal(state.apiPassword),
@@ -731,7 +731,7 @@ function guest(): void {
   run([
     "qemu-system-x86_64",
     "-name",
-    "hashifi-router-sim-guest",
+    "hashinet-router-sim-guest",
     "-enable-kvm",
     "-m",
     "256",
@@ -906,7 +906,7 @@ async function demo(): Promise<void> {
 
   // `demo payments` adds the stand-in providers; by default it is what launches: printed vouchers.
   const api = await startApi(state, true, args[0] === "payments");
-  const web = Bun.spawn(["bun", "run", "--filter", "@hashifi/web", "dev"], {
+  const web = Bun.spawn(["bun", "run", "--filter", "@hashinet/web", "dev"], {
     cwd: ROOT,
     stdout: "ignore",
     stderr: "ignore",
@@ -961,7 +961,7 @@ async function demo(): Promise<void> {
     "link-orig": "https://example.com/",
   });
   console.log(`
-HashiFi is running. Stop with Ctrl-C.
+HashiNet is running. Stop with Ctrl-C.
 
   Admin    http://localhost:3006
            Sign in as ${email}. Get the emailed code with: bun run router-sim code

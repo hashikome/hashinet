@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** The lowest price HashiFi sells a package for, in whole shillings. */
+/** The lowest price HashiNet sells a package for, in whole shillings. */
 export const MINIMUM_PRICE_TSH = 1_000;
 
 const whole = (min: number, max: number) =>

@@ -1,4 +1,4 @@
-import type { StaffRole, TeamMember } from "@hashifi/types";
+import type { StaffRole, TeamMember } from "@hashinet/types";
 import {
   BadRequestException,
   ConflictException,
@@ -73,7 +73,7 @@ const refuse = (code: string, message: string) => new ConflictException(apiError
 
 /**
  * The Team page: admins add, change and remove the people who sign in (ADR-0007). Two rules
- * hold throughout: HashiFi always keeps an active admin, and nobody changes their own role,
+ * hold throughout: HashiNet always keeps an active admin, and nobody changes their own role,
  * status or authenticator, or removes themselves. Every change is audited and the person told.
  */
 @Injectable()
@@ -334,6 +334,6 @@ async function keepAnAdmin(tx: Prisma.TransactionClient, id: string): Promise<vo
   const admins = await tx.$queryRaw<{ id: string; status: string }[]>`
     SELECT id, status::text FROM staff WHERE role = 'admin' ORDER BY id FOR UPDATE`;
   if (!admins.some((row) => row.id !== id && row.status === "active")) {
-    throw refuse("LAST_ADMIN", "HashiFi needs at least one active admin.");
+    throw refuse("LAST_ADMIN", "HashiNet needs at least one active admin.");
   }
 }

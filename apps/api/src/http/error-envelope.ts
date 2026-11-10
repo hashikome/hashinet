@@ -1,4 +1,4 @@
-import type { ApiError } from "@hashifi/types";
+import type { ApiError } from "@hashinet/types";
 import {
   type ArgumentsHost,
   Catch,

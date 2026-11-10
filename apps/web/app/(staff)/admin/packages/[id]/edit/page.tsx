@@ -1,6 +1,6 @@
 "use client";
 
-import type { PackageRecord, PackageResponse } from "@hashifi/types";
+import type { PackageRecord, PackageResponse } from "@hashinet/types";
 import {
   ArrowLeft,
   ArrowRight,

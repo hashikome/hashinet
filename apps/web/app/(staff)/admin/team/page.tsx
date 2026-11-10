@@ -1,6 +1,6 @@
 "use client";
 
-import type { AuditEntry, AuditList, TeamList, TeamMember, VenueList } from "@hashifi/types";
+import type { AuditEntry, AuditList, TeamList, TeamMember, VenueList } from "@hashinet/types";
 import { formatDistanceToNow } from "date-fns";
 import {
   ArrowDownCircle,

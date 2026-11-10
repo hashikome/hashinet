@@ -42,7 +42,7 @@ function bringUp(): void {
 async function syncPeers(): Promise<void> {
   const response = await fetch(`${portalOrigin}/api/internal/tunnel-peers`, {
     signal: AbortSignal.timeout(10_000),
-    headers: { Authorization: `Bearer ${syncSecret}`, "User-Agent": "hashifi-tunnel" },
+    headers: { Authorization: `Bearer ${syncSecret}`, "User-Agent": "hashinet-tunnel" },
   });
   if (!response.ok) throw new Error(`Peer list: HTTP ${response.status}`);
   const wanted = parsePeers(await response.json());
@@ -74,7 +74,7 @@ Bun.serve({
     }
     const upstream = await fetch(`${portalOrigin}${pathname}`, {
       signal: AbortSignal.timeout(20_000),
-      headers: { "User-Agent": "hashifi-tunnel" },
+      headers: { "User-Agent": "hashinet-tunnel" },
     });
     return relayResponse(upstream);
   },

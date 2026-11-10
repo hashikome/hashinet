@@ -1,4 +1,4 @@
-import type { AuditEntry, AuditList } from "@hashifi/types";
+import type { AuditEntry, AuditList } from "@hashinet/types";
 import { Controller, Get, Query } from "@nestjs/common";
 import { z } from "zod";
 import { Roles } from "../auth/staff-guard.js";

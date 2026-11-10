@@ -1,19 +1,20 @@
-# HashiFi
+# HashiNet
 
 Time-bound, device-limited WiFi access sold as vouchers through a captive portal, for a home
 and for venues with their own MikroTik routers. A cloud backend configures the routers,
-issues vouchers and tracks sessions. Public repository (FSL-1.1-ALv2), in production at
-`hashifi.hashikome.com`.
+issues vouchers and tracks sessions. Public repository (FSL-1.1-ALv2). A first build runs at `hashinet.hashikome.com`, proving
+the release path; businesses, venues and their roles are still prototypes. Renamed from HashiFi on
+11 November 2026 ([rename-to-hashinet](docs/exec-plans/active/rename-to-hashinet.md)).
 
-This repository is the source of truth for the HashiFi product and engineering decisions.
+This repository is the source of truth for the HashiNet product and engineering decisions.
 External documents are references only. Keep this file short: it is a map, not a manual.
 
 ## Current state
 
-The [build plan](docs/exec-plans/active/build-hashifi.md) tracks the work: read
-it before changing anything under `apps/`. M1 to M5 are done. HashiFi launches on printed vouchers; M6
+The [build plan](docs/exec-plans/active/build-hashinet.md) tracks the work: read
+it before changing anything under `apps/`. M1 to M5 are done. HashiNet launches on printed vouchers; M6
 (mobile money and SMS) is built and held until its providers' credentials exist: `apps/api` is NestJS on Bun with Prisma on PostgreSQL 18, and `apps/web` runs on it
-through `lib/api.ts` and `@hashifi/types`, including the captive portal and purchases.
+through `lib/api.ts` and `@hashinet/types`, including the captive portal and purchases.
 Next: businesses that own venues, with owners, managers and operators (ADR-0011,
 [business-scopes](docs/exec-plans/active/business-scopes.md)), and the admin and portal rebuilt in
 the Hearth design ([redesign-admin](docs/exec-plans/active/redesign-admin.md), which sets the order).
@@ -41,7 +42,7 @@ the Hearth design ([redesign-admin](docs/exec-plans/active/redesign-admin.md), w
 - `bun install` (generates Prisma Client); `bun run infra:up` starts PostgreSQL 18 on
   `127.0.0.1:5438`; `bun run db:deploy` and `bun run db:seed` prepare it; `bun run dev`.
 - `bun run verify`: formatting, lint, typecheck, unit tests and builds. It must pass before a
-  commit. `bun run test:integration` runs the database tests against `hashifi_test`.
+  commit. `bun run test:integration` runs the database tests against `hashinet_test`.
 - Schema changes: edit `apps/api/prisma/schema.prisma`, then `bun run db:migrate` (creates and
   applies a migration); never edit an applied migration. See `docs/runbooks/database.md`.
 - `bun run router-sim ...` runs a virtual MikroTik (`docs/runbooks/router-sim.md`).
@@ -62,7 +63,7 @@ the Hearth design ([redesign-admin](docs/exec-plans/active/redesign-admin.md), w
   (ADR-0002); no `console.log` in application code once M4 lands.
 - Email through Resend. Queues, where needed, are BullMQ on Redis with PostgreSQL
   authoritative.
-- Sign-in is Better Auth inside HashiFi, with email codes
+- Sign-in is Better Auth inside HashiNet, with email codes
   ([ADR-0007](docs/engineering-decisions/0007-sign-in-with-better-auth.md)); passkeys sign in on their own;
   platform staff, owners and managers follow an email code with an authenticator code (ADR-0011). Its tables hold identity and sessions; `staff` holds role, status and venue
   scope. Read authorization only from `staff`.
@@ -85,7 +86,7 @@ or discard user data without explicit approval.
   from the API. Authorization is enforced by the API, never inferred from what the UI shows.
 - **No `any`, no `undefined`, no `!`** ([ADR-0004](docs/engineering-decisions/0004-types-without-any-or-undefined.md)).
   Absence is `null`; unknown shapes are `unknown` and narrowed. The web reads API responses
-  through `@hashifi/types`.
+  through `@hashinet/types`.
 - **Nothing reports success before the router confirms it.** A paid voucher or an `active`
   row is not a device online. Vouchers go `unused → pending_activation → active` only after
   the router reads the user back; any new path that grants access follows the same rule.
@@ -99,13 +100,13 @@ or discard user data without explicit approval.
 - **Time:** stored in UTC; business days are calculated in `Africa/Dar_es_Salaam`.
 - **Copy:** mobile money is "mobile money" and "mobile number" in what guests and staff read; never name
   the payment company behind it. An owner choosing where payouts go picks a named network. The device
-  hashifi runs on is a "MikroTik router", never a bare "MikroTik".
+  HashiNet runs on is a "MikroTik router", never a bare "MikroTik".
 - **Personal data:** real people's data stays out of the repository, `ref/` and logs.
   Development uses seeded, invented data only.
 - **Secrets**: Docker secrets (`<NAME>_FILE`) for sensitive values, an env file for the rest
   (`.env.example` lists each key); the application starts from these alone, in its own scope
   ([docs/SECURITY.md](docs/SECURITY.md#credentials)).
-- **Service names carry the product:** `<product>-<service>[-<scope>]`, as in `hashifi-api` or
+- **Service names carry the product:** `<product>-<service>[-<scope>]`, as in `hashinet-api` or
   `infra-redis-queue`, never a bare `api`; services keep their default ports. Why, and how to create
   and rename them: [service naming](https://github.com/hashikome/workspace/blob/main/service-naming.md).
 - `ref/` is for disposable, git-ignored references and handoffs

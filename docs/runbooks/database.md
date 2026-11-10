@@ -2,8 +2,8 @@
 
 PostgreSQL 18, through Prisma 7. The schema is `apps/api/prisma/schema.prisma`; migrations
 are `apps/api/prisma/migrations/`. Locally, `compose.yml` runs PostgreSQL on `127.0.0.1:5438`
-with three databases: `hashifi` (development), `hashifi_test` (integration tests) and
-`hashifi_sim` (the router sim).
+with three databases: `hashinet` (development), `hashinet_test` (integration tests) and
+`hashinet_sim` (the router sim).
 
 ## Local setup
 
@@ -25,14 +25,14 @@ read `.env` itself; `prisma.config.ts` loads it, and set variables win.
 3. Commit the schema and the migration together. Never edit a migration once it has been
    applied anywhere shared; write a new one.
 
-Pre-deployment, a destructive change is fine locally: `bun run --filter @hashifi/api db:reset`
+Pre-deployment, a destructive change is fine locally: `bun run --filter @hashinet/api db:reset`
 drops and re-creates the development database.
 
 ## Tests
 
-`bun run test:integration` migrates `hashifi_test` with the real migrations and empties it
+`bun run test:integration` migrates `hashinet_test` with the real migrations and empties it
 before each test (`apps/api/test/integration/harness.ts`). Create the database once:
-`docker exec hashifi-postgres createdb -U hashifi hashifi_test`.
+`docker exec hashinet-postgres createdb -U hashinet hashinet_test`.
 
 ## Rules the schema enforces
 

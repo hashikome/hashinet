@@ -143,7 +143,7 @@ describe("sign-in", () => {
     expect(api.email.sent.length).toBe(before);
   });
 
-  test("only the sign-in routes HashiFi uses are reachable", async () => {
+  test("only the sign-in routes HashiNet uses are reachable", async () => {
     const c = client();
     const routes: [string, string, unknown][] = [
       ["POST", "/api/auth/sign-up/email", { email: "x@example.com", password: "p", name: "x" }],
@@ -215,7 +215,7 @@ describe("authenticator app", () => {
     });
     expect(trusted).toBe(0);
 
-    // Asked to trust this browser, HashiFi still asks for the authenticator next time.
+    // Asked to trust this browser, HashiNet still asks for the authenticator next time.
     await c.request("POST", "/api/auth/sign-out", {});
     expect((await signIn(c, "owner@example.com")).body).toMatchObject({ twoFactorRedirect: true });
     expect((await c.request("GET", "/api/me")).status).toBe(401);

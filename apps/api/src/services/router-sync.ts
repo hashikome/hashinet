@@ -29,7 +29,7 @@ import {
 import type { RouterAccess } from "./router-credentials.js";
 
 // Voucher codes are credentials: they appear in no log line, only counts do.
-const logger = getLogger(["hashifi", "router-sync"]);
+const logger = getLogger(["hashinet", "router-sync"]);
 
 /** Statuses whose vouchers must exist on the venue's routers. pending_activation: redeemed, still
  * waiting on a router to confirm, so a new router must receive them too. */

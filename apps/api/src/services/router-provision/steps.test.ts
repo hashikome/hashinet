@@ -297,7 +297,7 @@ describe("a venue's allowed sites", () => {
     return { ros: client, calls };
   }
 
-  test("matches the list exactly, and HashiFi's own rule does not count", async () => {
+  test("matches the list exactly, and HashiNet's own rule does not count", async () => {
     const rows = [backend, site("hotel.co.tz", "*2")];
     expect(await step.check({ ...ros(rows), ctx: ctx(["hotel.co.tz"]) })).toBe(true);
     expect(await step.check({ ...ros(rows), ctx: ctx([]) })).toBe(false);
@@ -305,7 +305,7 @@ describe("a venue's allowed sites", () => {
     expect(await step.check({ ...ros([backend]), ctx: ctx(["hotel.co.tz"]) })).toBe(false);
   });
 
-  test("adds what is new and removes what was taken off, leaving HashiFi's rule", async () => {
+  test("adds what is new and removes what was taken off, leaving HashiNet's rule", async () => {
     const fake = ros([backend, site("old.co.tz", "*2")]);
     await step.apply({ ros: fake.ros, ctx: ctx(["hotel.co.tz"]) });
     expect(fake.calls[0]).toBe("remove *2");

@@ -1,4 +1,4 @@
-import type { VenueRecord } from "@hashifi/types";
+import type { VenueRecord } from "@hashinet/types";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditLog } from "../audit/audit-log.js";
 import type { StaffPrincipal } from "../auth/staff-guard.js";

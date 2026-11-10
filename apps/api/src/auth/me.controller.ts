@@ -1,4 +1,4 @@
-import type { SignedInStaff } from "@hashifi/types";
+import type { SignedInStaff } from "@hashinet/types";
 import { Body, Controller, Get, Put } from "@nestjs/common";
 import { z } from "zod";
 import { PrismaService } from "../database/prisma.service.js";

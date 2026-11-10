@@ -117,7 +117,7 @@ export interface RevokeResult {
 
 /**
  * The captive portal's wording, colours and voucher defaults (`GET` and `PUT /api/portal`).
- * There are no uploaded images: HashiFi's logo ships with the web. Until an admin saves, the
+ * There are no uploaded images: HashiNet's logo ships with the web. Until an admin saves, the
  * API answers with its defaults and `updatedAt` is null.
  */
 export interface PortalSettingsRecord {
@@ -139,9 +139,9 @@ export interface PortalSettingsRecord {
   updatedAt: Timestamp | null;
 }
 
-/** What a venue shows: its own branding, or the HashiFi default. */
+/** What a venue shows: its own branding, or the HashiNet default. */
 export interface BrandRecord extends PortalSettingsRecord {
-  /** Served from the portal's own origin; null shows HashiFi's logo. */
+  /** Served from the portal's own origin; null shows HashiNet's logo. */
   logoUrl: string | null;
   backgroundUrl: string | null;
 }
@@ -149,7 +149,7 @@ export interface BrandRecord extends PortalSettingsRecord {
 /** `GET`, `PUT` and `DELETE /api/venues/:id/brand`. */
 export interface VenueBrandResponse {
   brand: BrandRecord;
-  /** False while the venue shows the HashiFi default. */
+  /** False while the venue shows the HashiNet default. */
   isCustom: boolean;
 }
 
@@ -682,7 +682,7 @@ export interface GuestPaymentStatus {
   online: boolean;
   /** The voucher has run out: this purchase is over, and the guest can buy again. */
   ended: boolean;
-  /** Paid, but the router has not confirmed yet: HashiFi keeps trying. */
+  /** Paid, but the router has not confirmed yet: HashiNet keeps trying. */
   owed: boolean;
   sms: SmsDelivery | null;
   dst: string | null;

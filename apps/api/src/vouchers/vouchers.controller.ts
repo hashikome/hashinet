@@ -4,7 +4,7 @@ import type {
   VoucherBatchDetail,
   VoucherBatchList,
   VoucherList,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import { Body, Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
 import { CurrentStaff, Roles, type StaffPrincipal } from "../auth/staff-guard.js";
 import { idParam, Origin } from "../http/request-origin.js";

@@ -7,7 +7,7 @@ import type {
   MonthlyTrend,
   PackageShares,
   TopVenues,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import {
   BarChart3,
   Building2,

@@ -1,6 +1,6 @@
 "use client";
 
-import type { SignedInStaff } from "@hashifi/types";
+import type { SignedInStaff } from "@hashinet/types";
 import { Loader, Monitor, Moon, Save, ShieldCheck, Sun, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";

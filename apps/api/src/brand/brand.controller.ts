@@ -1,4 +1,4 @@
-import type { VenueBrandResponse } from "@hashifi/types";
+import type { VenueBrandResponse } from "@hashinet/types";
 import {
   Body,
   Controller,
@@ -69,7 +69,7 @@ export class BrandController {
     return this.brand.save(staff, id, parseInput(brandInput, body), origin);
   }
 
-  /** Back to the HashiFi default. */
+  /** Back to the HashiNet default. */
   @Delete()
   reset(
     @CurrentStaff() staff: StaffPrincipal,

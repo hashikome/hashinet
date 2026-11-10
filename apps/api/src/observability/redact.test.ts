@@ -26,8 +26,8 @@ describe("redact", () => {
   });
 
   test("connection strings keep the host but lose the credentials", () => {
-    const out = redact("connect failed: postgresql://hashifi:s3cret@db:5432/hashifi");
-    expect(out).toBe("connect failed: postgresql://[redacted]@db:5432/hashifi");
+    const out = redact("connect failed: postgresql://hashinet:s3cret@db:5432/hashinet");
+    expect(out).toBe("connect failed: postgresql://[redacted]@db:5432/hashinet");
   });
 
   test("personal data: emails, MAC addresses and phone numbers", () => {
@@ -38,7 +38,7 @@ describe("redact", () => {
   });
 
   test("ordinary operational text is left alone", () => {
-    const text = "Router hashifi-sim at 10.88.0.2:8728 timed out after 10s (status 504)";
+    const text = "Router hashinet-sim at 10.88.0.2:8728 timed out after 10s (status 504)";
     expect(redact(text)).toBe(text);
   });
 });

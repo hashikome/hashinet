@@ -6,7 +6,7 @@ import type {
   GuestPaymentStarted,
   GuestPaymentStatus,
   RedeemResult,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import { type FormEvent, useEffect, useState } from "react";
 import { PortalView, themeOf } from "@/components/portal-view";
 import { formatDate } from "@/lib/utils";
@@ -15,7 +15,7 @@ import { Approve, PayForm, PaymentDone, PaymentFailed } from "./payment-screens"
 /** Any plain http address: the router intercepts it and sends the guest back here, with context. */
 const TRIGGER_URL = "http://neverssl.com/";
 /** Holds a scanned card's code on this origin while the guest goes round through the router. */
-const CARD_KEY = "hashifi.card";
+const CARD_KEY = "hashinet.card";
 
 function heldCard(): string {
   try {
@@ -35,7 +35,7 @@ function holdCard(code: string | null): void {
 }
 
 /** Proof this tab paid: kept here so a reload still finds the code, and nowhere else. */
-const PAYMENT_KEY = "hashifi.payment";
+const PAYMENT_KEY = "hashinet.payment";
 const POLL_MS = 3_000;
 
 type HeldPayment = GuestPaymentStarted;

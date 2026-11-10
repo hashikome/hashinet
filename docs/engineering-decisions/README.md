@@ -25,9 +25,10 @@ links stay valid.
 | [0010](0010-payments-and-sms.md) | Payments, vouchers and SMS | accepted |
 | [0009](0009-venue-branding.md) | A business's profile and each venue's brand, with images in R2 | accepted |
 | [0008](0008-captive-portal.md) | How a guest reaches the portal, signs in and comes back |
-| [0007](0007-sign-in-with-better-auth.md) | Sign-in with Better Auth, inside HashiFi (replaces 0005) | accepted |
+| [0007](0007-sign-in-with-better-auth.md) | Sign-in with Better Auth, inside HashiNet (replaces 0005) | accepted |
 | [0011](0011-platform-and-business-scopes.md) | Platform and business scopes, with owners, managers and operators | accepted |
 | [0012](0012-audit-log.md) | The audit log, scoped like everything else | accepted |
 | [0013](0013-onboarding-packages-and-pricing.md) | Onboarding packages and pricing | accepted |
 | [0014](0014-service-access-and-venue-lifecycle.md) | Service access, archiving, and the venue lifecycle | accepted |
 | [0015](0015-voucher-online-limit-through-radius.md) | A voucher is limited by the devices online at once, through RADIUS | accepted |
+| [0016](0016-the-product-is-hashinet.md) | The product is HashiNet | accepted |

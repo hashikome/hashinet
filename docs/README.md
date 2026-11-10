@@ -5,7 +5,7 @@ The map of repository knowledge. Start with [AGENTS.md](../AGENTS.md), then
 authority) and, for interface work, [DESIGN.md](../DESIGN.md) (visual system and tokens).
 The user and developer guide is [README.md](../README.md).
 
-Once HashiFi has a chapter in the [Hashikome handbook](https://handbook.hashikome.com),
+Once HashiNet has a chapter in the [Hashikome handbook](https://handbook.hashikome.com),
 it is the reading path for newcomers. This repository stays the authority: the handbook
 explains and links here.
 

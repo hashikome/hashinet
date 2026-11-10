@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { loadConfig } from "./config.js";
 
 const BASE = {
-  DATABASE_URL: "postgresql://hashifi:hashifi@127.0.0.1:5438/hashifi",
+  DATABASE_URL: "postgresql://hashinet:hashinet@127.0.0.1:5438/hashinet",
   ENCRYPTION_KEY: "ab".repeat(32),
   BETTER_AUTH_SECRET: "cd".repeat(32),
 };
@@ -47,7 +47,7 @@ describe("loadConfig", () => {
       ...production,
       RESEND_API_KEY: "re_test",
       R2_ENDPOINT: "https://account.r2.cloudflarestorage.com",
-      R2_BUCKET: "hashifi",
+      R2_BUCKET: "hashinet",
       R2_ACCESS_KEY_ID: "key",
       R2_SECRET_ACCESS_KEY: "secret",
       TRUSTED_PROXIES: "10.0.1.0/24, 10.0.2.5",

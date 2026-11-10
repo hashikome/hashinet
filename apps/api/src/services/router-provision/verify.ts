@@ -253,7 +253,7 @@ async function radioBroadcastingCheck(
 }
 
 async function loginModeCheck(ros: RosClient, plan: HotspotPlan): Promise<ReadinessCheck> {
-  const base = { id: "login-mode", title: "Only HashiFi signs devices in" };
+  const base = { id: "login-mode", title: "Only HashiNet signs devices in" };
   const row = await ros.findByName("/ip/hotspot/profile", plan.profileName);
 
   if (!row) {

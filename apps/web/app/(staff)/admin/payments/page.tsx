@@ -10,7 +10,7 @@ import type {
   VenueList,
   VenuePackages,
   VenueRecord,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import { Copy, Loader, Plus, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -210,7 +210,7 @@ function SaleDialog({
             <p className="text-sm text-muted-foreground">
               {sale.routerConfirmed
                 ? "The router has confirmed this voucher."
-                : "The router has not confirmed yet. HashiFi keeps trying."}
+                : "The router has not confirmed yet. HashiNet keeps trying."}
               {sale.sms === null ? "" : ` SMS: ${SMS[sale.sms].toLowerCase()}.`}
             </p>
           </div>

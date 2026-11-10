@@ -1,5 +1,5 @@
 /** The open ring with the ember in its gap. The ring takes the text colour, so it reads on any surface. */
-export function HashifiMark({ className }: { className?: string }) {
+export function HashiNetMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
       <path

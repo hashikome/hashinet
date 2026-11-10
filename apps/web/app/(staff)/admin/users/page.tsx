@@ -1,6 +1,6 @@
 "use client";
 
-import type { DeviceList, DeviceRecord, DeviceResponse } from "@hashifi/types";
+import type { DeviceList, DeviceRecord, DeviceResponse } from "@hashinet/types";
 import {
   Calendar,
   Cpu,

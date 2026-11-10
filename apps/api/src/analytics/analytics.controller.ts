@@ -9,7 +9,7 @@ import type {
   RevenueSummary,
   RevenueTransactions,
   TopVenues,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import { Controller, Get, Query } from "@nestjs/common";
 import { CurrentStaff, Roles, type StaffPrincipal } from "../auth/staff-guard.js";
 import { parseInput } from "../http/validation.js";

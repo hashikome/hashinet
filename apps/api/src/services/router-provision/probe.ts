@@ -257,7 +257,7 @@ function assessCompatibility(profile: Omit<RouterProfile, "compatibility">): Rou
 
   if (capabilities.hotspot && !capabilities.hotspotLogin) {
     reasons.push(
-      `RouterOS ${rosVersion.raw} has no /ip hotspot active login, which is how HashiFi signs ` +
+      `RouterOS ${rosVersion.raw} has no /ip hotspot active login, which is how HashiNet signs ` +
         `a device in. Upgrade RouterOS.`,
     );
   }

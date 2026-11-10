@@ -3,7 +3,7 @@ import type {
   ProvisioningBacklog,
   RouterList,
   RouterResponse,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import {
   Body,
   Controller,

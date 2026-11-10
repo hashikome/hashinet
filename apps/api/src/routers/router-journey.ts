@@ -1,4 +1,4 @@
-import type { RouterJourney, RouterSetupPhase, RouterStage } from "@hashifi/types";
+import type { RouterJourney, RouterSetupPhase, RouterStage } from "@hashinet/types";
 import { PHASE_TITLES, type SetupPhaseId } from "../services/router-provision/setup.js";
 
 /** A run this old with no finish was ended by a restart; setup itself takes minutes. */

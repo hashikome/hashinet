@@ -1,4 +1,4 @@
-import type { StaffRole } from "@hashifi/types";
+import type { StaffRole } from "@hashinet/types";
 import {
   type CanActivate,
   createParamDecorator,

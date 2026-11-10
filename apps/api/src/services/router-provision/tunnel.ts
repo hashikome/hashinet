@@ -24,7 +24,9 @@ export interface ManagementTunnel {
   endpointPort: number;
 }
 
-export const TUNNEL_INTERFACE = "hashifi-mgmt";
+export const TUNNEL_INTERFACE = "hashinet-mgmt";
+/** The name before the product became HashiNet: a router set up under it is renamed, not given a second tunnel. */
+export const FORMER_TUNNEL_INTERFACE = "hashifi-mgmt";
 /** Keeps NAT mappings open; RouterOS and WireGuard both recommend 25 s. */
 const KEEPALIVE = "25s";
 
@@ -53,7 +55,10 @@ export function tunnelLines(tunnel: ManagementTunnel): string[] {
   const publicKey = rosQuote(tunnel.serverPublicKey);
   const endpoint = `endpoint-address=${tunnel.endpointHost} endpoint-port=${tunnel.endpointPort}`;
   const peer = `public-key="${publicKey}" ${endpoint} allowed-address=${tunnel.serverAddress}/32 persistent-keepalive=${KEEPALIVE}`;
+  const former = FORMER_TUNNEL_INTERFACE;
   return [
+    // RouterOS keeps the address and peer on a renamed interface, so the tunnel stays up.
+    `:if ([:len [/interface wireguard find where name="${former}"]] > 0 && [:len [/interface wireguard find where name="${iface}"]] = 0) do={/interface wireguard set [find where name="${former}"] name=${iface}}`,
     `:if ([:len [/interface wireguard find where name="${iface}"]] = 0) do={/interface wireguard add name=${iface} private-key="${privateKey}"} else={/interface wireguard set [find where name="${iface}"] private-key="${privateKey}"}`,
     `:if ([:len [/ip address find where address="${tunnel.routerAddress}" interface=${iface}]] = 0) do={/ip address add address=${tunnel.routerAddress} interface=${iface}}`,
     // Two statements, not one add-or-set: repeating every parameter in both branches overran the

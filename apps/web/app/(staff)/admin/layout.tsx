@@ -4,7 +4,7 @@ import { Loader, Menu } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminSidebar } from "@/components/admin-sidebar";
-import { HashifiMark } from "@/components/hashifi-mark";
+import { HashiNetMark } from "@/components/hashinet-mark";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/auth-context";
@@ -84,8 +84,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <Menu className="size-5" />
           </button>
-          <HashifiMark className="size-6 text-foreground" />
-          <span className="text-sm font-semibold text-foreground">HashiFi</span>
+          <HashiNetMark className="size-6 text-foreground" />
+          <span className="text-sm font-semibold text-foreground">HashiNet</span>
         </header>
         <div className="hidden shrink-0 md:block print:hidden">
           <AdminSidebar />

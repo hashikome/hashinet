@@ -1,6 +1,6 @@
 "use client";
 
-import type { SignedInStaff } from "@hashifi/types";
+import type { SignedInStaff } from "@hashinet/types";
 import {
   createContext,
   type ReactNode,

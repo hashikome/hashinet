@@ -1,6 +1,6 @@
 "use client";
 
-import type { RouterResponse, VenueList, VenueRecord } from "@hashifi/types";
+import type { RouterResponse, VenueList, VenueRecord } from "@hashinet/types";
 import { ArrowLeft, Loader } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -80,7 +80,7 @@ export default function CreateRouterPage() {
         networkRange: form.networkRange.trim() || null,
         hotspotGatewayIp: form.hotspotGatewayIp.trim() || null,
         hotspotName: null,
-        apiUsername: "hashifi",
+        apiUsername: "hashinet",
         apiPassword: null,
         model: null,
       });
@@ -172,7 +172,7 @@ export default function CreateRouterPage() {
               <summary className="cursor-pointer font-medium">Hotspot network (optional)</summary>
               <div className="mt-4 space-y-4">
                 <p className="text-muted-foreground">
-                  HashiFi chooses these from the router it finds. Set them only to override it.
+                  HashiNet chooses these from the router it finds. Set them only to override it.
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="hotspotInterface">Port</Label>

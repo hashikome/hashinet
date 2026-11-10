@@ -1,4 +1,4 @@
-import type { BrandRecord } from "@hashifi/types";
+import type { BrandRecord } from "@hashinet/types";
 import { QRCodeSVG } from "qrcode.react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";

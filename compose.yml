@@ -1,20 +1,22 @@
 # Local development infrastructure only. Production uses the shared platform services, so
 # match their major version (infra docs/dokploy-data-services.md), not the newest release.
-# Loopback only, on HashiFi's +6 offset in ~/Person/stack/docs/local-port-registry.md.
+# Loopback only, on HashiNet's +6 offset in ~/Person/stack/docs/local-port-registry.md.
+# The project name keeps local containers, volumes and the network independent of the folder's name.
+name: hashinet
 services:
   postgres:
     image: postgres:18
-    container_name: hashifi-postgres
+    container_name: hashinet-postgres
     environment:
-      POSTGRES_USER: hashifi
-      POSTGRES_PASSWORD: hashifi
-      POSTGRES_DB: hashifi
+      POSTGRES_USER: hashinet
+      POSTGRES_PASSWORD: hashinet
+      POSTGRES_DB: hashinet
     ports:
       - "127.0.0.1:5438:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hashifi -d hashifi"]
+      test: ["CMD-SHELL", "pg_isready -U hashinet -d hashinet"]
       interval: 2s
       timeout: 3s
       retries: 30

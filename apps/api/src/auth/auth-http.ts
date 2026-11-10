@@ -4,7 +4,7 @@ import { apiError } from "../http/error-envelope.js";
 import { AUTH_BASE_PATH, type Auth } from "./create-auth.js";
 
 /**
- * The Better Auth routes HashiFi uses, by method and path under `/api/auth`. Everything else
+ * The Better Auth routes HashiNet uses, by method and path under `/api/auth`. Everything else
  * the library offers (account changes, email verification, password and link flows, disabling
  * the second factor) is refused: each is a way in that ADR-0007 did not choose.
  */

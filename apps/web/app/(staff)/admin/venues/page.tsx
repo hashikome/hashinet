@@ -1,6 +1,6 @@
 "use client";
 
-import type { VenueList, VenueRecord } from "@hashifi/types";
+import type { VenueList, VenueRecord } from "@hashinet/types";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";

@@ -9,7 +9,7 @@ import type {
   VenuePackages,
   VenueRecord,
   VoucherBatchDetail,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import {
   AlertCircle,
   ArrowLeft,

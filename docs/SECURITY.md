@@ -10,7 +10,7 @@ only to active staff and every caller gets the same answer; codes are stored und
 allow five attempts and last ten minutes; requests are limited per client address (resolved
 through `TRUSTED_PROXIES`) and to five codes per person per fifteen minutes. Every route
 requires an active staff session unless it is declared public, and status is checked on each
-request, so a suspension takes effect at once. Only the Better Auth routes HashiFi uses are
+request, so a suspension takes effect at once. Only the Better Auth routes HashiNet uses are
 reachable. The API enforces every
 permission: admins manage everything; managers act only on their own venues, and every query
 a manager can reach is scoped to those venues. Hiding a control in the web is never the
@@ -42,7 +42,7 @@ Reviewed 30 October 2026. Everything else requires a staff session.
 | Endpoint | Why public | What protects it |
 | --- | --- | --- |
 | `GET /api/health`, `/api/health/ready` | The platform's checks | Says nothing but up or down |
-| `/api/auth/*` (the routes HashiFi uses) | Signing in | ADR-0007: rate limits, one answer, the rest refused |
+| `/api/auth/*` (the routes HashiNet uses) | Signing in | ADR-0007: rate limits, one answer, the rest refused |
 | `POST /api/guest/context` | The portal page | Registered router; read-only wording and prices |
 | `POST /api/guest/redeem` | Taking a voucher into use | Attempt limits, a lock on the voucher, its venue, blocked devices, the router seeing the device |
 | `POST /api/guest/session` | The router's status pages | Time and data only, never a code; any origin, no cookies |
@@ -68,7 +68,7 @@ unexpected failure is a plain 500, reported to Sentry.
 
 ## Personal data
 
-HashiFi holds staff emails; for guest devices, the MAC address, device name and type, and
+HashiNet holds staff emails; for guest devices, the MAC address, device name and type, and
 sessions; and from M6, a paying customer's mobile number and payments. Managers see devices and customers only at their venues. External telemetry
 never carries personal data unredacted. Development and tests use invented data; real
 customers' data never enters the
@@ -83,7 +83,7 @@ two ways and needs nothing else to start:
   signing and encryption keys, provider keys, error-reporting DSNs): external to the stack,
   mounted at `/run/secrets/<name>` and passed as `<NAME>_FILE`. A set `<NAME>_FILE` wins; if it
   cannot be read or is empty, the API fails at startup, not at first use. The stack receives each
-  secret's versioned name (`<NAME>_SECRET=hashifi_<name>_YYYYMMDD_vN`), never its value.
+  secret's versioned name (`<NAME>_SECRET=hashinet_<name>_YYYYMMDD_vN`), never its value.
 - **Environment variables** from an env file for everything else, including local development.
 
 There is one template, `.env.example` at the repository root, listing each key; the web, its own

@@ -1,4 +1,4 @@
-import type { StaffRole } from "@hashifi/types";
+import type { StaffRole } from "@hashinet/types";
 import type { PrismaClient } from "../database/client.js";
 import type { Prisma } from "../generated/prisma/client.js";
 

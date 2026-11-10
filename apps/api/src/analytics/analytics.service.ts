@@ -11,7 +11,7 @@ import type {
   RevenueSummary,
   RevenueTransactions,
   TopVenues,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { z } from "zod";
 import type { StaffPrincipal } from "../auth/staff-guard.js";

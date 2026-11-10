@@ -8,7 +8,7 @@ import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } 
 import { useTestDatabase } from "./harness.js";
 
 const t = useTestDatabase();
-const api = useApi({ BRAND_STORE_DIR: join(tmpdir(), `hashifi-brand-${Date.now()}`) });
+const api = useApi({ BRAND_STORE_DIR: join(tmpdir(), `hashinet-brand-${Date.now()}`) });
 
 const { isActive: _active, updatedAt: _updated, ...SETTINGS } = DEFAULT_PORTAL_SETTINGS;
 
@@ -45,13 +45,13 @@ const logoUrlOf = (reply: { body: unknown }) =>
   (reply.body as { brand: { logoUrl: string } }).brand.logoUrl;
 
 describe("venue branding", () => {
-  test("a venue shows the HashiFi default until it sets its own, and can go back", async () => {
+  test("a venue shows the HashiNet default until it sets its own, and can go back", async () => {
     const c = await admin();
     const cafe = await venue();
     const before = await c.request("GET", `/api/venues/${cafe.id}/brand`);
     expect(before.body).toMatchObject({
       isCustom: false,
-      brand: { brandName: "HashiFi", logoUrl: null },
+      brand: { brandName: "HashiNet", logoUrl: null },
     });
 
     const saved = await c.request("PUT", `/api/venues/${cafe.id}/brand`, {
@@ -65,11 +65,11 @@ describe("venue branding", () => {
     });
     const other = await venue("Other");
     expect((await c.request("GET", `/api/venues/${other.id}/brand`)).body).toMatchObject({
-      brand: { brandName: "HashiFi" },
+      brand: { brandName: "HashiNet" },
     });
 
     const reset = await c.request("DELETE", `/api/venues/${cafe.id}/brand`);
-    expect(reset.body).toMatchObject({ isCustom: false, brand: { brandName: "HashiFi" } });
+    expect(reset.body).toMatchObject({ isCustom: false, brand: { brandName: "HashiNet" } });
     const actions = (await t.db.auditLog.findMany()).map((a) => a.action);
     expect(actions).toEqual(["brand_updated", "brand_reset"]);
   });

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ProvisioningBacklog, RouterList, RouterRecord } from "@hashifi/types";
+import type { ProvisioningBacklog, RouterList, RouterRecord } from "@hashinet/types";
 import { AlertTriangle, Plus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -121,7 +121,7 @@ export default function RoutersPage() {
       ) : routers.length === 0 && !isLoading ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            A router carries a venue's hotspot. Add one, and HashiFi walks you through connecting
+            A router carries a venue's hotspot. Add one, and HashiNet walks you through connecting
             it.
           </CardContent>
         </Card>

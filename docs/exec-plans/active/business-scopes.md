@@ -6,7 +6,7 @@ proceeds.
 
 ## Purpose / Big Picture
 
-HashiFi is sold to businesses. Hashikome creates a business, its venues and routers; the business's
+HashiNet is sold to businesses. Hashikome creates a business, its venues and routers; the business's
 owner signs in and sees all of their venues, with a venue switcher only when there are several, and
 invites managers to run venues for them and operators to work the counter. Hashikome's own platform
 owner, managers and operators oversee every business. The rules are
@@ -63,7 +63,7 @@ sequence of both plans.
   separates platform staff from a business's people, and only the active membership applies.
   Date/Author: 2026-11-03 / Paul and Claude
 - Decision: a business profile (name, logo) above each venue's portal brand; the admin keeps
-  HashiFi's design (ADR-0009).
+  HashiNet's design (ADR-0009).
   Rationale: a business with venues known by different names needs the venue on its portal.
   Date/Author: 2026-11-03 / Paul and Claude
 - Decision: keep platform operators in the model though none exist yet.
@@ -97,7 +97,7 @@ do, including Better Auth's tables and the tables that replace `staff`. Producti
 are test data only, so the owner approved dropping everything (4 November 2026): the migrations are
 replaced by one new baseline, and the seed writes realistic invented businesses, people and sales
 in place of `admin@example.com` and `Sim Manager`. Add `Business` (name, address, logo key, status; the logo stored as ADR-0009 says), `Venue.businessId` (required; drop `operatorId`),
-`Venue.region` (one of Tanzania's 31 regions, a closed list in `@hashifi/types`, chosen, never typed) and
+`Venue.region` (one of Tanzania's 31 regions, a closed list in `@hashinet/types`, chosen, never typed) and
 `Venue.area` (the area or street, typed), so analytics and onboarding travel group venues exactly,
 `Membership` (user id, scope `platform` or `business`, business id when business, role `owner`,
 `manager` or `operator` at the platform, and `owner`, `business_manager`, `venue_manager` or `venue_operator` in a business, status; unique per user and scope), the session's active membership (a
@@ -155,7 +155,7 @@ packages for managers; a CSV export of every package, its price and where it is 
 business has a handful of packages, and Add a package covers them (owner's decision, 7 November 2026).
 
 **M5, business profile.** The business's name and logo (owner only), the logo through the same
-checks and store as venue brands, and the portal's fallback (venue, business, HashiFi) served by
+checks and store as venue brands, and the portal's fallback (venue, business, HashiNet) served by
 the guest brand route. The screens are H2, H5 and H6 of [redesign-admin.md](redesign-admin.md).
 
 **M2 also rebuilds the audit log** (ADR-0012): `audit_logs` with actor, business, venue, typed
@@ -197,5 +197,5 @@ Design reference: round 3 of the Hearth review, each role's view, in git-ignored
 
 ## Interfaces And Dependencies
 
-`Principal` and `Capabilities` in `@hashifi/types` are the contract between the API and the web; the
+`Principal` and `Capabilities` in `@hashinet/types` are the contract between the API and the web; the
 web renders navigation and actions from capabilities, never from role names.

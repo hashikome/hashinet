@@ -1,6 +1,6 @@
 "use client";
 
-import type { RouterJourney, RouterRecord, RouterSetupPhase, RouterStage } from "@hashifi/types";
+import type { RouterJourney, RouterRecord, RouterSetupPhase, RouterStage } from "@hashinet/types";
 import { AlertTriangle, Check, Circle, Loader, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -85,7 +85,7 @@ function SetupProblem({ journey }: { journey: RouterJourney }) {
       </p>
       {journey.interrupted && (
         <p className="text-muted-foreground">
-          HashiFi restarted during the run. Setup is safe to run again.
+          HashiNet restarted during the run. Setup is safe to run again.
         </p>
       )}
       {journey.blockers.map((blocker) => (
@@ -187,7 +187,7 @@ export function RouterJourneyPanel({
                   <>
                     <p className="text-sm text-muted-foreground">
                       Reset the router, then paste the setup script into its terminal. It connects
-                      the router to HashiFi, so nothing has to be opened at the venue.
+                      the router to HashiNet, so nothing has to be opened at the venue.
                     </p>
                     {canManage && (
                       <Button onClick={() => setScriptOpen(true)}>Get setup script</Button>
@@ -202,7 +202,7 @@ export function RouterJourneyPanel({
                 {state === "current" && stage.id === "set-up" && !running && (
                   <>
                     <p className="text-sm text-muted-foreground">
-                      The router is connected. HashiFi checks it, applies the hotspot and confirms
+                      The router is connected. HashiNet checks it, applies the hotspot and confirms
                       it works. It takes a few minutes, and you can leave this page.
                     </p>
                     {failed && <SetupProblem journey={journey} />}

@@ -3,7 +3,7 @@ import type {
   ProvisioningBacklog,
   RouterJourney,
   RouterRecord,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import {
   BadGatewayException,
   BadRequestException,
@@ -535,7 +535,7 @@ function hintFor(kind: RouterError["kind"]): string {
     case "unreachable":
       return "Nothing answered the RouterOS API. Check the address, that this server can reach it, and that the API service is enabled: /ip service set api disabled=no";
     case "auth":
-      return "The router refused these credentials. Confirm the user exists in a group with API access: /user add name=hashifi password=… group=full";
+      return "The router refused these credentials. Confirm the user exists in a group with API access: /user add name=hashinet password=… group=full";
     default:
       return "The router answered, but the probe could not complete.";
   }

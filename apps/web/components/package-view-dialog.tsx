@@ -1,6 +1,6 @@
 "use client";
 
-import type { PackageRecord } from "@hashifi/types";
+import type { PackageRecord } from "@hashinet/types";
 import {
   Banknote,
   Clock,

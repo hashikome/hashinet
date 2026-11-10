@@ -1,6 +1,6 @@
 "use client";
 
-import type { BootstrapScriptResponse } from "@hashifi/types";
+import type { BootstrapScriptResponse } from "@hashinet/types";
 import { AlertTriangle, Check, Copy, Download, Loader, Terminal } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";

@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { buildBootstrapScript } from "./bootstrap.js";
-import { generateWireguardKeyPair, type ManagementTunnel, TUNNEL_INTERFACE } from "./tunnel.js";
+import {
+  FORMER_TUNNEL_INTERFACE,
+  generateWireguardKeyPair,
+  type ManagementTunnel,
+  TUNNEL_INTERFACE,
+} from "./tunnel.js";
 
 const keys = generateWireguardKeyPair();
 const server = generateWireguardKeyPair();
@@ -19,7 +24,7 @@ const script = buildBootstrapScript({
   routerName: "A".repeat(60),
   ipAddress: "192.168.0.161",
   gatewayIp: "192.168.0.1",
-  apiUsername: "hashifi",
+  apiUsername: "hashinet",
   apiPort: 8728,
   apiPassword: "p".repeat(64),
   tunnel: TUNNEL,
@@ -54,6 +59,17 @@ describe("the bootstrap brings the management tunnel up", () => {
     expect(script).toContain("allowed-address=10.88.0.1/32");
   });
 
+  test("renames a tunnel set up under the former name before adding one", () => {
+    const rename = script.indexOf(`name="${FORMER_TUNNEL_INTERFACE}"`);
+    expect(rename).toBeGreaterThan(-1);
+    expect(script).toContain(
+      `set [find where name="${FORMER_TUNNEL_INTERFACE}"] name=${TUNNEL_INTERFACE}`,
+    );
+    expect(rename).toBeLessThan(
+      script.indexOf(`/interface wireguard add name=${TUNNEL_INTERFACE}`),
+    );
+  });
+
   test("keeps the NAT mapping open, because only the router can open the path", () => {
     expect(script).toContain("persistent-keepalive=25s");
   });
@@ -80,7 +96,7 @@ describe("the bootstrap brings the management tunnel up", () => {
     const lan = buildBootstrapScript({
       routerName: "lan",
       ipAddress: "192.168.0.161",
-      apiUsername: "hashifi",
+      apiUsername: "hashinet",
       apiPort: 8728,
       apiPassword: "x".repeat(24),
       tunnel: null,

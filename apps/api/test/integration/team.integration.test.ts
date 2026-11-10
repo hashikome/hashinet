@@ -58,7 +58,7 @@ describe("team", () => {
       ],
     });
     await settle();
-    expect(sentTo("neema@example.com")).toContain("You have been added to HashiFi");
+    expect(sentTo("neema@example.com")).toContain("You have been added to HashiNet");
     const m = browser(api);
     expect((await signInWithCode(api, m, "neema@example.com")).status).toBe(200);
     const venues = (await m.request("GET", "/api/venues")).body as { venues: unknown[] };
@@ -100,7 +100,7 @@ describe("team", () => {
     });
     expect(memberOf(reply)).toMatchObject({ name: "New Name", email: "new@example.com" });
     await settle();
-    expect(sentTo("old@example.com")).toContain("Your HashiFi sign-in email has changed");
+    expect(sentTo("old@example.com")).toContain("Your HashiNet sign-in email has changed");
     expect((await signInWithCode(api, browser(api), "new@example.com")).status).toBe(200);
   });
 
@@ -121,13 +121,13 @@ describe("team", () => {
     await settle();
     expect(sentTo("m@example.com")).toEqual(
       expect.arrayContaining([
-        "Your HashiFi account is suspended",
-        "Your HashiFi account is active again",
+        "Your HashiNet account is suspended",
+        "Your HashiNet account is active again",
       ]),
     );
   });
 
-  test("HashiFi always keeps an active admin, and nobody acts on themselves", async () => {
+  test("HashiNet always keeps an active admin, and nobody acts on themselves", async () => {
     const a = await admin();
     for (const [method, path, body] of [
       ["PUT", `/api/team/${a.id}/role`, { role: "manager" }],

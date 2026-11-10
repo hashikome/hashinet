@@ -5,7 +5,7 @@ import type {
   GuestPaymentStatus,
   PaymentList,
   SaleResult,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import { Body, Controller, Get, HttpCode, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { CurrentStaff, Public, type StaffPrincipal } from "../auth/staff-guard.js";

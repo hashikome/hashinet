@@ -1,4 +1,4 @@
-import type { SessionList, SessionRecord } from "@hashifi/types";
+import type { SessionList, SessionRecord } from "@hashinet/types";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { z } from "zod";
 import { AuditLog } from "../audit/audit-log.js";

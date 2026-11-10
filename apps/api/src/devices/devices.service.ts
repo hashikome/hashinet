@@ -1,4 +1,4 @@
-import type { DeviceList, DeviceRecord } from "@hashifi/types";
+import type { DeviceList, DeviceRecord } from "@hashinet/types";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { z } from "zod";
 import { AuditLog } from "../audit/audit-log.js";

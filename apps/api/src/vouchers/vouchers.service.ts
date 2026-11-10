@@ -4,7 +4,7 @@ import type {
   VoucherBatchRecord,
   VoucherList,
   VoucherStatus,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import type { z } from "zod";
 import { AuditLog } from "../audit/audit-log.js";

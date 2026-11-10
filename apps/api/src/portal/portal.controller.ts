@@ -1,4 +1,4 @@
-import type { PortalSettingsResponse } from "@hashifi/types";
+import type { PortalSettingsResponse } from "@hashinet/types";
 import { Body, Controller, Get, Put } from "@nestjs/common";
 import { CurrentStaff, Roles, type StaffPrincipal } from "../auth/staff-guard.js";
 import { Origin } from "../http/request-origin.js";

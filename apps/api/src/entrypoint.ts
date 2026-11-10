@@ -13,7 +13,7 @@ async function fail(error: unknown): Promise<void> {
   if (stopping) return;
   stopping = true;
   captureFailure(error);
-  console.error("hashifi-api failed:", error instanceof Error ? error.message : error);
+  console.error("hashinet-api failed:", error instanceof Error ? error.message : error);
   await shutdownTelemetry();
   process.exit(1);
 }

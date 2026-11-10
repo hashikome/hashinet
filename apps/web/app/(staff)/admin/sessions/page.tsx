@@ -1,6 +1,6 @@
 "use client";
 
-import type { SessionList, SessionRecord, VenueList, VenueRecord } from "@hashifi/types";
+import type { SessionList, SessionRecord, VenueList, VenueRecord } from "@hashinet/types";
 import {
   Clock,
   Download,

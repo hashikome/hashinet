@@ -1,6 +1,6 @@
 "use client";
 
-import type { RouterRecord, RouterResponse } from "@hashifi/types";
+import type { RouterRecord, RouterResponse } from "@hashinet/types";
 import { ArrowLeft, Loader } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";

@@ -1,7 +1,7 @@
 # Mobile-money payments
 
 Status: `in progress`: built on test doubles, and waiting on provider accounts. M6 of the
-[build plan](../exec-plans/active/build-hashifi.md#m6-mobile-money-payments-snippe-and-customers),
+[build plan](../exec-plans/active/build-hashinet.md#m6-mobile-money-payments-snippe-and-customers),
 which holds the work; this item is removed when M6 completes.
 
 ## Problem

@@ -3,11 +3,11 @@ import { spawnSync } from "node:child_process";
 import { createPrismaClient, type PrismaClient } from "../../src/database/client.js";
 
 /**
- * Integration tests run against `hashifi_test` (the compose.yml PostgreSQL), migrated once per
+ * Integration tests run against `hashinet_test` (the compose.yml PostgreSQL), migrated once per
  * run with the real migrations, and emptied before each test. Run with `bun run test:integration`.
  */
 export const TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL ?? "postgresql://hashifi:hashifi@127.0.0.1:5438/hashifi_test";
+  process.env.TEST_DATABASE_URL ?? "postgresql://hashinet:hashinet@127.0.0.1:5438/hashinet_test";
 
 let migrated = false;
 

@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
-  title: "HashiFi Admin",
-  description: "Manage HashiFi venues, routers, packages and vouchers",
+  title: "HashiNet Admin",
+  description: "Manage HashiNet venues, routers, packages and vouchers",
 };
 
 /** Everything staff use. The guest portal stays outside this, and loads none of it. */

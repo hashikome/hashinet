@@ -1,4 +1,4 @@
-import type { PackageList, PackageResponse, VenuePackages } from "@hashifi/types";
+import type { PackageList, PackageResponse, VenuePackages } from "@hashinet/types";
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put } from "@nestjs/common";
 import { CurrentStaff, Roles, type StaffPrincipal } from "../auth/staff-guard.js";
 import { idParam, Origin } from "../http/request-origin.js";

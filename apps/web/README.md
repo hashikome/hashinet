@@ -1,8 +1,8 @@
-# @hashifi/web
+# @hashinet/web
 
-The HashiFi admin interface: venues and routers, packages and vouchers, live sessions,
+The HashiNet admin interface: venues and routers, packages and vouchers, live sessions,
 payments, revenue and analytics, the team, and the captive-portal branding editor. All data
-comes from `@hashifi/api`; the API's JSON contract is `@hashifi/types`.
+comes from `@hashinet/api`; the API's JSON contract is `@hashinet/types`.
 
 ## Commands
 
@@ -20,7 +20,7 @@ for CORS.
 ## Conventions
 
 - **The API decides; the web presents** ([ADR-0003](../../docs/engineering-decisions/0003-api-owns-logic-web-presents.md)).
-  Response shapes come from `@hashifi/types`, never hand-written copies.
+  Response shapes come from `@hashinet/types`, never hand-written copies.
 - **Money never has decimals:** `TSH {Math.floor(amount).toLocaleString()}`. Data usage keeps
   one: `{n.toFixed(1)} GB`.
 - **Dates only through `formatDate`** in `lib/utils.ts`.

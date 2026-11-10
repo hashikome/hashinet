@@ -1,7 +1,7 @@
 # Architecture
 
 The stable system map. Evolving detail belongs in [docs/design-docs/](docs/design-docs/README.md).
-The [build plan](docs/exec-plans/active/build-hashifi.md) tracks what is left to build.
+The [build plan](docs/exec-plans/active/build-hashinet.md) tracks what is left to build.
 
 ## Purpose
 
@@ -35,7 +35,7 @@ admin browser ──► apps/web (Next.js: admin + captive portal)
 | `apps/api` | NestJS API on Bun: business rules, authorization, router provisioning and sync, background jobs, persistence (Prisma, `prisma/schema.prisma`) |
 | `apps/api/src/services`, `routers`, `vouchers` | Router provisioning and dialects, `RouterSync`, `LiveMonitor`, tunnel allocation, voucher expiry and reconciliation |
 | `apps/api/src/observability`, `jobs`, `config` | Telemetry and wide events, interval jobs, validated configuration and secrets |
-| `apps/api/src/serializers` | Database rows to `@hashifi/types` records: the only place Prisma types become API shapes |
+| `apps/api/src/serializers` | Database rows to `@hashinet/types` records: the only place Prisma types become API shapes |
 | `apps/web` | Next.js: the admin interface and the captive portal pages |
 | `packages/types` | The API's JSON contract, shared by the API and the web |
 | `tooling/router-sim.ts` | A virtual MikroTik, guest and tunnel hub for testing against real RouterOS |
@@ -44,7 +44,7 @@ admin browser ──► apps/web (Next.js: admin + captive portal)
 ## Dependency rules
 
 - The web reaches data only through the API; it never imports Prisma or API internals.
-- Prisma rows leave the API only through `src/serializers`, as `@hashifi/types` records.
+- Prisma rows leave the API only through `src/serializers`, as `@hashinet/types` records.
 - Only the API talks to routers.
 - Router-specific behaviour lives in the provisioning dialect, nowhere else.
 

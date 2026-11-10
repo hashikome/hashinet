@@ -1,11 +1,13 @@
-# HashiFi product requirements
+# HashiNet product requirements
 
-The canonical product definition: what HashiFi must do and why. How it is built is in
+The canonical product definition: what HashiNet must do and why. How it is built is in
 [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/design-docs/](docs/design-docs/README.md).
 
 ## 1. Summary
 
-HashiFi is a prepaid WiFi billing platform for MikroTik hotspots. It lets a home or a venue sell
+**HashiNet: the platform for running WiFi businesses.**
+
+HashiNet is a prepaid WiFi billing platform for MikroTik hotspots. It lets a home or a venue sell
 internet access by time, speed and device limit: guests pay with mobile money or use a voucher,
 and the router enforces what they bought and cuts them off when it ends.
 
@@ -18,7 +20,7 @@ get a printed voucher instead.
 
 | User | Context and goals |
 | --- | --- |
-| Platform owner, manager, operator | Hashikome running HashiFi: create businesses and their venues, add and set up routers, onboard and support owners. The owner alone manages platform managers, settings and what businesses pay |
+| Platform owner, manager, operator | Hashikome running HashiNet: create businesses and their venues, add and set up routers, onboard and support owners. The owner alone manages platform managers, settings and what businesses pay |
 | Business owner | Accountable for the business, which sells WiFi at one or more venues: packages and prices, captive portal, analytics, their team. Alone invites business managers, sets business-wide prices, pays Hashikome, holds the payout account, adds venues and closes the business |
 | Business manager | Manages the whole business, across every venue, in the owner's place, except what the owner keeps |
 | Venue manager | Runs the venues they are assigned, one or a few, day to day |
@@ -38,11 +40,11 @@ first venue.
 - **Every way in is one mechanism and is recorded.** Self-service, an assisted sale and a
   pre-printed card all end in a voucher the router confirms, and every one is counted as a sale
   at its venue. Which one fits is a venue's choice, not the product's.
-- **Access follows the router, not the database.** HashiFi reports access granted only
+- **Access follows the router, not the database.** HashiNet reports access granted only
   after the router confirms it.
 - **The voucher is the guest's identity.** MAC addresses are a soft device signal:
   modern phones randomise them per network, and anyone nearby can observe them.
-- **The ISP router is only an uplink.** HashiFi controls a MikroTik behind it.
+- **The ISP router is only an uplink.** HashiNet controls a MikroTik behind it.
 - **Routers are probed, not assumed.** Board and RouterOS differences are detected.
 
 ## 4. Scope
@@ -50,7 +52,7 @@ first venue.
 ### 4.1 Venues and routers
 
 Admins create venues and add routers to them. Adding a router generates a bootstrap
-script for a freshly reset MikroTik. HashiFi then configures the hotspot automatically and
+script for a freshly reset MikroTik. HashiNet then configures the hotspot automatically and
 safely repeatably, and a readiness checklist shows what is working.
 
 A venue can list sites guests may open before paying, such as its own website.
@@ -77,11 +79,11 @@ mobile money (4.7), is logged straight in, or enters or scans a voucher they wer
 and is online once the router confirms. A returning device with an active voucher reconnects
 without re-entering the code, without the code ever being exposed.
 
-Acceptance: a phone on a HashiFi hotspot reaches the portal, redeems a voucher and browses;
+Acceptance: a phone on a HashiNet hotspot reaches the portal, redeems a voucher and browses;
 the voucher's limits and expiry are enforced by the router.
 
 Branding is per venue: its name, logo, background, colours and wording, shown on its portal and
-printed vouchers. A venue that has set none shows the HashiFi default. Admins edit the default,
+printed vouchers. A venue that has set none shows the HashiNet default. Admins edit the default,
 and managers brand their own venues.
 
 ### 4.5 Sessions and figures
@@ -106,7 +108,7 @@ All three end in a voucher confirmed by the router before access starts, and all
 a sale for the venue's figures. They suit different places, and a venue can use all of them.
 
 - **Self-service on the portal (the default).** The guest picks a package and pays with their
-  mobile number. When the payment is confirmed, HashiFi issues a voucher and logs **the device
+  mobile number. When the payment is confirmed, HashiNet issues a voucher and logs **the device
   that paid** straight in: no code to type. The code is also **shown on screen with a Copy
   button**, so the guest can keep it elsewhere, and sent to the phone number by SMS on a package of a
   day or longer, if the business has bought SMS credits (ADR-0013). Either copy
@@ -117,7 +119,7 @@ a sale for the venue's figures. They suit different places, and a venue can use 
   hour with nobody acting for the guest. A payment that succeeds while the router is
   unreachable is retried until the guest has access, and is shown as access owed until then.
 - **Assisted sale.** Anyone at the counter sells a voucher in one step: they record a payment (cash or
-  mobile money), with the guest's phone number if they have it; HashiFi issues the voucher, shows it on the sale screen as a QR code the guest scans and as a code (to type or
+  mobile money), with the guest's phone number if they have it; HashiNet issues the voucher, shows it on the sale screen as a QR code the guest scans and as a code (to type or
   copy), and sends it to that phone by SMS on a package of a day or longer if the business has credits, or the manager prints it. The fullest record: who paid, how, at which venue, for which voucher. Suits
   regulars. An operator's sale issues at once and waits in Payments for an owner or manager to
   confirm the money.
@@ -162,5 +164,5 @@ Development and tests use invented data only.
 
 ## 8. Delivery
 
-Active plan: [the build plan](docs/exec-plans/active/build-hashifi.md).
+Active plan: [the build plan](docs/exec-plans/active/build-hashinet.md).
 Nothing is deployed.

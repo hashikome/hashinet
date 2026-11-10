@@ -1,11 +1,11 @@
-import type { BrandRecord } from "@hashifi/types";
+import type { BrandRecord } from "@hashinet/types";
 
 /**
  * Settings to draw a voucher with before the real ones load, or if they cannot. The API's own
  * defaults (`GET /api/portal`) apply everywhere else.
  */
 export const initialPortalSettings: BrandRecord = {
-  brandName: "HashiFi",
+  brandName: "HashiNet",
   headline: "Welcome to fast WiFi",
   message: "Enter your voucher code to get online.",
   primaryColor: "#F59E2A",

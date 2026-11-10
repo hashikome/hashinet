@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { BrandRecord, VenueBrandResponse } from "@hashifi/types";
+import type { BrandRecord, VenueBrandResponse } from "@hashinet/types";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditLog } from "../audit/audit-log.js";
 import type { StaffPrincipal } from "../auth/staff-guard.js";
@@ -25,7 +25,7 @@ function urlOf(key: string | null): string | null {
 }
 
 /**
- * What each venue shows: its own branding, or the HashiFi default. A manager brands the venues
+ * What each venue shows: its own branding, or the HashiNet default. A manager brands the venues
  * they operate; outside them a venue is not found.
  */
 @Injectable()
@@ -37,7 +37,7 @@ export class BrandService {
     @Inject(BRAND_STORE) private readonly store: BrandStore,
   ) {}
 
-  /** What a venue shows. Null is a voucher with no venue: the HashiFi default. */
+  /** What a venue shows. Null is a voucher with no venue: the HashiNet default. */
   async resolve(venueId: string | null): Promise<BrandRecord> {
     const row =
       venueId === null ? null : await this.db.venueBrand.findUnique({ where: { venueId } });
@@ -85,7 +85,7 @@ export class BrandService {
     return this.response(id);
   }
 
-  /** Back to the HashiFi default; the venue's images go too. */
+  /** Back to the HashiNet default; the venue's images go too. */
   async reset(
     staff: StaffPrincipal,
     id: string,

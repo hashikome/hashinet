@@ -101,7 +101,7 @@ export function initializeTelemetry(config: TelemetryConfig, sinks: Sink[] | nul
       reset: true,
       sinks: named,
       loggers: [
-        { category: ["hashifi"], lowestLevel: "info", sinks: Object.keys(named) },
+        { category: ["hashinet"], lowestLevel: "info", sinks: Object.keys(named) },
         { category: ["logtape", "meta"], lowestLevel: null, sinks: [] },
       ],
     });

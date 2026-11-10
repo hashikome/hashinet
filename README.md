@@ -1,7 +1,7 @@
-# HashiFi 🔥📶
+# HashiNet 🔥📶
 _“WiFi by the bonfire” — Secure, smart, shared access._
 
-**HashiFi** manages **time-bound, device-limited WiFi access** sold as vouchers through a
+**HashiNet** manages **time-bound, device-limited WiFi access** sold as vouchers through a
 captive portal. It is for anyone who shares an internet connection and wants control without
 changing passwords by hand: a home, and venues such as hotels, coworking spaces, shops and
 shared compounds, each with its own routers, packages and branding.
@@ -10,7 +10,7 @@ It started with a personal problem: people asking to use the WiFi, which meant e
 disabling access and tracking MAC addresses by hand, sometimes late at night.
 
 > **Status:** in development. The plan is
-> [docs/exec-plans/active/build-hashifi.md](docs/exec-plans/active/build-hashifi.md).
+> [docs/exec-plans/active/build-hashinet.md](docs/exec-plans/active/build-hashinet.md).
 > The API, the admin web and the captive portal work together; printed vouchers are the launch workflow, and mobile money and SMS are held until their providers are set up.
 
 ## How it works
@@ -20,7 +20,7 @@ Internet / SIM / fibre
         ↓
 ISP router (uplink only)
         ↓
-HashiFi-managed MikroTik (hotspot, firewall, sessions)
+HashiNet-managed MikroTik (hotspot, firewall, sessions)
         ↓
 Guest WiFi → captive portal → voucher → online for the package's time and devices
 ```
@@ -55,7 +55,7 @@ bun run dev
 ```
 
 Sign in as a seeded person (`admin@example.com`, `manager@example.com`) or add one with
-`bun run --filter @hashifi/api staff:add --email you@example.com --name "You"`. Without
+`bun run --filter @hashinet/api staff:add --email you@example.com --name "You"`. Without
 `RESEND_API_KEY`, sign-in codes are written to `data/email/`. Admins set up an
 authenticator app at first sign-in.
 
@@ -73,7 +73,7 @@ docs/        design documents, decisions, plans and runbooks (start at docs/READ
 ## Licence
 
 [Functional Source License 1.1, Apache 2.0 future licence](LICENSE.md) (FSL-1.1-ALv2). You may
-use, modify and redistribute HashiFi for any purpose except offering a competing commercial
+use, modify and redistribute HashiNet for any purpose except offering a competing commercial
 product or service; each release becomes available under the Apache License 2.0 two years
 after it is published.
 

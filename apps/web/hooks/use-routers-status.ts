@@ -1,6 +1,6 @@
 "use client";
 
-import type { RouterList } from "@hashifi/types";
+import type { RouterList } from "@hashinet/types";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 

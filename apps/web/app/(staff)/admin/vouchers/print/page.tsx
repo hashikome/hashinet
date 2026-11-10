@@ -6,7 +6,7 @@ import type {
   PrintableVouchersResponse,
   VenueBrandResponse,
   VoucherBatchDetail,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import { ArrowLeft, Loader, Printer, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";

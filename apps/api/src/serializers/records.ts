@@ -5,7 +5,7 @@ import type {
   SessionRecord,
   VenueRecord,
   VoucherRecord,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import type {
   Package,
   PortalSetting,
@@ -17,7 +17,7 @@ import type {
 import { routerJourney, type StoredSetup } from "../routers/router-journey.js";
 
 /**
- * The only place database rows become API records (`@hashifi/types`): decimals as strings,
+ * The only place database rows become API records (`@hashinet/types`): decimals as strings,
  * timestamps as ISO 8601 UTC, byte counters as numbers. Each function returns the full record
  * type, so a field added to either side fails the typecheck until it is mapped.
  */

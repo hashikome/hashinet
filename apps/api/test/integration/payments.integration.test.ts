@@ -21,9 +21,9 @@ const api = useApi({
   SNIPPE_WEBHOOK_SECRET: PAY_SECRET,
   BRIQ_API_KEY: "key",
   BRIQ_APP_ID: "app",
-  BRIQ_SENDER_ID: "HASHIFI",
+  BRIQ_SENDER_ID: "HASHINET",
   BRIQ_WEBHOOK_SECRET: SMS_SECRET,
-  SMS_OUTBOX_DIR: join(tmpdir(), `hashifi-sms-${Date.now()}`),
+  SMS_OUTBOX_DIR: join(tmpdir(), `hashinet-sms-${Date.now()}`),
 });
 
 let charges: { phone: string; amount: number }[] = [];

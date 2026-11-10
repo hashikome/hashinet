@@ -1,6 +1,6 @@
 "use client";
 
-import type { RevokeResult, VoucherList, VoucherListItem } from "@hashifi/types";
+import type { RevokeResult, VoucherList, VoucherListItem } from "@hashinet/types";
 import {
   CheckCircle,
   Clock,

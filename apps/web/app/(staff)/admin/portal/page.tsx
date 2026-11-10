@@ -10,7 +10,7 @@ import type {
   VenueList,
   VenuePackages,
   VenueRecord,
-} from "@hashifi/types";
+} from "@hashinet/types";
 import {
   AlertCircle,
   CreditCard,
@@ -94,7 +94,7 @@ const DEFAULT_FORM: PortalForm = {
 };
 
 const colorPresets = [
-  { name: "HashiFi", primary: "#F59E2A", accent: "#0D1B2A", background: "#0D1B2A" },
+  { name: "HashiNet", primary: "#F59E2A", accent: "#0D1B2A", background: "#0D1B2A" },
   { name: "Signal", primary: "#2563EB", accent: "#10B981", background: "#0F172A" },
   { name: "Coral", primary: "#E11D48", accent: "#0891B2", background: "#18181B" },
   { name: "Forest", primary: "#15803D", accent: "#F59E0B", background: "#102018" },
@@ -185,7 +185,7 @@ export default function PortalPage() {
   const isAdmin = user?.role === "admin";
   const capabilities = useCapabilities();
 
-  // What is being edited: the HashiFi default, or one venue's brand.
+  // What is being edited: the HashiNet default, or one venue's brand.
   const [venues, setVenues] = useState<VenueRecord[]>([]);
   const [scope, setScope] = useState<string | null>(null);
   const [isCustom, setIsCustom] = useState(false);
@@ -326,7 +326,7 @@ export default function PortalPage() {
   const resetBrand = async () => {
     try {
       applyVenueBrand(await api.delete<VenueBrandResponse>(`/api/venues/${scope}/brand`));
-      toast.success("This venue now shows the HashiFi default");
+      toast.success("This venue now shows the HashiNet default");
     } catch (err) {
       toast.error(errorMessage(err, "Could not reset this venue"));
     } finally {
@@ -414,7 +414,7 @@ export default function PortalPage() {
                   <SelectValue placeholder="No venues yet" />
                 </SelectTrigger>
                 <SelectContent>
-                  {isAdmin && <SelectItem value={DEFAULT_SCOPE}>HashiFi default</SelectItem>}
+                  {isAdmin && <SelectItem value={DEFAULT_SCOPE}>HashiNet default</SelectItem>}
                   {venues.map((v) => (
                     <SelectItem key={v.id} value={v.id}>
                       {v.name}
@@ -427,12 +427,12 @@ export default function PortalPage() {
                   ? "What every venue without its own brand shows."
                   : isCustom
                     ? "This venue has its own brand."
-                    : "This venue shows the HashiFi default until you save."}
+                    : "This venue shows the HashiNet default until you save."}
               </p>
             </div>
             {!isDefault && isCustom && (
               <Button variant="outline" onClick={() => setIsResetOpen(true)}>
-                Use HashiFi default
+                Use HashiNet default
               </Button>
             )}
           </CardContent>
@@ -851,9 +851,9 @@ export default function PortalPage() {
         isOpen={isResetOpen}
         onClose={() => setIsResetOpen(false)}
         onConfirm={resetBrand}
-        title="Use the HashiFi default?"
+        title="Use the HashiNet default?"
         description="This venue's own name, colours, wording, logo and background are removed."
-        confirmText="Use HashiFi default"
+        confirmText="Use HashiNet default"
         variant="destructive"
       />
 

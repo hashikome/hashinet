@@ -1,6 +1,6 @@
 "use client";
 
-import type { AnalyticsSummary, MonthlyTrend, VoucherList, VoucherListItem } from "@hashifi/types";
+import type { AnalyticsSummary, MonthlyTrend, VoucherList, VoucherListItem } from "@hashinet/types";
 import {
   Activity,
   Clock,

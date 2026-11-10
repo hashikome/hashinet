@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { RouterJourney } from "@hashifi/types";
+import type { RouterJourney } from "@hashinet/types";
 import { addStaff } from "../../src/staff/add-staff.js";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
@@ -28,7 +28,7 @@ async function venue(operatorId: string | null = null) {
   });
 }
 
-const ROUTER = { name: "Lobby", ipAddress: "127.0.0.1", apiUsername: "hashifi" };
+const ROUTER = { name: "Lobby", ipAddress: "127.0.0.1", apiUsername: "hashinet" };
 
 type Body = Record<string, unknown>;
 const routerOf = (reply: { body: unknown }) => (reply.body as { router: Body }).router;
@@ -255,7 +255,7 @@ describe("routers", () => {
 
     const tested = await c.request("POST", "/api/routers/test-connection", {
       ipAddress: "127.0.0.1",
-      apiUsername: "hashifi",
+      apiUsername: "hashinet",
       apiPassword: "pw",
     });
     expect(tested.status).toBe(200);
@@ -269,7 +269,7 @@ describe("routers", () => {
     const reply = await c.request("POST", "/api/routers/test-connection", {
       routerId: router.id,
       ipAddress: "203.0.113.50",
-      apiUsername: "hashifi",
+      apiUsername: "hashinet",
     });
     expect(reply.status).toBe(400);
     expect(reply.body).toMatchObject({ details: { apiPassword: expect.any(String) } });

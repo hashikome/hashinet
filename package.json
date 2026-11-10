@@ -1,5 +1,5 @@
 {
-  "name": "hashifi",
+  "name": "hashinet",
   "private": true,
   "license": "FSL-1.1-ALv2",
   "packageManager": "bun@1.4.4",
@@ -11,9 +11,9 @@
     "dev": "bun run infra:up && bun run --filter '*' dev",
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",
-    "api:dev": "bun run --filter @hashifi/api dev",
-    "web:dev": "bun run --filter @hashifi/web dev",
-    "db:migrate": "bun run --filter @hashifi/api db:migrate",
+    "api:dev": "bun run --filter @hashinet/api dev",
+    "web:dev": "bun run --filter @hashinet/web dev",
+    "db:migrate": "bun run --filter @hashinet/api db:migrate",
     "check": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",
@@ -23,9 +23,9 @@
     "build": "bun run --filter '*' build",
     "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build",
     "router-sim": "bun tooling/router-sim.ts",
-    "db:deploy": "bun run --filter @hashifi/api db:deploy",
-    "db:seed": "bun run --filter @hashifi/api db:seed",
-    "test:integration": "bun run --filter @hashifi/api test:integration"
+    "db:deploy": "bun run --filter @hashinet/api db:deploy",
+    "db:seed": "bun run --filter @hashinet/api db:seed",
+    "test:integration": "bun run --filter @hashinet/api test:integration"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",

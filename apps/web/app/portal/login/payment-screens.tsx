@@ -1,6 +1,6 @@
 "use client";
 
-import type { GuestContext, GuestPaymentStatus, SmsDelivery } from "@hashifi/types";
+import type { GuestContext, GuestPaymentStatus, SmsDelivery } from "@hashinet/types";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { priceOf, themeOf } from "@/components/portal-view";
 import { formatDuration } from "@/lib/duration";

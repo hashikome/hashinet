@@ -1,6 +1,6 @@
 "use client";
 
-import type { BrandRecord } from "@hashifi/types";
+import type { BrandRecord } from "@hashinet/types";
 import { Loader, Ticket } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useState } from "react";
@@ -68,7 +68,7 @@ export function VoucherPreview({
             <div className="flex items-start justify-between gap-4 p-5">
               <div className="flex min-w-0 items-center gap-3">
                 {/* biome-ignore lint/performance/noImgElement: a small static SVG; image optimisation is off (next.config.mjs) */}
-                <img src={portal.logoUrl ?? LOGO_SRC} alt="HashiFi" className="size-12 shrink-0" />
+                <img src={portal.logoUrl ?? LOGO_SRC} alt="HashiNet" className="size-12 shrink-0" />
                 <div className="min-w-0">
                   <p className="truncate text-base font-semibold">{portal.brandName}</p>
                 </div>

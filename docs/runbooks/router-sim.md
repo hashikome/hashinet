@@ -45,7 +45,7 @@ target*). CHR has no radio, so the hotspot runs on `ether2`, a point-to-point UD
 ```bash
 bun run router-sim up          # boot (a copy-on-write overlay over the pristine image)
 bun run router-sim bootstrap   # onboarding steps 1-2: reset with no defaults, paste the bootstrap script
-bun run router-sim import <file>   # as `bootstrap`, from a script downloaded from a real HashiFi; prints none of it
+bun run router-sim import <file>   # as `bootstrap`, from a script downloaded from a real HashiNet; prints none of it
 bun run router-sim setup       # step 4: the real setupRouter pipeline (probe, readiness, apply, verify, self-test)
 bun run router-sim verify      # the readiness checks alone
 bun run router-sim console '<RouterOS statement>'
@@ -123,7 +123,7 @@ bun run router-sim hub down
 ```
 
 The hub (`tooling/router-sim-hub/Dockerfile`, built once with
-`docker build -t hashifi-router-sim-hub:1 tooling/router-sim-hub`) runs WireGuard in its own network
+`docker build -t hashinet-router-sim-hub:1 tooling/router-sim-hub`) runs WireGuard in its own network
 namespace with `NET_ADMIN`, published on `127.0.0.1:51820/udp`, which the router reaches as
 `10.0.2.2:51820`. With a tunnel, `setup` and `verify` run inside the hub, as your user, because
 only the hub is on the platform side; the router's API accepts only `10.88.0.1`. Creating the

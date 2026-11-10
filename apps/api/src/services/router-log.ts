@@ -57,7 +57,7 @@ const SYMBOL: Record<RouterLogOutcome, string> = {
 
 // Through LogTape, so the transcript is redacted like every other log (voucher codes are
 // hotspot user names); subscribers still receive the structured events.
-const transcript = getLogger(["hashifi", "router"]);
+const transcript = getLogger(["hashinet", "router"]);
 
 function consoleWrite(e: RouterLogEvent): void {
   const tag = `[${e.scope}:${e.runId.slice(0, 4)}]`;

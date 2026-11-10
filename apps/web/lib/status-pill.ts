@@ -1,4 +1,4 @@
-import type { VoucherStatus } from "@hashifi/types";
+import type { VoucherStatus } from "@hashinet/types";
 
 /**
  * One palette for every status pill in the admin. Three meanings, each defined once for both themes,

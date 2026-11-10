@@ -32,7 +32,7 @@ afterAll(() => server.stop(true));
 
 const store = new R2BrandStore({
   endpoint: `http://127.0.0.1:${server.port}`,
-  bucket: "hashifi",
+  bucket: "hashinet",
   accessKeyId: "key",
   secretAccessKey: "secret",
 });
@@ -43,7 +43,7 @@ describe("R2BrandStore", () => {
     const bytes = new Uint8Array([1, 2, 3]);
     expect(await store.get(key)).toBeNull();
     await store.put(key, bytes);
-    expect(objects.get(`/hashifi/${key}`)?.type).toBe("image/webp");
+    expect(objects.get(`/hashinet/${key}`)?.type).toBe("image/webp");
     expect(await store.get(key)).toEqual(bytes);
     await store.remove(key);
     expect(await store.get(key)).toBeNull();
