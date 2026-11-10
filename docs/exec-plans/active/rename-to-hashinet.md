@@ -20,9 +20,11 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
 - [x] (2026-11-11) Stage 1, in this repository: copy, code, packages, docs, file names, local
   development, and the git-ignored prototype. `bun run verify` passes (245 API tests), and
   `bun run test:integration` passes against `hashinet_test` (123). The router simulator was not run.
-- [ ] Stage 2, in this repository: the deployment manifest (`deploy/`, `.github/workflows/`). Its own
-  commit, which **must not reach `main` on GitHub before stage 3 is done**: every push to `main`
-  releases.
+- [x] (2026-11-11) Stage 2, in this repository: the deployment manifest (`deploy/`, the release
+  workflow), with the database secrets at version `hashinet_*_20261111_v1`. Its own commit, which
+  **must not reach `main` on GitHub before stage 3 is done**: every push to `main` releases. If the
+  owner creates the secrets on another day, change the date in `deploy/release.json` and
+  `deploy/docker-secrets.json` to match.
 - [ ] Stage 3, by the owner, outside the repository (see Concrete Steps).
 - [x] (2026-11-11) Stage 4, in other repositories, current docs only: handbook `55d0f88` (the
   chapter moves to `docs/hashinet/`; source and site checks pass), workspace `0640684`, ntumie

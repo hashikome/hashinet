@@ -1,5 +1,5 @@
-name: Release HashiFi
-# Every push to main ships, for as long as HashiFi is in development. To make releases manual
+name: Release HashiNet
+# Every push to main ships, for as long as HashiNet is in development. To make releases manual
 # again, replace `push` with `workflow_dispatch`. Deploying starts when DEPLOY_ENABLED is true.
 on:
   push:
@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: hashifi-release
+  group: hashinet-release
   cancel-in-progress: false
 jobs:
   verify:

@@ -1,34 +1,34 @@
 {
-  "title": "HashiFi",
+  "title": "HashiNet",
   "dokployUrl": "https://dokploy.hashikome.com",
   "application": {
     "compose": "NOobVsQuzvyXWWpacldOH",
-    "stack": "hashifi-[a-z0-9]{6}",
+    "stack": "hashinet-[a-z0-9]{6}",
     "manifest": "deploy/docker-stack.yml"
   },
   "migration": {
     "compose": "vWLE0OTlJqbixqlSrRkx5",
-    "stack": "hashifi-release-[a-z0-9]{6}",
+    "stack": "hashinet-release-[a-z0-9]{6}",
     "manifest": "deploy/docker-stack.migrate.yml",
-    "service": "hashifi-migration",
+    "service": "hashinet-migration",
     "image": "API_IMAGE",
     "command": ["bun", "--bun", "prisma", "migrate", "deploy"]
   },
   "services": {
-    "hashifi-api": {
+    "hashinet-api": {
       "image": "API_IMAGE"
     },
-    "hashifi-web": {
+    "hashinet-web": {
       "image": "WEB_IMAGE"
     },
-    "hashifi-tunnel": {
+    "hashinet-tunnel": {
       "image": "TUNNEL_IMAGE"
     }
   },
   "images": {
-    "API_IMAGE": "ghcr.io/hashikome/hashifi/api",
-    "WEB_IMAGE": "ghcr.io/hashikome/hashifi/web",
-    "TUNNEL_IMAGE": "ghcr.io/hashikome/hashifi/tunnel"
+    "API_IMAGE": "ghcr.io/hashikome/hashinet/api",
+    "WEB_IMAGE": "ghcr.io/hashikome/hashinet/web",
+    "TUNNEL_IMAGE": "ghcr.io/hashikome/hashinet/tunnel"
   },
   "allowedInputs": [
     "PUBLIC_HOST",
@@ -58,11 +58,11 @@
   ],
   "inputs": {
     "BACKEND_NETWORK": "hashikome-network",
-    "DATABASE_URL_SECRET": "hashifi_database_url_20261103_v1",
-    "MIGRATION_DATABASE_URL_SECRET": "hashifi_migration_database_url_20261103_v1"
+    "DATABASE_URL_SECRET": "hashinet_database_url_20261111_v1",
+    "MIGRATION_DATABASE_URL_SECRET": "hashinet_migration_database_url_20261111_v1"
   },
   "requiredValues": {
-    "PUBLIC_HOST": "hashifi.hashikome.com",
+    "PUBLIC_HOST": "hashinet.hashikome.com",
     "INGRESS_NETWORK": "dokploy-network"
   },
   "sharedInputs": ["BACKEND_NETWORK", "MIGRATION_DATABASE_URL_SECRET"]

@@ -1,7 +1,7 @@
 version: "3.8"
 # One host: Traefik sends the API's paths to `api` and everything else to `web`.
 services:
-  hashifi-api:
+  hashinet-api:
     # A full SHA tag and digest, supplied at release.
     image: ${API_IMAGE:?API_IMAGE_required}
     environment:
@@ -53,16 +53,16 @@ services:
       labels:
         traefik.enable: "true"
         traefik.swarm.network: ${INGRESS_NETWORK:?INGRESS_NETWORK_required}
-        traefik.http.routers.hashifi-api.rule: Host(`${PUBLIC_HOST}`) && (PathPrefix(`/api/`) || PathPrefix(`/ws/`) || PathPrefix(`/webhooks/`) || PathPrefix(`/portal/hotspot-files/`))
-        traefik.http.routers.hashifi-api.priority: "100"
-        traefik.http.routers.hashifi-api.service: hashifi-api
-        traefik.http.routers.hashifi-api.entrypoints: ${HTTPS_ENTRYPOINT:?HTTPS_ENTRYPOINT_required}
-        traefik.http.routers.hashifi-api.tls: "true"
-        traefik.http.routers.hashifi-api.tls.certresolver: ${TLS_RESOLVER:?TLS_RESOLVER_required}
-        traefik.http.services.hashifi-api.loadbalancer.server.port: "8080"
-        traefik.http.services.hashifi-api.loadbalancer.healthcheck.path: /api/health
-        traefik.http.services.hashifi-api.loadbalancer.healthcheck.interval: 15s
-  hashifi-web:
+        traefik.http.routers.hashinet-api.rule: Host(`${PUBLIC_HOST}`) && (PathPrefix(`/api/`) || PathPrefix(`/ws/`) || PathPrefix(`/webhooks/`) || PathPrefix(`/portal/hotspot-files/`))
+        traefik.http.routers.hashinet-api.priority: "100"
+        traefik.http.routers.hashinet-api.service: hashinet-api
+        traefik.http.routers.hashinet-api.entrypoints: ${HTTPS_ENTRYPOINT:?HTTPS_ENTRYPOINT_required}
+        traefik.http.routers.hashinet-api.tls: "true"
+        traefik.http.routers.hashinet-api.tls.certresolver: ${TLS_RESOLVER:?TLS_RESOLVER_required}
+        traefik.http.services.hashinet-api.loadbalancer.server.port: "8080"
+        traefik.http.services.hashinet-api.loadbalancer.healthcheck.path: /api/health
+        traefik.http.services.hashinet-api.loadbalancer.healthcheck.interval: 15s
+  hashinet-web:
     image: ${WEB_IMAGE:?WEB_IMAGE_required}
     environment:
       NODE_ENV: production
@@ -80,18 +80,18 @@ services:
       labels:
         traefik.enable: "true"
         traefik.swarm.network: ${INGRESS_NETWORK}
-        traefik.http.routers.hashifi-web.rule: Host(`${PUBLIC_HOST}`)
-        traefik.http.routers.hashifi-web.priority: "10"
-        traefik.http.routers.hashifi-web.service: hashifi-web
-        traefik.http.routers.hashifi-web.entrypoints: ${HTTPS_ENTRYPOINT}
-        traefik.http.routers.hashifi-web.tls: "true"
-        traefik.http.routers.hashifi-web.tls.certresolver: ${TLS_RESOLVER}
-        traefik.http.services.hashifi-web.loadbalancer.server.port: "3000"
-        traefik.http.services.hashifi-web.loadbalancer.healthcheck.path: /portal/login
-        traefik.http.services.hashifi-web.loadbalancer.healthcheck.interval: 15s
+        traefik.http.routers.hashinet-web.rule: Host(`${PUBLIC_HOST}`)
+        traefik.http.routers.hashinet-web.priority: "10"
+        traefik.http.routers.hashinet-web.service: hashinet-web
+        traefik.http.routers.hashinet-web.entrypoints: ${HTTPS_ENTRYPOINT}
+        traefik.http.routers.hashinet-web.tls: "true"
+        traefik.http.routers.hashinet-web.tls.certresolver: ${TLS_RESOLVER}
+        traefik.http.services.hashinet-web.loadbalancer.server.port: "3000"
+        traefik.http.services.hashinet-web.loadbalancer.healthcheck.path: /portal/login
+        traefik.http.services.hashinet-web.loadbalancer.healthcheck.interval: 15s
   # The routers' management tunnel (ADR-0006): on the host's network, so the API reaches a router
   # through wg0 and the router sees the platform's address.
-  hashifi-tunnel:
+  hashinet-tunnel:
     image: ${TUNNEL_IMAGE:?TUNNEL_IMAGE_required}
     environment:
       RELEASE_ATTEMPT: ${RELEASE_ATTEMPT}
