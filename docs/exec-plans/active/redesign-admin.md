@@ -228,7 +228,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   goes on invoices.
 - Decision: Settings is its own section, apart from the person signed in, whose Account and security
   stays in the account menu, and it will grow: General (the business's name, address and logo, for
-  owners, replacing Profile), Packages and Captive portal, which managers see for their own venues.
+  owners and business managers, replacing Profile), Packages and Captive portal, which venue managers
+  see for their own venues. A business manager has the owner's menu without Billing and Services,
+  which stay the owner's (ADR-0011, 3), and sets each venue's prices but not those for all venues.
   There is no business Defaults page: Packages has All venues, the default set new venues start with,
   and each venue's own version from the same picker, showing each price as default, its own, not sold
   there or only there. A package keeps its name, time and devices for good, as its vouchers carry them:
@@ -382,8 +384,8 @@ the welcome ("Karibu. Pull up a seat."), "Scan the QR code on your voucher, or e
 the venue's, else the business's, else HashiFi's. The router's pages stay byte-exact, and the walled
 garden is checked against the script Cloudflare injects into guests' pages.
 
-**H6, business screens.** Team (invite a manager or an operator to chosen venues; managers invite
-operators), Packages (the defaults, venue-only packages, a CSV export; no import, as a business has only a handful), Business
+**H6, business screens.** Team (the owner invites business managers; the owner and business managers
+invite venue managers and venue operators to chosen venues; venue managers invite venue operators), Packages (the defaults, venue-only packages, a CSV export; no import, as a business has only a handful), Business
 profile (name, logo, each venue's portal), and for platform staff Add a business and Default
 packages. Needs business-scopes M3 to M5.
 
