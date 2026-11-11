@@ -26,6 +26,12 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
   owner creates the secrets on another day, change the date in `deploy/release.json` and
   `deploy/docker-secrets.json` to match.
 - [ ] Stage 3, by the owner, outside the repository (see Concrete Steps).
+  - [x] (2026-11-11) Step 1: the owner renamed the repository; `origin` is
+    `git@github.com:hashikome/hashinet.git`.
+  - [x] (2026-11-11) Step 2, first half: `hashinet.hashikome.com`, an A record proxied to the same
+    server as `hashifi.hashikome.com`, created with the shared Cloudflare setup token. Delete the old
+    record after the cutover.
+  - [ ] Step 5 needs a Cloudflare token with R2 permission: the shared setup token has DNS only.
 - [x] (2026-11-11) Stage 4, in other repositories, current docs only: handbook `55d0f88` (the
   chapter moves to `docs/hashinet/`; source and site checks pass), workspace `0640684`, ntumie
   `280d0d8`, pigfarm `34c2892`. Left: workspace `backlog/README.md` and `brand/README.md`, which
