@@ -239,6 +239,11 @@ respects `prefers-reduced-motion`.
 - Do give a figure one number and only the context that adds to it: "6" routers online, "1 offline"
   below; never "6/7" or "of 7".
 - Do use a role, never a raw colour; a new need is a new role here first.
+- Do state a choice of one instead of offering it: a form with one possible role or venue says it
+  ("They see only Mama Neema Lodge"), with no lone radio button or checkbox (11 November 2026).
+- Do name a router as a router when it isn't its venue's first: "The Mama Neema Garden router is
+  offline", adding "at Mama Neema Lodge" for anyone who sees more than one venue; a venue's first
+  router stays "Mama Neema Lodge's router".
 - Don't use cream with terracotta, violet or indigo, a tinted sidebar, gradients, glows,
   glass, or a shadow on anything at rest.
 - Don't add a typeface or a fifth status hue.
