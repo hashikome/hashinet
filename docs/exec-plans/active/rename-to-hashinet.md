@@ -40,17 +40,25 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
     are in the secrets repository, `hashinet/database.json`.
   - [x] (2026-11-11) Step 4: the ten `hashinet_*_20261111_v1` Docker secrets exist on the server; the
     eight that are not database URLs hold the same values as their `hashifi_*` counterparts.
-  - [ ] The owner sets GitHub's `production` secrets `DATABASE_URL` and `MIGRATION_DATABASE_URL` from
-    `hashinet/database.json` (not needed for this release, which finds the Docker secrets in place).
-  - [ ] Cutover, with a few minutes' outage: make `hashifi` read-only and copy it into `hashinet`,
-    reapply the allocation script, remove the `hashifi-*` stacks (the tunnel holds UDP 51820), rename
-    both Dokploy composes to `hashinet-*` with the new env, push, watch the release.
+  - [x] (2026-11-11) GitHub `production` `DATABASE_URL` and `MIGRATION_DATABASE_URL` set by the owner.
+  - [x] (2026-11-11) Cutover, outage 00:52 to about 00:59 UTC: the `hashifi-*` stacks removed,
+    `hashifi` set read-only and restored into `hashinet` (28 tables, identical row counts), grants
+    reapplied. Dokploy keeps a compose's `appName`, so two new composes were made, `hashinet-svjd4p` and
+    `hashinet-release-xpdsvv`, and `deploy/release.json` names them. Release `1b1fd9c` (which also
+    shipped the Hearth look, unreleased until then) failed once: the environment's own
+    `SERVER_SSH_KEY` from 1 November overrode the organisation's replacement key. The owner shared the
+    organisation's `SERVER_SSH_KEY` and `DOKPLOY_API_KEY` with `hashinet` and deleted the environment
+    copies; the rerun passed. Health, portal and admin answer; the tunnel holds its peer; 12
+    migrations applied. The `hashifi.hashikome.com` record is deleted.
 - [x] (2026-11-11) Stage 4, in other repositories, current docs only: handbook `55d0f88` (the
   chapter moves to `docs/hashinet/`; source and site checks pass), workspace `0640684`, ntumie
   `280d0d8`, pigfarm `34c2892`. Left: workspace `backlog/README.md` and `brand/README.md`, which
   hold another session's uncommitted edits; infra, whose backup job changes at the cutover (stage 3,
   step 8); completed workspace plans, which are history.
-- [ ] Stage 5: push stages 1 and 2 together (stage 1 alone would break production: the web image
+- [x] (2026-11-11) Stage 5, release: see the cutover above. Left for the owner's go, the retirement:
+  the `hashifi` database and roles, the `hashifi_*` Docker secrets, the old Dokploy composes
+  (`NOobVsQuzvyXWWpacldOH`, `vWLE0OTlJqbixqlSrRkx5`), bucket `hashifi` and its place on the R2 token;
+  and infra's backup job, which still backs up `hashifi` (stage 3, step 8). Original note: push stages 1 and 2 together (stage 1 alone would break production: the web image
   already calls `hashinet-api`), release, check, then retire the old database, volume, secrets and bucket with the
   owner's go.
 - [ ] Stage 6, by the owner: rename the local folder and move Claude's memory directory with it.
