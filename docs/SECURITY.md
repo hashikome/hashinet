@@ -101,6 +101,11 @@ or administrator database credentials; migrations get their own `DATABASE_URL_FI
 To move a value to a Docker secret, first release an image that reads `<NAME>_FILE`, then change the
 stack. The other way round, the image ignores the file and the feature stops without an error.
 
+In production, each release creates any Docker secret the server lacks from `hashinet/docker-secrets.json`
+in the private `hashikome/secrets` repository, where every value is encrypted under its versioned name
+and opens only for this repository's `production` environment (`hashikome/actions/docker-secrets`). To
+rotate one, add the value under a new name there, point the stack at it and release.
+
 Router API passwords and tunnel private keys are encrypted at rest with AES-256-GCM
 (`SecretBox`) under `ENCRYPTION_KEY`, which the API requires at start; a tampered value fails
 to decrypt. They are never returned to clients.

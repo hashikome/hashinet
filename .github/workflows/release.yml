@@ -81,15 +81,18 @@ jobs:
     if: github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      # GitHub's OIDC token, exchanged for HashiNet's KMS key in hashikome/secrets
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Create missing Docker secrets
-        uses: hashikome/actions/docker-secrets@66a6e8f29d643f53b7f3c8b52df175b8eb7971db # v1.1.0
+        uses: hashikome/actions/docker-secrets@3134a14f9e86352e1c13e97cd0716e57c391a817
         with:
-          # Only the secrets deploy/docker-secrets.json names: never the whole `secrets` context.
-          values: >-
-            {"DATABASE_URL": ${{ toJSON(secrets.DATABASE_URL) }},
-            "MIGRATION_DATABASE_URL": ${{ toJSON(secrets.MIGRATION_DATABASE_URL) }}}
+          product: hashinet
+          reader-client-id: ${{ vars.SECRETS_READER_CLIENT_ID }}
+          reader-private-key: ${{ secrets.SECRETS_READER_PRIVATE_KEY }}
           ssh-key: ${{ secrets.SERVER_SSH_KEY }}
           ssh-target: ${{ vars.SERVER_SSH_TARGET }}
           ssh-host-key: ${{ vars.SERVER_HOST_KEY }}
