@@ -237,7 +237,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   NN/g warns): the side list is on every Help page, Start here included (owner's rule, after comparing
   four layouts on 11 November 2026: an index home, three panes and a single column). Start here does
   not list guides again or repeat the side list's topics; it is "How can we help?", a search whose
-  matching guides appear under the box, and Common questions: the role's most asked questions, each
+  matching guides appear under the box, and Frequently asked questions: the role's most asked questions, each
   its own item that opens in place, the first already open (search keeps and opens the questions it
   matches). Help stands on the dashboard's own frame, not a look of its own (owner, 11 November
   2026): the same brand and side column with the account menu, the phone's top bar and menu, the
