@@ -243,7 +243,15 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   2026): the same brand and side column with the account menu, the phone's top bar and menu, the
   title row with Back to Overview (and Copy link on a guide) as its actions, and every part in a card.
   Only the side list differs: Start here and the guides under their area names. Questions open in
-  place as rows of their card, ruled like a table's rows, the plus turning to a close mark. Every guide has its area, title, lead, steps, If it goes wrong, its area's common
+  place as rows of their card, ruled like a table's rows, the plus turning to a close mark. In Help the brand's tag
+  reads Help instead of Platform (or the business's name), so the space is told apart at a glance.
+- Proposed, prototype only until the owner approves (11 November 2026): stronger surface steps for
+  the whole theme, because cards, edges and the selected link sat at one tone (card on page 1.08:1
+  light and 1.12:1 dark, edges 1.2-1.45:1, the selected link 1.06:1 in light). Light: background
+  #e8ecf0, secondary #e3e8ee, accent #d0d8e2, border #bac3ce, muted text #4a5868, input #7b8696.
+  Dark: background #0a1521, card #162a3f, popover #1d3349, secondary #1f3650, accent #284565, border
+  #33506e, muted text #a3b3c4, input #7f91a6. On approval DESIGN.md's colour table and
+  apps/web/app/globals.css take them; every text and status pill keeps 4.5:1 or more in both themes. Every guide has its area, title, lead, steps, If it goes wrong, its area's common
   questions, "Was this guide helpful? Yes / No" (No opens Contact support about that guide), related
   guides, Copy link and Contact support.
   On a phone the list folds into "All guides" above the page. It opens before sign-in protection is set
