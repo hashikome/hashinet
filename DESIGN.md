@@ -247,7 +247,7 @@ respects `prefers-reduced-motion`.
 - Do keep what is the person's out of the business's navigation, never out of its look: Help has its
   own side list (Start here and the guides by area) on the dashboard's frame, title row and cards,
   under HashiNet's mark with a Help tag for every reader, since Help is the platform's, with a way back to the dashboard and one guide per shareable page; Account and security is a
-  dialog with its parts at the side, the chosen part marked by the selected 1px ink edge.
+  page on the same frame with an Account tag, its flows in place and never in a popup.
 - Do write Help for the reader's role only: a guide or question someone can't act on is left out,
   not greyed or labelled. Steps are numbered and short, name the button in bold, and end with what to
   do if it goes wrong.

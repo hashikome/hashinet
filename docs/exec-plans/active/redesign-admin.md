@@ -250,23 +250,28 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Frequently asked questions, written out. Help is HashiNet's, not the
   business's: for every reader its brand is the HashiNet mark with a Help tag (owner, 11 November
   2026), so the space is told apart at a glance.
+  Every guide has its area, title, lead, steps, If it goes wrong, its area's common
+  questions, "Was this guide helpful? Yes / No" (No opens Contact support about that guide), related
+  guides, Copy link and Contact support.
+  On a phone the list is the dashboard's menu, behind the top bar's button. It opens before sign-in protection is set
+  up, too. **Account and security is a page** on the dashboard's frame, like Help
+  (owner, 12 November 2026, after trying it as a dialog): HashiNet's mark with an Account tag, its parts
+  (Profile, Sign-in, Appearance) in the side list, each its own link, and Back to Overview. Its flows
+  run in place on the Sign-in part, never in a popup: setting up or replacing the authenticator
+  (Confirm it's you, scan and verify, save the recovery codes, numbered "1 of 3"), new recovery codes,
+  and removing a passkey, which asks in its own row. Sign-in has no password, so there is no
+  password to change. Whoever must protect their sign-in first reaches only this page, with no Back.
+  Help is role-aware: each guide and question names the roles it is for, and Help shows only
+  those. What the business has switched on doesn't hide anything: an owner reads how to take payments
+  online before it's on (owner's correction, 11 November 2026); only what depends on the reader's reach,
+  such as more than one venue, is shown when it applies. Prototype: `help.js`, `accountPage()`.
 - Proposed, prototype only until the owner approves (11 November 2026): stronger surface steps for
   the whole theme, because cards, edges and the selected link sat at one tone (card on page 1.08:1
   light and 1.12:1 dark, edges 1.2-1.45:1, the selected link 1.06:1 in light). Light: background
   #e8ecf0, secondary #e3e8ee, accent #d0d8e2, border #bac3ce, muted text #4a5868, input #7b8696.
   Dark: background #0a1521, card #162a3f, popover #1d3349, secondary #1f3650, accent #284565, border
   #33506e, muted text #a3b3c4, input #7f91a6. On approval DESIGN.md's colour table and
-  apps/web/app/globals.css take them; every text and status pill keeps 4.5:1 or more in both themes. Every guide has its area, title, lead, steps, If it goes wrong, its area's common
-  questions, "Was this guide helpful? Yes / No" (No opens Contact support about that guide), related
-  guides, Copy link and Contact support.
-  On a phone the list folds into "All guides" above the page. It opens before sign-in protection is set
-  up, too. **Account and security is a dialog** over the dashboard, opened from the account menu: its
-  parts (Profile, Sign-in, Appearance) listed at the side and one shown at a time, as tabs on a phone's
-  full-screen sheet; the authenticator and passkey dialogs return to it, and a link to it opens it over
-  Overview. Help is role-aware: each guide and question names the roles it is for, and Help shows only
-  those. What the business has switched on doesn't hide anything: an owner reads how to take payments
-  online before it's on (owner's correction, 11 November 2026); only what depends on the reader's reach,
-  such as more than one venue, is shown when it applies. Prototype: `help.js`, `accountDialog()`.
+  apps/web/app/globals.css take them; every text and status pill keeps 4.5:1 or more in both themes.
 - Decision: in the build, Help is content served by the API, as Soko's Guide is
   (`soko/docs/design-docs/guide-and-glossary.md`): guides and questions as seeded data versioned with the
   code, filtered by the API for the session's membership (ADR-0003), with
