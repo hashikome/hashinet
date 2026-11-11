@@ -234,11 +234,13 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   width, margins and columns), so the mark is over the guide list and Back to Overview ends where the
   dashboard's content does. Following help-centre practice (search first; topics by task; one article
   template; feedback; questions inside their topics, since a separate FAQ becomes a dumping ground, as
-  NN/g warns): the home opens with "How can we help?" and a search over guides and questions, then
-  Start here and the areas side by side; every guide has its area, title, lead, steps, If it goes
-  wrong, its area's common questions, "Was this guide helpful? Yes / No" (No opens Contact support
-  about that guide), related guides, Copy link and Contact support. There is no separate Questions
-  page.
+  NN/g warns): the side list is on every Help page, Start here included (owner's rule, after comparing
+  four layouts on 11 November 2026: an index home, three panes and a single column). Start here does
+  not list guides again; it is "How can we help?", a search whose matching guides appear under the box,
+  and the questions and answers grouped by topic, each topic opening in place (search opens the
+  topics it matches). Every guide has its area, title, lead, steps, If it goes wrong, its area's common
+  questions, "Was this guide helpful? Yes / No" (No opens Contact support about that guide), related
+  guides, Copy link and Contact support.
   On a phone the list folds into "All guides" above the page. It opens before sign-in protection is set
   up, too. **Account and security is a dialog** over the dashboard, opened from the account menu: its
   parts (Profile, Sign-in, Appearance) listed at the side and one shown at a time, as tabs on a phone's
