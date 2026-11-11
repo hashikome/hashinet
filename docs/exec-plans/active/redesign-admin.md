@@ -243,8 +243,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   2026): the same brand and side column with the account menu, the phone's top bar and menu, the
   title row with Back to Overview (and Copy link on a guide) as its actions, and every part in a card.
   Only the side list differs: Start here and the guides under their area names. Questions open in
-  place as rows of their card, ruled like a table's rows, the plus turning to a close mark. In Help the brand's tag
-  reads Help instead of Platform (or the business's name), so the space is told apart at a glance.
+  place as rows of their card, ruled like a table's rows, the plus turning to a close mark. Help is HashiNet's, not the
+  business's: for every reader its brand is the HashiNet mark with a Help tag (owner, 11 November
+  2026), so the space is told apart at a glance.
 - Proposed, prototype only until the owner approves (11 November 2026): stronger surface steps for
   the whole theme, because cards, edges and the selected link sat at one tone (card on page 1.08:1
   light and 1.12:1 dark, edges 1.2-1.45:1, the selected link 1.06:1 in light). Light: background
