@@ -115,7 +115,7 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   whom Who goes names when scheduling; the holder can Release or Hand to, and only someone above
   them can Take over, with a reason (ADR-0011, 11). While someone else is
   responsible, the steps are theirs: others see them read-only and take over to act, except recording
-  a payment, which stays the platform admin's. Each step is recorded with who did it, and a resolved issue names who was responsible and who helped. It stays
+  a payment, which the platform admin and managers do whoever is responsible. Each step is recorded with who did it, and a resolved issue names who was responsible and who helped. It stays
   so once it is resolved; Issues shows Started, Completed and Responsible for open and resolved alike. A
   resolved issue keeps its own page at the same address: what happened, in order, with who and when.
 - Decision: a venue's sites are their own table on the venue page, each open before paying or

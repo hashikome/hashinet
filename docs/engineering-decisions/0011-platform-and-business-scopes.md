@@ -46,7 +46,8 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    and closes the business (confirmed 11 November 2026). A business manager does everything else
    across the business, including inviting venue managers and operators. The platform admin alone invites and removes platform
    managers, changes platform settings and secrets, sets what businesses pay, and deletes a business. Setting what businesses pay
-   is not recording what they paid: a platform manager records payments and sends reminders. The
+   is not recording what they paid: a platform manager records payments and sends reminders, as the
+   admin's counterpart, the way a business manager is the owner's (confirmed 11 November 2026). The
    captive portal's defaults (its themes, which page opens first, the logo and the wording) are not
    sensitive, so a platform manager changes them too (7 November 2026), as with the default packages. Turning online payments on or off for one
    business is a platform manager's job as well; pausing a service for every business stays the
@@ -107,7 +108,8 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
 11. **Issues are claimed by rank** (5 November 2026). Anyone in scope claims an issue nobody holds,
     by Claim or by acting on it; its holder releases it or hands it to a colleague; only someone
     above the holder takes it over, with a reason the holder is told. While it is held, its steps are
-    the holder's, except recording a payment, which stays the platform admin's. An issue held
+    the holder's, except recording a payment, which the platform admin and managers do whoever holds
+    it (11 November 2026). An issue held
     with nothing done on it for 24 hours (a claim counts) is **stalled**; a scheduled setup waits
     for its date instead and stalls only if the date passes before its router reaches hashifi. A
     stalled issue is flagged: its status says so and Issues can filter for it; it is

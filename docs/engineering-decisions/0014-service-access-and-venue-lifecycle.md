@@ -50,8 +50,8 @@ and what belongs to the business.
    optional message to the customer; it needs a fresh authenticator code, is written to the audit log
    with the note, and emails the business's owners with the reason in plain words and the message,
    never the note.
-   Recording that a bill was paid is the platform admin's alone for now, so one person keeps the
-   books; managers see every bill and send reminders.
+   The platform admin and platform managers record that a bill was paid and send reminders
+   (ADR-0011, 3; changed 11 November 2026 from the admin alone).
 5. **Archiving closes a business without deleting it.** The platform admin archives a business
    (contract ended, terms broken) by typing its exact name; its owner may close it themselves, which
    archives it too. Archived, it reads as closed, the hotspot is switched off on its routers, and its
