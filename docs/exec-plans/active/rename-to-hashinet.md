@@ -60,8 +60,10 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
   `hashinet-postgres` (same token). New Kuma monitors: HashiNet (`/api/health`), HashiNet portal
   (`/join`), and ntumie.'s `/api/v1/status` and `/healthz`. Infra `a697222` renames the backup
   job to `hashinet-postgres`; its push and the `kuma_push` key are the secrets migration session's.
-  Kept until the first `hashinet-postgres` snapshot: the read-only `hashifi` database and its roles,
-  and infra's `allocate-hashifi.sql`. Nothing to rename: Resend (shared sender, display name set in
+  The first `hashinet-postgres` snapshot succeeded at 01:19 UTC; the `hashifi` database and its roles
+  were then dropped (owner's request), and infra `d1ca393` removes `allocate-hashifi.sql`. Its push,
+  which also remounts the new `kuma_push` so the job reports to Kuma, is the secrets session's.
+  namestarlit.com's HashiNet page links the new site and repository. Nothing to rename: Resend (shared sender, display name set in
   env) and the SMS sender ID (no provider account yet; register `HASHINET` when one exists). The old
   local volume `hashifi_postgres-data` is the owner's to remove.
 - [x] (2026-11-11) Stage 5, release: see the cutover above. Left for the owner's go, the retirement:
