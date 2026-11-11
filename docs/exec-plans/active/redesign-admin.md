@@ -226,17 +226,19 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: General is one Business profile section (7 November 2026): the logo with Replace, the
   business name, then Region (a select) and Area or street apart, as at the invitation; the address
   goes on invoices.
-- Decision: Help belongs to the person, not the business (11 November 2026). It sits in the account
-  menu beside Account and security for every role, and no longer in the platform's main menu. It is
-  role-aware: each guide and question names the roles it is for, and Help shows only those, so nobody
-  reads about what they can't do. What the business has switched on doesn't hide anything: an owner
-  reads how to take payments online before it's on (owner's correction, 11 November 2026); only what
-  depends on the reader's reach, such as more than one venue, is shown when it applies. A business's
-  people get Start here (their role's three or four commonest tasks), guides by area (Selling, Guests
-  and devices, Your venues, Your team, Money, Your account) that open in place with numbered steps and
-  "If it goes wrong", Questions, search, and Contact support; platform people get the platform's own
-  guides by role (admin, manager, operator) and no Contact support, since they are it. Screens link to
-  one guide (`help-<guide>`), as the router setup step does. Prototype: `help.js`.
+- Decision: Help and Account and security belong to the person, not the business (11 November 2026),
+  so neither sits in the business's menu or frame. **Help is its own space**: a top bar with the mark,
+  "Help" and Back to Overview (Back to Today for an operator), a side list of every guide for the
+  reader's role by area plus Start here and Questions, and one guide per page at its own link, which
+  can be shared (`hashinet.hashikome.com/help/<guide>`, with Copy link and the next guide in its area).
+  On a phone the list folds into "All guides" above the page. It opens before sign-in protection is set
+  up, too. **Account and security is a dialog** over the dashboard, opened from the account menu: its
+  parts (Profile, Sign-in, Appearance) listed at the side and one shown at a time, as tabs on a phone's
+  full-screen sheet; the authenticator and passkey dialogs return to it, and a link to it opens it over
+  Overview. Help is role-aware: each guide and question names the roles it is for, and Help shows only
+  those. What the business has switched on doesn't hide anything: an owner reads how to take payments
+  online before it's on (owner's correction, 11 November 2026); only what depends on the reader's reach,
+  such as more than one venue, is shown when it applies. Prototype: `help.js`, `accountDialog()`.
 - Decision: in the build, Help is content served by the API, as Soko's Guide is
   (`soko/docs/design-docs/guide-and-glossary.md`): guides and questions as seeded data versioned with the
   code, filtered by the API for the session's membership (ADR-0003), with

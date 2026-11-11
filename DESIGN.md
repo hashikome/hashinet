@@ -244,6 +244,9 @@ respects `prefers-reduced-motion`.
 - Do give a figure one number and only the context that adds to it: "6" routers online, "1 offline"
   below; never "6/7" or "of 7".
 - Do use a role, never a raw colour; a new need is a new role here first.
+- Do keep what is the person's out of the business's frame: Help is its own space with a way back to
+  the dashboard and one guide per shareable page; Account and security is a dialog with its parts at
+  the side.
 - Do write Help for the reader's role only: a guide or question someone can't act on is left out,
   not greyed or labelled. Steps are numbered and short, name the button in bold, and end with what to
   do if it goes wrong.
