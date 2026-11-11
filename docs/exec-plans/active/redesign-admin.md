@@ -245,7 +245,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   Only the side list differs: Start here and the guides under their area names. Questions open in
   place as rows of their card, ruled like a table's rows, the plus turning to a close mark. One is open at
   a time, and the whole item (question and answer) is one target with one fill, as namestarlit/sk
-  does; search opens only the first match. Help is HashiNet's, not the
+  does; search opens only the first match. A list of like rows (Frequently asked questions, guides) takes its heading
+  above its card, so the heading never reads as one of the rows; the questions are titled
+  Frequently asked questions, written out. Help is HashiNet's, not the
   business's: for every reader its brand is the HashiNet mark with a Help tag (owner, 11 November
   2026), so the space is told apart at a glance.
 - Proposed, prototype only until the owner approves (11 November 2026): stronger surface steps for
