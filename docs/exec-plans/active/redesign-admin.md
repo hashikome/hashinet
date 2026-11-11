@@ -239,11 +239,11 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   not list guides again or repeat the side list's topics; it is "How can we help?", a search whose
   matching guides appear under the box, and Common questions: the role's most asked questions, each
   its own item that opens in place, the first already open (search keeps and opens the questions it
-  matches). Help is read, not scanned, so it sets larger type in clear steps than the
-  dashboard (a 38px title, 22px sections, 17px questions over 16px answers in the softer ink); the side
-  list's area names head their guides in bold full ink above quieter links; and every Help control
-  (questions, search, the phone's All guides, Back to Overview) has an edge of at least 3:1 in both
-  themes. An open question shows by its answer and close mark, not a brighter edge. Every guide has its area, title, lead, steps, If it goes wrong, its area's common
+  matches). Help stands on the dashboard's own frame, not a look of its own (owner, 11 November
+  2026): the same brand and side column with the account menu, the phone's top bar and menu, the
+  title row with Back to Overview (and Copy link on a guide) as its actions, and every part in a card.
+  Only the side list differs: Start here and the guides under their area names. Questions open in
+  place as rows of their card, ruled like a table's rows, the plus turning to a close mark. Every guide has its area, title, lead, steps, If it goes wrong, its area's common
   questions, "Was this guide helpful? Yes / No" (No opens Contact support about that guide), related
   guides, Copy link and Contact support.
   On a phone the list folds into "All guides" above the page. It opens before sign-in protection is set
