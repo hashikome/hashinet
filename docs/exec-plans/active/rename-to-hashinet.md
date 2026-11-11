@@ -55,6 +55,15 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
   `280d0d8`, pigfarm `34c2892`. Left: workspace `backlog/README.md` and `brand/README.md`, which
   hold another session's uncommitted edits; infra, whose backup job changes at the cutover (stage 3,
   step 8); completed workspace plans, which are history.
+- [x] (2026-11-11) Retired: the ten `hashifi_*` Docker secrets, the old Dokploy composes, the empty
+  `hashifi` bucket. Renamed: Sentry project `hashinet-api` (same DSN), Kuma push monitor
+  `hashinet-postgres` (same token). New Kuma monitors: HashiNet (`/api/health`), HashiNet portal
+  (`/portal/login`), and ntumie.'s `/api/v1/status` and `/healthz`. Infra `a697222` renames the backup
+  job to `hashinet-postgres`; its push and the `kuma_push` key are the secrets migration session's.
+  Kept until the first `hashinet-postgres` snapshot: the read-only `hashifi` database and its roles,
+  and infra's `allocate-hashifi.sql`. Nothing to rename: Resend (shared sender, display name set in
+  env) and the SMS sender ID (no provider account yet; register `HASHINET` when one exists). The old
+  local volume `hashifi_postgres-data` is the owner's to remove.
 - [x] (2026-11-11) Stage 5, release: see the cutover above. Left for the owner's go, the retirement:
   the `hashifi` database and roles, the `hashifi_*` Docker secrets, the old Dokploy composes
   (`NOobVsQuzvyXWWpacldOH`, `vWLE0OTlJqbixqlSrRkx5`), bucket `hashifi` and its place on the R2 token;
