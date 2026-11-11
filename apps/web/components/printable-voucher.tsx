@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { LOGO_SRC } from "@/lib/brand";
 import { formatDuration } from "@/lib/duration";
+import { joinLink } from "@/lib/portal-url";
 
 /** The portal settings a printed voucher is drawn with. */
 export type VoucherTicketSettings = Pick<
@@ -45,7 +46,7 @@ export function PrintableVoucher({
   portalUrl,
   venueName,
 }: PrintableVoucherProps) {
-  const qrValue = portalUrl ? `${portalUrl}/portal/login#code=${code}` : code;
+  const qrValue = portalUrl ? joinLink(code, portalUrl) : code;
   return (
     <div
       className="voucher-print-card w-full max-w-100 border rounded-xl overflow-hidden bg-white text-zinc-950 shadow-sm print:shadow-none print:border-zinc-300"

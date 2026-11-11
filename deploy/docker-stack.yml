@@ -87,7 +87,7 @@ services:
         traefik.http.routers.hashinet-web.tls: "true"
         traefik.http.routers.hashinet-web.tls.certresolver: ${TLS_RESOLVER}
         traefik.http.services.hashinet-web.loadbalancer.server.port: "3000"
-        traefik.http.services.hashinet-web.loadbalancer.healthcheck.path: /portal/login
+        traefik.http.services.hashinet-web.loadbalancer.healthcheck.path: /join
         traefik.http.services.hashinet-web.loadbalancer.healthcheck.interval: 15s
   # The routers' management tunnel (ADR-0006): on the host's network, so the API reaches a router
   # through wg0 and the router sees the platform's address.

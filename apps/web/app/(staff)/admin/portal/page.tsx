@@ -55,9 +55,9 @@ import { LOGO_SRC } from "@/lib/brand";
 import { useCapabilities } from "@/lib/capabilities";
 import { formatDuration } from "@/lib/duration";
 import { errorMessage } from "@/lib/errors";
+import { joinLink } from "@/lib/portal-url";
 import { cn } from "@/lib/utils";
 
-const PORTAL_LOGIN_URL = process.env.NEXT_PUBLIC_PORTAL_URL || "http://localhost:3006/portal/login";
 const BRAND_PLACEHOLDER = "Your brand name";
 
 /** A package as this page's previews draw it. */
@@ -898,7 +898,7 @@ function VoucherPreview({
 }) {
   const samplePackage = packages[1] ?? packages[0];
   const voucherCode = sampleVoucherCode(portal.voucherPrefix);
-  const qrData = `${PORTAL_LOGIN_URL}#code=${voucherCode}`;
+  const qrData = joinLink(voucherCode);
 
   return (
     <Card className="overflow-hidden">

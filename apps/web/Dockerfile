@@ -19,5 +19,5 @@ WORKDIR /app/apps/web
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 USER bun
 EXPOSE 3000
-HEALTHCHECK --interval=15s --timeout=4s --start-period=30s --retries=3 CMD ["bun", "-e", "const r=await fetch('http://127.0.0.1:3000/portal/login');process.exit(r.ok?0:1)"]
+HEALTHCHECK --interval=15s --timeout=4s --start-period=30s --retries=3 CMD ["bun", "-e", "const r=await fetch('http://127.0.0.1:3000/join');process.exit(r.ok?0:1)"]
 CMD ["bun", "--bun", "next", "start", "-p", "3000"]

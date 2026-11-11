@@ -248,7 +248,7 @@ describe("the guest portal", () => {
     expect(page.headers.get("content-type")).not.toContain("html");
     expect(page.status).toBe(200);
     const html = await page.text();
-    expect(html).toContain(`/portal/login#router=${router.id}`);
+    expect(html).toContain(`/join#router=${router.id}`);
     expect(html).not.toContain("?mac=");
     expect(html).not.toContain("__ROUTER_ID__");
     expect(html).toContain("$(link-orig-esc)");

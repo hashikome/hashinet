@@ -269,7 +269,7 @@ and admin are presented by `apps/web`, and releases go GitHub CI → GHCR → Do
     Left for later, in `docs/backlog/technical-debt.md`: the provisioning report types are still
     copied in `provision-dialog.tsx`; a second setup on a busy router is not refused.
 - [x] (2026-10-30) M5 Captive portal in the web, and the security pass
-  ([ADR-0008](../../engineering-decisions/0008-captive-portal.md)). `apps/web/app/portal/login`
+  ([ADR-0008](../../engineering-decisions/0008-captive-portal.md)). `apps/web/app/join`
   takes a voucher, outside the staff route group; the API's `/api/guest/*` decides everything.
   Findings 1 and 2 are closed: no code is returned for a MAC, `link-login` is checked against the
   router and rebuilt, and the router pages use URL-encoded variables. Public endpoints are

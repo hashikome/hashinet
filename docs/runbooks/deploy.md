@@ -33,7 +33,7 @@ Once, before setting `DEPLOY_ENABLED`:
   does; HashiNet holds it as its own Docker secret.
 - In GitHub: an environment `production` with the secret `DOKPLOY_API_KEY`, and the variables
   `DOKPLOY_REGISTRY_ID` and `DEPLOY_ENABLED`.
-- Uptime Kuma monitors on `/api/health` and `/portal/login`.
+- Uptime Kuma monitors on `/api/health` and `/join`.
 
 The first admin is added with `bun run staff:add` in the API image.
 

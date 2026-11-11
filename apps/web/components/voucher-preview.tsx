@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { LOGO_SRC } from "@/lib/brand";
 import { formatDuration } from "@/lib/duration";
+import { joinLink } from "@/lib/portal-url";
 
 /** The selected package's details, or null for each while none is selected. */
 interface VoucherPreviewProps {
@@ -37,9 +38,8 @@ export function VoucherPreview({
 }: VoucherPreviewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL || "http://localhost:3006/portal/login";
   const voucherCode = `${prefix || "WIFI"}-8K2F-2026`;
-  const qrData = `${portalUrl}#code=${voucherCode}`;
+  const qrData = joinLink(voucherCode);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: replays the preview animation whenever a shown value changes
   useEffect(() => {

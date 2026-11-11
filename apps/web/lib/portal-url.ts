@@ -6,3 +6,8 @@ export function portalOrigin(): string {
   if (process.env.NEXT_PUBLIC_PORTAL_URL) return process.env.NEXT_PUBLIC_PORTAL_URL;
   return typeof window === "undefined" ? "" : window.location.origin;
 }
+
+/** The link a printed or shown voucher carries: the portal's Join page, with the code in the fragment (ADR-0008). */
+export function joinLink(code: string, origin: string = portalOrigin()): string {
+  return `${origin}/join#code=${code}`;
+}

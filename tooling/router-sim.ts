@@ -965,7 +965,7 @@ HashiNet is running. Stop with Ctrl-C.
 
   Admin    http://localhost:3006
            Sign in as ${email}. Get the emailed code with: bun run router-sim code
-  Guest    http://localhost:3006/portal/login#${fragment}
+  Guest    http://localhost:3006/join#${fragment}
            A voucher to try: ${code}
 `);
   await new Promise(() => {});
@@ -994,7 +994,7 @@ async function guestTest(): Promise<void> {
         // printf formats keep the result words out of the echoed command line, which the serial
         // console prints back and which would otherwise match.
         "grep -q 'Example Domain' /tmp/page && printf 'PAGE=%s\\n' internet; " +
-        "grep -o 'https\\?://[^\"]*/portal/login' /tmp/page | head -1 | sed 's/^/PORTAL /'",
+        "grep -o 'https\\?://[^\"]*/join' /tmp/page | head -1 | sed 's/^/PORTAL /'",
       30_000,
     );
     return {
@@ -1037,7 +1037,7 @@ async function guestTest(): Promise<void> {
     const intercepted = await fetchPage("http://example.com/");
     record(
       "An unauthenticated page request gets the portal",
-      !intercepted.internet && intercepted.portal === `${portalOrigin}/portal/login`,
+      !intercepted.internet && intercepted.portal === `${portalOrigin}/join`,
       describe(intercepted),
     );
 
@@ -1251,7 +1251,7 @@ async function guestTest(): Promise<void> {
     const expired = await fetchPage("http://example.com/");
     record(
       "At expiry the router cuts the guest off",
-      !expired.internet && expired.portal === `${portalOrigin}/portal/login`,
+      !expired.internet && expired.portal === `${portalOrigin}/join`,
       describe(expired),
     );
     // A guest with no voucher buys one, through the walled garden, on the development gateway.

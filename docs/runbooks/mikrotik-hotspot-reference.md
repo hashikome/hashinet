@@ -39,10 +39,10 @@ MikroTik hAP Lite  (192.168.0.161 on bridgeLocal)
 Phone (WiFi client, gets 10.5.50.x)
     │
     ▼  MikroTik intercepts HTTP, serves login.html
-    │  login.html redirects → http://192.168.0.15:4006/portal/login
+    │  login.html redirects → http://192.168.0.15:4006/join
     ▼
 Express backend (192.168.0.15:4006)
-    │ /portal/login renders captive portal page
+    │ /join renders captive portal page
     │ /portal/validate-voucher validates voucher in MySQL
     │ Backend calls RouterOS API → creates hotspot user on MikroTik
     ▼
@@ -358,7 +358,7 @@ Save as `login.html` (or edit `C:\Users\Patrick\Desktop\login.html`):
   <body>
     <script>
       window.location.replace(
-        "http://192.168.0.15:4006/portal/login" +
+        "http://192.168.0.15:4006/join" +
           "?mac=$(mac)" +
           "&ip=$(ip)" +
           "&link-login=$(link-login-only)" +
@@ -580,7 +580,7 @@ Replace `WIFI-XMZET0` with the actual active voucher code from your database.
 
 1. **Connect your phone to the hotspot WiFi** (the SSID served by MikroTik)
 2. Open any http:// URL in the phone browser (not https — HTTPS bypasses captive portal detection on some devices; try `http://example.com`)
-3. You should be redirected to `http://192.168.0.15:4006/portal/login`
+3. You should be redirected to `http://192.168.0.15:4006/join`
 4. Enter a voucher code that exists in **both** the MySQL database AND MikroTik's user list
 5. Tap "Connect"
 6. If successful, MikroTik grants internet access and the browser navigates to the original URL
@@ -706,7 +706,7 @@ will otherwise cost you an afternoon:
 | 5   | Firewall **forward** rule | `dst-address=192.168.0.15` (§10.3)                                                  |
 | 6   | Firewall **input** rule   | `src-address=192.168.0.15` (§10.4)                                                  |
 | 7   | Mac static IP + gateway   | `192.168.0.15` / gw `192.168.0.1` (gateway = home router)                           |
-| 8   | login.html redirect       | `http://192.168.0.15:4006/portal/login`, re-upload                                  |
+| 8   | login.html redirect       | `http://192.168.0.15:4006/join`, re-upload                                  |
 | 9   | Backend `.env`            | `MIKROTIK_IP=192.168.0.161` + restart backend                                       |
 
 The dynamic (`D`-flagged) hotspot filter/NAT rules regenerate themselves and will briefly

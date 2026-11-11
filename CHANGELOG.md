@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The captive portal is at `/join`, as the voucher says "Join our WiFi": routers send guests there and
+  voucher QR codes carry `/join#code=…`. Every QR is built by one helper, so the previews no longer
+  lose the path when `NEXT_PUBLIC_PORTAL_URL` is set.
 - HashiFi is now HashiNet, "The platform for running WiFi businesses." (ADR-0016): the copy, the
   `@hashinet/*` packages, the local database and test database `hashinet` and `hashinet_test`, the
   log category, and the routers' management interface `hashinet-mgmt`, which a router's setup script

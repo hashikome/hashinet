@@ -53,7 +53,7 @@ import {
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDuration } from "@/lib/duration";
-import { portalOrigin } from "@/lib/portal-url";
+import { joinLink } from "@/lib/portal-url";
 import { voucherStatusPill } from "@/lib/status-pill";
 import { formatDate } from "@/lib/utils";
 
@@ -476,7 +476,7 @@ export default function VouchersPage() {
               {/* QR Code */}
               <div className="flex flex-col items-center gap-2 rounded-lg border bg-muted/30 py-4">
                 <QRCodeSVG
-                  value={`${portalOrigin()}/portal/login#code=${selectedVoucher.code}`}
+                  value={joinLink(selectedVoucher.code)}
                   size={120}
                   bgColor="transparent"
                   fgColor="currentColor"

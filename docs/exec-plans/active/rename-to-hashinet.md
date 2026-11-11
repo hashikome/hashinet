@@ -58,7 +58,7 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
 - [x] (2026-11-11) Retired: the ten `hashifi_*` Docker secrets, the old Dokploy composes, the empty
   `hashifi` bucket. Renamed: Sentry project `hashinet-api` (same DSN), Kuma push monitor
   `hashinet-postgres` (same token). New Kuma monitors: HashiNet (`/api/health`), HashiNet portal
-  (`/portal/login`), and ntumie.'s `/api/v1/status` and `/healthz`. Infra `a697222` renames the backup
+  (`/join`), and ntumie.'s `/api/v1/status` and `/healthz`. Infra `a697222` renames the backup
   job to `hashinet-postgres`; its push and the `kuma_push` key are the secrets migration session's.
   Kept until the first `hashinet-postgres` snapshot: the read-only `hashifi` database and its roles,
   and infra's `allocate-hashifi.sql`. Nothing to rename: Resend (shared sender, display name set in
