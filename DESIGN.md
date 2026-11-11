@@ -239,6 +239,11 @@ respects `prefers-reduced-motion`.
 - Do give a figure one number and only the context that adds to it: "6" routers online, "1 offline"
   below; never "6/7" or "of 7".
 - Do use a role, never a raw colour; a new need is a new role here first.
+- Do count a thing once: every screen that shows a stock, a total or a status count reads the same
+  figure (Today's unused vouchers, the Vouchers subtitle and a low-stock issue agree), and lists only
+  what the venue sells.
+- Do keep a table of a name and one value on one line per row on a phone, the value at its right,
+  with no repeated label; tables with more columns stack.
 - Do state a choice of one instead of offering it: a form with one possible role or venue says it
   ("They see only Mama Neema Lodge"), with no lone radio button or checkbox (11 November 2026).
 - Do name a router as a router when it isn't its venue's first: "The Mama Neema Garden router is
