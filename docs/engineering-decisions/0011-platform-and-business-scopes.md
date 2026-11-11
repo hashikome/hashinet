@@ -1,6 +1,7 @@
 # ADR-0011: Platform and business scopes, with owners, managers and operators
 
-Status: accepted, 3 November 2026; sign-in protection by role settled on 4 November 2026. Replaces the admin and manager roles of ADR-0007, which keeps
+Status: accepted, 3 November 2026; sign-in protection by role settled on 4 November 2026; the platform's
+top role named admin on 11 November 2026. Replaces the admin and manager roles of ADR-0007, which keeps
 sign-in itself.
 
 ## Context
@@ -31,25 +32,25 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    devices, payments and brands are reached through their venue's business.
 2. **Roles at each level** (business roles clarified 11 November 2026; they need not mirror the
    platform's one for one).
-   - **Platform:** the **owner** decides for HashiFi; a **manager** runs businesses, venues, routers
-     and onboarding in the owner's place, except what the owner keeps (below); an **operator**
+   - **Platform:** the **admin** is responsible for HashiNet; a **manager** runs businesses, venues,
+     routers and onboarding in the admin's place, except what the admin keeps (below); an **operator**
      supports businesses: connection checks, setup help, looking things up.
    - **Business:** the **owner** is accountable for the business; a **business manager** manages the
      whole business, across every venue, in the owner's place, except what the owner keeps.
    - **Venue:** a **venue manager** runs the venues they are assigned, one or a few, day to day; a
      **venue operator** works the counter there: vouchers, live sessions, devices and the day's cash.
      Anyone covering every venue is a business manager, not a venue manager of each.
-3. **What each owner keeps.** The business owner alone invites and removes business managers, sets
+3. **What the business owner and the platform admin keep.** The business owner alone invites and removes business managers, sets
    the business-wide packages and prices, holds the payout and billing relationship with Hashikome
    (paying its bills, SMS credits, online payments and the payout account), adds venues (ADR-0014),
    and closes the business (confirmed 11 November 2026). A business manager does everything else
-   across the business, including inviting venue managers and operators. The platform owner alone invites and removes platform
+   across the business, including inviting venue managers and operators. The platform admin alone invites and removes platform
    managers, changes platform settings and secrets, sets what businesses pay, and deletes a business. Setting what businesses pay
    is not recording what they paid: a platform manager records payments and sends reminders. The
    captive portal's defaults (its themes, which page opens first, the logo and the wording) are not
    sensitive, so a platform manager changes them too (7 November 2026), as with the default packages. Turning online payments on or off for one
    business is a platform manager's job as well; pausing a service for every business stays the
-   platform owner's.
+   platform admin's.
 4. **Venue scope inside a business.** A business owner and a business manager reach every venue of
    the business. A venue manager or venue operator reaches only the venues on their membership, at
    least one. A venue manager may add packages that are sold only at their own venues. A business has a default set of packages,
@@ -62,7 +63,7 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    own scope: an owner invites managers and operators, a manager invites operators to their venues.
 7. **One person, one identity, one active membership.** A membership is a role in a scope, plus its
    venues where that applies. A person keeps one email and may hold several memberships, at most one
-   per scope: the platform owner may also own their own business, one person may own two
+   per scope: the platform admin may also own their own business, one person may own two
    businesses, a manager may run venues for two businesses. Switching has two levels:
    - **Workspace,** in the account menu at the foot of the sidebar: which membership the session acts
      as, the platform or one business. Every switch is audited.
@@ -97,16 +98,16 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    password manager's unlock): it is requested as required when a passkey is created and when it signs
    in, and the API rejects any assertion without the user-verified flag (7 November 2026). Business operators sign in
    with the email code alone unless they turn the authenticator on. Anyone may add passkeys. Losing
-   the phone means a recovery code, or a platform owner or manager resetting the authenticator after
+   the phone means a recovery code, or a platform admin or manager resetting the authenticator after
    confirming the person, which signs them out everywhere.
 10. **Default packages.** A new business starts with the platform's default packages, which the
-    platform owner and managers edit (7 November 2026; a change reaches only businesses added after it): 1 hour for TSh 500, 1 day for TSh 1,500 and 1 week for TSh 7,000. A
+    platform admin and managers edit (7 November 2026; a change reaches only businesses added after it): 1 hour for TSh 500, 1 day for TSh 1,500 and 1 week for TSh 7,000. A
     business can change them, add its own, or export them as a CSV file; there is no import, since a
     business has too few packages for one (7 November 2026).
 11. **Issues are claimed by rank** (5 November 2026). Anyone in scope claims an issue nobody holds,
     by Claim or by acting on it; its holder releases it or hands it to a colleague; only someone
     above the holder takes it over, with a reason the holder is told. While it is held, its steps are
-    the holder's, except recording a payment, which stays the platform owner's. An issue held
+    the holder's, except recording a payment, which stays the platform admin's. An issue held
     with nothing done on it for 24 hours (a claim counts) is **stalled**; a scheduled setup waits
     for its date instead and stalls only if the date passes before its router reaches hashifi. A
     stalled issue is flagged: its status says so and Issues can filter for it; it is

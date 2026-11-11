@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- PRODUCT.md opens with the problem HashiNet solves, how the platform, businesses, venues, routers and
+  guests fit together, every role, and where the product stands today. The platform's top role is
+  its admin; a business's is its owner (ADR-0011).
 - The captive portal is at `/join`, as the voucher says "Join our WiFi": routers send guests there and
   voucher QR codes carry `/join#code=…`. Every QR is built by one helper, so the previews no longer
   lose the path when `NEXT_PUBLIC_PORTAL_URL` is set.

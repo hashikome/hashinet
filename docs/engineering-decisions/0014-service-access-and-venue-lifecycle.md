@@ -43,16 +43,16 @@ and what belongs to the business.
 3. **Customers are not punished for the business's account.** They paid the business, so vouchers
    already sold keep working while the business is read-only, and sessions in progress run out
    rather than stop when it is suspended.
-4. **Who may change it.** The platform owner and platform managers start a grace period, restrict to
-   read-only, and restore. Only the platform owner suspends, applies an override, archives, or
+4. **Who may change it.** The platform admin and platform managers start a grace period, restrict to
+   read-only, and restore. Only the platform admin suspends, applies an override, archives, or
    restores an archived business. Every change takes a reason (payment overdue, payment received,
    policy violation, customer request, contract ended, issue resolved, other), an internal note, and an
    optional message to the customer; it needs a fresh authenticator code, is written to the audit log
    with the note, and emails the business's owners with the reason in plain words and the message,
    never the note.
-   Recording that a bill was paid is the platform owner's alone for now, so one person keeps the
+   Recording that a bill was paid is the platform admin's alone for now, so one person keeps the
    books; managers see every bill and send reminders.
-5. **Archiving closes a business without deleting it.** The platform owner archives a business
+5. **Archiving closes a business without deleting it.** The platform admin archives a business
    (contract ended, terms broken) by typing its exact name; its owner may close it themselves, which
    archives it too. Archived, it reads as closed, the hotspot is switched off on its routers, and its
    data is kept for retention (to be set with the data-retention decision). Restoring brings it back
@@ -75,6 +75,6 @@ and what belongs to the business.
   and to platform staff only as counts.
 - The API enforces service access in one policy after authentication and scope (ADR-0003), and the
   router workers stop new vouchers and logins while a business is read-only or suspended.
-- Pages: a business page has Service access (and Archive for the platform owner); a platform venue
+- Pages: a business page has Service access (and Archive for the platform admin); a platform venue
   page is read-only, and its Venues list only finds venues across businesses; an owner's Venues page has Add a venue; Issues lists venues waiting for a
   router with the days left.

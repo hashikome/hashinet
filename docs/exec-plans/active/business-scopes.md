@@ -12,7 +12,7 @@ invites managers to run venues for them and operators to work the counter. Hashi
 owner, managers and operators oversee every business. The rules are
 [ADR-0011](../../engineering-decisions/0011-platform-and-business-scopes.md).
 
-Observable result: the platform owner invites neema@neemahospitality.co.tz to start a business. Neema
+Observable result: the platform admin invites neema@neemahospitality.co.tz to start a business. Neema
 opens the invitation, names Neema Hospitality and its first venue, signs in with a code, asks for a
 second venue, sees both, invites Halima as manager of one venue and Musa as an
 operator there. Halima can change that venue's portal and add a weekend package sold only there, but
@@ -52,7 +52,7 @@ sequence of both plans.
   people mostly resume what they were doing.
   Date/Author: 2026-11-04 / Paul
 - Decision: one email per person, several memberships, one active per session (ADR-0011, 7).
-  Rationale: the platform owner also owns a business, and people should not keep a second identity
+  Rationale: the platform admin also owns a business, and people should not keep a second identity
   to change hats; one active membership still keeps every query in one scope.
   Date/Author: 2026-11-03 / Paul
 - Decision: the business is the tenant, the venue a scope inside it.
@@ -87,7 +87,7 @@ Not started.
   plus venues for a venue manager or venue operator (ADR-0011, 2, as clarified 11 November 2026). *Owner-only* actions are listed in ADR-0011, 3.
 
 Production holds only test data (one venue, `chr-test`, and test vouchers) and one staff member, the
-platform owner, which are dropped with the old migrations. The platform owner is created again by
+platform admin, which are dropped with the old migrations. The platform admin is created again by
 the add-staff command, and `chr-test` re-runs setup.
 
 ## Plan Of Work
@@ -99,13 +99,13 @@ replaced by one new baseline, and the seed writes realistic invented businesses,
 in place of `admin@example.com` and `Sim Manager`. Add `Business` (name, address, logo key, status; the logo stored as ADR-0009 says), `Venue.businessId` (required; drop `operatorId`),
 `Venue.region` (one of Tanzania's 31 regions, a closed list in `@hashinet/types`, chosen, never typed) and
 `Venue.area` (the area or street, typed), so analytics and onboarding travel group venues exactly,
-`Membership` (user id, scope `platform` or `business`, business id when business, role `owner`,
+`Membership` (user id, scope `platform` or `business`, business id when business, role `admin`,
 `manager` or `operator` at the platform, and `owner`, `business_manager`, `venue_manager` or `venue_operator` in a business, status; unique per user and scope), the session's active membership (a
 column on Better Auth's session through its additional fields, or `session_memberships`, whichever
 Better Auth supports cleanly), `MembershipVenue` (membership, venue), `Invitation`
 (email, scope, business, role, venues, invited by, expiry, accepted at), and packages owned by a
 business with an optional venue list (`PackageVenue`), plus `PlatformDefaultPackage`. The seed creates the
-platform owner, the default packages and sample businesses. `Staff` is renamed `Membership` in the same release
+platform admin, the default packages and sample businesses. `Staff` is renamed `Membership` in the same release
 (pre-deployment compatibility: no alias).
 
 **M2, access.** `apps/api/src/access/policy.ts`: actions as a closed union (`venue.read`,

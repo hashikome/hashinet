@@ -1,17 +1,20 @@
 # HashiNet 🔥📶
-_“WiFi by the bonfire” — Secure, smart, shared access._
+_The platform for running WiFi businesses._
 
-**HashiNet** manages **time-bound, device-limited WiFi access** sold as vouchers through a
-captive portal. It is for anyone who shares an internet connection and wants control without
-changing passwords by hand: a home, and venues such as hotels, coworking spaces, shops and
-shared compounds, each with its own routers, packages and branding.
+**HashiNet** lets a business sell **time-bound, device-limited WiFi access** at its venues,
+through a captive portal and printed vouchers in the venue's own name: guest houses, cafés,
+hostels, bars, and a home. Hashikome's team sets up each venue's MikroTik routers; the business
+runs its packages, vouchers and team.
 
 It started with a personal problem: people asking to use the WiFi, which meant enabling and
 disabling access and tracking MAC addresses by hand, sometimes late at night.
 
 > **Status:** in development. The plan is
 > [docs/exec-plans/active/build-hashinet.md](docs/exec-plans/active/build-hashinet.md).
-> The API, the admin web and the captive portal work together; printed vouchers are the launch workflow, and mobile money and SMS are held until their providers are set up.
+> The API, the admin web and the captive portal work together, deployed as a first build at
+> `hashinet.hashikome.com`; printed vouchers are the launch workflow, and mobile money and SMS are held
+> until their providers are set up. Businesses, venues and their roles are an approved prototype, not
+> yet built ([PRODUCT.md](PRODUCT.md#8-delivery)).
 
 ## How it works
 

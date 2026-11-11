@@ -7,27 +7,41 @@ The canonical product definition: what HashiNet must do and why. How it is built
 
 **HashiNet: the platform for running WiFi businesses.**
 
-HashiNet is a prepaid WiFi billing platform for MikroTik hotspots. It lets a home or a venue sell
-internet access by time, speed and device limit: guests pay with mobile money or use a voucher,
-and the router enforces what they bought and cuts them off when it ends.
+It began with a chore at home: letting a guest's phone onto the router, then remembering to take
+it off again. Every venue that shares its WiFi has the same chore, multiplied: a guest house, a
+café, a hostel, a bar. Most hand out one password that never changes, or switch devices on and off
+by hand. HashiNet lets them sell access instead: by time and number of devices, through a captive
+portal in the venue's own name, paid with mobile money or a printed voucher. The router enforces
+what was bought and ends it on time, and nobody has to ask for the password.
 
-It runs one home or many venues from one place, covering routers, packages, vouchers, live
-sessions and revenue. Its main goal is access that nobody has to ask for: no one requesting the
-password late at night, and no owner enabling and disabling devices by hand. Guests who pay cash
-get a printed voucher instead.
+HashiNet is the software and the setup behind that service. It is not what guests see: they see
+the venue.
+
+### How it fits together
+
+- **The platform** is HashiNet, run by Shikome Technology Limited under the Hashikome brand. Its
+  team onboards businesses, sets up their venues and routers, and supports them.
+- **A business** is a customer that sells WiFi, at one venue or many.
+- **A venue** is a place where the business offers WiFi: a lodge, a café, a home.
+- **A router** is a MikroTik router installed at a venue. It enforces each guest's package; a large
+  venue has several, and a voucher works on any of them.
+- **A guest** joins the venue's WiFi on a phone and gets online through the venue's own portal and
+  printed vouchers.
 
 ## 2. Users and use
 
 | User | Context and goals |
 | --- | --- |
-| Platform owner, manager, operator | Hashikome running HashiNet: create businesses and their venues, add and set up routers, onboard and support owners. The owner alone manages platform managers, settings and what businesses pay |
+| Platform admin | Responsible for HashiNet itself. Alone manages platform managers, platform settings and what businesses pay, and pauses a service for every business |
+| Platform manager | Runs businesses, venues, routers and onboarding in the admin's place, except what the admin keeps |
+| Platform operator | Supports businesses: connection checks, setup help, looking things up |
 | Business owner | Accountable for the business, which sells WiFi at one or more venues: packages and prices, captive portal, analytics, their team. Alone invites business managers, sets business-wide prices, pays Hashikome, holds the payout account, adds venues and closes the business |
 | Business manager | Manages the whole business, across every venue, in the owner's place, except what the owner keeps |
 | Venue manager | Runs the venues they are assigned, one or a few, day to day |
 | Venue operator | Works the counter at their venues: vouchers, live sessions, devices, the day's cash |
 | Guest | Joins a venue's WiFi on a phone, often on a slow link, and wants to get online quickly |
 
-A business is the tenant and owns its venues; roles and what each owner keeps are in
+A business is the tenant and owns its venues; roles and what the admin and each owner keep are in
 [ADR-0011](docs/engineering-decisions/0011-platform-and-business-scopes.md). Paul's home is the
 first venue.
 
@@ -165,4 +179,12 @@ Development and tests use invented data only.
 ## 8. Delivery
 
 Active plan: [the build plan](docs/exec-plans/active/build-hashinet.md).
-Nothing is deployed.
+
+Status (11 November 2026): HashiNet is in development. `hashinet.hashikome.com` runs a first build,
+a hotspot-billing admin and captive portal for one owner, which proves the release path; it has no
+customers. Businesses, venues and the platform, business and venue roles exist as an approved
+prototype (`prototypes/hearth-design/`) and in the plans
+([business-scopes](docs/exec-plans/active/business-scopes.md),
+[redesign-admin](docs/exec-plans/active/redesign-admin.md)), not yet in the build. Routers are tested
+on a virtual MikroTik router and virtual phones (`bun run router-sim`); a physical router has yet to
+pass the same tests.

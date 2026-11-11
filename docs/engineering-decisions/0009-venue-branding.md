@@ -17,7 +17,7 @@ another address.
    mark; platform staff always see HashiFi's, with the business named in the scope switcher. A
    venue's brand (`venue_brands`: colours, background, wording, an optional logo) themes its captive
    portal, edited by the owner or a manager of that venue. A guest sees the venue's logo, else the
-   business's, else HashiFi's default in `portal_settings`, which the platform owner edits. Printed
+   business's, else HashiFi's default in `portal_settings`, which the platform admin edits. Printed
    cards and new voucher prefixes follow the voucher's venue.
 2. **The admin stays HashiFi's.** A business changes no colours or layout in the admin, so every
    business gets the same readable screens and support can describe them; the portal's foot and
