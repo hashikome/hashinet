@@ -230,7 +230,15 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   so neither sits in the business's menu or frame. **Help is its own space**: a top bar with the mark,
   "Help" and Back to Overview (Back to Today for an operator), a side list of every guide for the
   reader's role by area plus Start here and Questions, and one guide per page at its own link, which
-  can be shared (`hashinet.hashikome.com/help/<guide>`, with Copy link and the next guide in its area).
+  can be shared (`hashinet.hashikome.com/help/<guide>`). It sits on the dashboard's frame (the same
+  width, margins and columns), so the mark is over the guide list and Back to Overview ends where the
+  dashboard's content does. Following help-centre practice (search first; topics by task; one article
+  template; feedback; questions inside their topics, since a separate FAQ becomes a dumping ground, as
+  NN/g warns): the home opens with "How can we help?" and a search over guides and questions, then
+  Start here and the areas side by side; every guide has its area, title, lead, steps, If it goes
+  wrong, its area's common questions, "Was this guide helpful? Yes / No" (No opens Contact support
+  about that guide), related guides, Copy link and Contact support. There is no separate Questions
+  page.
   On a phone the list folds into "All guides" above the page. It opens before sign-in protection is set
   up, too. **Account and security is a dialog** over the dashboard, opened from the account menu: its
   parts (Profile, Sign-in, Appearance) listed at the side and one shown at a time, as tabs on a phone's
