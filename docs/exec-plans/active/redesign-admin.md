@@ -226,6 +226,21 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - Decision: General is one Business profile section (7 November 2026): the logo with Replace, the
   business name, then Region (a select) and Area or street apart, as at the invitation; the address
   goes on invoices.
+- Decision: Help belongs to the person, not the business (11 November 2026). It sits in the account
+  menu beside Account and security for every role, and no longer in the platform's main menu. It is
+  role-aware: each guide and question names the roles it is for and, where it matters, what the
+  business has (online payments off, asked or on; SMS credits bought; more than one venue in the
+  reader's reach), and Help shows only those, so nobody reads about what they can't do. A business's
+  people get Start here (their role's three or four commonest tasks), guides by area (Selling, Guests
+  and devices, Your venues, Your team, Money, Your account) that open in place with numbered steps and
+  "If it goes wrong", Questions, search, and Contact support; platform people get the platform's own
+  guides by role (admin, manager, operator) and no Contact support, since they are it. Screens link to
+  one guide (`help-<guide>`), as the router setup step does. Prototype: `help.js`.
+- Decision: in the build, Help is content served by the API, as Soko's Guide is
+  (`soko/docs/design-docs/guide-and-glossary.md`): guides and questions as seeded data versioned with the
+  code, filtered by the API for the session's membership and its business's features (ADR-0003), with
+  figures such as the fee, the minimum and the payout threshold filled from the same settings the
+  screens read, so Help never disagrees with a page; a test keeps every guide link resolving.
 - Decision: Settings is its own section, apart from the person signed in, whose Account and security
   stays in the account menu, and it will grow: General (the business's name, address and logo, for
   owners and business managers, replacing Profile), Packages and Captive portal, which venue managers
