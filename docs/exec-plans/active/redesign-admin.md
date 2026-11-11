@@ -236,9 +236,10 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   template; feedback; questions inside their topics, since a separate FAQ becomes a dumping ground, as
   NN/g warns): the side list is on every Help page, Start here included (owner's rule, after comparing
   four layouts on 11 November 2026: an index home, three panes and a single column). Start here does
-  not list guides again; it is "How can we help?", a search whose matching guides appear under the box,
-  and the questions and answers grouped by topic, each topic opening in place (search opens the
-  topics it matches). Every guide has its area, title, lead, steps, If it goes wrong, its area's common
+  not list guides again or repeat the side list's topics; it is "How can we help?", a search whose
+  matching guides appear under the box, and Common questions: the role's most asked questions, each
+  its own item that opens in place, the first already open (search keeps and opens the questions it
+  matches). Every guide has its area, title, lead, steps, If it goes wrong, its area's common
   questions, "Was this guide helpful? Yes / No" (No opens Contact support about that guide), related
   guides, Copy link and Contact support.
   On a phone the list folds into "All guides" above the page. It opens before sign-in protection is set
