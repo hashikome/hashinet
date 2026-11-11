@@ -178,6 +178,11 @@ addresses and file names.
   instead of per-row buttons, with a select-all on the list's title; ticking any turns the title into
   "3 selected" with the actions and Clear beside it, and each action confirms with the count
   ("Block 3 devices?"). An action shows only if it applies to every ticked row.
+- A blocked device stays on Devices with a red Blocked status, which the Status filter offers, and a
+  quiet Unblock on its row (11 November 2026). Blocking ends its session, so it leaves Live sessions at
+  once. Unblocking takes nothing away, so it acts at once with a toast, no question; ticking only
+  blocked devices offers Unblock in place of Block. Owners and managers block and unblock; operators
+  ask their manager.
 - A row's action sits at its right edge. With four columns or fewer the subject takes the spare width, so
   the row's details stay together at the right instead of drifting apart.
 - Columns follow scope, never today's rows. A column goes only if this person can never see it, as money
