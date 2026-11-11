@@ -31,7 +31,20 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
   - [x] (2026-11-11) Step 2, first half: `hashinet.hashikome.com`, an A record proxied to the same
     server as `hashifi.hashikome.com`, created with the shared Cloudflare setup token. Delete the old
     record after the cutover.
-  - [ ] Step 5 needs a Cloudflare token with R2 permission: the shared setup token has DNS only.
+  - [x] (2026-11-11) Step 5: the shared setup token gained R2 Edit (and lost permissions its tools never
+    use); bucket `hashinet` created in WEUR with the old bucket's defaults. `hashifi` was empty, so
+    nothing was copied. The app's R2 token is renamed `hashinet-r2-api-token` and writes to both
+    buckets, so its key carries over; take `hashifi` off it when that bucket is deleted.
+  - [x] (2026-11-11) Step 3, first half: roles `hashinet_migrator` and `hashinet_runtime` and an empty
+    database `hashinet`, from infra's `allocate-hashinet.sql`; both roles sign in. Passwords and URLs
+    are in the secrets repository, `hashinet/database.json`.
+  - [x] (2026-11-11) Step 4: the ten `hashinet_*_20261111_v1` Docker secrets exist on the server; the
+    eight that are not database URLs hold the same values as their `hashifi_*` counterparts.
+  - [ ] The owner sets GitHub's `production` secrets `DATABASE_URL` and `MIGRATION_DATABASE_URL` from
+    `hashinet/database.json` (not needed for this release, which finds the Docker secrets in place).
+  - [ ] Cutover, with a few minutes' outage: make `hashifi` read-only and copy it into `hashinet`,
+    reapply the allocation script, remove the `hashifi-*` stacks (the tunnel holds UDP 51820), rename
+    both Dokploy composes to `hashinet-*` with the new env, push, watch the release.
 - [x] (2026-11-11) Stage 4, in other repositories, current docs only: handbook `55d0f88` (the
   chapter moves to `docs/hashinet/`; source and site checks pass), workspace `0640684`, ntumie
   `280d0d8`, pigfarm `34c2892`. Left: workspace `backlog/README.md` and `brand/README.md`, which
