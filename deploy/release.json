@@ -2,12 +2,12 @@
   "title": "HashiNet",
   "dokployUrl": "https://dokploy.hashikome.com",
   "application": {
-    "compose": "NOobVsQuzvyXWWpacldOH",
+    "compose": "_r14O_fggMIs17cUgyWhL",
     "stack": "hashinet-[a-z0-9]{6}",
     "manifest": "deploy/docker-stack.yml"
   },
   "migration": {
-    "compose": "vWLE0OTlJqbixqlSrRkx5",
+    "compose": "j_PElIzbKBa-uorYZJZ1E",
     "stack": "hashinet-release-[a-z0-9]{6}",
     "manifest": "deploy/docker-stack.migrate.yml",
     "service": "hashinet-migration",
