@@ -72,7 +72,11 @@ migrations), and HashiNet serves at `hashinet.hashikome.com`.
   and infra's backup job, which still backs up `hashifi` (stage 3, step 8). Original note: push stages 1 and 2 together (stage 1 alone would break production: the web image
   already calls `hashinet-api`), release, check, then retire the old database, volume, secrets and bucket with the
   owner's go.
-- [ ] Stage 6, by the owner: rename the local folder and move Claude's memory directory with it.
+- [x] (2026-11-11) Stage 6: the folder is `~/Person/stack/hashikome/hashinet`, Claude's memory copied to
+  the new project key, the local port registry updated; the old local container, volume, network
+  and images removed. namestarlit.com's HashiNet page links the new site and repository.
+- [ ] The test router `chr-test` runs "Set up again" so its `login.html` sends guests to `/join`; this
+  needs the owner signed in to the admin.
 
 ## Surprises & Discoveries
 
