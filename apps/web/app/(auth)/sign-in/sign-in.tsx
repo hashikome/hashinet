@@ -38,7 +38,7 @@ const KEY_ICON = (
  */
 export function SignIn() {
   const router = useRouter();
-  const next = safeNext(useSearchParams().get("next"));
+  const next = useSearchParams().get("next");
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -47,7 +47,7 @@ export function SignIn() {
   const [busy, setBusy] = useState(false);
   const [wait, setWait] = useState(0);
 
-  const done = () => router.replace(next);
+  const done = () => router.replace(safeNext(next));
 
   // A passkey offered in the email field's suggestions signs in straight away.
   useEffect(() => {
@@ -56,7 +56,7 @@ export function SignIn() {
     PublicKeyCredential.isConditionalMediationAvailable?.()
       .then((available) => (available && live ? signInWithPasskey(true) : null))
       .then((signed) => {
-        if (signed !== null && live) router.replace(next);
+        if (signed !== null && live) router.replace(safeNext(next));
       })
       .catch(() => undefined);
     return () => {
@@ -367,7 +367,16 @@ export function SignIn() {
   );
 }
 
-/** Only a path on this site, so a crafted link can't send someone elsewhere after signing in. */
+/**
+ * Only a page on this site, so a crafted link can't send someone elsewhere after signing in. The
+ * value is resolved as the browser would ("/\\evil.example" is another site), then its origin compared.
+ */
 function safeNext(raw: string | null): string {
-  return raw?.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  if (!raw) return "/";
+  try {
+    const url = new URL(raw, window.location.origin);
+    return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : "/";
+  } catch {
+    return "/";
+  }
 }

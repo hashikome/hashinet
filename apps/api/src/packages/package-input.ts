@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-/** The lowest price HashiNet sells a package for, in whole shillings. */
-export const MINIMUM_PRICE_TSH = 1_000;
+/** The lowest price a package sells for, in whole shillings (the default hour is TSh 500). */
+export const MINIMUM_PRICE_TSH = 100;
 
 const whole = (min: number, max: number) =>
   z

@@ -4134,3 +4134,10 @@ td .btn.danger:hover {
   margin: 10vh auto 0;
   padding-inline: 16px;
 }
+
+/* A number and its unit side by side, as one field. */
+.input-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}

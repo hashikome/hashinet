@@ -67,7 +67,7 @@ describe("packages", () => {
   test("the API enforces the form's rules and the ones that make throttling work", async () => {
     const c = await owner();
     const cases: [Body, string, RegExp][] = [
-      [{ priceTsh: 999 }, "priceTsh", /1000/],
+      [{ priceTsh: 99 }, "priceTsh", /100/],
       [{ priceTsh: 1500.5 }, "priceTsh", /whole number/],
       [{ durationMinutes: 600_000 }, "durationMinutes", /525600/],
       [
@@ -117,20 +117,24 @@ describe("packages", () => {
     expect(await t.db.package.count()).toBe(1);
   });
 
-  test("a package that vouchers still use cannot be deleted", async () => {
+  test("removing a package stops it selling; its vouchers keep working", async () => {
     const c = await owner();
     const pkg = await t.db.package.create({
       data: { businessId: await testBusinessId(t.db), ...DAY },
     });
-    await t.db.voucher.create({
+    const voucher = await t.db.voucher.create({
       data: { packageId: pkg.id, code: "LIVE01", durationMinutes: 1440, priceTsh: "2000" },
     });
-    const refused = await c.request("DELETE", `/api/packages/${pkg.id}`);
-    expect(refused.status).toBe(409);
-    expect(refused.body).toMatchObject({ code: "PACKAGE_IN_USE" });
-
-    await t.db.voucher.updateMany({ data: { status: "expired" } });
     expect((await c.request("DELETE", `/api/packages/${pkg.id}`)).status).toBe(204);
+    expect(
+      ((await c.request("GET", "/api/packages")).body as { packages: Body[] }).packages,
+    ).toEqual([]);
+    expect((await c.request("GET", `/api/packages/${pkg.id}`)).status).toBe(404);
+    expect(await t.db.voucher.findUniqueOrThrow({ where: { id: voucher.id } })).toMatchObject({
+      packageId: pkg.id,
+      status: "unused",
+    });
+    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain("package.delete");
   });
 
   test("a manager reads what is on sale and changes nothing", async () => {

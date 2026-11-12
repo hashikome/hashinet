@@ -1,5 +1,5 @@
 import type { AuditAction, PackageRecord, VenuePackages } from "@hashinet/types";
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
 import { businessScope, venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
@@ -10,7 +10,6 @@ import { VenuesService } from "../venues/venues.service.js";
 import type { PackageInput } from "./package-input.js";
 
 /** Vouchers a package is still behind: deleting it would leave them without speed or time. */
-const LIVE_VOUCHERS = ["unused", "pending_activation", "active"] as const;
 
 export const packageNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That package does not exist."));
@@ -30,7 +29,7 @@ export class PackagesService {
   /** Admins see the whole catalogue; managers only what can be sold. */
   async list(staff: Principal): Promise<PackageRecord[]> {
     const rows = await this.db.package.findMany({
-      where: { ...businessScope(staff), ...(seesInactive(staff) ? {} : { isActive: true }) },
+      where: { ...businessScope(staff), isActive: true },
       orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
     });
     return rows.map(packageRecord);
@@ -82,7 +81,7 @@ export class PackagesService {
       where: {
         id,
         ...businessScope(staff),
-        ...(seesInactive(staff) ? {} : { isActive: true }),
+        isActive: true,
       },
     });
     if (!row) throw packageNotFound();
@@ -109,21 +108,14 @@ export class PackagesService {
     return packageRecord(row);
   }
 
-  /** Refused while vouchers depend on it; deactivating takes it off sale instead. */
+  /**
+   * Takes a package off sale for good: guests can no longer buy it, while vouchers already printed
+   * or sold keep working until their time ends and its sales stay in the figures. It is kept, so
+   * those vouchers and figures still name it.
+   */
   async remove(staff: Principal, id: string): Promise<void> {
     await this.get(staff, id);
-    const live = await this.db.voucher.count({
-      where: { packageId: id, status: { in: [...LIVE_VOUCHERS] } },
-    });
-    if (live > 0) {
-      throw new ConflictException(
-        apiError(
-          "PACKAGE_IN_USE",
-          `${live} voucher${live === 1 ? " uses" : "s use"} this package. Deactivate it to stop selling it.`,
-        ),
-      );
-    }
-    await this.db.package.delete({ where: { id } });
+    await this.db.package.update({ where: { id }, data: { isActive: false } });
     await this.record(staff, "package.delete", id);
   }
 
@@ -203,10 +195,6 @@ export class PackagesService {
 }
 
 /** The owner and platform staff see packages taken off sale; everyone else only what is on sale. */
-function seesInactive(staff: Principal): boolean {
-  return staff.scope === "platform" || staff.role === "owner";
-}
-
 /**
  * One CSV cell: quoted when it holds a comma, quote or line break, and kept from running as a
  * spreadsheet formula when it starts with one of `= + - @` (a package name is anyone's text).

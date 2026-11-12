@@ -93,7 +93,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
               data: {
                 ...session,
                 signedInWith,
-                provedAt: signedInWith === "email_code" ? null : new Date(),
+                provedAt: PROVING_METHODS.has(signedInWith) ? new Date() : null,
               },
             };
           },
@@ -255,6 +255,13 @@ export function normalRecoveryCode(typed: string): string {
   const clean = typed.toUpperCase().replace(/[^A-Z0-9]/g, "");
   return clean.length === 8 ? `${clean.slice(0, 4)}-${clean.slice(4)}` : typed.trim();
 }
+
+/** The ways of signing in that prove protection; anything else proves nothing. */
+const PROVING_METHODS: ReadonlySet<SignInMethod> = new Set([
+  "authenticator",
+  "recovery_code",
+  "passkey",
+]);
 
 /** The routes whose success proves the person's protection. */
 const PROVES: ReadonlySet<string> = new Set([
