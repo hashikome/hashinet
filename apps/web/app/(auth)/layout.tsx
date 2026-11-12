@@ -1,4 +1,3 @@
-import "../hearth.css";
 import type { ReactNode } from "react";
 import { AlwaysDark } from "@/components/hearth/always-dark";
 

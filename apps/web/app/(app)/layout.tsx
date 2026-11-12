@@ -1,4 +1,3 @@
-import "../hearth.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { ToastProvider } from "@/components/hearth/ui";

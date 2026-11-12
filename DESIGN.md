@@ -1,7 +1,8 @@
 # HashiNet design
 
 > The visual system and tokens, written for DESIGN.md-aware tools. Tokens live in
-> `apps/web/app/globals.css`; components use the roles, never raw colours.
+> `apps/web/app/hearth.css` (ported from the approved prototype); components use the roles, never
+> raw colours.
 
 ## Overview
 
@@ -16,7 +17,7 @@ ground, white panels and midnight ink; ember only in the mark, the charts and th
 
 ## Colors
 
-Role names are the shadcn tokens the components use. Brand colours: midnight `#0D1B2A`, ember
+Role names are the tokens `hearth.css` defines (`--muted-foreground` is `--muted-fg` there). Brand colours: midnight `#0D1B2A`, ember
 `#F59E2A`, sand `#F2E7D7`, mist `#E9ECF0`.
 
 | Role | Light | Dark | Use |

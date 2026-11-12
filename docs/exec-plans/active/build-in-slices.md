@@ -29,7 +29,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
 - [x] (2026-11-12) Full prototype reviewed and approved by the owner after the journey and role review
   (every persona walked in the browser, the interface audited, the logic code-reviewed); the rules it
   settled are in redesign-admin.md's Decision Log. Theme surface steps approved and applied
-  (`DESIGN.md`, `apps/web/app/globals.css`).
+  (`DESIGN.md`, then `apps/web/app/globals.css`, now `apps/web/app/hearth.css`).
 - [x] (2026-11-12) This plan written; slices agreed with the owner.
 - [ ] Slice 1: one owner, one venue, selling. Built on the local branch `slice-1`; merged to `main` only
   when it passes its acceptance, as every push to `main` releases. Steps, each ending with
@@ -93,10 +93,24 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     none; setup output stays the platform's. The setup flow itself (bootstrap script, background
     setup, readiness journey, tunnel) carries over unchanged. Tests cover each role. Integration
     129/129.
-  - [ ] (g) The screens, against the prototype (read the version-matched Next.js guide first), each
-    built with design-build and audited with design-audit as it is finished, P0 and P1 fixed before
-    the next screen.
-  - [ ] (h) Whatever is left of the first build, removed.
+  - [x] (2026-11-13) (g) The screens, against the prototype, ported from its stylesheet
+    (`apps/web/app/hearth.css`) and building blocks (`components/hearth/`): sign-in (passkey, email
+    code, authenticator, recovery code), the shell (business head, venue filter, menu from
+    capabilities, account menu and workspace switch), the owner's Overview, Vouchers and Print
+    vouchers, Payments, Packages, Account and security with its flows in place, Help, the platform's
+    Businesses with Invite a business, accepting an invitation, a venue's router page, and the
+    captive portal. Each was walked in the browser and checked at 1280 and 375 (390 for the portal)
+    wide, light and dark: no overflow and every text reaching AA contrast, measured from computed
+    colours; compared with the prototype side by side. Walked end to end: Paul protected his sign-in,
+    invited an owner who accepted and signed in; a passkey registered and signed in through Chrome's
+    virtual authenticator and was refused without user verification; the authenticator set up with a
+    real code; a sheet of twelve vouchers printed; a guest's voucher kept when the router could not
+    confirm it. The API gained what the screens needed (Decision Log). Verify passes; integration
+    135/135. Not walked: a router serving guests, which needs a router (the CHR sim or `chr-test`,
+    in (j)).
+  - [x] (2026-11-13) (h) Leftovers of the first build removed: its portal components, Tailwind, shadcn
+    and their packages and config, `globals.css` (`hearth.css` is the one stylesheet), unused web
+    helpers and the old logo; DESIGN.md and the web README point at the new code.
   - [ ] (i) finish-work on the branch: review, security, simplify, the journey-level design audit
     across the slice's screens, docs, CHANGELOG and the handbook.
   - [ ] (j) Production reset (owner-run, Concrete Steps), deploy, and live acceptance.

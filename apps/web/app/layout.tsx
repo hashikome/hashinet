@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
+import "./hearth.css";
 import { THEME_SCRIPT } from "@/lib/theme";
 
 // Self-hosted (OFL-1.1, see public/fonts/OFL.txt) on every page, the guest portal included: the
@@ -34,9 +34,7 @@ export default function RootLayout({
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: a constant script from lib/theme */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body className="antialiased bg-background" suppressHydrationWarning>
-        {children}
-      </body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

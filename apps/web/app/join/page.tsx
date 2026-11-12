@@ -1,4 +1,3 @@
-import "../hearth.css";
 import type { Metadata } from "next";
 import { GuestPortal } from "./portal";
 
