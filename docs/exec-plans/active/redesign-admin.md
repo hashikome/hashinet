@@ -258,8 +258,14 @@ and are built by [business-scopes.md](business-scopes.md); branding from
   (owner, 12 November 2026, after trying it as a dialog): HashiNet's mark with an Account tag, its parts
   (Profile, Sign-in, Appearance) in the side list, each its own link, and Back to Overview. Its flows
   run in place on the Sign-in part, never in a popup: setting up or replacing the authenticator
-  (Confirm it's you, scan and verify, save the recovery codes, numbered "1 of 3"), new recovery codes,
-  and removing a passkey, which asks in its own row. Sign-in has no password, so there is no
+  (Confirm it's you, scan and verify, save the recovery codes), new recovery codes, and removing a
+  passkey, which asks in its own row. The page holds a settings width (about 720px, as settings design
+  systems cap forms). A flow names itself, shows its named steps as a progress row (on a phone the bars,
+  with the current step named under them), and keeps Cancel in its head. Confirming offers the
+  strongest proof first: the passkey, then a code from the current app, then a recovery code; proof
+  lasts 2 hours, as GitHub's sudo mode does, so a second change doesn't ask again. The recovery codes
+  can be downloaded, printed or copied, and Done waits for "I've saved these codes". On a phone the
+  authenticator step opens the app and shows the setup key instead of a QR code it can't scan. Sign-in has no password, so there is no
   password to change. Whoever must protect their sign-in first reaches only this page, with no Back.
   Help is role-aware: each guide and question names the roles it is for, and Help shows only
   those. What the business has switched on doesn't hide anything: an owner reads how to take payments
