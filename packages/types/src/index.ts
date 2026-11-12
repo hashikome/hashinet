@@ -923,7 +923,7 @@ export interface InvitationPreview {
   expiresAt: Timestamp;
 }
 
-/** Accepting an invitation to start a business: four steps, saved only at the last. */
+/** Accepting an invitation to start a business: three steps, saved only at the last. */
 export interface AcceptBusinessInvitation {
   token: string;
   person: { name: string; phone: string };

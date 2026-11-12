@@ -4153,3 +4153,10 @@ td .btn.danger:hover {
     display: block;
   }
 }
+
+/* A row's actions stay on one line on a laptop: `.actions` wraps, which would stack them. */
+@media (min-width: 901px) {
+  .actions.row-actions {
+    flex-wrap: nowrap;
+  }
+}
