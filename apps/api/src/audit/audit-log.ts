@@ -17,6 +17,9 @@ export interface AuditEvent {
 
 type Writer = Pick<PrismaClient, "auditLog"> | Prisma.TransactionClient;
 
+/** Who acted: a principal, or someone whose membership an acceptance has just created. */
+export type AuditActor = Pick<Principal, "membershipId" | "userId" | "businessId">;
+
 /**
  * The audit log (ADR-0012): append-only. Pass the change's own transaction as `tx` so a failed
  * audit write rolls the change back; the application never edits or deletes a row.
@@ -26,8 +29,8 @@ export class AuditLog {
 
   constructor(private readonly db: PrismaClient) {}
 
-  /** Something a person did, as the membership their session acts as. */
-  async record(actor: Principal, event: AuditEvent, tx: Writer = this.db): Promise<void> {
+  /** Something a person did, as the membership their session acts as (or has just been given). */
+  async record(actor: AuditActor, event: AuditEvent, tx: Writer = this.db): Promise<void> {
     await tx.auditLog.create({
       data: {
         actorMembershipId: actor.membershipId,

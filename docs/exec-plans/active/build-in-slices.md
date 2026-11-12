@@ -67,7 +67,18 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     Left for (g), which needs a browser: a WebAuthn ceremony through Chrome's virtual authenticator
     (an assertion without user verification refused), and replacing the authenticator behind the
     flows' 2-hour proof.
-  - [ ] (d) Inviting a new business's owner, and acceptance.
+  - [x] (2026-11-13) (d) Inviting a new business's owner, and acceptance (`apps/api/src/invitations/`).
+    Platform admins and managers invite by email (`POST /api/invitations/businesses`); HashiNet's
+    team lists who is pending; Resend gives a new link and Revoke ends it. Issuing creates only the
+    invitation, its token's digest (the 256-bit token travels only in the link's fragment), the
+    email and the audit row; inviting the same email again replaces it; a link lasts 72 hours.
+    Accepting (`POST /api/invitations/accept/business`, public, token in the body) claims the token
+    with one conditional update, then creates or finds the person (name, mobile number, now
+    `users.phone`), the business with its region and area, its first venue, its copy of the
+    platform's default packages sold there, and the owner's membership, all audited; it signs no
+    one in. Someone already on HashiNet keeps one identity and gains a workspace. Tests cover
+    each of these and the refusals (used, replaced, revoked, expired, unknown links; a bad phone or
+    region; others inviting). Verify passes; integration 126/126.
   - [ ] (e) Packages per business (M4); a sale stores its price when its voucher is issued.
   - [ ] (f) Routers under the access policy: add, bootstrap script, setup, readiness.
   - [ ] (g) The screens, against the prototype (read the version-matched Next.js guide first), each

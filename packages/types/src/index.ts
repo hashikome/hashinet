@@ -576,6 +576,11 @@ export const AUDIT_ACTIONS = [
   "brand.reset",
   "brand.image.upload",
   "brand.image.remove",
+  "invitation.issue",
+  "invitation.resend",
+  "invitation.revoke",
+  "invitation.accept",
+  "business.create",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 export type AuditCategory = "change" | "read" | "auth";
@@ -810,3 +815,41 @@ export type MembershipScope = "platform" | "business";
 export type PlatformRole = "admin" | "manager" | "operator";
 export type BusinessRole = "owner" | "business_manager" | "venue_manager" | "venue_operator";
 export type MembershipRole = PlatformRole | BusinessRole;
+
+/** A pending invitation, as the platform's Businesses page lists it (business-scopes M3). */
+export interface InvitationRecord {
+  id: string;
+  email: string;
+  scope: MembershipScope;
+  role: MembershipRole;
+  /** Null for a new business's owner and for a platform role. */
+  businessId: string | null;
+  invitedBy: string | null;
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
+}
+
+export interface InvitationList {
+  invitations: InvitationRecord[];
+}
+
+/** What the invitation page shows before anything is entered: never a business or a person. */
+export interface InvitationPreview {
+  email: string;
+  kind: "business_owner";
+  expiresAt: Timestamp;
+}
+
+/** Accepting an invitation to start a business: four steps, saved only at the last. */
+export interface AcceptBusinessInvitation {
+  token: string;
+  person: { name: string; phone: string };
+  business: { name: string; region: Region; area: string };
+  venue: { name: string; region: Region; area: string };
+}
+
+/** After accepting, the person signs in with a code like everyone; nothing signs them in here. */
+export interface AcceptedInvitation {
+  email: string;
+  businessId: string;
+}

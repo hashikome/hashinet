@@ -176,6 +176,8 @@ model User {
   email            String   @unique @db.VarChar(255)
   emailVerified    Boolean  @default(false) @map("email_verified")
   image            String?
+  /// E.164, as `+255...`; given when accepting an invitation, so HashiNet's team can call.
+  phone            String?  @db.VarChar(20)
   twoFactorEnabled Boolean? @default(false) @map("two_factor_enabled")
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)

@@ -50,6 +50,9 @@ export const POLICY = {
   "portal.defaults.update": PLATFORM_STAFF,
   "brand.read": BUSINESS_ALL,
   "brand.update": BUSINESS_MANAGERS,
+  // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.
+  "business.read": PLATFORM_ALL,
+  "business.invite": PLATFORM_STAFF,
   // The audit log: everyone but operators (ADR-0012).
   "audit.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
 } as const satisfies Record<string, readonly MembershipRole[]>;
