@@ -91,12 +91,29 @@ describe("vouchers", () => {
     const stored = await t.db.voucher.findFirstOrThrow();
     const days = ((stored.expiresAt?.getTime() ?? 0) - Date.now()) / 86_400_000;
     expect(days).toBeGreaterThan(29.9);
-    expect((await t.db.auditLog.findFirstOrThrow()).action).toBe("voucher.print");
+    expect((await t.db.auditLog.findFirstOrThrow({ where: { category: "change" } })).action).toBe(
+      "voucher.print",
+    );
 
     const again = await own.client.request("GET", `/api/vouchers/batches/${detail.batch.id}`);
     expect((again.body as Detail).vouchers.map((v) => v.code).sort()).toEqual(
       detail.vouchers.map((v) => v.code).sort(),
     );
+    // A code is found from any of its digits, typed in groups or not.
+    const one = detail.vouchers[3]?.code ?? "";
+    const found = await own.client.request(
+      "GET",
+      `/api/vouchers?code=${encodeURIComponent(`${one.slice(4, 8)} ${one.slice(8)}`)}`,
+    );
+    expect((found.body as { vouchers: { code: string }[] }).vouchers.map((v) => v.code)).toContain(
+      one,
+    );
+
+    // Showing the codes is a read that reveals something (ADR-0012), recorded with the count.
+    const reads = await t.db.auditLog.findMany({ where: { action: "voucher.read" } });
+    expect(reads.length).toBeGreaterThan(0);
+    expect(reads.every((r) => r.category === "read")).toBe(true);
+    expect(reads.map((r) => r.change)).toContainEqual({ before: {}, after: { count: 25 } });
   });
 
   test("only a package on sale at the venue, and only in the manager's venues", async () => {

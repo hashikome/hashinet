@@ -2,8 +2,7 @@
    (prototypes/hearth-design/prototype/app.css), which stays the reference for every screen. The tokens
    match globals.css (DESIGN.md); the theme is `data-theme` on <html>, set before the first paint. */
 :root {
-  --font-mono:
-    ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, "SF Mono", Consolas, monospace;
   --background: #e8ecf0;
   --foreground: #0d1b2a;
   --card: #fff;
@@ -4140,4 +4139,17 @@ td .btn.danger:hover {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
+}
+
+/* The sheet a print run makes: off screen, and the only thing on paper. */
+.print-sheet {
+  display: none;
+}
+@media print {
+  .canvas > :not(.print-sheet) {
+    display: none !important;
+  }
+  .print-sheet {
+    display: block;
+  }
 }

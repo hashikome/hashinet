@@ -12,6 +12,14 @@ const figtree = localFont({
   variable: "--font-figtree",
 });
 
+// JetBrains Mono (OFL-1.1, public/fonts/OFL-JetBrainsMono.txt) for voucher codes, IDs and keys alone
+// (DESIGN.md), self-hosted beside Figtree.
+const mono = localFont({
+  src: "../public/fonts/jetbrains-mono-latin-wght-normal.woff2",
+  weight: "100 800",
+  variable: "--font-jetbrains",
+});
+
 export const metadata: Metadata = { title: "HashiNet" };
 
 export default function RootLayout({
@@ -20,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={figtree.variable} suppressHydrationWarning>
+    <html lang="en" className={`${figtree.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         {/* Sets the theme before the first paint, so it never flashes. */}
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: a constant script from lib/theme */}

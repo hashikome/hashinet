@@ -6,6 +6,7 @@ import { SMS_SENDER, type SmsSender } from "../../src/messaging/sms-sender.js";
 import { MOBILE_MONEY, type MobileMoneyGateway } from "../../src/payments/mobile-money.js";
 import { PaymentsService } from "../../src/payments/payments.service.js";
 import { RouterSync } from "../../src/services/router-sync.js";
+import { groupedCode } from "../../src/vouchers/voucher-codes.js";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, testBusinessId } from "./people.js";
@@ -217,7 +218,9 @@ describe("buying on the portal", () => {
 
     const voucher = await t.db.voucher.findFirstOrThrow();
     expect(voucher).toMatchObject({ status: "active", venueId: venue.id });
-    expect(texts).toEqual([{ to: PHONE, text: expect.stringContaining(voucher.code) }]);
+    expect(texts).toEqual([
+      { to: PHONE, text: expect.stringContaining(groupedCode(voucher.code)) },
+    ]);
     expect(await t.db.customer.findFirstOrThrow()).toMatchObject({ phone: PHONE });
 
     // Another session has the id at most, and gets nothing, not even that it exists.

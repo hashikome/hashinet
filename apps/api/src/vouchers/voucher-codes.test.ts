@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { CODE_LENGTH, generateCode, generateCodes, normalCode } from "./voucher-codes.js";
+import {
+  CODE_LENGTH,
+  generateCode,
+  generateCodes,
+  groupedCode,
+  normalCode,
+} from "./voucher-codes.js";
 
 describe("voucher codes", () => {
   test("twelve digits, with no prefix (ADR-0008)", () => {
@@ -25,6 +31,7 @@ describe("voucher codes", () => {
   test("a code typed in groups, or with dashes, is the code", () => {
     expect(normalCode("4827 1693 6518")).toBe("482716936518");
     expect(normalCode(" 4827-1693-6518 ")).toBe("482716936518");
+    expect(groupedCode("482716936518")).toBe("4827 1693 6518");
   });
 
   test("codes already taken are replaced, never repeated", async () => {

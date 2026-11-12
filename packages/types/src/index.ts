@@ -617,6 +617,7 @@ export const AUDIT_ACTIONS = [
   "package.delete",
   "package.venue.assign",
   "package.venue.unassign",
+  "voucher.read",
   "voucher.print",
   "voucher.revoke",
   "voucher.provision_failed",

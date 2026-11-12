@@ -33,7 +33,7 @@ import { captureFailure } from "../observability/telemetry.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { describeFailures, outcomeOk, RouterSync } from "../services/router-sync.js";
-import { generateCodes } from "../vouchers/voucher-codes.js";
+import { generateCodes, groupedCode } from "../vouchers/voucher-codes.js";
 import { type ChargeState, MOBILE_MONEY, type MobileMoneyGateway } from "./mobile-money.js";
 import type {
   PaymentListInput,
@@ -400,7 +400,7 @@ export class PaymentsService {
     try {
       const { jobId } = await this.sms.send({
         to: row.phone,
-        text: `${brandName} WiFi code: ${row.voucher.code}. Keep it to reconnect or add a device.`,
+        text: `${brandName} WiFi code: ${groupedCode(row.voucher.code)}. Keep it to reconnect or add a device.`,
       });
       await this.db.smsMessage.update({
         where: { paymentId: row.id },

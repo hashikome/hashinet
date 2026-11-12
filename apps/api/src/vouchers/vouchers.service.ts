@@ -10,7 +10,6 @@ import type { z } from "zod";
 import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
-import { BrandService } from "../brand/brand.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma, type Voucher } from "../generated/prisma/client.js";
 import type { VoucherWhereInput } from "../generated/prisma/models.js";
@@ -49,7 +48,6 @@ export class VouchersService {
     private readonly audit: AuditLog,
     private readonly sync: RouterSync,
     private readonly packages: PackagesService,
-    private readonly brand: BrandService,
   ) {}
 
   async list(staff: Principal, query: z.infer<typeof listQuery>): Promise<VoucherList> {
@@ -58,6 +56,7 @@ export class VouchersService {
       ...(query.venueId === null ? {} : { venueId: query.venueId }),
       ...(query.batchId === null ? {} : { batchId: query.batchId }),
       ...(query.status === null ? {} : { status: query.status }),
+      ...(query.code ? { code: { contains: query.code } } : {}),
       ...(query.before === null ? {} : { id: { lt: query.before } }),
     };
     const rows = await this.db.voucher.findMany({
@@ -67,6 +66,7 @@ export class VouchersService {
       take: query.limit + 1,
     });
     const page = rows.slice(0, query.limit);
+    await this.recordRead(staff, page.length, query.batchId);
     return {
       vouchers: page.map((row) => ({
         ...voucherRecord(row),
@@ -100,6 +100,7 @@ export class VouchersService {
       orderBy: { code: "asc" },
     });
     const printable = vouchers.map((voucher) => printableOf(voucher, row.venue?.name ?? null));
+    await this.recordRead(staff, printable.length, id);
     return { batch: await this.batchRecord(row), vouchers: printable };
   }
 
@@ -113,7 +114,19 @@ export class VouchersService {
       },
       orderBy: { code: "asc" },
     });
+    await this.recordRead(staff, rows.length, null);
     return rows.map((row) => printableOf(row, row.venue?.name ?? null));
+  }
+
+  /** Showing codes is a read that reveals something (ADR-0012): recorded, with how many. */
+  private async recordRead(staff: Principal, count: number, batchId: string | null) {
+    if (count === 0) return;
+    await this.audit.record(staff, {
+      action: "voucher.read",
+      category: "read",
+      target: { type: batchId ? "voucher_batch" : "voucher", id: batchId },
+      change: { before: {}, after: { count } },
+    });
   }
 
   /**

@@ -14,6 +14,11 @@ export function generateCode(): string {
   return code;
 }
 
+/** "4827 1693 6518": a code in the three groups it is printed and read aloud in. */
+export function groupedCode(code: string): string {
+  return code.replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+
 /** A code as someone typed or printed it ("4827 1693 6518"), in the form it is stored. */
 export function normalCode(typed: string): string {
   return typed.replace(/[\s-]/g, "");
