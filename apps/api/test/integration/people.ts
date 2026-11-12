@@ -10,7 +10,9 @@ export interface Person {
   email: string;
 }
 
-async function user(db: PrismaClient, email: string, name: string) {
+async function user(db: PrismaClient, given: string, name: string) {
+  // Stored lower-case, as acceptance stores it (and the database requires).
+  const email = given.trim().toLowerCase();
   return (
     (await db.user.findUnique({ where: { email } })) ??
     (await db.user.create({ data: { id: Bun.randomUUIDv7(), email, name, emailVerified: true } }))

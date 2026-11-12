@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { platformMember, testBusinessId } from "./people.js";
+import { businessMember, testBusinessId } from "./people.js";
 
 /** No provider credentials: what launches. Printed vouchers need neither provider. */
 const t = useTestDatabase();
@@ -55,9 +55,9 @@ describe("without mobile money or SMS", () => {
   });
 
   test("staff see what is on, and a sale waits with the rest", async () => {
-    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
     const c = browser(api);
-    await enrollAuthenticatorFor(api, c, "admin@example.com");
+    await enrollAuthenticatorFor(api, c, "owner@example.com");
     expect((await c.request("GET", "/api/capabilities")).body).toEqual({
       mobileMoney: false,
       sms: false,

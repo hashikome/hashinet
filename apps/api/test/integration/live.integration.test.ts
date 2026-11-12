@@ -73,7 +73,7 @@ describe("live view", () => {
     await expect(connect(unenrolled)).rejects.toThrow("401");
   });
 
-  test("a manager gets their venues' hotspots only; admins get everything", async () => {
+  test("a manager gets their venues' hotspots only; HashiNet's team gets setup transcripts only", async () => {
     const { membershipId: id } = await businessMember(t.db, {
       email: "m@example.com",
       name: "M",
@@ -97,7 +97,7 @@ describe("live view", () => {
       },
     });
     const m = browser(api);
-    await signInWithCode(api, m, "m@example.com");
+    await enrollAuthenticatorFor(api, m, "m@example.com");
     await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const a = browser(api);
     await enrollAuthenticatorFor(api, a, "admin@example.com");
@@ -114,11 +114,8 @@ describe("live view", () => {
     expect(managerSocket.messages.map((x) => [x.type, x.venueId])).toEqual([
       ["hotspot_update", mine.id],
     ]);
-    expect(adminSocket.messages.map((x) => x.type)).toEqual([
-      "hotspot_update",
-      "hotspot_update",
-      "provision_log",
-    ]);
+    // HashiNet's team gets setup transcripts, never guests' devices (ADR-0014).
+    expect(adminSocket.messages.map((x) => x.type)).toEqual(["provision_log"]);
     managerSocket.close();
     adminSocket.close();
     await settle();

@@ -20,11 +20,17 @@ export const LIVE_PATH = "/ws/live";
 /** How often an open socket's sign-in is checked again, so a suspension disconnects it. */
 export const REVALIDATE_MS = 60_000;
 
-interface Watcher {
+/** What one socket receives. */
+interface Reach {
+  /** The venues whose guests' hotspot updates it receives: a business's people, their venues. */
+  hotspotVenues: Set<string>;
+  /** Router setup transcripts: HashiNet's team, which sets routers up. */
+  setupLogs: boolean;
+}
+
+interface Watcher extends Reach {
   socket: WebSocket;
   headers: Headers;
-  /** Null for an admin (every venue); the venues a manager operates otherwise. */
-  venueIds: Set<string> | null;
 }
 
 /**
@@ -34,8 +40,9 @@ interface Watcher {
  * and refuses other origins, since a browser sends the session cookie with a cross-site
  * socket too. The earlier `/ws/live` accepted anyone and sent them every venue.
  *
- * Hotspot updates carry guests' voucher codes and MAC addresses, so a manager receives only
- * their venues'; provisioning transcripts name no venue and go to admins only.
+ * Hotspot updates carry guests' voucher codes and MAC addresses, so a business's people receive
+ * only their venues' and the platform none (ADR-0014); setup transcripts name no venue and go to
+ * HashiNet's team, which sets routers up.
  */
 @Injectable()
 export class LiveHub implements OnModuleInit, OnApplicationShutdown {
@@ -81,18 +88,18 @@ export class LiveHub implements OnModuleInit, OnApplicationShutdown {
 
   publishHotspot(update: HotspotUpdate): void {
     const message: LiveMessage = update;
-    this.send(message, (w) => w.venueIds === null || w.venueIds.has(update.venueId));
+    this.send(message, (w) => w.hotspotVenues.has(update.venueId));
   }
 
   /** Signs every open socket in again; one whose sign-in no longer holds is closed. */
   async revalidate(): Promise<void> {
     for (const watcher of [...this.watchers]) {
-      const venueIds = await this.authorise(watcher.headers);
-      if (venueIds === false) {
+      const reach = await this.authorise(watcher.headers);
+      if (reach === false) {
         this.watchers.delete(watcher);
         watcher.socket.close(4401, "sign-in required");
       } else {
-        watcher.venueIds = venueIds;
+        Object.assign(watcher, reach);
       }
     }
   }
@@ -102,10 +109,10 @@ export class LiveHub implements OnModuleInit, OnApplicationShutdown {
     if (path !== LIVE_PATH) return reject(socket, 404);
     if (request.headers.origin !== this.config.frontendOrigin) return reject(socket, 403);
     const headers = fromNodeHeaders(request.headers);
-    const venueIds = await this.authorise(headers);
-    if (venueIds === false) return reject(socket, 401);
+    const reach = await this.authorise(headers);
+    if (reach === false) return reject(socket, 401);
     this.server.handleUpgrade(request, socket, head, (ws) => {
-      const watcher: Watcher = { socket: ws, headers, venueIds };
+      const watcher: Watcher = { socket: ws, headers, ...reach };
       this.watchers.add(watcher);
       ws.on("close", () => this.watchers.delete(watcher));
       ws.on("error", () => this.watchers.delete(watcher));
@@ -114,19 +121,23 @@ export class LiveHub implements OnModuleInit, OnApplicationShutdown {
   }
 
   /**
-   * The venues the session may watch (null for every venue), or false when it may not connect:
-   * the same principal and policy as the HTTP API. The live view lists guests' devices, so the
-   * platform, which sees them only as counts (ADR-0014), does not get it.
+   * What the session may receive, or false when it may not connect: the same principal and
+   * policy as the HTTP API.
    */
-  private async authorise(headers: Headers): Promise<Set<string> | null | false> {
+  private async authorise(headers: Headers): Promise<Reach | false> {
     const principal = await principalFromSession(this.db, this.auth, headers);
     if (!principal || principal.access === "account") return false;
-    if (!allows(principal.role, "session.read")) return false;
-    const venues = await this.db.venue.findMany({
-      where: venueScope(principal),
-      select: { id: true },
-    });
-    return new Set(venues.map((v) => v.id));
+    const setupLogs = allows(principal.role, "router.check");
+    let hotspotVenues = new Set<string>();
+    if (allows(principal.role, "session.read")) {
+      const venues = await this.db.venue.findMany({
+        where: venueScope(principal),
+        select: { id: true },
+      });
+      hotspotVenues = new Set(venues.map((v) => v.id));
+    }
+    if (!setupLogs && !allows(principal.role, "session.read")) return false;
+    return { hotspotVenues, setupLogs };
   }
 
   private publishLog(event: RouterLogEvent): void {
@@ -147,7 +158,7 @@ export class LiveHub implements OnModuleInit, OnApplicationShutdown {
         outcome: event.outcome ?? null,
       },
     };
-    this.send(message, (w) => w.venueIds === null);
+    this.send(message, (w) => w.setupLogs);
   }
 
   private send(message: LiveMessage, to: (watcher: Watcher) => boolean): void {

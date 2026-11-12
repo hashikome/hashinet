@@ -64,7 +64,7 @@ describe("HTTP wide events", () => {
     expect(event).toMatchObject({
       "http.route": "/api/venues/:id",
       "http.status_code": 404,
-      "staff.id": id,
+      "membership.id": id,
     });
     expect(JSON.stringify(event)).not.toContain(missing);
     expect(JSON.stringify(event)).not.toContain("AA:BB");

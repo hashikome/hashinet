@@ -6,7 +6,7 @@ import { SMS_SENDER, type SmsSender } from "../../src/messaging/sms-sender.js";
 import { MOBILE_MONEY, type MobileMoneyGateway } from "../../src/payments/mobile-money.js";
 import { PaymentsService } from "../../src/payments/payments.service.js";
 import { RouterSync } from "../../src/services/router-sync.js";
-import { browser, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
+import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, testBusinessId } from "./people.js";
 
@@ -460,10 +460,11 @@ describe("delivery reports", () => {
 });
 
 describe("sales and records", () => {
+  /** The test business's owner, who records sales and reads payments. */
   async function adminClient() {
-    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
     const c = browser(api);
-    await enrollAuthenticatorFor(api, c, "admin@example.com");
+    await enrollAuthenticatorFor(api, c, "owner@example.com");
     return c;
   }
 
@@ -531,7 +532,7 @@ describe("sales and records", () => {
     });
 
     const m = browser(api);
-    await signInWithCode(api, m, "m@example.com");
+    await enrollAuthenticatorFor(api, m, "m@example.com");
     const mine = (await m.request("GET", "/api/payments")).body as { payments: unknown[] };
     expect(mine.payments).toEqual([expect.objectContaining({ venueName: "Theirs" })]);
     expect((await m.request("GET", "/api/customers")).body).toMatchObject({
@@ -549,7 +550,11 @@ describe("sales and records", () => {
     const c = await adminClient();
     const { venue, pkg } = await setting();
     await c.request("POST", "/api/sales", { venueId: venue.id, packageId: pkg.id, method: "cash" });
-    const revenue = await c.request("GET", "/api/revenue/summary");
+    // Revenue across businesses is the platform's to read.
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    const admin = browser(api);
+    await enrollAuthenticatorFor(api, admin, "admin@example.com");
+    const revenue = await admin.request("GET", "/api/revenue/summary");
     expect(JSON.stringify(revenue.body)).toContain("2000");
   });
 });

@@ -103,7 +103,7 @@ export class DevicesService {
       });
       await this.sessions.end(
         connected.map((s) => s.id),
-        "device.block",
+        "device_blocked",
       );
     }
     await this.record(staff, status === "blocked" ? "device.block" : "device.unblock", id);

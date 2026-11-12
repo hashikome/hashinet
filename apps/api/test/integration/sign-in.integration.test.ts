@@ -194,20 +194,26 @@ describe("my profile", () => {
     await signIn(c, "me@example.com");
     const reply = await c.request("PUT", "/api/me", { name: "  New Name ", role: "admin" });
     expect(reply.status).toBe(200);
-    expect(reply.body).toMatchObject({ name: "New Name", role: "manager" });
+    expect(reply.body).toMatchObject({ name: "New Name", active: { role: "venue_manager" } });
     expect((await c.request("GET", "/api/me")).body).toMatchObject({ name: "New Name" });
     expect((await c.request("PUT", "/api/me", { name: "" })).status).toBe(400);
   });
 });
 
 describe("authenticator app", () => {
-  test("an admin without one is told to set it up", async () => {
+  test("an admin without one reaches only Account and security", async () => {
     await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const c = client();
     expect((await signIn(c, "admin@example.com")).status).toBe(200);
     const me = await c.request("GET", "/api/me");
     expect(me.status).toBe(200);
-    expect(me.body).toMatchObject({ role: "admin", twoFactorEnrollmentRequired: true });
+    expect(me.body).toMatchObject({
+      active: { role: "admin", access: "account", capabilities: [] },
+      protection: { required: true, authenticator: false },
+    });
+    const refused = await c.request("GET", "/api/venues");
+    expect(refused.status).toBe(403);
+    expect(refused.body).toMatchObject({ code: "PROTECTION_REQUIRED" });
   });
 
   test("once set up, sign-in needs both codes, and no device skips the second", async () => {
@@ -215,9 +221,10 @@ describe("authenticator app", () => {
     const first = client();
     const uri = await enrollAuthenticator(first, "owner@example.com");
     const enrolled = await first.request("GET", "/api/me");
+    // Setting it up proves this session holds it, so the session may act at once.
     expect(enrolled.body).toMatchObject({
-      twoFactorEnabled: true,
-      twoFactorEnrollmentRequired: false,
+      active: { access: "full" },
+      protection: { authenticator: true },
     });
     const again = await first.request("POST", "/api/auth/two-factor/enable", {});
     expect(again.status).toBe(400);

@@ -113,6 +113,23 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   and Payments, slice 5's Analytics).
   Date/Author: 2026-11-12 / Claude, from the automated security review.
 
+- Decision: a device's blocked status is shared across HashiNet today (one row per MAC address),
+  so blocking reaches every business; until slice 2 makes blocking per business (the prototype's
+  blocked list is the business's), only an owner or business manager blocks.
+  Rationale: ADR-0011, 7 (nothing from one business applies in another); found while recasting
+  the device tests.
+  Date/Author: 2026-11-12 / Claude.
+- Decision: router setup output (a run's transcript, the live setup stream) is HashiNet's team's
+  (`router.check`); guests' hotspot updates in the live view are the business's, never the
+  platform's (ADR-0014).
+  Rationale: the live view carried both to "admins"; the new roles separate them.
+  Date/Author: 2026-11-12 / Claude.
+- Decision: a venue manager's or operator's scope goes through their membership's venues
+  (`members.some`), never an `id` filter.
+  Rationale: an `id` key in the scope replaced the id a caller asked for, so a venue manager could
+  read another venue's brand; the integration tests caught it.
+  Date/Author: 2026-11-12 / Claude.
+
 ## Outcomes & Retrospective
 
 Not started.

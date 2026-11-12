@@ -42,7 +42,7 @@ export class RoutersController {
 
   /** Guests waiting on a router in the caller's venues. */
   @Get("provisioning-backlog")
-  @Can("router.check")
+  @Can("router.read")
   backlog(@CurrentPrincipal() staff: Principal): Promise<ProvisioningBacklog> {
     return this.routers.backlog(staff);
   }
@@ -164,7 +164,7 @@ export class RoutersController {
   }
 
   @Get(":id/provision/latest")
-  @Can("router.read")
+  @Can("router.check")
   latestProvision(@CurrentPrincipal() staff: Principal, @Param("id", idParam()) id: string) {
     return this.routers.latestProvision(staff, id);
   }

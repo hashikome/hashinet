@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, testBusinessId } from "./people.js";
 
@@ -234,7 +234,11 @@ describe("vouchers", () => {
     });
     await t.db.voucher.update({ where: { id: finished.id }, data: { status: "used" } });
 
-    const refused = await own.client.request("POST", "/api/vouchers/revoke", { ids: [unused.id] });
+    // Venue operators sell; revoking is for managers and the owner.
+    await businessMember(t.db, { email: "op@example.com", name: "Op", role: "venue_operator" });
+    const op = browser(api);
+    await signInWithCode(api, op, "op@example.com");
+    const refused = await op.request("POST", "/api/vouchers/revoke", { ids: [unused.id] });
     expect(refused.status).toBe(403);
 
     const reply = await c.request("POST", "/api/vouchers/revoke", {

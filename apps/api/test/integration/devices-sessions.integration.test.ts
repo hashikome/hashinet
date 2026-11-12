@@ -134,7 +134,7 @@ describe("devices", () => {
     expect(next.nextBefore).toBeNull();
   });
 
-  test("blocking ends the device's sessions everywhere; only admins block or delete", async () => {
+  test("blocking ends the device's sessions everywhere; only the owner and business managers block or delete", async () => {
     const w = await world();
     const path = `/api/devices/${w.phone.id}`;
     expect(
@@ -147,7 +147,7 @@ describe("devices", () => {
     expect(blocked.body).toMatchObject({ device: { status: "blocked", isOnline: false } });
     expect(
       await t.db.wifiSession.findUniqueOrThrow({ where: { id: w.atTheirs.id } }),
-    ).toMatchObject({ status: "terminated", terminationReason: "device.block" });
+    ).toMatchObject({ status: "terminated", terminationReason: "device_blocked" });
     const stats = ((await c.request("GET", "/api/devices")).body as { stats: Body }).stats;
     expect(stats).toEqual({ total: 2, online: 0, offline: 1, blocked: 1 });
 

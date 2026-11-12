@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_PORTAL_SETTINGS } from "../../src/portal/portal-input.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember } from "./people.js";
+import { platformMember } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
@@ -17,7 +17,7 @@ async function admin(): Promise<Client> {
 const { updatedAt: _unsaved, ...SETTINGS } = DEFAULT_PORTAL_SETTINGS;
 
 describe("portal settings", () => {
-  test("defaults until saved; then the whole branding, audited, for any staff to read", async () => {
+  test("defaults until saved; then the whole branding, audited, for HashiNet's team to read", async () => {
     const c = await admin();
     const first = await c.request("GET", "/api/portal");
     expect(first.body).toEqual({ settings: DEFAULT_PORTAL_SETTINGS });
@@ -35,9 +35,11 @@ describe("portal settings", () => {
     await c.request("PUT", "/api/portal", { ...SETTINGS, brandName: "Again" });
     expect(await t.db.portalSetting.count()).toBe(1);
 
-    await businessMember(t.db, { email: "m@example.com", name: "M", role: "venue_manager" });
+    // HashiNet's defaults are the platform's: its operators read them; only its admin and
+    // managers change them (ADR-0011, 3).
+    await platformMember(t.db, { email: "m@example.com", name: "M", role: "operator" });
     const m = browser(api);
-    await signInWithCode(api, m, "m@example.com");
+    await enrollAuthenticatorFor(api, m, "m@example.com");
     expect((await m.request("GET", "/api/portal")).body).toMatchObject({
       settings: { brandName: "Again" },
     });

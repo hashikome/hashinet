@@ -32,7 +32,7 @@ const packageOf = (reply: { body: unknown }) => (reply.body as { package: Body }
 const details = (reply: { body: unknown }) => (reply.body as { details: Body }).details;
 
 describe("packages", () => {
-  test("an admin creates, replaces and deletes a package, each audited", async () => {
+  test("the owner creates, replaces and deletes a package, each audited", async () => {
     const c = await owner();
     const created = await c.request("POST", "/api/packages", {
       ...DAY,
@@ -45,7 +45,6 @@ describe("packages", () => {
     expect(packageOf(created)).toMatchObject({
       priceTsh: "2000.00",
       deviceLimit: 1,
-      packageType: "hotspot",
       throttledDownloadMbps: 2,
     });
     const id = String(packageOf(created).id);

@@ -119,6 +119,7 @@ describe("venues", () => {
     const c = await admin();
     const created = await c.request("POST", "/api/venues", {
       ...VENUE,
+      businessId: await testBusinessId(t.db),
       allowedSites: ["https://Hotel.co.tz/rooms?x=1", "hotel.co.tz", "www.hotel.co.tz"],
     });
     expect(created.status).toBe(201);
@@ -136,18 +137,18 @@ describe("venues", () => {
     const c = await admin();
     const bad = await c.request("POST", "/api/venues", {
       name: "Line\nbreak",
-      region: "Dar es Salaam",
+      region: "Narnia",
       area: "",
     });
     expect(bad.status).toBe(400);
     expect(bad.body).toMatchObject({
       code: "VALIDATION_FAILED",
-      details: {
-        name: "must be one line of text",
-        region: "Dar es Salaam",
-        area: "is required",
-      },
+      details: { name: "must be one line of text", area: "is required" },
     });
+    // A region is one of Tanzania's 31, never typed.
+    expect(Object.keys((bad.body as { details: Record<string, string> }).details)).toContain(
+      "region",
+    );
     expect((await c.request("GET", "/api/venues/not-a-uuid")).status).toBe(404);
   });
 
@@ -177,7 +178,8 @@ describe("venues", () => {
       "Content-Type": "application/json",
     });
     expect(missing.status).toBe(403);
-    const ours = await c.requestWith("POST", "/api/venues", JSON.stringify(VENUE), {
+    const body = JSON.stringify({ ...VENUE, businessId: await testBusinessId(t.db) });
+    const ours = await c.requestWith("POST", "/api/venues", body, {
       Origin: FRONTEND_ORIGIN,
       "Content-Type": "application/json",
     });
