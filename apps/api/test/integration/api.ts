@@ -112,7 +112,8 @@ export class Client {
       else this.cookies.set(name, value);
     }
     const text = await response.text();
-    return { status: response.status, body: text === "" ? null : JSON.parse(text) };
+    const json = (response.headers.get("content-type") ?? "").includes("json");
+    return { status: response.status, body: text === "" ? null : json ? JSON.parse(text) : text };
   }
 
   /** The cookies this browser would send, as a `Cookie` header. */

@@ -1,5 +1,5 @@
 import type { PackageList, PackageResponse, VenuePackages } from "@hashinet/types";
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Header, HttpCode, Param, Post, Put } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
 import { idParam } from "../http/id-param.js";
@@ -15,6 +15,15 @@ export class PackagesController {
   @Can("package.read")
   async list(@CurrentPrincipal() staff: Principal): Promise<PackageList> {
     return { packages: await this.packages.list(staff) };
+  }
+
+  /** Every package, its price and where it is sold, as `packages.csv`. */
+  @Get("export.csv")
+  @Can("package.read")
+  @Header("Content-Type", "text/csv; charset=utf-8")
+  @Header("Content-Disposition", 'attachment; filename="packages.csv"')
+  exportCsv(@CurrentPrincipal() staff: Principal): Promise<string> {
+    return this.packages.exportCsv(staff);
   }
 
   @Get(":id")

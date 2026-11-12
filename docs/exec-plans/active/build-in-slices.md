@@ -79,7 +79,14 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     one in. Someone already on HashiNet keeps one identity and gains a workspace. Tests cover
     each of these and the refusals (used, replaced, revoked, expired, unknown links; a bad phone or
     region; others inviting). Verify passes; integration 126/126.
-  - [ ] (e) Packages per business (M4); a sale stores its price when its voucher is issued.
+  - [x] (2026-11-13) (e) Packages per business (M4): every package query is scoped by business, the
+    owner alone sets them, a new business starts with its copy of the platform's defaults (d), and
+    a venue sells only its business's packages. `GET /api/packages/export.csv` lists each package,
+    its time, devices, price, whether it is on sale and where it is sold (platform staff also see
+    the business); cells are escaped and a value starting `= + - @` is kept as text. A sale keeps
+    its price: vouchers and payments store it when made and the figures sum what is stored, with a
+    test that raises a price after printing. Venue-limited packages for venue managers come with
+    their role in slice 2. Verify passes; integration 128/128.
   - [ ] (f) Routers under the access policy: add, bootstrap script, setup, readiness.
   - [ ] (g) The screens, against the prototype (read the version-matched Next.js guide first), each
     built with design-build and audited with design-audit as it is finished, P0 and P1 fixed before

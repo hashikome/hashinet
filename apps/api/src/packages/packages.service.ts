@@ -1,7 +1,7 @@
 import type { AuditAction, PackageRecord, VenuePackages } from "@hashinet/types";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
-import { businessScope } from "../access/venue-scope.js";
+import { businessScope, venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
@@ -34,6 +34,47 @@ export class PackagesService {
       orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
     });
     return rows.map(packageRecord);
+  }
+
+  /**
+   * Every package the reader's business has, its price and where it is sold, as a CSV file
+   * (ADR-0011, 10; business-scopes M4). A package assigned to no venue is sold at every venue.
+   * Platform staff reach every business, so their file names each package's business.
+   */
+  async exportCsv(staff: Principal): Promise<string> {
+    const rows = await this.db.package.findMany({
+      where: businessScope(staff),
+      include: {
+        business: { select: { name: true } },
+        venues: { where: { venue: venueScope(staff) }, include: { venue: true } },
+      },
+      orderBy: [{ businessId: "asc" }, { priceTsh: "asc" }, { createdAt: "asc" }],
+    });
+    const platform = staff.scope === "platform";
+    const header = [
+      ...(platform ? ["Business"] : []),
+      "Package",
+      "Minutes",
+      "Devices",
+      "Price (TSh)",
+      "On sale",
+      "Sold at",
+    ];
+    const lines = rows.map((row) => [
+      ...(platform ? [row.business.name] : []),
+      row.name,
+      String(row.durationMinutes),
+      String(row.deviceLimit),
+      String(Math.round(Number(row.priceTsh))),
+      row.isActive ? "Yes" : "No",
+      row.venues.length === 0
+        ? "Every venue"
+        : row.venues
+            .map((v) => v.venue.name)
+            .sort()
+            .join("; "),
+    ]);
+    return [header, ...lines].map((cells) => cells.map(csvCell).join(",")).join("\r\n") + "\r\n";
   }
 
   async get(staff: Principal, id: string): Promise<PackageRecord> {
@@ -164,4 +205,13 @@ export class PackagesService {
 /** The owner and platform staff see packages taken off sale; everyone else only what is on sale. */
 function seesInactive(staff: Principal): boolean {
   return staff.scope === "platform" || staff.role === "owner";
+}
+
+/**
+ * One CSV cell: quoted when it holds a comma, quote or line break, and kept from running as a
+ * spreadsheet formula when it starts with one of `= + - @` (a package name is anyone's text).
+ */
+function csvCell(value: string): string {
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
 }

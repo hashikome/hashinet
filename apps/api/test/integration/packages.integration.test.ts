@@ -215,4 +215,46 @@ describe("packages", () => {
       "package.venue.unassign",
     ]);
   });
+
+  test("the owner exports every package and where it is sold, never another business's", async () => {
+    const c = await owner();
+    const mine = await testBusinessId(t.db);
+    const home = await t.db.venue.create({
+      data: { businessId: mine, name: "Home", region: "Dar es Salaam", area: "Mbweni" },
+    });
+    const day = await t.db.package.create({ data: { businessId: mine, ...DAY } });
+    await t.db.package.create({ data: { businessId: mine, ...DAY, name: "=HYPERLINK(1)" } });
+    await t.db.venuePackage.create({ data: { venueId: home.id, packageId: day.id } });
+    const other = await testBusinessId(t.db, "Other Business");
+    await t.db.package.create({ data: { businessId: other, ...DAY, name: "Theirs" } });
+
+    const reply = await c.request("GET", "/api/packages/export.csv");
+    expect(reply.status).toBe(200);
+    const csv = String(reply.body);
+    const lines = csv.trim().split("\r\n");
+    expect(lines[0]).toBe("Package,Minutes,Devices,Price (TSh),On sale,Sold at");
+    expect(lines).toContain("Day,1440,1,2000,Yes,Home");
+    // A formula-looking name is kept as text, and another business's packages never appear.
+    expect(csv).toContain("'=HYPERLINK(1),1440,1,2000,Yes,Every venue");
+    expect(csv).not.toContain("Theirs");
+  });
+
+  test("a printed voucher keeps the price it was made at when the package's price changes", async () => {
+    const c = await owner();
+    const businessId = await testBusinessId(t.db);
+    const venue = await t.db.venue.create({
+      data: { businessId, name: "Home", region: "Dar es Salaam", area: "Mbweni" },
+    });
+    const pkg = await t.db.package.create({ data: { businessId, ...DAY } });
+    const batch = await c.request("POST", "/api/vouchers/batches", {
+      venueId: venue.id,
+      packageId: pkg.id,
+      quantity: 2,
+    });
+    expect(batch.status).toBe(201);
+    const raised = await c.request("PUT", `/api/packages/${pkg.id}`, { ...DAY, priceTsh: 5000 });
+    expect(raised.status).toBe(200);
+    const prices = await t.db.voucher.findMany({ where: { packageId: pkg.id } });
+    expect(prices.map((v) => Number(v.priceTsh))).toEqual([2000, 2000]);
+  });
 });
