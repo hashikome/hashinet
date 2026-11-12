@@ -87,7 +87,12 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     its price: vouchers and payments store it when made and the figures sum what is stored, with a
     test that raises a price after printing. Venue-limited packages for venue managers come with
     their role in slice 2. Verify passes; integration 128/128.
-  - [ ] (f) Routers under the access policy: add, bootstrap script, setup, readiness.
+  - [x] (2026-11-13) (f) Routers under the access policy: HashiNet's admin and managers add, change,
+    set up and bootstrap routers at any business's venue (`router.manage`); its operators run
+    connection checks (`router.check`); a business reads its own routers in scope and changes
+    none; setup output stays the platform's. The setup flow itself (bootstrap script, background
+    setup, readiness journey, tunnel) carries over unchanged. Tests cover each role. Integration
+    129/129.
   - [ ] (g) The screens, against the prototype (read the version-matched Next.js guide first), each
     built with design-build and audited with design-audit as it is finished, P0 and P1 fixed before
     the next screen.

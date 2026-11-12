@@ -286,4 +286,34 @@ describe("routers", () => {
     expect(reply.status).toBe(400);
     expect(reply.body).toMatchObject({ details: { apiPassword: expect.any(String) } });
   });
+
+  test("only HashiNet sets routers up: the owner reads theirs; its operators check, never change", async () => {
+    const mine = await venue();
+    const router = await t.db.router.create({
+      data: { venueId: mine.id, name: "Lobby", ipAddress: "192.168.88.1" },
+    });
+    await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
+    const owner = browser(api);
+    await enrollAuthenticatorFor(api, owner, "owner@example.com");
+    expect((await owner.request("GET", `/api/routers/${router.id}`)).status).toBe(200);
+    for (const [method, path] of [
+      ["POST", "/api/routers"],
+      ["PUT", `/api/routers/${router.id}`],
+      ["POST", `/api/routers/${router.id}/setup`],
+      ["POST", `/api/routers/${router.id}/bootstrap-script`],
+      ["POST", `/api/routers/${router.id}/probe`],
+    ] as const) {
+      const reply = await owner.request(method, path, {});
+      expect({ method, path, status: reply.status }).toEqual({ method, path, status: 403 });
+    }
+
+    await platformMember(t.db, { email: "op@example.com", name: "Op", role: "operator" });
+    const operator = browser(api);
+    await enrollAuthenticatorFor(api, operator, "op@example.com");
+    expect((await operator.request("GET", "/api/routers/provisioning-backlog")).status).toBe(200);
+    expect((await operator.request("POST", `/api/routers/${router.id}/setup`, {})).status).toBe(
+      403,
+    );
+    expect((await operator.request("DELETE", `/api/routers/${router.id}`)).status).toBe(403);
+  });
 });
