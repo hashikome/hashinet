@@ -39,7 +39,9 @@ export const POLICY = {
   "sale.record": BUSINESS_ALL,
   "customer.read": BUSINESS_MANAGERS,
   "analytics.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
-  "revenue.read": [...PLATFORM_STAFF, ...WHOLE_BUSINESS],
+  // Revenue across businesses: its routes are not scoped to a business, so they stay the
+  // platform's. A business reads its own takings from scoped routes (Overview, Payments).
+  "revenue.read": PLATFORM_STAFF,
   // The portal: HashiNet's defaults are the platform's (ADR-0011, 3); a business's managers brand
   // their own venues.
   "portal.defaults.read": PLATFORM_ALL,

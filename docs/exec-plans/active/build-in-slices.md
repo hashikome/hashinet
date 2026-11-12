@@ -106,6 +106,13 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   last slice's run also completes this plan.
   Date/Author: 2026-11-12 / owner and Claude.
 
+- Decision: the cross-business revenue routes (`/api/revenue/*`, `/api/analytics/monthly` and
+  `/venues`) stay the platform's (`revenue.read`) until they are scoped by business.
+  Rationale: a security review of slice 1b found that granting them to owners exposed every
+  business's revenue; a business reads its own takings through scoped routes (slice 1's Overview
+  and Payments, slice 5's Analytics).
+  Date/Author: 2026-11-12 / Claude, from the automated security review.
+
 ## Outcomes & Retrospective
 
 Not started.
