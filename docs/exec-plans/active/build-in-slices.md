@@ -31,7 +31,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   settled are in redesign-admin.md's Decision Log. Theme surface steps approved and applied
   (`DESIGN.md`, `apps/web/app/globals.css`).
 - [x] (2026-11-12) This plan written; slices agreed with the owner.
-- [ ] Slice 1: one owner, one venue, selling. Built on the branch `slice-1`; merged to `main` only
+- [ ] Slice 1: one owner, one venue, selling. Built on the local branch `slice-1`; merged to `main` only
   when it passes its acceptance, as every push to `main` releases. Steps, each ending with
   `bun run verify` passing and a commit:
   - [ ] (a) The baseline schema (business-scopes M1), a development seed of invented businesses, and a
@@ -83,6 +83,17 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   Rationale: a later price change must never re-price past sales (journey review, 12 November 2026).
   Date/Author: 2026-11-12 / Claude, from the code review.
 
+- Decision: each slice is built on a local branch (`slice-<n>`) that is never pushed and has no pull
+  request; when the slice passes its checks it is merged into `main` locally with
+  `git merge --ff-only`, then `main` is pushed, which releases it.
+  Rationale: the owner's workflow (12 November 2026); `main` stays releasable while a slice is broken.
+  Date/Author: 2026-11-12 / owner.
+- Decision: run finish-work at the end of every slice, on its branch, before the merge.
+  Rationale: each slice ships and becomes the base for the next, so its review, security pass,
+  simplification, design audit and docs land with it; problems found later cost more to undo. The
+  last slice's run also completes this plan.
+  Date/Author: 2026-11-12 / owner and Claude.
+
 ## Outcomes & Retrospective
 
 Not started.
@@ -122,8 +133,8 @@ platform admin's minimal Businesses page with Invite a business, and a venue's r
 Removed: the first build's admin screens, `staff`, `team`, `@Roles` and every route, type and test
 only they used.
 Accepted live: Paul is invited as the owner of Paul's home, accepts, protects his sign-in with a
-passkey, prints vouchers, and a guest redeems one through `chr-test`, or the physical router if it is
-installed by then (otherwise that stays with build-hashinet M8 and does not block the slice).
+passkey, prints vouchers, and a guest redeems one through `chr-test`. No physical router is installed
+yet (owner, 12 November 2026), so that stays with build-hashinet M8 and does not block the slice.
 
 **Slice 2, the counter.** For a venue manager and an operator (Daudi, Musa).
 Backend: business-scopes M3's business-role invitations with venues; recording a sale (cash or mobile
@@ -170,7 +181,9 @@ and a real message (M8).
 
 Within each slice the order is: schema, then the API with its tests, then the screens against the
 prototype, then removal of what the slice replaced, then design-audit at 1280 and 375 pixels in light
-and dark with every P0 and P1 fixed (redesign-admin H7), then docs (CHANGELOG, runbooks, the plans).
+and dark with every P0 and P1 fixed (redesign-admin H7), then finish-work on the branch (review,
+security, simplify, docs, CHANGELOG, the handbook), then `git merge --ff-only` into `main`, push, and
+live acceptance.
 
 ## Concrete Steps
 
