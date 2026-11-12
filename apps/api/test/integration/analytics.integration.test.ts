@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, testBusinessId } from "./people.js";
 
@@ -379,6 +379,20 @@ describe("a business's day", () => {
 
     const staff = await admin();
     expect((await staff.request("GET", "/api/analytics/today")).status).toBe(403);
+
+    // A venue operator's home is the Overview too: their venues' day.
+    const { membershipId } = await businessMember(t.db, {
+      email: "op@example.com",
+      name: "Op",
+      role: "venue_operator",
+    });
+    await t.db.membershipVenue.create({ data: { membershipId, venueId: cafe.id } });
+    const operator = browser(api);
+    await signInWithCode(api, operator, "op@example.com");
+    expect((await operator.request("GET", "/api/analytics/today")).body).toMatchObject({
+      sold: 1,
+      takingsTsh: "500.00",
+    });
   });
 });
 
@@ -426,5 +440,41 @@ describe("payments received", () => {
       totalTsh: "0.00",
     });
     expect((await (await admin()).request("GET", "/api/payments/received")).status).toBe(403);
+  });
+});
+
+describe("payments received, page by page", () => {
+  test("rows sharing a time are never skipped between pages", async () => {
+    await businessMember(t.db, { email: "pages@example.com", name: "Pages", role: "owner" });
+    const owner = browser(api);
+    await enrollAuthenticatorFor(api, owner, "pages@example.com");
+    const businessId = await testBusinessId(t.db);
+    const venue = await t.db.venue.create({
+      data: { businessId, name: "Home", region: "Dar es Salaam", area: "Mbezi" },
+    });
+    const paidAt = new Date();
+    await t.db.payment.createMany({
+      data: Array.from({ length: 101 }, () => ({
+        venueId: venue.id,
+        provider: "manual" as const,
+        amountTsh: 500,
+        status: "paid" as const,
+        paidAt,
+      })),
+    });
+    type Page = { count: number; payments: { id: string }[]; nextBefore: string | null };
+    const first = (await owner.request("GET", "/api/payments/received")).body as Page;
+    expect(first.count).toBe(101);
+    expect(first.payments).toHaveLength(100);
+    const second = (
+      await owner.request(
+        "GET",
+        `/api/payments/received?before=${encodeURIComponent(first.nextBefore ?? "")}`,
+      )
+    ).body as Page;
+    expect(second.payments).toHaveLength(1);
+    expect(second.nextBefore).toBeNull();
+    const ids = new Set([...first.payments, ...second.payments].map((p) => p.id));
+    expect(ids.size).toBe(101);
   });
 });

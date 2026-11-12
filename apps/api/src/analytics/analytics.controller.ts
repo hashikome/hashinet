@@ -35,8 +35,9 @@ export class AnalyticsController {
     return this.analytics.summary(staff);
   }
 
+  /** Every business role sees its own day: the Overview is each one's home, as Payments is. */
   @Get("today")
-  @Can("analytics.read")
+  @Can("payment.read")
   today(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<TodaySummary> {
     return this.analytics.today(staff, parseInput(todayQuery, query));
   }

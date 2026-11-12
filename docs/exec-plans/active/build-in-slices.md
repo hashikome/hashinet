@@ -135,6 +135,15 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   refused the approved default hour of TSh 500; voucher codes still had the old prefix form that
   ADR-0008 had replaced with 12 digits.
   Evidence: `package-input.ts`, `voucher-codes.ts` before (g).
+- Observation: most audit events record neither the venue nor, when HashiNet's team acts on a
+  business, the business: `record` defaults `businessId` to the actor's and services seldom pass
+  `venueId`, so a venue manager's or an owner's scoped Audit log would miss them. To fix with the
+  Audit log screen in slice 2, before any data is kept (nothing is deployed yet).
+  Evidence: `apps/api/src/audit/audit-log.ts`, finish-work's code review of slice 1.
+- Observation: every guarded request reads the session row again after Better Auth has, and counts
+  passkeys even when that cannot change the access level; `/api/me` then re-reads what the guard
+  read. Left for a later pass: correct, only slower.
+  Evidence: `apps/api/src/access/principal-from-session.ts`, finish-work's reviews of slice 1.
 - Observation: Better Auth's own recovery codes mix cases and use 0, O, 1, I and l, hard to copy off
   paper.
   Evidence: `better-auth/dist/plugins/two-factor/backup-codes`.

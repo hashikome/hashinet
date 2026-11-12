@@ -1,15 +1,13 @@
 import type { AuditAction, PackageRecord, VenuePackages } from "@hashinet/types";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
-import { businessScope, venueScope } from "../access/venue-scope.js";
+import { businessScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { packageRecord } from "../serializers/records.js";
 import { VenuesService } from "../venues/venues.service.js";
 import type { PackageInput } from "./package-input.js";
-
-/** Vouchers a package is still behind: deleting it would leave them without speed or time. */
 
 export const packageNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That package does not exist."));
@@ -45,7 +43,7 @@ export class PackagesService {
       where: businessScope(staff),
       include: {
         business: { select: { name: true } },
-        venues: { where: { venue: venueScope(staff) }, include: { venue: true } },
+        venues: { include: { venue: { select: { id: true, name: true } } } },
       },
       orderBy: [{ businessId: "asc" }, { priceTsh: "asc" }, { createdAt: "asc" }],
     });
@@ -59,7 +57,12 @@ export class PackagesService {
       "On sale",
       "Sold at",
     ];
-    const lines = rows.map((row) => [
+    // A reader limited to some venues sees the packages sold there, and those venues' names.
+    const mine = (venueId: string) => staff.venueIds === null || staff.venueIds.includes(venueId);
+    const visible = rows.filter(
+      (row) => row.venues.length === 0 || row.venues.some((v) => mine(v.venueId)),
+    );
+    const lines = visible.map((row) => [
       ...(platform ? [row.business.name] : []),
       row.name,
       String(row.durationMinutes),
@@ -69,6 +72,7 @@ export class PackagesService {
       row.venues.length === 0
         ? "Every venue"
         : row.venues
+            .filter((v) => mine(v.venueId))
             .map((v) => v.venue.name)
             .sort()
             .join("; "),
@@ -194,7 +198,6 @@ export class PackagesService {
   }
 }
 
-/** The owner and platform staff see packages taken off sale; everyone else only what is on sale. */
 /**
  * One CSV cell: quoted when it holds a comma, quote or line break, and kept from running as a
  * spreadsheet formula when it starts with one of `= + - @` (a package name is anyone's text).

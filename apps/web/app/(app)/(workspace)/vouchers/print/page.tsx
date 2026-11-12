@@ -82,7 +82,16 @@ export default function PrintPage() {
         packageId: chosen.id,
         quantity: Number(count),
       });
-      setSheet(made.vouchers.map((v) => face(v.code)));
+      // Each card shows what its voucher was made with, never what this page loaded earlier.
+      setSheet(
+        made.vouchers.map((v) => ({
+          code: v.code,
+          venue: v.venueName ?? venue?.name ?? "",
+          price: Number(v.priceTsh),
+          packageName: v.packageName ?? "",
+          devices: v.deviceLimit,
+        })),
+      );
       toast(`${made.vouchers.length} vouchers ready to print`);
     } catch (err) {
       setError(

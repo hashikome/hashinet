@@ -173,6 +173,7 @@ describe("sign-in", () => {
       ["POST", "/api/auth/sign-up/email", { email: "x@example.com", password: "p", name: "x" }],
       ["POST", "/api/auth/sign-in/email", { email: "x@example.com", password: "p" }],
       ["POST", "/api/auth/two-factor/disable", {}],
+      ["POST", "/api/auth/two-factor/get-totp-uri", {}],
       ["POST", "/api/auth/update-user", { name: "x" }],
       ["POST", "/api/auth/email-otp/verify-email", { email: "x@example.com", otp: "1" }],
       ["POST", "/api/auth/passkey/update-passkey", { id: "x", name: "x" }],

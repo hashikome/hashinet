@@ -95,7 +95,9 @@ export class VouchersService {
     const vouchers = await this.db.voucher.findMany({
       where: { batchId: id },
       include: {
-        package: { select: { name: true, downloadSpeedMbps: true, uploadSpeedMbps: true } },
+        package: {
+          select: { name: true, downloadSpeedMbps: true, uploadSpeedMbps: true, deviceLimit: true },
+        },
       },
       orderBy: { code: "asc" },
     });
@@ -109,7 +111,9 @@ export class VouchersService {
     const rows = await this.db.voucher.findMany({
       where: { id: { in: ids }, ...inScope(staff) },
       include: {
-        package: { select: { name: true, downloadSpeedMbps: true, uploadSpeedMbps: true } },
+        package: {
+          select: { name: true, downloadSpeedMbps: true, uploadSpeedMbps: true, deviceLimit: true },
+        },
         venue: { select: { name: true } },
       },
       orderBy: { code: "asc" },
@@ -273,7 +277,12 @@ const batchInclude = {
 type BatchRow = Prisma.VoucherBatchGetPayload<{ include: typeof batchInclude }>;
 
 type PrintRow = Voucher & {
-  package: { name: string; downloadSpeedMbps: number; uploadSpeedMbps: number | null } | null;
+  package: {
+    name: string;
+    downloadSpeedMbps: number;
+    uploadSpeedMbps: number | null;
+    deviceLimit: number;
+  } | null;
 };
 
 function printableOf(row: PrintRow, venueName: string | null): PrintableVoucher {
@@ -283,5 +292,6 @@ function printableOf(row: PrintRow, venueName: string | null): PrintableVoucher 
     venueName,
     downloadSpeedMbps: row.package?.downloadSpeedMbps ?? null,
     uploadSpeedMbps: row.package?.uploadSpeedMbps ?? row.package?.downloadSpeedMbps ?? null,
+    deviceLimit: row.package?.deviceLimit ?? 1,
   };
 }

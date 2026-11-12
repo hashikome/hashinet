@@ -241,6 +241,16 @@ describe("packages", () => {
     // A formula-looking name is kept as text, and another business's packages never appear.
     expect(csv).toContain("'=HYPERLINK(1),1440,1,2000,Yes,Every venue");
     expect(csv).not.toContain("Theirs");
+
+    // A manager of another venue sees what sells there: never a package sold only at Home.
+    const away = await t.db.venue.create({
+      data: { businessId: mine, name: "Away", region: "Dar es Salaam", area: "Kunduchi" },
+    });
+    const m = await manager("away@example.com");
+    await t.db.membershipVenue.create({ data: { membershipId: m.id, venueId: away.id } });
+    const theirs = String((await m.client.request("GET", "/api/packages/export.csv")).body);
+    expect(theirs).not.toContain("Day,1440,1,2000,Yes");
+    expect(theirs).toContain("Every venue");
   });
 
   test("a printed voucher keeps the price it was made at when the package's price changes", async () => {

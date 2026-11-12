@@ -13,12 +13,13 @@ import {
 } from "react";
 import { ApiRequestError, api } from "./api";
 import { LoadFailed } from "./load";
+import { homeOf } from "./nav";
 import { applyTheme } from "./theme";
 
 interface Session {
   me: Me;
   /** Asks the API again, after anything that changes who this is or what they may do. */
-  refresh: () => Promise<void>;
+  refresh: () => Promise<Me | null>;
   replace: (me: Me) => void;
   signOut: () => Promise<void>;
   /** Acts as another of the person's workspaces, then opens its overview. */
@@ -36,19 +37,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [me, setMe] = useState<Me | null>(null);
   const [unreachable, setUnreachable] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<Me | null> => {
     try {
       const next = await api.get<Me>("/api/me");
       applyTheme(next.theme);
       setMe(next);
       setUnreachable(false);
+      return next;
     } catch (error) {
       if (error instanceof ApiRequestError && error.status === 401) {
         const back = `${location.pathname}${location.search}`;
         router.replace(back === "/" ? "/sign-in" : `/sign-in?next=${encodeURIComponent(back)}`);
-        return;
+        return null;
       }
       setUnreachable(true);
+      return null;
     }
   }, [router]);
 
@@ -69,8 +72,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const switchTo = useCallback(
     async (membershipId: string) => {
       await api.post("/api/me/membership", { membershipId });
-      await load();
-      router.push("/overview");
+      const next = await load();
+      // The new workspace's own home: a business's Overview, or HashiNet's Businesses.
+      if (next) router.push(homeOf(next));
     },
     [load, router],
   );

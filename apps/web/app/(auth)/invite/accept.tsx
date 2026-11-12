@@ -137,11 +137,10 @@ export function AcceptInvitation() {
         },
       };
       const done = await api.post<AcceptedInvitation>("/api/invitations/accept/business", body);
-      await api.post("/api/auth/email-otp/send-verification-otp", {
-        email: done.email,
-        type: "sign-in",
-      });
+      // The business exists now, whatever happens to the code: a lost code is sent again from
+      // the next page, never by accepting twice.
       setCreated(done);
+      await sendCode(done.email);
     } catch (err) {
       if (err instanceof ApiRequestError && err.details) {
         const found = Object.fromEntries(
@@ -155,6 +154,15 @@ export function AcceptInvitation() {
       } else setErrors({ form: messageOf(err) });
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function sendCode(email: string) {
+    try {
+      await api.post("/api/auth/email-otp/send-verification-otp", { email, type: "sign-in" });
+      setCodeError("");
+    } catch {
+      setCodeError("The code didn't send. Send another in a minute.");
     }
   }
 
@@ -209,6 +217,13 @@ export function AcceptInvitation() {
             Sign in
           </button>
         </form>
+        <p className="auth-terms auth-rule">
+          No email?{" "}
+          <button className="link" type="button" onClick={() => void sendCode(created.email)}>
+            Send another code
+          </button>
+          , or sign in later from the sign-in page.
+        </p>
       </AuthFrame>
     );
   }

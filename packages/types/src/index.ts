@@ -98,6 +98,8 @@ export interface VoucherBatchList {
 export interface PrintableVoucher extends VoucherListItem {
   downloadSpeedMbps: number | null;
   uploadSpeedMbps: number | null;
+  /** How many devices it serves at once, from its package. */
+  deviceLimit: number;
 }
 
 /** `GET /api/vouchers/batches/:id` and `POST /api/vouchers/batches`: a batch and its cards. */
@@ -606,7 +608,7 @@ export interface PaymentsReceived {
     occurredAt: Timestamp;
   }[];
   /** Pass as `before` for the next page; null on the last. */
-  nextBefore: Timestamp | null;
+  nextBefore: string | null;
 }
 
 /** `GET /api/revenue/transactions` (admins): the month's latest 50. */

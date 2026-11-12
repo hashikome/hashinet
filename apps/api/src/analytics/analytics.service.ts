@@ -44,7 +44,12 @@ export const receivedQuery = z.object({
     .nullable()
     .default(null),
   venueId: z.uuid().nullable().default(null),
-  before: z.iso.datetime().nullable().default(null),
+  /** The last row shown, as `<ISO time>_<id>`, from `nextBefore`. */
+  before: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z_[0-9a-f-]{36}$/, "must be a page cursor")
+    .nullable()
+    .default(null),
 });
 
 export const todayQuery = z.object({ venueId: z.uuid().nullable().default(null) });
@@ -181,10 +186,12 @@ export class AnalyticsService {
       WITH ${REVENUE_EVENTS}
       SELECT ${moneySum(Prisma.sql`e.amount`)} AS amount, count(*)::int AS n
       FROM revenue_events e WHERE ${inMonth} AND ${inScope}`;
+    // Keyset paging on (time, id), so rows sharing a timestamp are never skipped.
+    const [beforeAt, beforeId] = query.before?.split("_") ?? [];
     const before =
-      query.before === null
-        ? Prisma.sql`TRUE`
-        : Prisma.sql`e.occurred_at < ${new Date(query.before)}`;
+      beforeAt && beforeId
+        ? Prisma.sql`(e.occurred_at, e.id) < (${new Date(beforeAt)}, ${beforeId}::uuid)`
+        : Prisma.sql`TRUE`;
     const rows = await this.db.$queryRaw<
       {
         id: string;
@@ -221,8 +228,12 @@ export class AnalyticsService {
         reference: r.reference,
         occurredAt: r.occurred_at.toISOString(),
       })),
-      nextBefore:
-        rows.length > RECEIVED_PAGE ? (shown.at(-1)?.occurred_at.toISOString() ?? null) : null,
+      nextBefore: (() => {
+        const last = shown.at(-1);
+        return rows.length > RECEIVED_PAGE && last
+          ? `${last.occurred_at.toISOString()}_${last.id}`
+          : null;
+      })(),
     };
   }
 
