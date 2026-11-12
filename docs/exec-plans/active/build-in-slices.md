@@ -31,7 +31,23 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   settled are in redesign-admin.md's Decision Log. Theme surface steps approved and applied
   (`DESIGN.md`, `apps/web/app/globals.css`).
 - [x] (2026-11-12) This plan written; slices agreed with the owner.
-- [ ] Slice 1: one owner, one venue, selling.
+- [ ] Slice 1: one owner, one venue, selling. Built on the branch `slice-1`; merged to `main` only
+  when it passes its acceptance, as every push to `main` releases. Steps, each ending with
+  `bun run verify` passing and a commit:
+  - [ ] (a) The baseline schema (business-scopes M1), a development seed of invented businesses, and a
+    separate production bootstrap that creates only the platform admin (replacing `staff:add`).
+    Merged with (b) if the web's typecheck against `@hashinet/types` can't pass without it.
+  - [ ] (b) The access policy, `Principal`, `GET /api/me` with capabilities, the audit log (ADR-0012);
+    every old module rewired or deleted.
+  - [ ] (c) Sign-in: passkeys, the authenticator, recovery codes, and the session-based protection
+    rule, with tests (ADR-0011 §9).
+  - [ ] (d) Inviting a new business's owner, and acceptance.
+  - [ ] (e) Packages per business (M4); a sale stores its price when its voucher is issued.
+  - [ ] (f) Routers under the access policy: add, bootstrap script, setup, readiness.
+  - [ ] (g) The screens, against the prototype (read the version-matched Next.js guide first).
+  - [ ] (h) Whatever is left of the first build, removed.
+  - [ ] (i) design-audit on the slice's screens; P0 and P1 fixed.
+  - [ ] (j) Production reset (owner-run, Concrete Steps), deploy, and live acceptance.
 - [ ] Slice 2: the counter.
 - [ ] Slice 3: onboarding a business.
 - [ ] Slice 4: getting paid.
@@ -106,7 +122,8 @@ platform admin's minimal Businesses page with Invite a business, and a venue's r
 Removed: the first build's admin screens, `staff`, `team`, `@Roles` and every route, type and test
 only they used.
 Accepted live: Paul is invited as the owner of Paul's home, accepts, protects his sign-in with a
-passkey, prints vouchers, and a guest phone redeems one on the physical router (build-hashinet M8).
+passkey, prints vouchers, and a guest redeems one through `chr-test`, or the physical router if it is
+installed by then (otherwise that stays with build-hashinet M8 and does not block the slice).
 
 **Slice 2, the counter.** For a venue manager and an operator (Daudi, Musa).
 Backend: business-scopes M3's business-role invitations with venues; recording a sale (cash or mobile
@@ -169,6 +186,15 @@ bun run test:integration
 
 Expected result: every check passes. The prototype runs for comparison with
 `python3 -m http.server 8797` in `prototypes/hearth-design/prototype/`.
+
+**Production reset, slice 1 only, run with the owner just before its first deploy.** The baseline
+replaces the twelve applied migrations, so `prisma migrate deploy` cannot move the existing
+`hashinet` database forward; its rows are test data, but they include the owner's account and the
+routers' credentials and WireGuard peers. With the owner's explicit go at that time (the 4 November
+approval predates the cutover): take a final backup, drop and recreate the `hashinet` database's
+schema with the migrator role, deploy (the release's migrate stack applies the baseline), run the
+production bootstrap for the platform admin, then set up `chr-test` and any physical router again so
+they regain management. Record each step's time and outcome here.
 
 ## Validation And Acceptance
 
