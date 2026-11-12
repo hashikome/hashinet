@@ -138,6 +138,14 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   read another venue's brand; the integration tests caught it.
   Date/Author: 2026-11-12 / Claude.
 
+- Decision: someone who already has protection adds an authenticator or a passkey only from a
+  session that used protection; only a person's first protection marks their email-code session
+  protected.
+  Rationale: a background security review found that adding a credential from an email-code
+  session would have marked it protected, so an email inbox alone could lift ADR-0011, 9's limit.
+  Regression test in `sign-in.integration.test.ts`.
+  Date/Author: 2026-11-12 / Claude, from the automated security review.
+
 ## Outcomes & Retrospective
 
 Not started.

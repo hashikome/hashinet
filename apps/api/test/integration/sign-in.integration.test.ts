@@ -200,6 +200,39 @@ describe("my profile", () => {
   });
 });
 
+describe("protection is the session's, not the inbox's", () => {
+  test("a passkey-protected person signed in with an email code alone cannot add a second factor", async () => {
+    const person = await businessMember(t.db, {
+      email: "pk@example.com",
+      name: "Passkey Person",
+      role: "owner",
+    });
+    await t.db.passkey.create({
+      data: {
+        id: Bun.randomUUIDv7(),
+        userId: person.id,
+        publicKey: "test-key",
+        credentialID: "test-credential",
+        counter: 0,
+        deviceType: "singleDevice",
+        backedUp: false,
+      },
+    });
+    const c = client();
+    expect((await signIn(c, "pk@example.com")).status).toBe(200);
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({
+      active: { access: "account" },
+    });
+    const enable = await c.request("POST", "/api/auth/two-factor/enable", {});
+    expect(enable.status).toBe(403);
+    expect(enable.body).toMatchObject({ code: "PROTECTION_REQUIRED" });
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({
+      active: { access: "account" },
+      protection: { authenticator: false, passkeys: 1 },
+    });
+  });
+});
+
 describe("authenticator app", () => {
   test("an admin without one reaches only Account and security", async () => {
     await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });

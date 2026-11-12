@@ -116,10 +116,26 @@ export function createAuth({ config, db, email }: AuthDependencies) {
             });
           }
         }
+        if (ADDS_PROTECTION.has(ctx.path)) {
+          // Someone who already has protection adds more only from a session that used it:
+          // otherwise an email inbox alone could add its own second factor (ADR-0011, 9).
+          const current = await getSessionFromCtx(ctx);
+          if (current && (await hasProtection(db, current.user.id))) {
+            const row = await db.session.findUnique({ where: { id: current.session.id } });
+            if (row === null || row.signedInWith === null || row.signedInWith === "email_code") {
+              throw new APIError("FORBIDDEN", {
+                code: "PROTECTION_REQUIRED",
+                message: "Sign in with your passkey or authenticator app to add another.",
+              });
+            }
+          }
+        }
       }),
       after: createAuthMiddleware(async (ctx) => {
-        // Setting up the authenticator (its first code) or registering a passkey proves the
-        // session holds it, so the session counts as protected from then on (ADR-0011, 9).
+        // A person's first protection, set up from an email-code session, proves the session
+        // holds it, so the session counts as protected from then on (ADR-0011, 9). Someone who
+        // already had protection cannot reach here from an email-code session (`hooks.before`),
+        // and a session that already used protection is left as it signed in.
         const proved =
           ctx.path === "/two-factor/verify-totp"
             ? "authenticator"
@@ -153,6 +169,22 @@ export function createAuth({ config, db, email }: AuthDependencies) {
       withEmailCodeGate(twoFactor({ issuer: "HashiNet", allowPasswordless: true })),
     ],
   });
+}
+
+/** The routes that add a second factor or a passkey. */
+const ADDS_PROTECTION: ReadonlySet<string> = new Set([
+  "/two-factor/enable",
+  "/passkey/generate-register-options",
+  "/passkey/verify-registration",
+]);
+
+/** Whether the person already has an authenticator app or a passkey. */
+async function hasProtection(db: PrismaClient, userId: string): Promise<boolean> {
+  const [user, passkeys] = await Promise.all([
+    db.user.findUnique({ where: { id: userId }, select: { twoFactorEnabled: true } }),
+    db.passkey.count({ where: { userId } }),
+  ]);
+  return user?.twoFactorEnabled === true || passkeys > 0;
 }
 
 /**
