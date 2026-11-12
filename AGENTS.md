@@ -66,8 +66,9 @@ access, sign-in, invitations) and [redesign-admin](docs/exec-plans/active/redesi
   authoritative.
 - Sign-in is Better Auth inside HashiNet, with email codes
   ([ADR-0007](docs/engineering-decisions/0007-sign-in-with-better-auth.md)); passkeys sign in on their own;
-  platform staff, owners and managers follow an email code with an authenticator code (ADR-0011). Its tables hold identity and sessions; `staff` holds role, status and venue
-  scope. Read authorization only from `staff`.
+  platform staff, owners and managers follow an email code with an authenticator code (ADR-0011). Its tables hold identity and sessions; `memberships` hold
+  each person's role per scope and their venues. Read authorization only from the session's active
+  membership, through the one policy in `apps/api/src/access/`.
 - Conventional Commits: `feat(api): ...`, `fix(web): ...`, `docs: ...`, `chore: ...`.
 
 ## Pre-deployment compatibility

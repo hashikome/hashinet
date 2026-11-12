@@ -10,7 +10,7 @@ with three databases: `hashinet` (development), `hashinet_test` (integration tes
 ```bash
 bun run infra:up      # PostgreSQL, waiting until healthy
 bun run db:deploy     # apply every migration
-bun run db:seed       # invented data: admin@example.com, a venue, packages; safe to repeat
+bun run db:seed       # invented data: the prototype's personas at example.com; safe to repeat
 ```
 
 `apps/api/.env` holds `DATABASE_URL` and `ENCRYPTION_KEY` (see the root `.env.example`). Prisma does not
@@ -37,8 +37,9 @@ before each test (`apps/api/test/integration/harness.ts`). Create the database o
 ## Rules the schema enforces
 
 - Sign-in identity is Better Auth's (`users`, `sessions`, `accounts`, `verifications`,
-  `two_factors`, `rate_limits`); what a person may do is `staff`, sharing the user's id
-  (ADR-0007). Guest devices are `devices`, one per MAC address, not people.
+  `two_factors`, `passkeys`, `rate_limits`); what a person may do is their `memberships`, one per
+  scope (ADR-0011), and a session acts as one of them. Guest devices are `devices`, one per MAC
+  address, not people.
 - Voucher codes and prefixes are upper-case and emails lower-case (`CHECK` constraints):
   RouterOS compares hotspot usernames case-sensitively, so input is normalised before lookup.
 - Instants are `timestamptz` in UTC; business days are computed in `Africa/Dar_es_Salaam`

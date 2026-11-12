@@ -40,7 +40,9 @@ Two things the rename to HashiNet taught (11 November 2026): Dokploy never chang
 GitHub environment's own secret overrides the organisation's, so shared keys (`SERVER_SSH_KEY`,
 `DOKPLOY_API_KEY`) live only at the organisation, shared with this repository.
 
-The first admin is added with `bun run staff:add` in the API image.
+The platform's first admin and the default packages are created with
+`bun run platform:bootstrap --email <email> --name <name>` in the API image; it changes nothing on a
+second run.
 
 Mobile money and SMS need nothing here until their providers exist: add `SNIPPE_*` or `BRIQ_*`
 and they turn on ([ADR-0010](../engineering-decisions/0010-payments-and-sms.md)).

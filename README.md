@@ -57,8 +57,9 @@ bun run db:deploy && bun run db:seed            # schema and invented data
 bun run dev
 ```
 
-Sign in as a seeded person (`admin@example.com`, `manager@example.com`) or add one with
-`bun run --filter @hashinet/api staff:add --email you@example.com --name "You"`. Without
+Sign in as a seeded person (the prototype's personas, such as `paul@example.com` or
+`neema@example.com`) or create the platform admin with
+`bun run --filter @hashinet/api platform:bootstrap --email you@example.com --name "You"`. Without
 `RESEND_API_KEY`, sign-in codes are written to `data/email/`. Admins set up an
 authenticator app at first sign-in.
 

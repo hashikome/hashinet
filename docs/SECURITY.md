@@ -5,8 +5,9 @@
 Admins and managers sign in with their email and a one-time code, through Better Auth
 ([ADR-0007](engineering-decisions/0007-sign-in-with-better-auth.md)); admins must also use an
 authenticator app, and once anyone has one it is asked for at every sign-in (no trusted
-devices). There is no sign-up: `bun run staff:add` and the Team page add people. A code goes
-only to active staff and every caller gets the same answer; codes are stored under an HMAC,
+devices). There is no sign-up: `bun run platform:bootstrap` creates the platform's first admin, and
+an invitation is the only other way in (ADR-0011). A code goes only to someone with an active
+membership and every caller gets the same answer; codes are stored under an HMAC,
 allow five attempts and last ten minutes; requests are limited per client address (resolved
 through `TRUSTED_PROXIES`) and to five codes per person per fifteen minutes. Every route
 requires an active staff session unless it is declared public, and status is checked on each
