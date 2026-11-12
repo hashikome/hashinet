@@ -10,9 +10,10 @@ import type {
   RevenueSource,
   RevenueSummary,
   RevenueTransactions,
+  TodaySummary,
   TopVenues,
 } from "@hashinet/types";
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
 import { z } from "zod";
 import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
@@ -33,6 +34,8 @@ export const monthQuery = z.object({
     .nullable()
     .default(null),
 });
+
+export const todayQuery = z.object({ venueId: z.uuid().nullable().default(null) });
 
 export const rangeQuery = z.object({
   from: z.string().regex(DAY, "must be YYYY-MM-DD").nullable().default(null),
@@ -94,6 +97,54 @@ export class AnalyticsService {
       allTimeUploadBytes: bytes(row?.all_up ?? 0n),
       allTimeDownloadBytes: bytes(row?.all_down ?? 0n),
       revenueThisMonthTsh: revenue,
+    };
+  }
+
+  /**
+   * A business's day so far: who is online, what sold and what it took, against the same weekday a
+   * week ago up to now. The platform has its own figures, so this is a business's alone.
+   */
+  async today(staff: Principal, query: z.infer<typeof todayQuery>): Promise<TodaySummary> {
+    if (staff.scope === "platform") {
+      throw new ForbiddenException(apiError("FORBIDDEN", "Today's figures are a business's own."));
+    }
+    const all = (await this.venueIds(staff)) ?? [];
+    const venues = query.venueId === null ? all : all.filter((id) => id === query.venueId);
+    const day = businessDayOf(new Date());
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * DAY_MS);
+    const lastWeekDay = businessDayOf(weekAgo);
+    const inScope = venueFilter(Prisma.sql`venue_id`, venues);
+    const [online] = await this.db.$queryRaw<{ n: number }[]>`
+      SELECT count(DISTINCT device_id)::int AS n FROM wifi_sessions
+      WHERE status = 'connected' AND ${inScope}`;
+    const rows = await this.db.$queryRaw<
+      { package_id: string | null; name: string | null; sold: number; takings: string }[]
+    >`
+      WITH ${REVENUE_EVENTS}
+      SELECT e.package_id, p.name, count(*)::int AS sold, ${moneySum(Prisma.sql`e.amount`)} AS takings
+      FROM revenue_events e LEFT JOIN packages p ON p.id = e.package_id
+      WHERE ${businessDaySql(Prisma.sql`e.occurred_at`)} = ${day}::date
+        AND ${venueFilter(Prisma.sql`e.venue_id`, venues)}
+      GROUP BY e.package_id, p.name
+      ORDER BY sold DESC, p.name`;
+    const [before] = await this.db.$queryRaw<{ takings: string }[]>`
+      WITH ${REVENUE_EVENTS}
+      SELECT ${moneySum(Prisma.sql`amount`)} AS takings FROM revenue_events
+      WHERE ${businessDaySql(Prisma.sql`occurred_at`)} = ${lastWeekDay}::date
+        AND occurred_at <= ${weekAgo} AND ${inScope}`;
+    return {
+      day,
+      onlineNow: online?.n ?? 0,
+      sold: rows.reduce((n, r) => n + r.sold, 0),
+      takingsTsh: sumMoney(rows.map((r) => r.takings)),
+      lastWeekTakingsTsh: before?.takings ?? "0.00",
+      byPackage: rows.map((r) => ({
+        packageId: r.package_id,
+        name: r.name,
+        sold: r.sold,
+        takingsTsh: r.takings,
+      })),
     };
   }
 

@@ -178,10 +178,38 @@ export type AccessLevel = "full" | "setup" | "account";
 
 /** The signed-in person (`GET /api/me`): who they are, their workspaces, and what the active one
  * allows. The web draws navigation and buttons from `capabilities`, never from the role. */
+/** A business as HashiNet's team lists it (`GET /api/businesses`). */
+export interface BusinessSummary {
+  id: string;
+  name: string;
+  region: Region;
+  area: string;
+  /** Its owner, once the invitation is accepted. */
+  owner: { name: string; email: string } | null;
+  venues: {
+    id: string;
+    name: string;
+    /** Its routers' states, so the list shows whether it is serving. */
+    routers: RouterStatus[];
+  }[];
+  createdAt: Timestamp;
+}
+
+/** `GET /api/businesses`. */
+export interface BusinessList {
+  businesses: BusinessSummary[];
+}
+
+/** How the dashboard looks; `system` follows the device. */
+export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
+export type ThemePreference = (typeof THEME_PREFERENCES)[number];
+
 export interface Me {
   id: string;
   email: string;
   name: string;
+  /** Kept per person, so it follows them in every workspace and on every device. */
+  theme: ThemePreference;
   memberships: MembershipSummary[];
   active: MembershipSummary & {
     /** The venues of a venue manager or operator; null when the role reaches every venue. */
@@ -194,6 +222,13 @@ export interface Me {
     required: boolean;
     authenticator: boolean;
     passkeys: number;
+    /** While `access` is `setup`: when the 7 days to get set up without protection end. */
+    setupEndsAt: Timestamp | null;
+    /**
+     * Until when this session's proof holds: removing a passkey, new recovery codes or replacing
+     * the authenticator ask for proof first after it. Null when it has none.
+     */
+    provedUntil: Timestamp | null;
   };
 }
 
@@ -462,6 +497,27 @@ export interface AnalyticsSummary {
   revenueThisMonthTsh: DecimalString | null;
 }
 
+/**
+ * `GET /api/analytics/today` (a business's own): today so far, by the Dar es Salaam day, over the
+ * caller's venues or one of them. Sales follow the one definition of revenue.
+ */
+export interface TodaySummary {
+  day: BusinessDay;
+  /** Devices connected now. */
+  onlineNow: number;
+  sold: number;
+  takingsTsh: DecimalString;
+  /** The same weekday a week ago, up to this time of day, to compare with. */
+  lastWeekTakingsTsh: DecimalString;
+  /** Every package sold today, the most sold first. */
+  byPackage: {
+    packageId: string | null;
+    name: string | null;
+    sold: number;
+    takingsTsh: DecimalString;
+  }[];
+}
+
 /** `GET /api/analytics/daily-usage`: every business day in the range, including empty ones. */
 export interface DailyUsage {
   days: {
@@ -547,6 +603,7 @@ export interface RevenueTransactions {
 export const AUDIT_ACTIONS = [
   "membership.switch",
   "profile.update",
+  "authenticator.replace",
   "venue.create",
   "venue.update",
   "venue.delete",

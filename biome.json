@@ -66,6 +66,19 @@
           }
         }
       }
+    },
+    {
+      "includes": ["apps/web/app/hearth.css"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDescendingSpecificity": "off"
+          },
+          "complexity": {
+            "noImportantStyles": "off"
+          }
+        }
+      }
     }
   ]
 }

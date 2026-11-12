@@ -199,6 +199,20 @@ describe("my profile", () => {
     expect((await c.request("GET", "/api/me")).body).toMatchObject({ name: "New Name" });
     expect((await c.request("PUT", "/api/me", { name: "" })).status).toBe(400);
   });
+
+  test("the theme is kept per person, system until chosen", async () => {
+    await businessMember(t.db, { email: "me@example.com", name: "Me", role: "venue_operator" });
+    const c = client();
+    await signIn(c, "me@example.com");
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({ theme: "system" });
+    expect((await c.request("PUT", "/api/me", { theme: "dark" })).body).toMatchObject({
+      theme: "dark",
+      name: "Me",
+    });
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({ theme: "dark" });
+    expect((await c.request("PUT", "/api/me", { theme: "sepia" })).status).toBe(400);
+    expect((await c.request("PUT", "/api/me", {})).status).toBe(400);
+  });
 });
 
 describe("protection is the session's, not the inbox's", () => {
@@ -278,7 +292,7 @@ describe("passkeys", () => {
     expect((await signIn(c, "rm@example.com")).status).toBe(200);
     const removed = await c.request("POST", "/api/auth/passkey/delete-passkey", { id });
     expect(removed.status).toBe(403);
-    expect(removed.body).toMatchObject({ code: "PROTECTION_REQUIRED" });
+    expect(removed.body).toMatchObject({ code: "PROOF_REQUIRED" });
     expect(await t.db.passkey.count({ where: { userId: person.id } })).toBe(1);
   });
 });
@@ -361,5 +375,103 @@ describe("authenticator app", () => {
     await c.request("POST", "/api/auth/sign-out", {});
     expect((await signIn(c, "owner@example.com")).body).toMatchObject({ twoFactorRedirect: true });
     expect((await c.request("GET", "/api/me")).status).toBe(401);
+  });
+});
+
+describe("proof lasts 2 hours, and a wrong code proves nothing", () => {
+  test("a failed authenticator check never upgrades an email-code session", async () => {
+    await businessMember(t.db, { email: "new@example.com", name: "New", role: "owner" });
+    const c = client();
+    await signIn(c, "new@example.com");
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({ active: { access: "setup" } });
+    const wrong = await c.request("POST", "/api/auth/two-factor/verify-totp", { code: "000000" });
+    expect(wrong.status).toBeGreaterThanOrEqual(400);
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({
+      active: { access: "setup" },
+      protection: { provedUntil: null },
+    });
+  });
+
+  test("new recovery codes after 2 hours ask again; an authenticator code proves it afresh", async () => {
+    await platformMember(t.db, { email: "late@example.com", name: "Late", role: "admin" });
+    const c = client();
+    const uri = await enrollAuthenticator(c, "late@example.com");
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({
+      protection: { provedUntil: expect.any(String) },
+    });
+    await t.db.session.updateMany({ data: { provedAt: new Date(Date.now() - 3 * 3_600_000) } });
+    const refused = await c.request("POST", "/api/auth/two-factor/generate-backup-codes", {});
+    expect(refused.status).toBe(403);
+    expect(refused.body).toMatchObject({ code: "PROOF_REQUIRED" });
+
+    await Bun.sleep(1000); // a fresh 30-second step is not needed, but the code must not repeat
+    const proved = await c.request("POST", "/api/auth/two-factor/verify-totp", { code: totp(uri) });
+    expect(proved.status).toBe(200);
+    expect((await c.request("POST", "/api/auth/two-factor/generate-backup-codes", {})).status).toBe(
+      200,
+    );
+  });
+
+  test("replacing the authenticator: proof first, then the old one stops and a new one is set up", async () => {
+    await platformMember(t.db, { email: "swap@example.com", name: "Swap", role: "admin" });
+    const c = client();
+    const oldUri = await enrollAuthenticator(c, "swap@example.com");
+
+    await t.db.session.updateMany({ data: { provedAt: null } });
+    const refused = await c.request("POST", "/api/me/authenticator/replace", {});
+    expect(refused.status).toBe(403);
+    expect(await t.db.twoFactor.count()).toBe(1);
+
+    await t.db.session.updateMany({ data: { provedAt: new Date() } });
+    const replaced = await c.request("POST", "/api/me/authenticator/replace", {});
+    expect(replaced.status).toBe(200);
+    expect(replaced.body).toMatchObject({ protection: { authenticator: false } });
+    expect(await t.db.twoFactor.count()).toBe(0);
+    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain(
+      "authenticator.replace",
+    );
+
+    const enabled = await c.request("POST", "/api/auth/two-factor/enable", {});
+    expect(enabled.status).toBe(200);
+    const newUri = (enabled.body as { totpURI: string }).totpURI;
+    expect(newUri).not.toBe(oldUri);
+    expect(
+      (await c.request("POST", "/api/auth/two-factor/verify-totp", { code: totp(newUri) })).status,
+    ).toBe(200);
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({
+      protection: { authenticator: true },
+    });
+
+    // Signing in now takes the new app's code, and the old one's no longer works.
+    const next = client();
+    expect((await signIn(next, "swap@example.com")).body).toMatchObject({
+      twoFactorRedirect: true,
+    });
+    const stale = await next.request("POST", "/api/auth/two-factor/verify-totp", {
+      code: totp(oldUri),
+    });
+    expect(stale.status).toBe(401);
+  });
+});
+
+describe("recovery codes are read off paper", () => {
+  test("eight unambiguous codes, accepted in any case and spacing", async () => {
+    await platformMember(t.db, { email: "paper@example.com", name: "Paper", role: "admin" });
+    const first = client();
+    await enrollAuthenticator(first, "paper@example.com");
+    const codes = (
+      (await first.request("POST", "/api/auth/two-factor/generate-backup-codes", {})).body as {
+        backupCodes: string[];
+      }
+    ).backupCodes;
+    expect(codes).toHaveLength(8);
+    for (const code of codes) expect(code).toMatch(/^[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/);
+
+    const c = client();
+    await signIn(c, "paper@example.com");
+    const typed = ` ${codes[1]?.toLowerCase().replace("-", " ")} `;
+    expect(
+      (await c.request("POST", "/api/auth/two-factor/verify-backup-code", { code: typed })).status,
+    ).toBe(200);
   });
 });

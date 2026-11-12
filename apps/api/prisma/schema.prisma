@@ -204,6 +204,9 @@ model Session {
   activeMembershipId String?       @map("active_membership_id") @db.Uuid
   /// How this session signed in; an email code alone can reach only Account and security.
   signedInWith       SignInMethod? @map("signed_in_with")
+  /// When this session last proved the person's protection (a passkey, an authenticator code or
+  /// a recovery code). Changing protection needs proof from the last 2 hours, as sudo mode does.
+  provedAt           DateTime?     @map("proved_at") @db.Timestamptz(3)
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 

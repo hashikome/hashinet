@@ -73,8 +73,10 @@ describe("inviting a business", () => {
     await enrollAuthenticatorFor(api, owner, "owner@example.com");
     const body = { email: "x@example.com" };
     expect((await owner.request("POST", "/api/invitations/businesses", body)).status).toBe(403);
+    expect((await owner.request("GET", "/api/businesses")).status).toBe(403);
     const operator = await staff("operator");
     expect((await operator.request("GET", "/api/invitations/businesses")).status).toBe(200);
+    expect((await operator.request("GET", "/api/businesses")).status).toBe(200);
     expect((await operator.request("POST", "/api/invitations/businesses", body)).status).toBe(403);
   });
 });
@@ -119,6 +121,17 @@ describe("accepting an invitation to start a business", () => {
     const actions = (await t.db.auditLog.findMany()).map((a) => a.action);
     expect(actions).toEqual(expect.arrayContaining(["invitation.accept", "business.create"]));
 
+    // HashiNet's team sees it, with its owner and venue.
+    expect((await c.request("GET", "/api/businesses")).body).toMatchObject({
+      businesses: [
+        {
+          name: "Bahari Beach Bar",
+          owner: { name: "Baraka Mollel", email: "baraka@example.com" },
+          venues: [{ name: "Bahari Beach Bar", routers: [] }],
+        },
+      ],
+    });
+
     // The same link works once.
     const again = await guest.request("POST", "/api/invitations/accept/business", {
       token,
@@ -132,6 +145,7 @@ describe("accepting an invitation to start a business", () => {
     expect((await signInWithCode(api, owner, "baraka@example.com")).status).toBe(200);
     expect((await owner.request("GET", "/api/me")).body).toMatchObject({
       active: { role: "owner", business: { name: "Bahari Beach Bar" }, access: "setup" },
+      protection: { required: true, passkeys: 0, setupEndsAt: expect.any(String) },
     });
   });
 

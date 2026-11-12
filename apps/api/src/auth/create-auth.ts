@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHmac, randomInt } from "node:crypto";
 import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
@@ -56,6 +56,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
         // create hook below.
         activeMembershipId: { type: "string", required: false, input: false },
         signedInWith: { type: "string", required: false, input: false },
+        provedAt: { type: "date", required: false, input: false },
       },
     },
     telemetry: { enabled: false },
@@ -87,7 +88,14 @@ export function createAuth({ config, db, email }: AuthDependencies) {
                 message: "This account cannot sign in.",
               });
             }
-            return { data: { ...session, signedInWith: signInMethodOf(ctx?.path) } };
+            const signedInWith = signInMethodOf(ctx?.path);
+            return {
+              data: {
+                ...session,
+                signedInWith,
+                provedAt: signedInWith === "email_code" ? null : new Date(),
+              },
+            };
           },
         },
       },
@@ -104,6 +112,14 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           const address = String(ctx.body?.email ?? "").toLowerCase();
           if (!(await maySendSignInCode(db, address))) return ctx.json({ success: true });
         }
+        if (ctx.path === "/two-factor/verify-backup-code" && typeof ctx.body?.code === "string") {
+          // Recovery codes are read off paper: any case, spaces or a missing dash still match.
+          return {
+            context: {
+              body: { ...ctx.body, code: normalRecoveryCode(ctx.body.code), trustDevice: false },
+            },
+          };
+        }
         if (ctx.path.startsWith("/two-factor/verify-") && ctx.body?.trustDevice === true) {
           // HashiNet trusts no device to skip the authenticator (withEmailCodeGate).
           return { context: { body: { ...ctx.body, trustDevice: false } } };
@@ -119,16 +135,13 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           }
         }
         if (CHANGES_PROTECTION.has(ctx.path)) {
-          // Removing a passkey or making new recovery codes asks for proof first: only a session
-          // that signed in with protection may (ADR-0011, 9).
+          // Removing a passkey or making new recovery codes asks for proof first: a passkey, an
+          // authenticator code or a recovery code in the last 2 hours (ADR-0011, 9).
           const current = await getSessionFromCtx(ctx);
-          const row = current
-            ? await db.session.findUnique({ where: { id: current.session.id } })
-            : null;
-          if (row === null || row.signedInWith === null || row.signedInWith === "email_code") {
+          if (!current || !(await provedRecently(db, current.session.id))) {
             throw new APIError("FORBIDDEN", {
-              code: "PROTECTION_REQUIRED",
-              message: "Sign in with your passkey or authenticator app first.",
+              code: "PROOF_REQUIRED",
+              message: "Confirm it's you with your passkey, authenticator app or a recovery code.",
             });
           }
         }
@@ -148,6 +161,20 @@ export function createAuth({ config, db, email }: AuthDependencies) {
         }
       }),
       after: createAuthMiddleware(async (ctx) => {
+        // After hooks run for failures too, with the error as the result: a wrong code proves
+        // nothing.
+        if (ctx.context.returned instanceof APIError) return;
+        // A passkey, an authenticator code or a recovery code proves the session afresh, whether it
+        // signs in or confirms a change.
+        if (PROVES.has(ctx.path)) {
+          const proving = await getSessionFromCtx(ctx);
+          if (proving) {
+            await db.session.updateMany({
+              where: { id: proving.session.id },
+              data: { provedAt: new Date() },
+            });
+          }
+        }
         // A person's first protection, set up from an email-code session, proves the session
         // holds it, so the session counts as protected from then on (ADR-0011, 9). Someone who
         // already had protection cannot reach here from an email-code session (`hooks.before`),
@@ -182,7 +209,13 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           void email.send(signInCodeEmail(address, otp)).catch(captureFailure);
         },
       }),
-      withEmailCodeGate(twoFactor({ issuer: "HashiNet", allowPasswordless: true })),
+      withEmailCodeGate(
+        twoFactor({
+          issuer: "HashiNet",
+          allowPasswordless: true,
+          backupCodeOptions: { customBackupCodesGenerate: recoveryCodes },
+        }),
+      ),
       // A passkey counts only with user verification (the device unlock), requested and checked
       // at registration and at every sign-in, so it is two factors whatever holds it
       // (ADR-0011, 9). It is bound to the web's host; WebAuthn allows `localhost` without HTTPS.
@@ -202,6 +235,43 @@ const ADDS_PROTECTION: ReadonlySet<string> = new Set([
   "/passkey/generate-register-options",
   "/passkey/verify-registration",
 ]);
+
+/** Letters and digits that can't be mistaken for one another on paper: no 0, O, 1, I or L. */
+const RECOVERY_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+/** Eight recovery codes such as K7QM-2XFD (40 bits each), each working once. */
+export function recoveryCodes(): string[] {
+  return Array.from({ length: 8 }, () => {
+    const chars = Array.from(
+      { length: 8 },
+      () => RECOVERY_ALPHABET[randomInt(RECOVERY_ALPHABET.length)],
+    );
+    return `${chars.slice(0, 4).join("")}-${chars.slice(4).join("")}`;
+  });
+}
+
+/** A recovery code as typed, in the form it was issued. */
+export function normalRecoveryCode(typed: string): string {
+  const clean = typed.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return clean.length === 8 ? `${clean.slice(0, 4)}-${clean.slice(4)}` : typed.trim();
+}
+
+/** The routes whose success proves the person's protection. */
+const PROVES: ReadonlySet<string> = new Set([
+  "/two-factor/verify-totp",
+  "/two-factor/verify-backup-code",
+  "/passkey/verify-authentication",
+  "/passkey/verify-registration",
+]);
+
+/** How long a proof lets someone change their protection without asking again. */
+export const PROOF_HOURS = 2;
+
+/** Whether the session proved the person's protection in the last 2 hours. */
+export async function provedRecently(db: PrismaClient, sessionId: string): Promise<boolean> {
+  const row = await db.session.findUnique({ where: { id: sessionId }, select: { provedAt: true } });
+  return row?.provedAt != null && Date.now() - row.provedAt.getTime() < PROOF_HOURS * 3_600_000;
+}
 
 /** The routes that change the protection a person already has. */
 const CHANGES_PROTECTION: ReadonlySet<string> = new Set([

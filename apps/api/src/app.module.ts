@@ -3,6 +3,7 @@ import { AnalyticsModule } from "./analytics/analytics.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { BrandModule } from "./brand/brand.module.js";
+import { BusinessesModule } from "./businesses/businesses.module.js";
 import type { AppConfig } from "./config/config.js";
 import { configModule } from "./config/config.module.js";
 import { DatabaseModule } from "./database/database.module.js";
@@ -30,6 +31,7 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
       AuditModule,
       AuthModule,
       InvitationsModule,
+      BusinessesModule,
       RoutersModule,
       VenuesModule,
       PackagesModule,

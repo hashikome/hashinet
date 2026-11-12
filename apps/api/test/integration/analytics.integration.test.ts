@@ -299,3 +299,85 @@ describe("analytics for a manager", () => {
     );
   });
 });
+
+describe("a business's day", () => {
+  test("today's sales, takings and who is online, over the owner's venues or one of them", async () => {
+    await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
+    const owner = browser(api);
+    await enrollAuthenticatorFor(api, owner, "owner@example.com");
+    const businessId = await testBusinessId(t.db);
+    const place = { businessId, region: "Dar es Salaam", area: "Mbezi" } as const;
+    const home = await t.db.venue.create({ data: { ...place, name: "Home" } });
+    const cafe = await t.db.venue.create({ data: { ...place, name: "Cafe" } });
+    const hour = await t.db.package.create({
+      data: {
+        businessId,
+        name: "1 hour",
+        durationMinutes: 60,
+        downloadSpeedMbps: 10,
+        priceTsh: 500,
+      },
+    });
+    const now = new Date();
+    for (const [venueId, code] of [
+      [home.id, "T-1"],
+      [home.id, "T-2"],
+      [cafe.id, "T-3"],
+    ] as const) {
+      const batch = await t.db.voucherBatch.create({
+        data: { venueId, packageId: hour.id, quantity: 1, prefix: code },
+      });
+      await t.db.voucher.create({
+        data: {
+          batchId: batch.id,
+          venueId,
+          packageId: hour.id,
+          code,
+          status: "active",
+          activatedAt: now,
+          durationMinutes: 60,
+          priceTsh: 500,
+        },
+      });
+    }
+    await t.db.payment.create({
+      data: {
+        packageId: hour.id,
+        venueId: home.id,
+        provider: "manual",
+        amountTsh: 500,
+        status: "paid",
+        paidAt: now,
+      },
+    });
+    const device = await t.db.device.create({ data: { macAddress: "AA:BB:CC:00:00:09" } });
+    await t.db.wifiSession.create({
+      data: { venueId: home.id, deviceId: device.id, macAddress: "AA:BB", status: "connected" },
+    });
+
+    expect((await owner.request("GET", "/api/analytics/today")).body).toMatchObject({
+      onlineNow: 1,
+      sold: 4,
+      takingsTsh: "2000.00",
+      lastWeekTakingsTsh: "0.00",
+      byPackage: [{ name: "1 hour", sold: 4, takingsTsh: "2000.00" }],
+    });
+    expect(
+      (await owner.request("GET", `/api/analytics/today?venueId=${cafe.id}`)).body,
+    ).toMatchObject({ onlineNow: 0, sold: 1, takingsTsh: "500.00" });
+
+    // Another business's venue is simply nothing.
+    const elsewhere = await t.db.business.create({
+      data: { name: "Elsewhere", region: "Arusha", area: "Njiro" },
+    });
+    const far = await t.db.venue.create({
+      data: { businessId: elsewhere.id, name: "Far", region: "Arusha", area: "Njiro" },
+    });
+    expect(
+      (await owner.request("GET", `/api/analytics/today?venueId=${far.id}`)).body,
+    ).toMatchObject({ sold: 0, takingsTsh: "0.00" });
+
+    const staff = await admin();
+    expect((await staff.request("GET", "/api/analytics/today")).status).toBe(403);
+  });
+});
