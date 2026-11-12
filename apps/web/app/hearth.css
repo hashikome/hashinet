@@ -4160,3 +4160,32 @@ td .btn.danger:hover {
     flex-wrap: nowrap;
   }
 }
+
+/* The portal on a guest's phone: the preview's frame, the whole screen. */
+.g-s.g-page {
+  height: auto;
+  min-height: 100svh;
+  border-radius: 0;
+  overflow: visible;
+}
+.g-page .g-pad {
+  width: 100%;
+  max-width: 440px;
+  margin-inline: auto;
+  padding-bottom: 24px;
+}
+.g-video {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 16px;
+  background: #000;
+  display: block;
+  margin-bottom: 14px;
+}
+.g-page .g-strip {
+  width: 100%;
+  max-width: 440px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}

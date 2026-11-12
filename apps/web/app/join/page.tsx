@@ -1,5 +1,6 @@
+import "../hearth.css";
 import type { Metadata } from "next";
-import { GuestPortal } from "./guest-portal";
+import { GuestPortal } from "./portal";
 
 export const metadata: Metadata = {
   title: "Connect to the WiFi",
@@ -8,6 +9,6 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-export default function PortalLoginPage() {
+export default function PortalPage() {
   return <GuestPortal />;
 }
