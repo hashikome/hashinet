@@ -29,5 +29,5 @@ venues, with platform, business and venue roles (ADR-0011). The owner chose a na
 - A router set up under the old name keeps working, and running its setup script again renames its
   `hashifi-mgmt` interface instead of adding a second tunnel.
 - The rename crosses GitHub, DNS, Dokploy, Docker secrets, PostgreSQL, R2, Resend, the SMS sender ID,
-  Sentry and the infra backups; the steps and their order are in
-  [rename-to-hashinet](../exec-plans/active/rename-to-hashinet.md).
+  Sentry and the infra backups. The rename was carried out on 11 November 2026 (a seven-minute
+  outage at the database cutover); its plan is in the git history.

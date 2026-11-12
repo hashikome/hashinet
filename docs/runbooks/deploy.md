@@ -35,6 +35,11 @@ Once, before setting `DEPLOY_ENABLED`:
   `DOKPLOY_REGISTRY_ID` and `DEPLOY_ENABLED`.
 - Uptime Kuma monitors on `/api/health` and `/join`.
 
+Two things the rename to HashiNet taught (11 November 2026): Dokploy never changes a stack's
+`appName`, so renaming means new stacks named in `deploy/release.json` and the old ones removed; and a
+GitHub environment's own secret overrides the organisation's, so shared keys (`SERVER_SSH_KEY`,
+`DOKPLOY_API_KEY`) live only at the organisation, shared with this repository.
+
 The first admin is added with `bun run staff:add` in the API image.
 
 Mobile money and SMS need nothing here until their providers exist: add `SNIPPE_*` or `BRIQ_*`

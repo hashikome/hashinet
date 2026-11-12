@@ -4,7 +4,7 @@ Time-bound, device-limited WiFi access sold as vouchers through a captive portal
 and for venues with their own MikroTik routers. A cloud backend configures the routers,
 issues vouchers and tracks sessions. Public repository (FSL-1.1-ALv2). A first build runs at `hashinet.hashikome.com`, proving
 the release path; businesses, venues and their roles are still prototypes. Renamed from HashiFi on
-11 November 2026 ([rename-to-hashinet](docs/exec-plans/active/rename-to-hashinet.md)).
+11 November 2026 ([ADR-0016](docs/engineering-decisions/0016-the-product-is-hashinet.md)).
 
 This repository is the source of truth for the HashiNet product and engineering decisions.
 External documents are references only. Keep this file short: it is a map, not a manual.

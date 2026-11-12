@@ -11,8 +11,9 @@
 - HashiFi is now HashiNet, "The platform for running WiFi businesses." (ADR-0016): the copy, the
   `@hashinet/*` packages, the local database and test database `hashinet` and `hashinet_test`, the
   log category, and the routers' management interface `hashinet-mgmt`, which a router's setup script
-  renames from `hashifi-mgmt`. The deployment follows once production has its new names
-  (`docs/exec-plans/active/rename-to-hashinet.md`).
+  renames from `hashifi-mgmt`. HashiNet serves at `hashinet.hashikome.com` from 11 November 2026, on
+  its own database, Docker secrets, Dokploy stacks, R2 bucket and monitors; the HashiFi host and
+  everything named for it are retired.
 - HashiFi wears Hashikome's bonfire: midnight ink on mist, ember on the one action and on what is
   alive, and a new mark, the open ring with the ember in its gap.
 - The deployment stack file is `deploy/docker-stack.yml`, and the release's Docker actions run on
