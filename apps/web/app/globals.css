@@ -61,7 +61,7 @@
 /* DESIGN.md is the authority. Hearth: midnight ink on mist, with ember on the one action and on what
    is alive. Ember is too light to read as text on white, so text uses --ember, its deeper shade. */
 :root {
-  --background: #f4f6f8;
+  --background: #e8ecf0;
   --foreground: #0d1b2a;
 
   --card: #ffffff;
@@ -73,20 +73,20 @@
   --primary: #f59e2a;
   --primary-foreground: #0d1b2a;
 
-  --secondary: #edf0f3;
+  --secondary: #e3e8ee;
   --secondary-foreground: #0d1b2a;
 
-  --muted: #edf0f3;
-  --muted-foreground: #4e5d6e;
+  --muted: #e3e8ee;
+  --muted-foreground: #4a5868;
 
-  --accent: #e7ebf0;
+  --accent: #d0d8e2;
   --accent-foreground: #0d1b2a;
 
   --ember: #a9530a;
   --destructive: #c4242a;
 
-  --border: #dfe3e8;
-  --input: #8a94a3;
+  --border: #bac3ce;
+  --input: #7b8696;
   --ring: #a9530a;
 
   --chart-1: #c97412;
@@ -111,29 +111,29 @@
 
 /* Midnight, the brand's own night, rather than a neutral dark; elevation by lightness. */
 .dark {
-  --background: #0d1b2a;
+  --background: #0a1521;
   --foreground: #eef1f4;
 
-  --card: #132538;
+  --card: #162a3f;
   --card-foreground: #eef1f4;
 
-  --popover: #1a2f45;
+  --popover: #1d3349;
   --popover-foreground: #eef1f4;
 
-  --secondary: #1a2f45;
+  --secondary: #1f3650;
   --secondary-foreground: #eef1f4;
 
-  --muted: #1a2f45;
-  --muted-foreground: #9daec0;
+  --muted: #1f3650;
+  --muted-foreground: #a3b3c4;
 
-  --accent: #1a2f45;
+  --accent: #284565;
   --accent-foreground: #ffffff;
 
   --ember: #f6ae52;
   --destructive: #f2707a;
 
-  --border: #22384f;
-  --input: #7a8ca0;
+  --border: #33506e;
+  --input: #7f91a6;
   --ring: #f59e2a;
 
   --chart-1: #f59e2a;

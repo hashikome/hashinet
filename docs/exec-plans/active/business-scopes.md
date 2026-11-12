@@ -23,6 +23,9 @@ not found.
 ## Progress
 
 - [x] (2026-11-03) Roles agreed with the owner; ADR-0011 written; ADR-0007 narrowed to sign-in.
+- Order: these milestones are built within the slices of [build-in-slices.md](build-in-slices.md)
+  (M1, M2, M4 and the owner's invitation in slice 1; business roles in slice 2; platform roles in slice 3;
+  M5 in slice 5).
 - [ ] M1: schema: businesses, memberships, membership venues, invitations, business packages;
   migration of existing rows.
 - [ ] M2: the access policy and the principal; every service scoped through it; the audit log (ADR-0012).

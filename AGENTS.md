@@ -15,9 +15,10 @@ The [build plan](docs/exec-plans/active/build-hashinet.md) tracks the work: read
 it before changing anything under `apps/`. M1 to M5 are done. HashiNet launches on printed vouchers; M6
 (mobile money and SMS) is built and held until its providers' credentials exist: `apps/api` is NestJS on Bun with Prisma on PostgreSQL 18, and `apps/web` runs on it
 through `lib/api.ts` and `@hashinet/types`, including the captive portal and purchases.
-Next: businesses that own venues, with owners, managers and operators (ADR-0011,
-[business-scopes](docs/exec-plans/active/business-scopes.md)), and the admin and portal rebuilt in
-the Hearth design ([redesign-admin](docs/exec-plans/active/redesign-admin.md), which sets the order).
+Next: HashiNet rebuilt from the approved Hearth prototype in six slices, each one complete journey
+accepted live before the next ([build-in-slices](docs/exec-plans/active/build-in-slices.md), which sets
+the order). The detail stays in [business-scopes](docs/exec-plans/active/business-scopes.md) (schema,
+access, sign-in, invitations) and [redesign-admin](docs/exec-plans/active/redesign-admin.md) (screens).
 
 ## Map
 
@@ -71,7 +72,11 @@ the Hearth design ([redesign-admin](docs/exec-plans/active/redesign-admin.md), w
 
 ## Pre-deployment compatibility
 
-Until the owner changes this policy, the repository is one unreleased release unit. Do not
+HashiNet has no users (owner, 12 November 2026), so compatibility costs more than it earns. Until the
+owner changes this policy, the repository is one unreleased release unit, and what is built now is the
+authoritative code and the base for what follows. Remove dead code as you go: when something is
+replaced, delete the old route, module, model, screen, type, test and doc in the same change, with no
+shim, alias, adapter, deprecated path or feature flag left for it. Do not
 preserve compatibility for superseded routes, shapes, schemas or docs: update every producer
 and consumer together and remove the replaced implementation. Nothing inherited is binding: when
 there is a better way, drop whatever stands in the way, whether a package, a module, a model or

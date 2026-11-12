@@ -24,5 +24,8 @@ A plan must make sense with `ref/` empty while it runs.
 
 | Plan | Status |
 | --- | --- |
-| [active/build-hashinet.md](active/build-hashinet.md) | M1 to M5 done; M6 built, awaiting provider accounts |
+| [active/build-in-slices.md](active/build-in-slices.md) | The build order: six slices from the approved prototype; slice 1 next |
+| [active/business-scopes.md](active/business-scopes.md) | Schema, access, sign-in and invitations; built within slices 1 to 3 and 5 |
+| [active/redesign-admin.md](active/redesign-admin.md) | Prototype approved; its screens built within the slices |
+| [active/build-hashinet.md](active/build-hashinet.md) | M1 to M5 done; M6 built, awaiting provider accounts (slice 6) |
 | [active/rename-to-hashinet.md](active/rename-to-hashinet.md) | The repository renamed; the deployment waits on the owner's production steps |

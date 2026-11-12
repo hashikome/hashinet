@@ -32,8 +32,9 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 - [x] (2026-11-03) Design rounds: ten variations, then Hearth with Night Band's portal, then each
   role's view; chosen by the owner.
 - [x] (2026-11-04) H1: tokens, the mark and `DESIGN.md` in Hearth.
-- [ ] Full prototype reviewed and approved by the owner (`prototypes/hearth-design/prototype/`). No schema or
-  screen work starts before this; the finished screens must match it.
+- [x] (2026-11-12) Full prototype reviewed and approved by the owner (`prototypes/hearth-design/prototype/`),
+  after the journey and role review; the finished screens must match it. H2 to H7 are now built
+  within the slices of [build-in-slices.md](build-in-slices.md), which sets their order.
 - [ ] H2: the shell: grouped navigation from capabilities, scope filter, account menu, business head.
 - [ ] H3: the overview as "right now", and the Analytics page, both computed by the API.
 - [ ] H4: lists and forms that work on a phone; named actions; the router edit form.

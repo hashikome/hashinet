@@ -21,18 +21,18 @@ Role names are the shadcn tokens the components use. Brand colours: midnight `#0
 
 | Role | Light | Dark | Use |
 | --- | --- | --- | --- |
-| `background`, `sidebar` | `#f4f6f8` | `#0d1b2a` | Page ground; the sidebar sits on it |
-| `card` | `#ffffff` | `#132538` | Panels |
-| `popover` | `#ffffff` | `#1a2f45` | What floats |
+| `background`, `sidebar` | `#e8ecf0` | `#0a1521` | Page ground; the sidebar sits on it |
+| `card` | `#ffffff` | `#162a3f` | Panels, a clear step off the ground (1.18:1 light, 1.26:1 dark) |
+| `popover` | `#ffffff` | `#1d3349` | What floats |
 | `foreground` | `#0d1b2a` | `#eef1f4` | Primary text |
-| `muted-foreground` | `#4e5d6e` | `#9daec0` | Secondary text; reaches 4.5:1 on every surface |
-| `muted`, `secondary` | `#edf0f3` | `#1a2f45` | Tone steps, neutral fills |
+| `muted-foreground` | `#4a5868` | `#a3b3c4` | Secondary text; reaches 4.5:1 on every surface |
+| `muted`, `secondary` | `#e3e8ee` | `#1f3650` | Tone steps, neutral fills |
 | `primary` | `#f59e2a` | `#f59e2a` | The filled button on the midnight sign-in screens, with `primary-foreground` midnight text (8.1:1). In the app the filled button is `foreground` with `background` text, so it inverts in dark mode |
 | `ember` | `#a9530a` | `#f6ae52` | Ember as a small mark in charts and the logo. Ember itself is 2.1:1 on white, so never text |
-| `accent` | `#e7ebf0` | `#1a2f45` | Pale area: the selected fill, hover |
+| `accent` | `#d0d8e2` | `#284565` | The selected fill and hover, visible against the ground (1.2:1 light, 1.86:1 dark) |
 | `destructive` | `#c4242a` | `#f2707a` | Failed or destructive: problems are red, never ember |
-| `border` | `#dfe3e8` | `#22384f` | Panel edges |
-| `input` | `#8a94a3` | `#7a8ca0` | Control edges, 3:1 on a panel |
+| `border` | `#bac3ce` | `#33506e` | Panel edges, readable at a glance (1.4:1 light, 2.2:1 dark on the ground) |
+| `input` | `#7b8696` | `#7f91a6` | Control edges, 3:1 on a panel |
 | `ring` | `#a9530a` | `#f59e2a` | Focus |
 | `chart-1` to `chart-5` | ember, slate, pale ember, midnight, pale slate | the same, lifted | One hue per chart; ember on the main series, deepened to `#c97412` in light for 3:1 |
 
