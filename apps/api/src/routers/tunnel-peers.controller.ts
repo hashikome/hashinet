@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { Controller, Get, Headers, Inject, UnauthorizedException } from "@nestjs/common";
-import { Public } from "../auth/staff-guard.js";
+import { Public } from "../access/access.guard.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";

@@ -1,11 +1,11 @@
-import type { PackageRecord, VenuePackages } from "@hashinet/types";
+import type { AuditAction, PackageRecord, VenuePackages } from "@hashinet/types";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import type { Principal } from "../access/principal.js";
+import { businessScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { packageRecord } from "../serializers/records.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import { VenuesService } from "../venues/venues.service.js";
 import type { PackageInput } from "./package-input.js";
 
@@ -28,25 +28,32 @@ export class PackagesService {
   ) {}
 
   /** Admins see the whole catalogue; managers only what can be sold. */
-  async list(staff: StaffPrincipal): Promise<PackageRecord[]> {
+  async list(staff: Principal): Promise<PackageRecord[]> {
     const rows = await this.db.package.findMany({
-      where: staff.role === "admin" ? {} : { isActive: true },
+      where: { ...businessScope(staff), ...(seesInactive(staff) ? {} : { isActive: true }) },
       orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
     });
     return rows.map(packageRecord);
   }
 
-  async get(staff: StaffPrincipal, id: string): Promise<PackageRecord> {
+  async get(staff: Principal, id: string): Promise<PackageRecord> {
     const row = await this.db.package.findFirst({
-      where: { id, ...(staff.role === "admin" ? {} : { isActive: true }) },
+      where: {
+        id,
+        ...businessScope(staff),
+        ...(seesInactive(staff) ? {} : { isActive: true }),
+      },
     });
     if (!row) throw packageNotFound();
     return packageRecord(row);
   }
 
-  async create(staff: StaffPrincipal, input: PackageInput, origin: RequestOrigin) {
-    const row = await this.db.package.create({ data: input });
-    await this.record(staff, "package_created", row.id, row.name, origin);
+  async create(staff: Principal, input: PackageInput) {
+    // `package.manage` is the owner's alone, so the principal is in a business.
+    const row = await this.db.package.create({
+      data: { ...input, businessId: staff.businessId ?? "" },
+    });
+    await this.record(staff, "package.create", row.id);
     return packageRecord(row);
   }
 
@@ -54,16 +61,16 @@ export class PackagesService {
    * Issued vouchers keep the duration and price they were sold with; a speed change reaches
    * the routers at their next sync.
    */
-  async update(staff: StaffPrincipal, id: string, input: PackageInput, origin: RequestOrigin) {
+  async update(staff: Principal, id: string, input: PackageInput) {
     await this.get(staff, id);
     const row = await this.db.package.update({ where: { id }, data: input });
-    await this.record(staff, "package_updated", row.id, row.name, origin);
+    await this.record(staff, "package.update", row.id);
     return packageRecord(row);
   }
 
   /** Refused while vouchers depend on it; deactivating takes it off sale instead. */
-  async remove(staff: StaffPrincipal, id: string, origin: RequestOrigin): Promise<void> {
-    const pkg = await this.get(staff, id);
+  async remove(staff: Principal, id: string): Promise<void> {
+    await this.get(staff, id);
     const live = await this.db.voucher.count({
       where: { packageId: id, status: { in: [...LIVE_VOUCHERS] } },
     });
@@ -76,11 +83,11 @@ export class PackagesService {
       );
     }
     await this.db.package.delete({ where: { id } });
-    await this.record(staff, "package_deleted", id, pkg.name, origin);
+    await this.record(staff, "package.delete", id);
   }
 
   /** What a venue sells: its assigned packages that are active, or every active package. */
-  async soldAt(staff: StaffPrincipal, venueId: string): Promise<VenuePackages> {
+  async soldAt(staff: Principal, venueId: string): Promise<VenuePackages> {
     await this.venues.get(staff, venueId);
     const assigned = await this.db.venuePackage.findMany({
       where: { venueId },
@@ -91,67 +98,70 @@ export class PackagesService {
     return { packages, assignedPackageIds, sellsAll: assignedPackageIds.length === 0 };
   }
 
-  /** The rule for what a venue sells, for the guest portal, which has no staff member. */
+  /**
+   * The rule for what a venue sells, for the guest portal, which has no principal: its business's
+   * active packages, narrowed to the ones assigned to it when there are any. Never another
+   * business's.
+   */
   async onSaleAt(venueId: string): Promise<PackageRecord[]> {
+    const venue = await this.db.venue.findUnique({ where: { id: venueId } });
+    if (!venue) return [];
     const assigned = await this.db.venuePackage.findMany({
       where: { venueId },
       select: { packageId: true },
     });
     const ids = assigned.map((a) => a.packageId);
     const rows = await this.db.package.findMany({
-      where: { isActive: true, ...(ids.length === 0 ? {} : { id: { in: ids } }) },
+      where: {
+        businessId: venue.businessId,
+        isActive: true,
+        ...(ids.length === 0 ? {} : { id: { in: ids } }),
+      },
       orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
     });
     return rows.map(packageRecord);
   }
 
   /** Puts a package on sale at a venue. Idempotent. */
-  async assign(staff: StaffPrincipal, venueId: string, packageId: string, origin: RequestOrigin) {
+  async assign(staff: Principal, venueId: string, packageId: string) {
     const venue = await this.venues.get(staff, venueId);
     const pkg = await this.get(staff, packageId);
+    // A venue sells only its own business's packages; anything else is not found.
+    if (pkg.businessId !== venue.businessId) throw packageNotFound();
     await this.db.venuePackage.upsert({
       where: { venueId_packageId: { venueId, packageId } },
       create: { venueId, packageId },
       update: {},
     });
-    await this.record(staff, "package_assigned", packageId, pkg.name, origin, {
-      venueId,
-      venueName: venue.name,
-    });
+    await this.record(staff, "package.venue.assign", packageId, { venueId });
     return this.soldAt(staff, venueId);
   }
 
   /** Takes a package off sale at a venue. Idempotent. */
-  async unassign(staff: StaffPrincipal, venueId: string, packageId: string, origin: RequestOrigin) {
-    const venue = await this.venues.get(staff, venueId);
+  async unassign(staff: Principal, venueId: string, packageId: string) {
+    await this.venues.get(staff, venueId);
     const removed = await this.db.venuePackage.deleteMany({ where: { venueId, packageId } });
     if (removed.count > 0) {
-      await this.record(staff, "package_unassigned", packageId, null, origin, {
-        venueId,
-        venueName: venue.name,
-      });
+      await this.record(staff, "package.venue.unassign", packageId, { venueId });
     }
     return this.soldAt(staff, venueId);
   }
 
   private async record(
-    staff: StaffPrincipal,
-    action: string,
+    staff: Principal,
+    action: AuditAction,
     entityId: string,
-    entityName: string | null,
-    origin: RequestOrigin,
     details: Record<string, string> = {},
   ): Promise<void> {
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
+    await this.audit.record(staff, {
       action,
-      entityType: "package",
-      entityId,
-      entityName,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details,
+      target: { type: "package", id: entityId },
+      change: { before: {}, after: details },
     });
   }
+}
+
+/** The owner and platform staff see packages taken off sale; everyone else only what is on sale. */
+function seesInactive(staff: Principal): boolean {
+  return staff.scope === "platform" || staff.role === "owner";
 }

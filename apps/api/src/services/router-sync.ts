@@ -251,11 +251,13 @@ export class RouterSync {
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
         outcome.failures.push({ router: router.name, error });
-        await this.audit.system(
-          "router.push_failed",
-          { type: "router", id: router.id, name: router.name },
-          { host: router.ipAddress, codes: codes.length, error },
-        );
+        await this.audit.system({
+          action: "router.push_failed",
+          target: { type: "router", id: router.id },
+          venueId: router.venueId,
+          outcome: "failed",
+          change: { before: {}, after: { codes: codes.length } },
+        });
       }
     }
     enrichWideEvent({ "sync.attempted": outcome.attempted, "sync.succeeded": outcome.succeeded });
@@ -319,14 +321,14 @@ export class RouterSync {
         data: { status: "online", lastSeenAt: new Date() },
       });
       enrichWideEvent({ "sync.attempted": venueVouchers.length, "sync.succeeded": synced });
-    } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
+    } catch {
       await this.db.router.update({ where: { id: routerId }, data: { status: "error" } });
-      await this.audit.system(
-        "router.sync_failed",
-        { type: "router", id: routerId, name: router.name },
-        { host: router.ipAddress, error },
-      );
+      await this.audit.system({
+        action: "router.sync_failed",
+        target: { type: "router", id: routerId },
+        venueId: router.venueId,
+        outcome: "failed",
+      });
     } finally {
       if (conn) await closeConnection(conn);
     }
@@ -408,11 +410,12 @@ export class RouterSync {
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
         outcome.failures.push({ router: router.name, error });
-        await this.audit.system(
-          "router.jit_sync_failed",
-          { type: "router", id: router.id, name: router.name },
-          { host: router.ipAddress, voucherId: voucher.id, error },
-        );
+        await this.audit.system({
+          action: "router.sync_failed",
+          target: { type: "router", id: router.id },
+          venueId: router.venueId,
+          outcome: "failed",
+        });
       }
     }
     return outcome;

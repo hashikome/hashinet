@@ -25,7 +25,6 @@ export const packageInput = z
       .min(1, "is required")
       .max(180)
       .regex(/^[^\p{Cc}]*$/u, "must be one line of text"),
-    packageType: z.enum(["hotspot", "home", "business", "premium"]).default("hotspot"),
     description: z
       .string()
       .trim()

@@ -8,10 +8,9 @@ import type {
 } from "@hashinet/types";
 import { Body, Controller, Get, HttpCode, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
-import { CurrentStaff, Public, type StaffPrincipal } from "../auth/staff-guard.js";
-import { Origin } from "../http/request-origin.js";
+import { Can, CurrentPrincipal, Public } from "../access/access.guard.js";
+import type { Principal } from "../access/principal.js";
 import { parseInput } from "../http/validation.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import {
   paymentListInput,
   paymentStatusInput,
@@ -45,27 +44,27 @@ export class PaymentsController {
 
   /** What this installation can offer, so the admin shows only what works. */
   @Get("capabilities")
+  @Can("payment.read")
   capabilities(): Capabilities {
     return this.payments.capabilities();
   }
 
   @Get("payments")
-  async list(@CurrentStaff() staff: StaffPrincipal, @Query() query: unknown): Promise<PaymentList> {
+  @Can("payment.read")
+  async list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<PaymentList> {
     return { payments: await this.payments.list(staff, parseInput(paymentListInput, query)) };
   }
 
   @Get("customers")
-  async customers(@CurrentStaff() staff: StaffPrincipal): Promise<CustomerList> {
+  @Can("customer.read")
+  async customers(@CurrentPrincipal() staff: Principal): Promise<CustomerList> {
     return { customers: await this.payments.customers(staff) };
   }
 
   /** The code is in this response: it is what staff read out, or print. */
   @Post("sales")
-  sale(
-    @CurrentStaff() staff: StaffPrincipal,
-    @Body() body: unknown,
-    @Origin() origin: RequestOrigin,
-  ): Promise<SaleResult> {
-    return this.payments.recordSale(staff, parseInput(saleInput, body), origin);
+  @Can("sale.record")
+  sale(@CurrentPrincipal() staff: Principal, @Body() body: unknown): Promise<SaleResult> {
+    return this.payments.recordSale(staff, parseInput(saleInput, body));
   }
 }

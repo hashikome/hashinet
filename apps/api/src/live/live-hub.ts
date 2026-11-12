@@ -4,6 +4,9 @@ import type { LiveMessage } from "@hashinet/types";
 import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } from "@nestjs/common";
 import { fromNodeHeaders } from "better-auth/node";
 import { type WebSocket, WebSocketServer } from "ws";
+import { allows } from "../access/policy.js";
+import { principalFromSession } from "../access/principal-from-session.js";
+import { venueScope } from "../access/venue-scope.js";
 import { type Auth, BETTER_AUTH } from "../auth/create-auth.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
@@ -110,15 +113,17 @@ export class LiveHub implements OnModuleInit, OnApplicationShutdown {
     });
   }
 
-  /** The venues the session may watch (null for all), or false when it may not connect. */
+  /**
+   * The venues the session may watch (null for every venue), or false when it may not connect:
+   * the same principal and policy as the HTTP API. The live view lists guests' devices, so the
+   * platform, which sees them only as counts (ADR-0014), does not get it.
+   */
   private async authorise(headers: Headers): Promise<Set<string> | null | false> {
-    const session = await this.auth.api.getSession({ headers });
-    if (!session) return false;
-    const staff = await this.db.staff.findUnique({ where: { id: session.user.id } });
-    if (staff?.status !== "active") return false;
-    if (staff.role === "admin") return session.user.twoFactorEnabled === true ? null : false;
+    const principal = await principalFromSession(this.db, this.auth, headers);
+    if (!principal || principal.access === "account") return false;
+    if (!allows(principal.role, "session.read")) return false;
     const venues = await this.db.venue.findMany({
-      where: { operatorId: staff.id },
+      where: venueScope(principal),
       select: { id: true },
     });
     return new Set(venues.map((v) => v.id));

@@ -1,10 +1,9 @@
 import type { PortalSettingsRecord } from "@hashinet/types";
 import { Injectable } from "@nestjs/common";
+import type { Principal } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { portalSettingsRecord } from "../serializers/records.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import { DEFAULT_PORTAL_SETTINGS, type PortalInput } from "./portal-input.js";
 
 /**
@@ -24,26 +23,16 @@ export class PortalService {
     return row === null ? DEFAULT_PORTAL_SETTINGS : portalSettingsRecord(row);
   }
 
-  async save(
-    staff: StaffPrincipal,
-    input: PortalInput,
-    origin: RequestOrigin,
-  ): Promise<PortalSettingsRecord> {
+  async save(staff: Principal, input: PortalInput): Promise<PortalSettingsRecord> {
     const row = await this.db.portalSetting.upsert({
       where: { singleton: true },
       create: input,
       update: input,
     });
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
-      action: "portal_updated",
-      entityType: "portal",
-      entityId: row.id,
-      entityName: row.brandName,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details: {},
+    await this.audit.record(staff, {
+      action: "portal.defaults.update",
+      target: { type: "portal", id: row.id },
+      change: { before: {}, after: {} },
     });
     return portalSettingsRecord(row);
   }

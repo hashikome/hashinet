@@ -2,7 +2,7 @@ import type { AuditLog } from "../audit/audit-log.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import type { VenueWhereInput } from "../generated/prisma/models.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
-import { describeFailures, outcomeOk, type RouterSync } from "../services/router-sync.js";
+import { outcomeOk, type RouterSync } from "../services/router-sync.js";
 
 /** Leave the request path time to finish before second-guessing it. */
 const MIN_AGE_MS = 30_000;
@@ -38,11 +38,10 @@ export class VoucherReconciler {
 
     let recovered = 0;
     for (const voucher of stuck) {
-      const entity = { type: "voucher", id: voucher.id, name: null };
+      const target = { type: "voucher", id: voucher.id };
+      const venueId = voucher.venueId;
       if (!voucher.venueId) {
-        await this.audit.system("voucher.provision_failed", entity, {
-          reason: "The voucher has no venue, so no router can be chosen",
-        });
+        await this.audit.system({ action: "voucher.provision_failed", target, outcome: "failed" });
         continue;
       }
       try {
@@ -50,18 +49,27 @@ export class VoucherReconciler {
         if (outcomeOk(outcome)) {
           await this.db.voucher.update({ where: { id: voucher.id }, data: { status: "active" } });
           recovered++;
-          await this.audit.system("voucher.provision_recovered", entity, {
-            routers: outcome.succeeded,
+          await this.audit.system({
+            action: "voucher.provision_recovered",
+            target,
+            venueId,
+            change: { before: {}, after: { routers: outcome.succeeded } },
           });
         } else {
-          await this.audit.system("voucher.provision_failed", entity, {
-            reason: describeFailures(outcome),
-            attemptedRouters: outcome.attempted,
+          await this.audit.system({
+            action: "voucher.provision_failed",
+            target,
+            venueId,
+            outcome: "failed",
+            change: { before: {}, after: { routers: outcome.attempted } },
           });
         }
-      } catch (err) {
-        await this.audit.system("voucher.provision_failed", entity, {
-          reason: err instanceof Error ? err.message : String(err),
+      } catch {
+        await this.audit.system({
+          action: "voucher.provision_failed",
+          target,
+          venueId,
+          outcome: "failed",
         });
       }
     }

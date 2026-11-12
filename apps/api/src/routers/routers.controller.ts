@@ -17,10 +17,10 @@ import {
   Query,
 } from "@nestjs/common";
 import { z } from "zod";
-import { CurrentStaff, Roles, type StaffPrincipal } from "../auth/staff-guard.js";
-import { idParam, Origin } from "../http/request-origin.js";
+import { Can, CurrentPrincipal } from "../access/access.guard.js";
+import type { Principal } from "../access/principal.js";
+import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import { bootstrapInput, routerInput, testConnectionInput } from "./router-input.js";
 import { RoutersService } from "./routers.service.js";
 
@@ -34,71 +34,71 @@ export class RoutersController {
   constructor(private readonly routers: RoutersService) {}
 
   @Get()
-  async list(@CurrentStaff() staff: StaffPrincipal, @Query() query: unknown): Promise<RouterList> {
+  @Can("router.read")
+  async list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<RouterList> {
     const { venueId } = parseInput(listQuery, query);
     return { routers: await this.routers.list(staff, venueId) };
   }
 
   /** Guests waiting on a router in the caller's venues. */
   @Get("provisioning-backlog")
-  backlog(@CurrentStaff() staff: StaffPrincipal): Promise<ProvisioningBacklog> {
+  @Can("router.check")
+  backlog(@CurrentPrincipal() staff: Principal): Promise<ProvisioningBacklog> {
     return this.routers.backlog(staff);
   }
 
   @Post("test-connection")
-  @Roles("admin")
+  @Can("router.check")
   @HttpCode(200)
   testConnection(@Body() body: unknown) {
     return this.routers.testConnection(parseInput(testConnectionInput, body));
   }
 
   @Get(":id")
+  @Can("router.read")
   async get(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
   ): Promise<RouterResponse> {
     return { router: await this.routers.get(staff, id) };
   }
 
   @Post()
-  @Roles("admin")
+  @Can("router.manage")
   async create(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Body() body: unknown,
-    @Origin() origin: RequestOrigin,
   ): Promise<RouterResponse> {
-    return { router: await this.routers.create(staff, parseInput(routerInput, body), origin) };
+    return { router: await this.routers.create(staff, parseInput(routerInput, body)) };
   }
 
   @Put(":id")
-  @Roles("admin")
+  @Can("router.manage")
   async update(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Body() body: unknown,
-    @Origin() origin: RequestOrigin,
   ): Promise<RouterResponse> {
     return {
-      router: await this.routers.update(staff, id, parseInput(routerInput, body), origin),
+      router: await this.routers.update(staff, id, parseInput(routerInput, body)),
     };
   }
 
   @Delete(":id")
-  @Roles("admin")
+  @Can("router.manage")
   @HttpCode(204)
   async remove(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-    @Origin() origin: RequestOrigin,
   ): Promise<void> {
-    await this.routers.remove(staff, id, origin);
+    await this.routers.remove(staff, id);
   }
 
   @Post(":id/sync")
-  @Roles("admin")
+  @Can("router.manage")
   @HttpCode(200)
   async sync(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
   ): Promise<RouterResponse> {
     return { router: await this.routers.syncNow(staff, id) };
@@ -106,30 +106,29 @@ export class RoutersController {
 
   /** Carries the router's API password, so no cache may keep it. */
   @Post(":id/bootstrap-script")
-  @Roles("admin")
+  @Can("router.manage")
   @HttpCode(200)
   @Header("Cache-Control", "no-store")
   bootstrapScript(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Body() body: unknown,
-    @Origin() origin: RequestOrigin,
   ): Promise<BootstrapScriptResponse> {
-    return this.routers.bootstrapScript(staff, id, parseInput(bootstrapInput, body), origin);
+    return this.routers.bootstrapScript(staff, id, parseInput(bootstrapInput, body));
   }
 
   @Post(":id/probe")
-  @Roles("admin")
+  @Can("router.check")
   @HttpCode(200)
-  probe(@CurrentStaff() staff: StaffPrincipal, @Param("id", idParam()) id: string) {
+  probe(@CurrentPrincipal() staff: Principal, @Param("id", idParam()) id: string) {
     return this.routers.probe(staff, id);
   }
 
   @Post(":id/verify")
-  @Roles("admin")
+  @Can("router.check")
   @HttpCode(200)
   verify(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Query("skipWriteTest") skipWriteTest: unknown,
   ) {
@@ -137,10 +136,10 @@ export class RoutersController {
   }
 
   @Post(":id/setup")
-  @Roles("admin")
+  @Can("router.manage")
   @HttpCode(202)
   setup(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Query("force") force: unknown,
   ) {
@@ -148,15 +147,16 @@ export class RoutersController {
   }
 
   @Get(":id/journey")
-  journey(@CurrentStaff() staff: StaffPrincipal, @Param("id", idParam()) id: string) {
+  @Can("router.read")
+  journey(@CurrentPrincipal() staff: Principal, @Param("id", idParam()) id: string) {
     return this.routers.journey(staff, id);
   }
 
   @Post(":id/provision")
-  @Roles("admin")
+  @Can("router.manage")
   @HttpCode(200)
   provision(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Query("dryRun") dryRun: unknown,
   ) {
@@ -164,8 +164,8 @@ export class RoutersController {
   }
 
   @Get(":id/provision/latest")
-  @Roles("admin")
-  latestProvision(@CurrentStaff() staff: StaffPrincipal, @Param("id", idParam()) id: string) {
+  @Can("router.read")
+  latestProvision(@CurrentPrincipal() staff: Principal, @Param("id", idParam()) id: string) {
     return this.routers.latestProvision(staff, id);
   }
 }

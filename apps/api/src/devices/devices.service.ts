@@ -1,8 +1,8 @@
-import type { DeviceList, DeviceRecord } from "@hashinet/types";
+import type { AuditAction, DeviceList, DeviceRecord } from "@hashinet/types";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { z } from "zod";
+import type { Principal } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Device } from "../generated/prisma/client.js";
 import type { DeviceWhereInput } from "../generated/prisma/models.js";
@@ -12,7 +12,6 @@ import { bytes } from "../serializers/records.js";
 import { RouterSync } from "../services/router-sync.js";
 import { sessionScope } from "../sessions/session-scope.js";
 import { SessionsService } from "../sessions/sessions.service.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 
 export const deviceQuery = z.object({
   status: z.enum(["online", "offline", "blocked"]).nullable().default(null),
@@ -35,7 +34,7 @@ export class DevicesService {
     private readonly sync: RouterSync,
   ) {}
 
-  async list(staff: StaffPrincipal, query: z.infer<typeof deviceQuery>): Promise<DeviceList> {
+  async list(staff: Principal, query: z.infer<typeof deviceQuery>): Promise<DeviceList> {
     const search = query.search === null || query.search === "" ? null : query.search;
     const scope = this.scope(staff);
     const online: DeviceWhereInput = {
@@ -77,7 +76,7 @@ export class DevicesService {
     };
   }
 
-  async get(staff: StaffPrincipal, id: string): Promise<DeviceRecord> {
+  async get(staff: Principal, id: string): Promise<DeviceRecord> {
     const row = await this.db.device.findFirst({ where: { id, ...this.scope(staff) } });
     if (!row) throw deviceNotFound();
     const [record] = await this.records(staff, [row]);
@@ -90,10 +89,9 @@ export class DevicesService {
    * portal. Blocking also ends its sessions everywhere at once.
    */
   async setStatus(
-    staff: StaffPrincipal,
+    staff: Principal,
     id: string,
     status: "active" | "blocked",
-    origin: RequestOrigin,
   ): Promise<DeviceRecord> {
     const device = await this.get(staff, id);
     await this.db.device.update({ where: { id }, data: { status } });
@@ -105,31 +103,26 @@ export class DevicesService {
       });
       await this.sessions.end(
         connected.map((s) => s.id),
-        "device_blocked",
+        "device.block",
       );
     }
-    await this.record(
-      staff,
-      status === "blocked" ? "device_blocked" : "device_unblocked",
-      id,
-      origin,
-    );
+    await this.record(staff, status === "blocked" ? "device.block" : "device.unblock", id);
     return this.get(staff, id);
   }
 
   /** Forgets a device (a MAC address is personal data); its sessions stay, unlinked. */
-  async remove(staff: StaffPrincipal, id: string, origin: RequestOrigin): Promise<void> {
+  async remove(staff: Principal, id: string): Promise<void> {
     await this.get(staff, id);
     await this.db.device.delete({ where: { id } });
-    await this.record(staff, "device_deleted", id, origin);
+    await this.record(staff, "device.delete", id);
   }
 
-  private scope(staff: StaffPrincipal): DeviceWhereInput {
-    return staff.role === "admin" ? {} : { sessions: { some: sessionScope(staff) } };
+  private scope(staff: Principal): DeviceWhereInput {
+    return staff.scope === "platform" ? {} : { sessions: { some: sessionScope(staff) } };
   }
 
   /** Usage and online state, counted over the sessions the staff member may see. */
-  private async records(staff: StaffPrincipal, rows: Device[]): Promise<DeviceRecord[]> {
+  private async records(staff: Principal, rows: Device[]): Promise<DeviceRecord[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((row) => row.id);
     const [usage, connected] = await Promise.all([
@@ -161,23 +154,7 @@ export class DevicesService {
     }));
   }
 
-  private async record(
-    staff: StaffPrincipal,
-    action: string,
-    id: string,
-    origin: RequestOrigin,
-  ): Promise<void> {
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
-      action,
-      entityType: "device",
-      entityId: id,
-      // Not the MAC address: the audit trail names records, it does not collect personal data.
-      entityName: null,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details: {},
-    });
+  private async record(staff: Principal, action: AuditAction, id: string): Promise<void> {
+    await this.audit.record(staff, { action, target: { type: "device", id: id } });
   }
 }

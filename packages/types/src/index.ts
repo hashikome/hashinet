@@ -19,6 +19,7 @@ export type VoucherStatus =
 
 export interface PackageRecord {
   id: string;
+  businessId: string;
   name: string;
   description: string | null;
   durationMinutes: number;
@@ -159,20 +160,41 @@ export interface PortalSettingsResponse {
   settings: PortalSettingsRecord;
 }
 
-export type StaffRole = "admin" | "manager";
+/** One of the person's memberships, for the account menu's workspaces. */
+export interface MembershipSummary {
+  id: string;
+  scope: MembershipScope;
+  role: MembershipRole;
+  /** Null for the platform. */
+  business: { id: string; name: string } | null;
+}
 
-/** The signed-in staff member (`GET /api/me`). */
-export interface SignedInStaff {
+/**
+ * How far the session may act (ADR-0011, 9): `full`; `setup`, an owner or manager in their first
+ * 7 days before protecting their sign-in, who may get set up but not sell or serve; or `account`,
+ * Account and security only.
+ */
+export type AccessLevel = "full" | "setup" | "account";
+
+/** The signed-in person (`GET /api/me`): who they are, their workspaces, and what the active one
+ * allows. The web draws navigation and buttons from `capabilities`, never from the role. */
+export interface Me {
   id: string;
   email: string;
   name: string;
-  role: StaffRole;
-  twoFactorEnabled: boolean;
-  /**
-   * True while an admin has no authenticator app: every other route answers 403
-   * `TWO_FACTOR_ENROLLMENT_REQUIRED` until one is set up.
-   */
-  twoFactorEnrollmentRequired: boolean;
+  memberships: MembershipSummary[];
+  active: MembershipSummary & {
+    /** The venues of a venue manager or operator; null when the role reaches every venue. */
+    venueIds: string[] | null;
+    access: AccessLevel;
+    capabilities: string[];
+  };
+  protection: {
+    /** Platform staff, owners and managers must protect their sign-in. */
+    required: boolean;
+    authenticator: boolean;
+    passkeys: number;
+  };
 }
 
 /** Every error the API answers with (Better Auth's `/api/auth` routes keep their own shape). */
@@ -191,10 +213,10 @@ export interface VenueRecord {
   name: string;
   /** Host names guests can open before paying. */
   allowedSites: string[];
-  /** Where the venue is, as the owner writes it. */
-  location: string;
-  /** The manager who runs it. */
-  operatorId: string | null;
+  businessId: string;
+  region: Region;
+  /** The area or street, as the owner types it. */
+  area: string;
   status: VenueStatus;
   routerCount: number;
   createdAt: Timestamp;
@@ -521,50 +543,59 @@ export interface RevenueTransactions {
   }[];
 }
 
-export type StaffStatus = "active" | "inactive" | "suspended";
+/** Every action the audit log records (ADR-0012): a closed list, each with its own bounded change. */
+export const AUDIT_ACTIONS = [
+  "membership.switch",
+  "profile.update",
+  "venue.create",
+  "venue.update",
+  "venue.delete",
+  "router.create",
+  "router.update",
+  "router.delete",
+  "router.bootstrap",
+  "router.unreachable",
+  "router.push_failed",
+  "router.sync_failed",
+  "package.create",
+  "package.update",
+  "package.delete",
+  "package.venue.assign",
+  "package.venue.unassign",
+  "voucher.print",
+  "voucher.revoke",
+  "voucher.provision_failed",
+  "voucher.provision_recovered",
+  "session.terminate",
+  "device.block",
+  "device.unblock",
+  "device.delete",
+  "sale.record",
+  "portal.defaults.update",
+  "brand.update",
+  "brand.reset",
+  "brand.image.upload",
+  "brand.image.remove",
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+export type AuditCategory = "change" | "read" | "auth";
+export type AuditOutcome = "success" | "no_change" | "failed" | "denied";
+/** A bounded before and after: statuses, prices, roles, counts. Never names, emails, codes,
+ * tokens or addresses. */
+export type AuditChange = Record<string, string | number | boolean | null>;
 
-/** A person on the Team page (admins only). */
-export interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  /** E.164, such as +255712345678. */
-  phone: string | null;
-  role: StaffRole;
-  status: StaffStatus;
-  twoFactorEnabled: boolean;
-  lastLoginAt: Timestamp | null;
-  createdAt: Timestamp;
-  /** The venues a manager operates; empty for an admin. */
-  venues: { id: string; name: string }[];
-}
-
-/** `GET /api/team`. */
-export interface TeamList {
-  members: TeamMember[];
-}
-
-/** Every `/api/team/:id` route that changes a member answers with it. */
-export interface TeamMemberResponse {
-  member: TeamMember;
-}
-
-/** One entry of the audit trail (admins only): who did what to which record. */
+/** One audit row as the Audit log page shows it; labels are read when answering. */
 export interface AuditEntry {
   id: string;
-  action: string;
-  entityType: string;
-  entityId: string | null;
-  entityName: string | null;
-  /** The staff member who acted; null for the system or someone since removed. */
-  staffId: string | null;
-  actorName: string;
-  ipAddress: string | null;
-  details: Record<string, string | number | boolean | null>;
   createdAt: Timestamp;
+  actor: { name: string; role: MembershipRole } | null;
+  action: AuditAction;
+  category: AuditCategory;
+  target: { type: string; id: string | null; label: string | null };
+  outcome: AuditOutcome;
+  change: { before: AuditChange; after: AuditChange } | null;
 }
 
-/** `GET /api/audit`: newest first, a page at a time. */
 export interface AuditList {
   entries: AuditEntry[];
   nextBefore: string | null;

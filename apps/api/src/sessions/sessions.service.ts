@@ -1,15 +1,14 @@
 import type { SessionList, SessionRecord } from "@hashinet/types";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { z } from "zod";
+import type { Principal } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { WifiSessionWhereInput } from "../generated/prisma/models.js";
 import { apiError } from "../http/error-envelope.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { bytes, sessionRecord } from "../serializers/records.js";
 import { RouterSync } from "../services/router-sync.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import { sessionScope } from "./session-scope.js";
 
 export const sessionQuery = z.object({
@@ -36,7 +35,7 @@ export class SessionsService {
     private readonly sync: RouterSync,
   ) {}
 
-  async list(staff: StaffPrincipal, query: z.infer<typeof sessionQuery>): Promise<SessionList> {
+  async list(staff: Principal, query: z.infer<typeof sessionQuery>): Promise<SessionList> {
     const search = query.search === null || query.search === "" ? null : query.search;
     const where: WifiSessionWhereInput = {
       ...sessionScope(staff),
@@ -77,7 +76,7 @@ export class SessionsService {
     };
   }
 
-  async get(staff: StaffPrincipal, id: string): Promise<SessionRecord> {
+  async get(staff: Principal, id: string): Promise<SessionRecord> {
     const row = await this.db.wifiSession.findFirst({
       where: { id, ...sessionScope(staff) },
       include: sessionInclude,
@@ -90,7 +89,7 @@ export class SessionsService {
    * Ends a session and drops it from the venue's routers. The voucher stays valid, so the
    * device can sign in again; to stop it, block the device.
    */
-  async terminate(staff: StaffPrincipal, id: string, origin: RequestOrigin) {
+  async terminate(staff: Principal, id: string) {
     const session = await this.get(staff, id);
     const ended = await this.end([id], "staff_disconnect");
     if (ended === 0) {
@@ -98,16 +97,11 @@ export class SessionsService {
         apiError("SESSION_NOT_ACTIVE", "That session has already ended."),
       );
     }
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
-      action: "session_terminated",
-      entityType: "session",
-      entityId: id,
-      entityName: session.venueName,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details: {},
+    await this.audit.record(staff, {
+      action: "session.terminate",
+      venueId: session.venueId,
+      target: { type: "session", id: id },
+      change: { before: {}, after: {} },
     });
     return this.get(staff, id);
   }

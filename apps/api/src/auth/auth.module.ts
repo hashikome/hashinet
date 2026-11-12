@@ -1,12 +1,12 @@
 import { Global, Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
+import { AccessGuard } from "../access/access.guard.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { EMAIL_SENDER, type EmailSender } from "../email/email-sender.js";
 import { BETTER_AUTH, createAuth } from "./create-auth.js";
 import { MeController } from "./me.controller.js";
-import { StaffGuard } from "./staff-guard.js";
 
 @Global()
 @Module({
@@ -18,7 +18,7 @@ import { StaffGuard } from "./staff-guard.js";
       useFactory: (config: AppConfig, db: PrismaService, email: EmailSender) =>
         createAuth({ config, db, email }),
     },
-    { provide: APP_GUARD, useClass: StaffGuard },
+    { provide: APP_GUARD, useClass: AccessGuard },
   ],
   exports: [BETTER_AUTH],
 })

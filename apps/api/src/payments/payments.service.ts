@@ -17,9 +17,9 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
+import type { Principal } from "../access/principal.js";
+import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
-import { venueScope } from "../auth/venue-scope.js";
 import { BrandService } from "../brand/brand.service.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
@@ -33,7 +33,6 @@ import { captureFailure } from "../observability/telemetry.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { describeFailures, outcomeOk, RouterSync } from "../services/router-sync.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import { generateCodes } from "../vouchers/voucher-codes.js";
 import { type ChargeState, MOBILE_MONEY, type MobileMoneyGateway } from "./mobile-money.js";
 import type {
@@ -74,8 +73,8 @@ const notFound = () => new NotFoundException(apiError("NOT_FOUND", "That payment
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
 
 /** Who may see a payment: an admin all of them, a manager their venues' (finding 3). */
-function inScope(staff: StaffPrincipal): Prisma.PaymentWhereInput {
-  return staff.role === "admin" ? {} : { venue: venueScope(staff) };
+function inScope(staff: Principal): Prisma.PaymentWhereInput {
+  return staff.scope === "platform" ? {} : { venue: venueScope(staff) };
 }
 
 /**
@@ -480,11 +479,7 @@ export class PaymentsService {
    * A sale staff record: the money has changed hands, so no prompt reaches a phone. The voucher
    * is shown to them, and sent if there is a number.
    */
-  async recordSale(
-    staff: StaffPrincipal,
-    input: SaleInput,
-    origin: RequestOrigin,
-  ): Promise<SaleResult> {
+  async recordSale(staff: Principal, input: SaleInput): Promise<SaleResult> {
     this.refuseWhileOff();
     const sold = await this.packages.soldAt(staff, input.venueId);
     const pkg = sold.packages.find((p) => p.id === input.packageId) ?? null;
@@ -526,20 +521,14 @@ export class PaymentsService {
           customerId: customer?.id ?? null,
           phone,
           amountTsh: pkg.priceTsh,
-          recordedById: staff.id,
+          recordedById: staff.membershipId,
         },
       });
     });
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
-      action: "sale_recorded",
-      entityType: "payment",
-      entityId: payment.id,
-      entityName: pkg.name,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details: { method: input.method },
+    await this.audit.record(staff, {
+      action: "sale.record",
+      target: { type: "payment", id: payment.id },
+      change: { before: {}, after: { method: input.method } },
     });
     await this.settle(payment.id);
     const row = await this.db.payment.findUniqueOrThrow({ where: { id: payment.id }, include });
@@ -555,7 +544,7 @@ export class PaymentsService {
     return this.config.features;
   }
 
-  async list(staff: StaffPrincipal, input: PaymentListInput): Promise<PaymentRecord[]> {
+  async list(staff: Principal, input: PaymentListInput): Promise<PaymentRecord[]> {
     const owed = { status: "paid", routerProvisionedAt: null } as const;
     const rows = await this.db.payment.findMany({
       where: {
@@ -570,7 +559,7 @@ export class PaymentsService {
   }
 
   /** Who has paid, within what this staff member may see. */
-  async customers(staff: StaffPrincipal): Promise<CustomerRecord[]> {
+  async customers(staff: Principal): Promise<CustomerRecord[]> {
     const scope: Prisma.PaymentWhereInput = {
       ...inScope(staff),
       status: "paid",

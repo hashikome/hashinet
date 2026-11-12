@@ -12,12 +12,12 @@ import {
   Req,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { CurrentStaff, type StaffPrincipal } from "../auth/staff-guard.js";
+import { Can, CurrentPrincipal } from "../access/access.guard.js";
+import type { Principal } from "../access/principal.js";
 import { apiError } from "../http/error-envelope.js";
-import { idParam, Origin } from "../http/request-origin.js";
+import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import { brandInput } from "../portal/portal-input.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import { BrandService } from "./brand.service.js";
 import type { BrandImageKind } from "./brand-images.js";
 import { MAX_UPLOAD_BYTES } from "./brand-images.js";
@@ -52,53 +52,54 @@ export class BrandController {
   constructor(private readonly brand: BrandService) {}
 
   @Get()
+  @Can("brand.read")
   get(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
   ): Promise<VenueBrandResponse> {
     return this.brand.ofVenue(staff, id);
   }
 
   @Put()
+  @Can("brand.update")
   save(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Body() body: unknown,
-    @Origin() origin: RequestOrigin,
   ): Promise<VenueBrandResponse> {
-    return this.brand.save(staff, id, parseInput(brandInput, body), origin);
+    return this.brand.save(staff, id, parseInput(brandInput, body));
   }
 
   /** Back to the HashiNet default. */
   @Delete()
+  @Can("brand.update")
   reset(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-    @Origin() origin: RequestOrigin,
   ): Promise<VenueBrandResponse> {
-    return this.brand.reset(staff, id, origin);
+    return this.brand.reset(staff, id);
   }
 
   @Put("images/:kind")
+  @Can("brand.update")
   async putImage(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Param("kind") kind: string,
     @Req() request: Request,
-    @Origin() origin: RequestOrigin,
   ): Promise<VenueBrandResponse> {
     const imageKind = kindOf(kind);
     await this.brand.ofVenue(staff, id);
-    return this.brand.putImage(staff, id, imageKind, await readUpload(request), origin);
+    return this.brand.putImage(staff, id, imageKind, await readUpload(request));
   }
 
   @Delete("images/:kind")
+  @Can("brand.update")
   removeImage(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Param("kind") kind: string,
-    @Origin() origin: RequestOrigin,
   ): Promise<VenueBrandResponse> {
-    return this.brand.removeImage(staff, id, kindOf(kind), origin);
+    return this.brand.removeImage(staff, id, kindOf(kind));
   }
 }

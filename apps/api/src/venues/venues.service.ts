@@ -1,19 +1,18 @@
-import type { VenueRecord } from "@hashinet/types";
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import type { AuditAction, VenueRecord } from "@hashinet/types";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import type { Principal } from "../access/principal.js";
+import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
-import { venueScope } from "../auth/venue-scope.js";
 import { BrandService } from "../brand/brand.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { venueRecord } from "../serializers/records.js";
 import type { VenueInput } from "./venue-input.js";
-
-/** Where a change came from, for the audit trail. */
-export interface RequestOrigin {
-  ipAddress: string | null;
-  userAgent: string | null;
-}
 
 export const venueNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That venue does not exist."));
@@ -27,7 +26,7 @@ export class VenuesService {
   ) {}
 
   /** Newest first, each with its number of routers. */
-  async list(staff: StaffPrincipal): Promise<VenueRecord[]> {
+  async list(staff: Principal): Promise<VenueRecord[]> {
     const rows = await this.db.venue.findMany({
       where: venueScope(staff),
       include: { _count: { select: { routers: true } } },
@@ -36,7 +35,7 @@ export class VenuesService {
     return rows.map((row) => venueRecord(row, row._count.routers));
   }
 
-  async get(staff: StaffPrincipal, id: string): Promise<VenueRecord> {
+  async get(staff: Principal, id: string): Promise<VenueRecord> {
     const row = await this.db.venue.findFirst({
       where: { id, ...venueScope(staff) },
       include: { _count: { select: { routers: true } } },
@@ -45,29 +44,33 @@ export class VenuesService {
     return venueRecord(row, row._count.routers);
   }
 
-  async create(
-    staff: StaffPrincipal,
-    input: VenueInput,
-    origin: RequestOrigin,
-  ): Promise<VenueRecord> {
-    const row = await this.db.venue.create({ data: input });
-    await this.record(staff, "venue_created", row.id, row.name, origin);
+  async create(staff: Principal, input: VenueInput): Promise<VenueRecord> {
+    const { businessId: named, ...fields } = input;
+    const businessId = staff.scope === "platform" ? named : staff.businessId;
+    if (!businessId) {
+      throw new BadRequestException(
+        apiError("VALIDATION_FAILED", "Choose the business the venue belongs to.", {
+          businessId: "is required",
+        }),
+      );
+    }
+    const business = await this.db.business.findUnique({ where: { id: businessId } });
+    if (!business) throw venueNotFound();
+    const row = await this.db.venue.create({ data: { ...fields, businessId } });
+    await this.record(staff, "venue.create", row.id);
     return venueRecord(row, 0);
   }
 
-  async update(
-    staff: StaffPrincipal,
-    id: string,
-    input: VenueInput,
-    origin: RequestOrigin,
-  ): Promise<VenueRecord> {
+  async update(staff: Principal, id: string, input: VenueInput): Promise<VenueRecord> {
     await this.get(staff, id);
+    // A venue never moves to another business.
+    const { businessId: _ignored, ...fields } = input;
     const row = await this.db.venue.update({
       where: { id },
-      data: input,
+      data: fields,
       include: { _count: { select: { routers: true } } },
     });
-    await this.record(staff, "venue_updated", row.id, row.name, origin);
+    await this.record(staff, "venue.update", row.id);
     return venueRecord(row, row._count.routers);
   }
 
@@ -75,7 +78,7 @@ export class VenuesService {
    * Refused while the venue has routers: deleting it would delete their records and tunnel
    * keys while the routers kept running, unmanaged.
    */
-  async remove(staff: StaffPrincipal, id: string, origin: RequestOrigin): Promise<void> {
+  async remove(staff: Principal, id: string): Promise<void> {
     const venue = await this.get(staff, id);
     if (venue.routerCount > 0) {
       throw new ConflictException(
@@ -84,26 +87,10 @@ export class VenuesService {
     }
     await this.brand.forget(id);
     await this.db.venue.delete({ where: { id } });
-    await this.record(staff, "venue_deleted", id, venue.name, origin);
+    await this.record(staff, "venue.delete", id);
   }
 
-  private async record(
-    staff: StaffPrincipal,
-    action: string,
-    entityId: string,
-    entityName: string,
-    origin: RequestOrigin,
-  ): Promise<void> {
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
-      action,
-      entityType: "venue",
-      entityId,
-      entityName,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details: {},
-    });
+  private async record(staff: Principal, action: AuditAction, entityId: string): Promise<void> {
+    await this.audit.record(staff, { action, target: { type: "venue", id: entityId } });
   }
 }

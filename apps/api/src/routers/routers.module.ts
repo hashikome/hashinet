@@ -88,11 +88,6 @@ export class BackgroundJobs implements OnApplicationBootstrap, OnApplicationShut
         ),
     },
     {
-      provide: AuditLog,
-      inject: [PrismaService],
-      useFactory: (db: PrismaService) => new AuditLog(db),
-    },
-    {
       provide: RouterSync,
       inject: [PrismaService, RouterAccess, AuditLog],
       useFactory: (db: PrismaService, access: RouterAccess, audit: AuditLog) =>
@@ -138,7 +133,6 @@ export class BackgroundJobs implements OnApplicationBootstrap, OnApplicationShut
   exports: [
     LiveHub,
     RouterAccess,
-    AuditLog,
     RouterSync,
     PrismaRouterStore,
     LiveMonitor,

@@ -1,4 +1,5 @@
 import type {
+  AuditAction,
   BootstrapScriptResponse,
   ProvisioningBacklog,
   RouterJourney,
@@ -13,9 +14,10 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import type { z } from "zod";
+import { allows } from "../access/policy.js";
+import type { Principal } from "../access/principal.js";
+import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
-import { venueScope } from "../auth/venue-scope.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { toJsonValue } from "../database/json.js";
@@ -42,7 +44,6 @@ import { probeReadiness, type ReadinessReport } from "../services/router-provisi
 import { type SetupReport, setupRouter } from "../services/router-provision/setup.js";
 import { probeVerify, type VerifyReport } from "../services/router-provision/verify.js";
 import { RouterSync } from "../services/router-sync.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import { VoucherReconciler } from "../vouchers/voucher-reconciler.js";
 import { backendSettings } from "./backend-settings.js";
 import type { bootstrapInput, RouterInput, testConnectionInput } from "./router-input.js";
@@ -92,28 +93,24 @@ export class RoutersService {
     @Inject(TUNNEL_ALLOCATOR) private readonly tunnels: TunnelAllocator | null,
   ) {}
 
-  async list(staff: StaffPrincipal, venueId: string | null): Promise<RouterRecord[]> {
+  async list(staff: Principal, venueId: string | null): Promise<RouterRecord[]> {
     const rows = await this.db.router.findMany({
       where: { venue: venueScope(staff), ...(venueId === null ? {} : { venueId }) },
       include: withVenue,
       orderBy: { createdAt: "desc" },
     });
-    return rows.map((row) => routerRecord(row, staff.role));
+    return rows.map((row) => routerRecord(row, allows(staff.role, "router.manage")));
   }
 
-  async get(staff: StaffPrincipal, id: string): Promise<RouterRecord> {
-    return routerRecord(await this.row(staff, id), staff.role);
+  async get(staff: Principal, id: string): Promise<RouterRecord> {
+    return routerRecord(await this.row(staff, id), allows(staff.role, "router.manage"));
   }
 
-  backlog(staff: StaffPrincipal): Promise<ProvisioningBacklog> {
+  backlog(staff: Principal): Promise<ProvisioningBacklog> {
     return this.reconciler.backlog(venueScope(staff));
   }
 
-  async create(
-    staff: StaffPrincipal,
-    input: RouterInput,
-    origin: RequestOrigin,
-  ): Promise<RouterRecord> {
+  async create(staff: Principal, input: RouterInput): Promise<RouterRecord> {
     await this.checkVenue(staff, input.venueId);
     const { apiPassword, ...fields } = input;
     const row = await this.db.router.create({
@@ -123,23 +120,18 @@ export class RoutersService {
       },
       include: withVenue,
     });
-    await this.record(staff, "router_created", row.id, row.name, origin);
+    await this.record(staff, "router.create", row.id);
     // Nobody waits on this: a router that is not reachable yet is the normal case before its
     // bootstrap script is pasted. `syncRouter` records its own failures.
     void this.sync.syncRouter(row.id).catch(captureFailure);
-    return routerRecord(row, staff.role);
+    return routerRecord(row, allows(staff.role, "router.manage"));
   }
 
   /**
    * Replaces the router's settings, keeping the stored API password when none is given. The
    * venue cannot change: the router holds that venue's vouchers as hotspot users.
    */
-  async update(
-    staff: StaffPrincipal,
-    id: string,
-    input: RouterInput,
-    origin: RequestOrigin,
-  ): Promise<RouterRecord> {
+  async update(staff: Principal, id: string, input: RouterInput): Promise<RouterRecord> {
     const existing = await this.row(staff, id);
     if (input.venueId !== existing.venueId) {
       throw new BadRequestException(
@@ -159,10 +151,10 @@ export class RoutersService {
       },
       include: withVenue,
     });
-    await this.record(staff, "router_updated", row.id, row.name, origin, {
+    await this.record(staff, "router.update", row.id, {
       passwordChanged: apiPassword !== null,
     });
-    return routerRecord(row, staff.role);
+    return routerRecord(row, allows(staff.role, "router.manage"));
   }
 
   /**
@@ -170,16 +162,16 @@ export class RoutersService {
    * tunnel peer by its public key, and the deleted router's peer is removed with it
    * (ADR-0006), so the physical router cannot use the address once it is reassigned.
    */
-  async remove(staff: StaffPrincipal, id: string, origin: RequestOrigin): Promise<void> {
+  async remove(staff: Principal, id: string): Promise<void> {
     const row = await this.row(staff, id);
     await this.db.router.delete({ where: { id } });
-    await this.record(staff, "router_deleted", id, row.name, origin, {
+    await this.record(staff, "router.delete", id, {
       tunnelAddress: row.tunnelAddress,
     });
   }
 
   /** Pushes the venue's live vouchers to the router now. */
-  async syncNow(staff: StaffPrincipal, id: string): Promise<RouterRecord> {
+  async syncNow(staff: Principal, id: string): Promise<RouterRecord> {
     await this.row(staff, id);
     await this.sync.syncRouter(id);
     return this.get(staff, id);
@@ -191,10 +183,9 @@ export class RoutersService {
    * same credentials and key as the first. A password given here replaces the stored one.
    */
   async bootstrapScript(
-    staff: StaffPrincipal,
+    staff: Principal,
     id: string,
     input: z.infer<typeof bootstrapInput>,
-    origin: RequestOrigin,
   ): Promise<BootstrapScriptResponse> {
     const router = await this.row(staff, id);
     if (router.apiUsername === null) {
@@ -230,7 +221,7 @@ export class RoutersService {
           : { apiPasswordEncrypted: this.access.sealPassword(built.resolved.apiPassword) }),
       },
     });
-    await this.record(staff, "router_bootstrap_generated", id, router.name, origin, {
+    await this.record(staff, "router.bootstrap", id, {
       tunnel: tunnel !== null,
       passwordChanged: built.resolved.apiPassword !== stored,
     });
@@ -296,7 +287,7 @@ export class RoutersService {
   }
 
   /** Reads the router (never writes to it), caches what it learned, and checks readiness. */
-  async probe(staff: StaffPrincipal, id: string): Promise<ProbeResult> {
+  async probe(staff: Principal, id: string): Promise<ProbeResult> {
     const router = await this.row(staff, id);
     const creds = this.credentialsOf(router);
     const logger = new RouterLogger("probe");
@@ -335,7 +326,7 @@ export class RoutersService {
    * Proves the router is serving. Changes no configuration; the write test creates and
    * removes one throwaway hotspot user unless skipped.
    */
-  async verify(staff: StaffPrincipal, id: string, writeTest: boolean): Promise<VerifyReport> {
+  async verify(staff: Principal, id: string, writeTest: boolean): Promise<VerifyReport> {
     const router = await this.row(staff, id);
     const creds = this.credentialsOf(router);
     const logger = new RouterLogger("probe");
@@ -360,13 +351,13 @@ export class RoutersService {
   }
 
   /** Probe, readiness, dry run, provision, re-check and self-test, in one run. */
-  async journey(staff: StaffPrincipal, id: string): Promise<RouterJourney> {
+  async journey(staff: Principal, id: string): Promise<RouterJourney> {
     const row = await this.row(staff, id);
     return routerJourney(row, row.lastSetup as StoredSetup | null);
   }
 
   /** Starts a setup and answers at once: it outlasts a request, and its state is on the row. */
-  async startSetup(staff: StaffPrincipal, id: string, force: boolean): Promise<RouterJourney> {
+  async startSetup(staff: Principal, id: string, force: boolean): Promise<RouterJourney> {
     await this.row(staff, id);
     const stale = new Date(Date.now() - SETUP_STALE_MS);
     const { count } = await this.db.router.updateMany({
@@ -398,12 +389,12 @@ export class RoutersService {
     });
   }
 
-  async provision(staff: StaffPrincipal, id: string, dryRun: boolean): Promise<ProvisionReport> {
+  async provision(staff: Principal, id: string, dryRun: boolean): Promise<ProvisionReport> {
     await this.row(staff, id);
     return provisionRouter(id, this.store, { dryRun });
   }
 
-  async latestProvision(staff: StaffPrincipal, id: string) {
+  async latestProvision(staff: Principal, id: string) {
     const router = await this.row(staff, id);
     return {
       report: router.lastProvisionReport,
@@ -415,7 +406,7 @@ export class RoutersService {
   }
 
   /** The router, if the staff member's venues include it; otherwise not found. */
-  private async row(staff: StaffPrincipal, id: string) {
+  private async row(staff: Principal, id: string) {
     const row = await this.db.router.findFirst({
       where: { id, venue: venueScope(staff) },
       include: withVenue,
@@ -475,7 +466,7 @@ export class RoutersService {
   }
 
   /** A manager may not add routers, so only an admin reaches this; the venue must exist. */
-  private async checkVenue(staff: StaffPrincipal, venueId: string): Promise<void> {
+  private async checkVenue(staff: Principal, venueId: string): Promise<void> {
     const venue = await this.db.venue.findFirst({ where: { id: venueId, ...venueScope(staff) } });
     if (!venue) {
       throw new BadRequestException(
@@ -487,23 +478,15 @@ export class RoutersService {
   }
 
   private async record(
-    staff: StaffPrincipal,
-    action: string,
+    staff: Principal,
+    action: AuditAction,
     entityId: string,
-    entityName: string,
-    origin: RequestOrigin,
     details: Record<string, string | number | boolean | null> = {},
   ): Promise<void> {
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
+    await this.audit.record(staff, {
       action,
-      entityType: "router",
-      entityId,
-      entityName,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details,
+      target: { type: "router", id: entityId },
+      change: { before: {}, after: details },
     });
   }
 }

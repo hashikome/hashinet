@@ -7,9 +7,9 @@ import type {
 } from "@hashinet/types";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import type { z } from "zod";
+import type { Principal } from "../access/principal.js";
+import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
-import { venueScope } from "../auth/venue-scope.js";
 import { BrandService } from "../brand/brand.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma, type Voucher } from "../generated/prisma/client.js";
@@ -19,7 +19,6 @@ import { captureFailure } from "../observability/telemetry.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { voucherRecord } from "../serializers/records.js";
 import { RouterSync } from "../services/router-sync.js";
-import type { RequestOrigin } from "../venues/venues.service.js";
 import { generateCodes } from "./voucher-codes.js";
 import type { BatchInput, listQuery } from "./voucher-input.js";
 
@@ -39,8 +38,8 @@ const batchNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That batch does not exist."));
 
 /** Vouchers or batches in the staff member's venues; admins also see ones whose venue is gone. */
-function inScope(staff: StaffPrincipal) {
-  return staff.role === "admin" ? {} : { venue: { is: venueScope(staff) } };
+function inScope(staff: Principal) {
+  return staff.scope === "platform" ? {} : { venue: { is: venueScope(staff) } };
 }
 
 @Injectable()
@@ -53,7 +52,7 @@ export class VouchersService {
     private readonly brand: BrandService,
   ) {}
 
-  async list(staff: StaffPrincipal, query: z.infer<typeof listQuery>): Promise<VoucherList> {
+  async list(staff: Principal, query: z.infer<typeof listQuery>): Promise<VoucherList> {
     const where: VoucherWhereInput = {
       ...inScope(staff),
       ...(query.venueId === null ? {} : { venueId: query.venueId }),
@@ -78,7 +77,7 @@ export class VouchersService {
     };
   }
 
-  async batches(staff: StaffPrincipal): Promise<VoucherBatchRecord[]> {
+  async batches(staff: Principal): Promise<VoucherBatchRecord[]> {
     const rows = await this.db.voucherBatch.findMany({
       where: inScope(staff),
       include: batchInclude,
@@ -87,7 +86,7 @@ export class VouchersService {
     return Promise.all(rows.map((row) => this.batchRecord(row)));
   }
 
-  async batch(staff: StaffPrincipal, id: string): Promise<VoucherBatchDetail> {
+  async batch(staff: Principal, id: string): Promise<VoucherBatchDetail> {
     const row = await this.db.voucherBatch.findFirst({
       where: { id, ...inScope(staff) },
       include: batchInclude,
@@ -105,7 +104,7 @@ export class VouchersService {
   }
 
   /** Chosen vouchers with what their cards show, for reprinting; in scope only. */
-  async printable(staff: StaffPrincipal, ids: string[]): Promise<PrintableVoucher[]> {
+  async printable(staff: Principal, ids: string[]): Promise<PrintableVoucher[]> {
     const rows = await this.db.voucher.findMany({
       where: { id: { in: ids }, ...inScope(staff) },
       include: {
@@ -122,11 +121,7 @@ export class VouchersService {
    * the background. A voucher is `unused` until a guest redeems it and the router confirms it;
    * a router that misses the push gets the code when it is redeemed.
    */
-  async createBatch(
-    staff: StaffPrincipal,
-    input: BatchInput,
-    origin: RequestOrigin,
-  ): Promise<VoucherBatchDetail> {
+  async createBatch(staff: Principal, input: BatchInput): Promise<VoucherBatchDetail> {
     const sold = await this.packages.soldAt(staff, input.venueId);
     const pkg = sold.packages.find((p) => p.id === input.packageId) ?? null;
     if (pkg === null) {
@@ -141,16 +136,10 @@ export class VouchersService {
       input.expiryDays === null ? null : new Date(Date.now() + input.expiryDays * DAY_MS);
 
     const { batchId, codes } = await this.insertBatch(staff, input, prefix, expiresAt);
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
-      action: "vouchers_generated",
-      entityType: "voucher_batch",
-      entityId: batchId,
-      entityName: pkg.name,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details: { quantity: input.quantity, venueId: input.venueId, prefix },
+    await this.audit.record(staff, {
+      action: "voucher.print",
+      target: { type: "voucher_batch", id: batchId },
+      change: { before: {}, after: { quantity: input.quantity, venueId: input.venueId, prefix } },
     });
 
     const row = await this.db.package.findUniqueOrThrow({ where: { id: input.packageId } });
@@ -163,7 +152,7 @@ export class VouchersService {
    * the venue's routers, and stay on record. Redeemed or finished vouchers are left as they
    * are, so this never cuts off a guest who paid.
    */
-  async revoke(staff: StaffPrincipal, ids: string[], origin: RequestOrigin) {
+  async revoke(staff: Principal, ids: string[]) {
     const targets = await this.db.voucher.findMany({
       where: { id: { in: ids }, status: { in: [...REVOCABLE] }, ...inScope(staff) },
       select: { id: true, code: true, venueId: true },
@@ -175,16 +164,10 @@ export class VouchersService {
       where: { id: { in: targetIds }, status: { in: [...REVOCABLE] } },
       data: { status: "revoked", revokedAt: now },
     });
-    await this.audit.record({
-      staffId: staff.id,
-      actorName: staff.name,
-      action: "vouchers_revoked",
-      entityType: "voucher",
-      entityId: targets.length === 1 ? (targets[0]?.id ?? null) : null,
-      entityName: null,
-      ipAddress: origin.ipAddress,
-      userAgent: origin.userAgent,
-      details: { count: targets.length },
+    await this.audit.record(staff, {
+      action: "voucher.revoke",
+      target: { type: "voucher", id: targets.length === 1 ? (targets[0]?.id ?? null) : null },
+      change: { before: {}, after: { count: targets.length } },
     });
     const byVenue = new Map<string, string[]>();
     for (const voucher of targets) {
@@ -199,7 +182,7 @@ export class VouchersService {
 
   /** Inserts the batch and its codes in one transaction; a code taken meanwhile is retried. */
   private async insertBatch(
-    staff: StaffPrincipal,
+    staff: Principal,
     input: BatchInput,
     prefix: string,
     expiresAt: Date | null,
@@ -219,7 +202,7 @@ export class VouchersService {
             data: {
               packageId: input.packageId,
               venueId: input.venueId,
-              createdById: staff.id,
+              createdById: staff.membershipId,
               quantity: input.quantity,
               prefix,
               expiresAt,

@@ -11,7 +11,8 @@ import type {
   TopVenues,
 } from "@hashinet/types";
 import { Controller, Get, Query } from "@nestjs/common";
-import { CurrentStaff, Roles, type StaffPrincipal } from "../auth/staff-guard.js";
+import { Can, CurrentPrincipal } from "../access/access.guard.js";
+import type { Principal } from "../access/principal.js";
 import { parseInput } from "../http/validation.js";
 import { AnalyticsService, monthQuery, rangeQuery } from "./analytics.service.js";
 
@@ -21,33 +22,37 @@ export class AnalyticsController {
   constructor(private readonly analytics: AnalyticsService) {}
 
   @Get("summary")
-  summary(@CurrentStaff() staff: StaffPrincipal): Promise<AnalyticsSummary> {
+  @Can("analytics.read")
+  summary(@CurrentPrincipal() staff: Principal): Promise<AnalyticsSummary> {
     return this.analytics.summary(staff);
   }
 
   @Get("daily-usage")
-  dailyUsage(@CurrentStaff() staff: StaffPrincipal, @Query() query: unknown): Promise<DailyUsage> {
+  @Can("analytics.read")
+  dailyUsage(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<DailyUsage> {
     return this.analytics.dailyUsage(staff, parseInput(rangeQuery, query));
   }
 
   @Get("monthly")
-  @Roles("admin")
+  @Can("revenue.read")
   monthly(): Promise<MonthlyTrend> {
     return this.analytics.monthly();
   }
 
   @Get("packages")
-  packages(@CurrentStaff() staff: StaffPrincipal): Promise<PackageShares> {
+  @Can("analytics.read")
+  packages(@CurrentPrincipal() staff: Principal): Promise<PackageShares> {
     return this.analytics.packageShares(staff);
   }
 
   @Get("devices")
-  devices(@CurrentStaff() staff: StaffPrincipal): Promise<DeviceTypeShares> {
+  @Can("analytics.read")
+  devices(@CurrentPrincipal() staff: Principal): Promise<DeviceTypeShares> {
     return this.analytics.deviceTypes(staff);
   }
 
   @Get("venues")
-  @Roles("admin")
+  @Can("revenue.read")
   venues(): Promise<TopVenues> {
     return this.analytics.topVenues();
   }
@@ -55,26 +60,29 @@ export class AnalyticsController {
 
 /** Revenue, by the business month (`?month=YYYY-MM`, this month by default). Admins only. */
 @Controller("api/revenue")
-@Roles("admin")
 export class RevenueController {
   constructor(private readonly analytics: AnalyticsService) {}
 
   @Get("summary")
+  @Can("revenue.read")
   summary(@Query() query: unknown): Promise<RevenueSummary> {
     return this.analytics.revenueSummary(parseInput(monthQuery, query));
   }
 
   @Get("by-package")
+  @Can("revenue.read")
   byPackage(@Query() query: unknown): Promise<RevenueByPackage> {
     return this.analytics.revenueByPackage(parseInput(monthQuery, query));
   }
 
   @Get("by-venue")
+  @Can("revenue.read")
   byVenue(@Query() query: unknown): Promise<RevenueByVenue> {
     return this.analytics.revenueByVenue(parseInput(monthQuery, query));
   }
 
   @Get("transactions")
+  @Can("revenue.read")
   transactions(@Query() query: unknown): Promise<RevenueTransactions> {
     return this.analytics.transactions(parseInput(monthQuery, query));
   }

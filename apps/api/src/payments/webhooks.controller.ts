@@ -10,7 +10,7 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { Public } from "../auth/staff-guard.js";
+import { Public } from "../access/access.guard.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { apiError } from "../http/error-envelope.js";

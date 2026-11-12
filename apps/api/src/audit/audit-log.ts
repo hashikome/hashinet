@@ -1,68 +1,67 @@
+import type { AuditAction, AuditCategory, AuditChange, AuditOutcome } from "@hashinet/types";
 import { getLogger } from "@logtape/logtape";
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { Principal } from "../access/principal.js";
+import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 
-export type AuditDetails = Record<string, string | number | boolean | null>;
-
-interface AuditEntry {
-  /** The staff member who acted; null for the system. */
-  staffId: string | null;
-  actorName: string;
-  action: string;
-  entityType: string;
-  entityId: string | null;
-  entityName: string | null;
-  ipAddress: string | null;
-  userAgent: string | null;
-  details: AuditDetails;
+export interface AuditEvent {
+  action: AuditAction;
+  category?: AuditCategory;
+  target: { type: string; id: string | null };
+  /** The business and venue the event belongs to; the business defaults to the actor's. */
+  businessId?: string | null;
+  venueId?: string | null;
+  outcome?: AuditOutcome;
+  /** Bounded values only: statuses, prices, roles, counts (ADR-0012). */
+  change?: { before: AuditChange; after: AuditChange } | null;
 }
 
-/** The internal audit trail (docs/SECURITY.md): who did what to which record. */
+type Writer = Pick<PrismaClient, "auditLog"> | Prisma.TransactionClient;
+
+/**
+ * The audit log (ADR-0012): append-only. Pass the change's own transaction as `tx` so a failed
+ * audit write rolls the change back; the application never edits or deletes a row.
+ */
 export class AuditLog {
   private readonly logger = getLogger(["hashinet", "audit"]);
 
   constructor(private readonly db: PrismaClient) {}
 
-  async record(entry: AuditEntry): Promise<void> {
-    await this.db.auditLog.create({
+  /** Something a person did, as the membership their session acts as. */
+  async record(actor: Principal, event: AuditEvent, tx: Writer = this.db): Promise<void> {
+    await tx.auditLog.create({
       data: {
-        staffId: entry.staffId,
-        action: entry.action,
-        entityType: entry.entityType,
-        entityId: entry.entityId,
-        ipAddress: entry.ipAddress,
-        // The column is varchar(512): a long or hostile user agent must not fail the insert.
-        userAgent: entry.userAgent?.slice(0, 512) ?? null,
-        metadata: { actorName: entry.actorName, entityName: entry.entityName, ...entry.details },
+        actorMembershipId: actor.membershipId,
+        actorUserId: actor.userId,
+        ...rowOf(event, actor.businessId),
       },
     });
   }
 
   /**
-   * Records something the system did on its own, such as a failed router push, with no admin
-   * behind it. Never throws: an audit write must not take down the work it describes.
+   * Something the system did on its own, such as a failed router push. Never throws: an audit
+   * write must not take down the work it describes.
    */
-  async system(
-    action: string,
-    entity: { type: string; id: string | null; name: string | null },
-    details: AuditDetails = {},
-  ): Promise<void> {
+  async system(event: AuditEvent): Promise<void> {
     try {
-      await this.record({
-        staffId: null,
-        actorName: "system",
-        action,
-        entityType: entity.type,
-        entityId: entity.id,
-        entityName: entity.name,
-        ipAddress: null,
-        userAgent: null,
-        details,
-      });
+      await this.db.auditLog.create({ data: rowOf(event, null) });
     } catch (error) {
       this.logger.error("Failed to write a system audit event {action}", {
-        action,
+        action: event.action,
         error: error instanceof Error ? error.message : String(error),
       });
     }
   }
+}
+
+function rowOf(event: AuditEvent, actorBusinessId: string | null) {
+  return {
+    action: event.action,
+    category: event.category ?? "change",
+    targetType: event.target.type,
+    targetId: event.target.id,
+    businessId: event.businessId === undefined ? actorBusinessId : event.businessId,
+    venueId: event.venueId ?? null,
+    outcome: event.outcome ?? "success",
+    change: event.change ?? undefined,
+  };
 }

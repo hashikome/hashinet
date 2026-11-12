@@ -13,12 +13,12 @@ import {
   Res,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { Public } from "../auth/staff-guard.js";
+import { Public } from "../access/access.guard.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
-import { idParam } from "../http/request-origin.js";
+import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import { backendSettings } from "../routers/backend-settings.js";
 import { resolveBackendEndpoints } from "../services/router-provision/context.js";

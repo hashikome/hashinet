@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { emailOTP, twoFactor } from "better-auth/plugins";
+import type { SignInMethod } from "../access/principal.js";
 import type { AppConfig } from "../config/config.js";
 import type { PrismaClient } from "../database/client.js";
 import type { EmailSender } from "../email/email-sender.js";
@@ -24,16 +25,17 @@ export type Auth = ReturnType<typeof createAuth>;
 /**
  * Better Auth, configured to ADR-0007 rather than to the library's defaults:
  *
- * - Email one-time codes only. No passwords, no sign-up: a code is sent only to active staff,
- *   and every caller gets the same answer whether or not the email is staff.
+ * - Email one-time codes only. No passwords, no sign-up: a code is sent only to someone with an
+ *   active membership, and every caller gets the same answer whether or not they have one.
  * - Codes are stored under an HMAC keyed by the auth secret, so a database copy does not
  *   reveal them (a bare hash of six digits is reversed by trying a million).
  * - A person with an authenticator app must give its code after the email code: the
  *   two-factor gate is widened to the email-code sign-in (`withEmailCodeGate`). No device is
- *   ever trusted to skip it. Admins must enroll; the staff guard holds them until they do.
+ *   ever trusted to skip it. Each session records how it signed in, which the access guard reads
+ *   for ADR-0011's protection rule.
  * - Rate limits are on in every environment and kept in PostgreSQL, shared by every process;
  *   a per-person budget (`consumeSignInCode`) limits codes sent whatever address asks.
- * - Inactive staff cannot get a code or a session.
+ * - Someone with no active membership cannot get a code or a session.
  * - Library telemetry is off.
  */
 export function createAuth({ config, db, email }: AuthDependencies) {
@@ -46,6 +48,14 @@ export function createAuth({ config, db, email }: AuthDependencies) {
     trustedOrigins: [config.frontendOrigin],
     database: prismaAdapter(db, { provider: "postgresql" }),
     emailAndPassword: { enabled: false },
+    session: {
+      additionalFields: {
+        // Written only by HashiNet: the access guard and `POST /api/me/membership`, and the
+        // create hook below.
+        activeMembershipId: { type: "string", required: false, input: false },
+        signedInWith: { type: "string", required: false, input: false },
+      },
+    },
     telemetry: { enabled: false },
     advanced: {
       database: { generateId: () => Bun.randomUUIDv7() },
@@ -65,20 +75,17 @@ export function createAuth({ config, db, email }: AuthDependencies) {
     databaseHooks: {
       session: {
         create: {
-          before: async (session) => {
-            const staff = await db.staff.findUnique({ where: { id: session.userId } });
-            if (staff?.status !== "active") {
+          before: async (session, ctx) => {
+            const member = await db.membership.findFirst({
+              where: { userId: session.userId, status: "active" },
+            });
+            if (!member) {
               throw new APIError("FORBIDDEN", {
                 code: "ACCOUNT_INACTIVE",
                 message: "This account cannot sign in.",
               });
             }
-          },
-          after: async (session) => {
-            await db.staff.update({
-              where: { id: session.userId },
-              data: { lastLoginAt: new Date() },
-            });
+            return { data: { ...session, signedInWith: signInMethodOf(ctx?.path) } };
           },
         },
       },
@@ -110,6 +117,23 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           }
         }
       }),
+      after: createAuthMiddleware(async (ctx) => {
+        // Setting up the authenticator (its first code) or registering a passkey proves the
+        // session holds it, so the session counts as protected from then on (ADR-0011, 9).
+        const proved =
+          ctx.path === "/two-factor/verify-totp"
+            ? "authenticator"
+            : ctx.path === "/passkey/verify-registration"
+              ? "passkey"
+              : null;
+        if (proved === null) return;
+        const current = await getSessionFromCtx(ctx);
+        if (!current) return;
+        await db.session.updateMany({
+          where: { id: current.session.id, signedInWith: "email_code" },
+          data: { signedInWith: proved },
+        });
+      }),
     },
     plugins: [
       emailOTP({
@@ -120,7 +144,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
         storeOTP: {
           hash: async (otp) => createHmac("sha256", otpKey).update(otp).digest("base64url"),
         },
-        // Reached only for active staff within their budget (`maySendSignInCode`). Not
+        // Reached only for an active member within their budget (`maySendSignInCode`). Not
         // awaited, so the answer does not wait on Resend.
         sendVerificationOTP: async ({ email: address, otp }) => {
           void email.send(signInCodeEmail(address, otp)).catch(captureFailure);
@@ -132,13 +156,28 @@ export function createAuth({ config, db, email }: AuthDependencies) {
 }
 
 /**
- * Whether a sign-in code may be created for this address: it belongs to active staff, and
- * takes one from their budget. Every address costs the same lookup.
+ * Whether a sign-in code may be created for this address: it belongs to someone with an active
+ * membership, and takes one from their budget. Every address costs the same lookup.
  */
 async function maySendSignInCode(db: PrismaClient, address: string): Promise<boolean> {
-  const user = await db.user.findUnique({ where: { email: address }, include: { staff: true } });
-  if (user?.staff?.status !== "active") return false;
+  const user = await db.user.findUnique({
+    where: { email: address },
+    include: { memberships: { where: { status: "active" }, take: 1 } },
+  });
+  if (!user || user.memberships.length === 0) return false;
   return consumeSignInCode(db, user.id);
+}
+
+/**
+ * How a session signed in, from the route that created it. An email code followed by the
+ * authenticator creates its session at the authenticator's route, so an `email_code` session
+ * had nothing after the code. Anything unknown counts as the weakest.
+ */
+export function signInMethodOf(path: string | undefined): SignInMethod {
+  if (path === "/two-factor/verify-totp") return "authenticator";
+  if (path === "/two-factor/verify-backup-code") return "recovery_code";
+  if (path?.startsWith("/passkey/")) return "passkey";
+  return "email_code";
 }
 
 const TRUST_DEVICE_COOKIE = "trust_device";

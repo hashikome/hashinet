@@ -1,6 +1,7 @@
 import type {
   PackageRecord,
   PortalSettingsRecord,
+  Region,
   RouterRecord,
   SessionRecord,
   VenueRecord,
@@ -34,8 +35,8 @@ export function bytes(value: bigint): number {
 export function packageRecord(row: Package): PackageRecord {
   return {
     id: row.id,
+    businessId: row.businessId,
     name: row.name,
-    packageType: row.packageType,
     description: row.description,
     durationMinutes: row.durationMinutes,
     downloadSpeedMbps: row.downloadSpeedMbps,
@@ -101,8 +102,9 @@ export function venueRecord(row: Venue, routerCount: number): VenueRecord {
     id: row.id,
     name: row.name,
     allowedSites: row.allowedSites,
-    location: row.location,
-    operatorId: row.operatorId,
+    businessId: row.businessId,
+    region: row.region as Region,
+    area: row.area,
     status: row.status,
     routerCount,
     createdAt: iso(row.createdAt),
@@ -113,7 +115,8 @@ export function venueRecord(row: Venue, routerCount: number): VenueRecord {
 /** An allowlist, so a column added later (a key, a secret) stays out until it is mapped. */
 export function routerRecord(
   row: Router & { venue: { name: string } },
-  audience: "admin" | "manager",
+  /** Whether the reader sets up routers: only they see the setup command. */
+  managesRouters: boolean,
 ): RouterRecord {
   return {
     id: row.id,
@@ -132,7 +135,7 @@ export function routerRecord(
     hotspotInterface: row.hotspotInterface,
     ssid: row.ssid,
     networkRange: row.networkRange,
-    provisioningCommand: audience === "admin" ? row.provisioningCommand : null,
+    provisioningCommand: managesRouters ? row.provisioningCommand : null,
     tunnelAddress: row.tunnelAddress,
     rosVersion: row.rosVersion,
     architecture: row.architecture,

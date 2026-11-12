@@ -1,5 +1,6 @@
 import { type DynamicModule, Module } from "@nestjs/common";
 import { AnalyticsModule } from "./analytics/analytics.module.js";
+import { AuditModule } from "./audit/audit.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { BrandModule } from "./brand/brand.module.js";
 import type { AppConfig } from "./config/config.js";
@@ -13,7 +14,6 @@ import { PaymentsModule } from "./payments/payments.module.js";
 import { PortalModule } from "./portal/portal.module.js";
 import { RoutersModule } from "./routers/routers.module.js";
 import { SessionsModule } from "./sessions/sessions.module.js";
-import { TeamModule } from "./team/team.module.js";
 import { VenuesModule } from "./venues/venues.module.js";
 import { VouchersModule } from "./vouchers/vouchers.module.js";
 
@@ -26,6 +26,7 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
     imports: [
       configModule(config, email),
       DatabaseModule,
+      AuditModule,
       AuthModule,
       RoutersModule,
       VenuesModule,
@@ -35,7 +36,6 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
       AnalyticsModule,
       PortalModule,
       BrandModule,
-      TeamModule,
       GuestModule,
       PaymentsModule,
     ],

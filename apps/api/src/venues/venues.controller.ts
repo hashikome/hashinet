@@ -1,58 +1,58 @@
 import type { VenueList, VenueResponse } from "@hashinet/types";
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put } from "@nestjs/common";
-import { CurrentStaff, Roles, type StaffPrincipal } from "../auth/staff-guard.js";
-import { idParam, Origin } from "../http/request-origin.js";
+import { Can, CurrentPrincipal } from "../access/access.guard.js";
+import type { Principal } from "../access/principal.js";
+import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import { venueInput } from "./venue-input.js";
-import { type RequestOrigin, VenuesService } from "./venues.service.js";
+import { type VenuesService } from "./venues.service.js";
 
 @Controller("api/venues")
 export class VenuesController {
   constructor(private readonly venues: VenuesService) {}
 
   @Get()
-  async list(@CurrentStaff() staff: StaffPrincipal): Promise<VenueList> {
+  @Can("venue.read")
+  async list(@CurrentPrincipal() staff: Principal): Promise<VenueList> {
     return { venues: await this.venues.list(staff) };
   }
 
   @Get(":id")
+  @Can("venue.read")
   async get(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
   ): Promise<VenueResponse> {
     return { venue: await this.venues.get(staff, id) };
   }
 
   @Post()
-  @Roles("admin")
+  @Can("venue.create")
   async create(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Body() body: unknown,
-    @Origin() origin: RequestOrigin,
   ): Promise<VenueResponse> {
-    return { venue: await this.venues.create(staff, parseInput(venueInput, body), origin) };
+    return { venue: await this.venues.create(staff, parseInput(venueInput, body)) };
   }
 
   /** Replaces the venue: the form sends all of it. */
   @Put(":id")
-  @Roles("admin")
+  @Can("venue.update")
   async update(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Body() body: unknown,
-    @Origin() origin: RequestOrigin,
   ): Promise<VenueResponse> {
-    return { venue: await this.venues.update(staff, id, parseInput(venueInput, body), origin) };
+    return { venue: await this.venues.update(staff, id, parseInput(venueInput, body)) };
   }
 
   @Delete(":id")
-  @Roles("admin")
+  @Can("venue.delete")
   @HttpCode(204)
   async remove(
-    @CurrentStaff() staff: StaffPrincipal,
+    @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-    @Origin() origin: RequestOrigin,
   ): Promise<void> {
-    await this.venues.remove(staff, id, origin);
+    await this.venues.remove(staff, id);
   }
 }

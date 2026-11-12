@@ -14,7 +14,8 @@ import type {
 } from "@hashinet/types";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { z } from "zod";
-import type { StaffPrincipal } from "../auth/staff-guard.js";
+import type { Principal } from "../access/principal.js";
+import { venueScope } from "../access/venue-scope.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
@@ -52,7 +53,7 @@ const percentOf = (count: number, total: number) =>
 export class AnalyticsService {
   constructor(private readonly db: PrismaService) {}
 
-  async summary(staff: StaffPrincipal): Promise<AnalyticsSummary> {
+  async summary(staff: Principal): Promise<AnalyticsSummary> {
     const venues = await this.venueIds(staff);
     const inScope = venueFilter(Prisma.sql`venue_id`, venues);
     const weekAgo = new Date(Date.now() - 7 * DAY_MS);
@@ -97,7 +98,7 @@ export class AnalyticsService {
   }
 
   /** Every business day from `from` to `to` (inclusive), 30 days to today by default. */
-  async dailyUsage(staff: StaffPrincipal, range: z.infer<typeof rangeQuery>): Promise<DailyUsage> {
+  async dailyUsage(staff: Principal, range: z.infer<typeof rangeQuery>): Promise<DailyUsage> {
     const today = businessDayOf(new Date());
     const to = range.to ?? today;
     const from = range.from ?? businessDayOf(new Date(Date.parse(`${to}T12:00:00Z`) - 29 * DAY_MS));
@@ -171,7 +172,7 @@ export class AnalyticsService {
   }
 
   /** Active vouchers by package. */
-  async packageShares(staff: StaffPrincipal): Promise<PackageShares> {
+  async packageShares(staff: Principal): Promise<PackageShares> {
     const venues = await this.venueIds(staff);
     const rows = await this.db.$queryRaw<
       { package_id: string | null; name: string | null; count: number }[]
@@ -192,7 +193,7 @@ export class AnalyticsService {
   }
 
   /** Devices by reported type, among devices that had a session in scope. */
-  async deviceTypes(staff: StaffPrincipal): Promise<DeviceTypeShares> {
+  async deviceTypes(staff: Principal): Promise<DeviceTypeShares> {
     const venues = await this.venueIds(staff);
     const rows = await this.db.$queryRaw<{ type: string; count: number }[]>`
       SELECT lower(d.device_type) AS type, count(*)::int AS count
@@ -361,13 +362,10 @@ export class AnalyticsService {
     };
   }
 
-  /** Null for an admin (every venue); the venues a manager operates otherwise. */
-  private async venueIds(staff: StaffPrincipal): Promise<string[] | null> {
-    if (staff.role === "admin") return null;
-    const venues = await this.db.venue.findMany({
-      where: { operatorId: staff.id },
-      select: { id: true },
-    });
+  /** Null on the platform (every venue); the venues in the principal's scope otherwise. */
+  private async venueIds(staff: Principal): Promise<string[] | null> {
+    if (staff.scope === "platform") return null;
+    const venues = await this.db.venue.findMany({ where: venueScope(staff), select: { id: true } });
     return venues.map((v) => v.id);
   }
 

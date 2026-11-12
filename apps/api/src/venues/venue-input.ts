@@ -1,3 +1,4 @@
+import { REGIONS } from "@hashinet/types";
 import { z } from "zod";
 
 /** One line of text: trimmed, no control characters (names reach printed vouchers and the portal). */
@@ -9,9 +10,9 @@ const line = (max: number) =>
     .regex(/^[^\p{Cc}]*$/u, "must be one line of text");
 
 /**
- * A venue as the admin enters it, for create and for update alike: the form always sends the
- * whole venue, so an absent optional field is cleared rather than left as it was. Who operates
- * it is not here: that is set on the Team page, and a venue save leaves it alone.
+ * A venue as it is entered, for create and for update alike: the form always sends the whole
+ * venue, so an absent optional field is cleared rather than left as it was. Who works there is
+ * not here: that is each membership's venues.
  */
 const HOST_NAME = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 
@@ -30,7 +31,10 @@ export const venueInput = z.object({
     .max(20)
     .default([])
     .transform((sites) => [...new Set(sites)]),
-  location: line(255).min(1, "is required"),
+  region: z.enum(REGIONS),
+  area: line(160).min(1, "is required"),
+  /** Platform staff name the business; a business's own people add to their business. */
+  businessId: z.uuid().optional(),
   status: z.enum(["active", "inactive", "maintenance"]).default("active"),
 });
 

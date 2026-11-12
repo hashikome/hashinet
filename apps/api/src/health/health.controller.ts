@@ -1,5 +1,5 @@
 import { Controller, Get, HttpCode, ServiceUnavailableException } from "@nestjs/common";
-import { Public } from "../auth/staff-guard.js";
+import { Public } from "../access/access.guard.js";
 import { PrismaService } from "../database/prisma.service.js";
 
 /** Liveness and readiness for the platform's health checks and Uptime Kuma. */
