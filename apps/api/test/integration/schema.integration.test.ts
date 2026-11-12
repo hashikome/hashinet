@@ -52,6 +52,15 @@ describe("the schema on PostgreSQL 18", () => {
     expect(lower).toMatch(/vouchers_code_upper/);
   });
 
+  test("no voucher costs less than TSh 500", async () => {
+    const { venue, pkg } = await venueAndPackage();
+    const data = { venueId: venue.id, packageId: pkg.id, code: "482716936518" };
+    expect(await failure(t.db.voucher.create({ data: { ...data, priceTsh: "499" } }))).toMatch(
+      /vouchers_minimum_price/,
+    );
+    await t.db.voucher.create({ data: { ...data, priceTsh: "500" } });
+  });
+
   test("codes are unique", async () => {
     const { venue, pkg } = await venueAndPackage();
     const data = { venueId: venue.id, packageId: pkg.id, priceTsh: "1000", code: "WIFI-DUPE" };

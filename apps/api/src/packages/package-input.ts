@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-/** The lowest price a package sells for, in whole shillings (the default hour is TSh 500). */
-export const MINIMUM_PRICE_TSH = 100;
+/** The lowest price a package, and so a voucher, sells for, in whole shillings (owner's rule). */
+export const MINIMUM_PRICE_TSH = 500;
 
 const whole = (min: number, max: number) =>
   z

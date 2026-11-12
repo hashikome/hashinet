@@ -28,7 +28,12 @@ const WINDOW_SECONDS = 600;
 const FAILURES_PER_ADDRESS = 60;
 const FAILURES_PER_DEVICE = 10;
 const GIB = 1_073_741_824;
-const MINIMUM_PAYMENT_TSH = 500;
+/**
+ * The lowest amount the mobile-money provider (Snippe) takes. Not confirmed with Snippe yet (owner,
+ * 13 November 2026); it may be TSh 1,000. It is separate from a voucher's lowest price (TSh 500): a
+ * package below it still sells as printed vouchers, and is not offered for payment online.
+ */
+export const MINIMUM_PAYMENT_TSH = 500;
 
 const refuse = (code: string, message: string) => new BadRequestException(apiError(code, message));
 

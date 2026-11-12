@@ -67,7 +67,7 @@ describe("packages", () => {
   test("the API enforces the form's rules and the ones that make throttling work", async () => {
     const c = await owner();
     const cases: [Body, string, RegExp][] = [
-      [{ priceTsh: 99 }, "priceTsh", /100/],
+      [{ priceTsh: 499 }, "priceTsh", /500/],
       [{ priceTsh: 1500.5 }, "priceTsh", /whole number/],
       [{ durationMinutes: 600_000 }, "durationMinutes", /525600/],
       [

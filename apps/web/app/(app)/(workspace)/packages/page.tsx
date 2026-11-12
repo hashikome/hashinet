@@ -203,7 +203,7 @@ function PriceDialog({
             className="input"
             type="number"
             inputMode="numeric"
-            min={100}
+            min={500}
             step={100}
             value={price}
             onChange={(e) => setPrice(e.target.value)}
@@ -370,7 +370,7 @@ function AddDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => P
           </Field>
         </div>
         <Field label="Price in TSh" id="pr" error={errors.priceTsh}>
-          {input("pr", "price", "priceTsh", { ...number, required: true, step: 100 })}
+          {input("pr", "price", "priceTsh", { ...number, required: true, min: 500, step: 100 })}
         </Field>
         <details
           open={Boolean(errors.downloadSpeedMbps || errors.uploadSpeedMbps || errors.dataLimitGb)}

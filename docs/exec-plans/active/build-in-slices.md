@@ -214,11 +214,18 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   accepted in any case and spacing.
   Rationale: they are read off paper (prototype); 40 bits each, single use, rate-limited.
   Date/Author: 2026-11-13 / Claude.
-- Decision: removing a package takes it off sale for good and keeps it; the lowest price is TSh 100.
+- Decision: removing a package takes it off sale for good and keeps it.
   Rationale: the prototype's Remove: printed or sold vouchers keep working and its sales stay in the
-  figures. The earlier refusal while vouchers lived, and the TSh 1,000 floor, came from the first
-  build and contradicted the approved defaults.
+  figures. The earlier refusal while vouchers lived came from the first build.
   Date/Author: 2026-11-13 / Claude, from the approved prototype.
+- Decision: TSh 500 is the lowest price of a voucher, so of a package and of a platform default
+  package; the API refuses less and database CHECKs hold it (`20261113150000_minimum_price`).
+  Rationale: the owner's rule (13 November 2026). The first build's TSh 1,000 floor refused the
+  default hour of TSh 500, and an interim TSh 100 was too low. The mobile-money provider's own lowest
+  amount is a separate rule (`MINIMUM_PAYMENT_TSH`, now 500): the 1,000 may have been Snippe's, which
+  the owner is confirming; if so it rises to 1,000, and packages below it sell only as printed
+  vouchers, never online.
+  Date/Author: 2026-11-13 / owner.
 - Decision: voucher codes are 12 digits with no prefix, as ADR-0008 decided; the batch, portal and
   brand prefixes are dropped. A code typed in groups or with dashes is the code.
   Rationale: the prototype's portal keypad and printed cards; no backward compatibility to keep.

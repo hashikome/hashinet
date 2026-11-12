@@ -186,11 +186,6 @@ describe("buying on the portal", () => {
     expect(await t.db.payment.count()).toBe(0);
   });
 
-  test("a price under the provider's minimum is not offered for payment", async () => {
-    const { router, pkg } = await setting("400");
-    expect((await buy(router.id, pkg.id)).body).toMatchObject({ code: "PACKAGE_NOT_PAYABLE" });
-  });
-
   test("a number cannot be prompted again and again", async () => {
     const { router, pkg } = await setting();
     for (let i = 0; i < 3; i++) {
