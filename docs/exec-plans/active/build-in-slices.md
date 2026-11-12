@@ -44,9 +44,12 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (d) Inviting a new business's owner, and acceptance.
   - [ ] (e) Packages per business (M4); a sale stores its price when its voucher is issued.
   - [ ] (f) Routers under the access policy: add, bootstrap script, setup, readiness.
-  - [ ] (g) The screens, against the prototype (read the version-matched Next.js guide first).
+  - [ ] (g) The screens, against the prototype (read the version-matched Next.js guide first), each
+    built with design-build and audited with design-audit as it is finished, P0 and P1 fixed before
+    the next screen.
   - [ ] (h) Whatever is left of the first build, removed.
-  - [ ] (i) design-audit on the slice's screens; P0 and P1 fixed.
+  - [ ] (i) finish-work on the branch: review, security, simplify, the journey-level design audit
+    across the slice's screens, docs, CHANGELOG and the handbook.
   - [ ] (j) Production reset (owner-run, Concrete Steps), deploy, and live acceptance.
 - [ ] Slice 2: the counter.
 - [ ] Slice 3: onboarding a business.
@@ -180,10 +183,11 @@ payments with the platform's review. Accepted as build-hashinet M6 says, then li
 and a real message (M8).
 
 Within each slice the order is: schema, then the API with its tests, then the screens against the
-prototype, then removal of what the slice replaced, then design-audit at 1280 and 375 pixels in light
-and dark with every P0 and P1 fixed (redesign-admin H7), then finish-work on the branch (review,
-security, simplify, docs, CHANGELOG, the handbook), then `git merge --ff-only` into `main`, push, and
-live acceptance.
+prototype, each built with design-build and audited with design-audit at 1280 and 375 pixels in light
+and dark as soon as it is finished, its P0 and P1 fixed before the next screen (redesign-admin H7);
+then removal of what the slice replaced; then finish-work on the branch, whose design audit checks the
+slice's journeys across screens (review, security, simplify, docs, CHANGELOG, the handbook); then
+`git merge --ff-only` into `main`, push, and live acceptance.
 
 ## Concrete Steps
 
