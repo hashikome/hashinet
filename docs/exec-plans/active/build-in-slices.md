@@ -34,9 +34,18 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
 - [ ] Slice 1: one owner, one venue, selling. Built on the local branch `slice-1`; merged to `main` only
   when it passes its acceptance, as every push to `main` releases. Steps, each ending with
   `bun run verify` passing and a commit:
-  - [ ] (a) The baseline schema (business-scopes M1), a development seed of invented businesses, and a
-    separate production bootstrap that creates only the platform admin (replacing `staff:add`).
-    Merged with (b) if the web's typecheck against `@hashinet/types` can't pass without it.
+  - [x] (2026-11-12) (a) The baseline schema (business-scopes M1): one migration
+    `20261112150016_baseline` replacing the twelve, with businesses, memberships (one per person
+    per scope, by a NULLS NOT DISTINCT unique index; each role in its own scope, by CHECK), membership
+    venues, invitations, passkeys, user preferences, platform default packages, sessions carrying
+    the active membership and how they signed in, packages and venues owned by a business (venue
+    region and area replacing location), and the ADR-0012 audit log; every key defaults to
+    `uuidv7()`. `packageType` and the notification preferences dropped (unused). Better Auth 1.7.22
+    with `@better-auth/passkey` 1.7.22. `bun run platform:bootstrap` (replacing `staff:add`)
+    creates only the platform admin and the default packages; the development seed holds the
+    prototype's personas with example.com addresses, safe to repeat. `REGIONS` and the role types
+    in `@hashinet/types`. Verify does not pass yet: 86 type errors in 31 files that still read
+    `staff` and `operatorId`, which (b) replaces; (a) and (b) close together.
   - [ ] (b) The access policy, `Principal`, `GET /api/me` with capabilities, the audit log (ADR-0012);
     every old module rewired or deleted.
   - [ ] (c) Sign-in: passkeys, the authenticator, recovery codes, and the session-based protection

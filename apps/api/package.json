@@ -17,11 +17,12 @@
     "db:reset": "bun --bun prisma migrate reset",
     "db:seed": "bun --bun prisma db seed",
     "db:studio": "bun --bun prisma studio",
-    "staff:add": "bun src/staff/add-staff.cli.ts",
+    "platform:bootstrap": "bun src/platform/bootstrap.cli.ts",
     "postinstall": "bun --bun prisma generate",
     "test:integration": "bun test test/integration"
   },
   "dependencies": {
+    "@better-auth/passkey": "1.7.22",
     "@hashinet/types": "workspace:*",
     "@logtape/logtape": "2.4.2",
     "@logtape/sentry": "2.4.2",
@@ -31,7 +32,7 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "@sentry/bun": "11.10.0",
-    "better-auth": "1.7.14",
+    "better-auth": "1.7.22",
     "express": "5.3.0",
     "pg": "8.23.1",
     "reflect-metadata": "0.2.2",

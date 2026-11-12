@@ -17,12 +17,9 @@ export type VoucherStatus =
   | "used"
   | "revoked";
 
-export type PackageType = "hotspot" | "home" | "business" | "premium";
-
 export interface PackageRecord {
   id: string;
   name: string;
-  packageType: PackageType;
   description: string | null;
   durationMinutes: number;
   downloadSpeedMbps: number;
@@ -740,3 +737,45 @@ export interface GuestSession {
     remainingBytes: number | null;
   } | null;
 }
+
+/** Tanzania's 31 regions: a business's and a venue's region is chosen from these, never typed. */
+export const REGIONS = [
+  "Arusha",
+  "Dar es Salaam",
+  "Dodoma",
+  "Geita",
+  "Iringa",
+  "Kagera",
+  "Kaskazini Pemba",
+  "Kaskazini Unguja",
+  "Katavi",
+  "Kigoma",
+  "Kilimanjaro",
+  "Kusini Pemba",
+  "Kusini Unguja",
+  "Lindi",
+  "Manyara",
+  "Mara",
+  "Mbeya",
+  "Mjini Magharibi",
+  "Morogoro",
+  "Mtwara",
+  "Mwanza",
+  "Njombe",
+  "Pwani",
+  "Rukwa",
+  "Ruvuma",
+  "Shinyanga",
+  "Simiyu",
+  "Singida",
+  "Songwe",
+  "Tabora",
+  "Tanga",
+] as const;
+export type Region = (typeof REGIONS)[number];
+
+/** Where a membership acts, and its role there (ADR-0011). */
+export type MembershipScope = "platform" | "business";
+export type PlatformRole = "admin" | "manager" | "operator";
+export type BusinessRole = "owner" | "business_manager" | "venue_manager" | "venue_operator";
+export type MembershipRole = PlatformRole | BusinessRole;
