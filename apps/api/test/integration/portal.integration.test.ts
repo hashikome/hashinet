@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_PORTAL_SETTINGS } from "../../src/portal/portal-input.js";
-import { addStaff } from "../../src/staff/add-staff.js";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
 async function admin(): Promise<Client> {
-  await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
   const c = browser(api);
   await enrollAuthenticatorFor(api, c, "admin@example.com");
   return c;
@@ -35,7 +35,7 @@ describe("portal settings", () => {
     await c.request("PUT", "/api/portal", { ...SETTINGS, brandName: "Again" });
     expect(await t.db.portalSetting.count()).toBe(1);
 
-    await addStaff(t.db, { email: "m@example.com", name: "M", role: "manager" });
+    await businessMember(t.db, { email: "m@example.com", name: "M", role: "venue_manager" });
     const m = browser(api);
     await signInWithCode(api, m, "m@example.com");
     expect((await m.request("GET", "/api/portal")).body).toMatchObject({
@@ -43,7 +43,7 @@ describe("portal settings", () => {
     });
     expect((await m.request("PUT", "/api/portal", SETTINGS)).status).toBe(403);
     const actions = (await t.db.auditLog.findMany()).map((a) => a.action);
-    expect(actions).toEqual(["portal_updated", "portal_updated"]);
+    expect(actions).toEqual(["portal.defaults.update", "portal.defaults.update"]);
   });
 
   test("bad branding is refused field by field", async () => {

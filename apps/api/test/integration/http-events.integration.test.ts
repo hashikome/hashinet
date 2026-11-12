@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import type { LogRecord } from "@logtape/logtape";
 import { initializeTelemetry } from "../../src/observability/telemetry.js";
-import { addStaff } from "../../src/staff/add-staff.js";
 import { browser, requestSignInCode, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember } from "./people.js";
 
 const records: LogRecord[] = [];
 beforeAll(async () => {
@@ -31,7 +31,11 @@ async function eventsSince(from: number, count: number) {
 
 describe("HTTP wide events", () => {
   test("every request has one, refusals included, with the route pattern and no values", async () => {
-    const { id } = await addStaff(t.db, { email: "m@example.com", name: "M", role: "manager" });
+    const { membershipId: id } = await businessMember(t.db, {
+      email: "m@example.com",
+      name: "M",
+      role: "venue_manager",
+    });
     const c = browser(api);
 
     let from = records.length;

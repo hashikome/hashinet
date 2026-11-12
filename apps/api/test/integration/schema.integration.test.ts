@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { useTestDatabase } from "./harness.js";
+import { testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 
@@ -14,9 +15,22 @@ async function failure(query: PromiseLike<unknown>): Promise<string | null> {
 }
 
 async function venueAndPackage() {
-  const venue = await t.db.venue.create({ data: { name: "Home", location: "Dar es Salaam" } });
+  const venue = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Home",
+      region: "Dar es Salaam",
+      area: "Dar es Salaam",
+    },
+  });
   const pkg = await t.db.package.create({
-    data: { name: "Hour", durationMinutes: 60, downloadSpeedMbps: 10, priceTsh: "1000" },
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Hour",
+      durationMinutes: 60,
+      downloadSpeedMbps: 10,
+      priceTsh: "1000",
+    },
   });
   return { venue, pkg };
 }
@@ -57,12 +71,23 @@ describe("the schema on PostgreSQL 18", () => {
     expect(mixed).toMatch(/users_email_lower/);
   });
 
-  test("staff shares the user's id and goes with the user", async () => {
+  test("a membership goes with its user, and one person has one per scope", async () => {
     const id = Bun.randomUUIDv7();
-    await t.db.user.create({ data: { id, email: "staff@example.com", name: "Staff" } });
-    await t.db.staff.create({ data: { id, role: "admin" } });
+    await t.db.user.create({ data: { id, email: "member@example.com", name: "Member" } });
+    await t.db.membership.create({ data: { userId: id, scope: "platform", role: "admin" } });
+    await expect(
+      t.db.membership.create({ data: { userId: id, scope: "platform", role: "manager" } }),
+    ).rejects.toThrow();
     await t.db.user.delete({ where: { id } });
-    expect(await t.db.staff.findUnique({ where: { id } })).toBeNull();
+    expect(await t.db.membership.count({ where: { userId: id } })).toBe(0);
+  });
+
+  test("a role belongs to its own scope", async () => {
+    const id = Bun.randomUUIDv7();
+    await t.db.user.create({ data: { id, email: "scoped@example.com", name: "Scoped" } });
+    await expect(
+      t.db.membership.create({ data: { userId: id, scope: "platform", role: "owner" } }),
+    ).rejects.toThrow(/memberships_scope_role/);
   });
 
   test("money keeps its exact decimal value", async () => {

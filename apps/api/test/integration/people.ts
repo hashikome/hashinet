@@ -1,0 +1,74 @@
+import type { PrismaClient } from "../../src/generated/prisma/client.js";
+import type { MembershipRole } from "../../src/generated/prisma/enums.js";
+
+/** Invented people, businesses and venues for the integration tests (ADR-0011's model). */
+
+export interface Person {
+  /** The user's id. */
+  id: string;
+  membershipId: string;
+  email: string;
+}
+
+async function user(db: PrismaClient, email: string, name: string) {
+  return (
+    (await db.user.findUnique({ where: { email } })) ??
+    (await db.user.create({ data: { id: Bun.randomUUIDv7(), email, name, emailVerified: true } }))
+  );
+}
+
+/** A person on HashiNet's own team. */
+export async function platformMember(
+  db: PrismaClient,
+  input: { email: string; name: string; role?: "admin" | "manager" | "operator" },
+): Promise<Person> {
+  const u = await user(db, input.email, input.name);
+  const m = await db.membership.create({
+    data: { userId: u.id, scope: "platform", role: input.role ?? "admin" },
+  });
+  return { id: u.id, membershipId: m.id, email: input.email };
+}
+
+/** The business most tests work in, created on first use. */
+export async function testBusinessId(db: PrismaClient, name = "Test Business"): Promise<string> {
+  const found = await db.business.findFirst({ where: { name } });
+  if (found) return found.id;
+  return (await db.business.create({ data: { name, region: "Dar es Salaam", area: "Test" } })).id;
+}
+
+/** A person in a business, with venues for a venue manager or venue operator. */
+export async function businessMember(
+  db: PrismaClient,
+  input: {
+    email: string;
+    name: string;
+    role: Extract<
+      MembershipRole,
+      "owner" | "business_manager" | "venue_manager" | "venue_operator"
+    >;
+    businessId?: string;
+    venueIds?: string[];
+  },
+): Promise<Person> {
+  const u = await user(db, input.email, input.name);
+  const businessId = input.businessId ?? (await testBusinessId(db));
+  const m = await db.membership.create({
+    data: {
+      userId: u.id,
+      scope: "business",
+      businessId,
+      role: input.role,
+      venues: { create: (input.venueIds ?? []).map((venueId) => ({ venueId })) },
+    },
+  });
+  return { id: u.id, membershipId: m.id, email: input.email };
+}
+
+/** Gives a venue manager or operator another venue. */
+export async function assignVenue(
+  db: PrismaClient,
+  person: Person,
+  venueId: string,
+): Promise<void> {
+  await db.membershipVenue.create({ data: { membershipId: person.membershipId, venueId } });
+}

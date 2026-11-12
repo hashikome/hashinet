@@ -3,12 +3,20 @@ import { randomBytes } from "node:crypto";
 import { SecretBox } from "../../src/crypto/secret-box.js";
 import { TunnelAllocator } from "../../src/routers/tunnel-allocator.js";
 import { useTestDatabase } from "./harness.js";
+import { testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const box = new SecretBox(randomBytes(32));
 
 async function routers(count: number): Promise<string[]> {
-  const venue = await t.db.venue.create({ data: { name: "Venue", location: "Arusha" } });
+  const venue = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Venue",
+      region: "Dar es Salaam",
+      area: "Arusha",
+    },
+  });
   const ids: string[] = [];
   for (let i = 0; i < count; i++) {
     const r = await t.db.router.create({

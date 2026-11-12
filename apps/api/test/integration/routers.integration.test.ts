@@ -1,31 +1,43 @@
 import { describe, expect, test } from "bun:test";
 import type { RouterJourney } from "@hashinet/types";
-import { addStaff } from "../../src/staff/add-staff.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 // Nothing listens on port 9, so a router here is unreachable at once.
 const api = useApi({ MIKROTIK_API_PORT: "9", MIKROTIK_CONNECT_TIMEOUT: "2" });
 
 async function admin(): Promise<Client> {
-  await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
   const c = browser(api);
   await enrollAuthenticatorFor(api, c, "admin@example.com");
   return c;
 }
 
 async function manager(email: string): Promise<{ client: Client; id: string }> {
-  const { id } = await addStaff(t.db, { email, name: email, role: "manager" });
+  const { membershipId: id } = await businessMember(t.db, {
+    email,
+    name: email,
+    role: "venue_manager",
+  });
   const client = browser(api);
-  expect((await signInWithCode(api, client, email)).status).toBe(200);
+  await enrollAuthenticatorFor(api, client, email);
   return { client, id };
 }
 
 async function venue(operatorId: string | null = null) {
-  return t.db.venue.create({
-    data: { name: "Home", location: "Dar es Salaam", operatorId },
+  const created = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Home",
+      region: "Dar es Salaam",
+      area: "Dar es Salaam",
+    },
   });
+  if (operatorId)
+    await t.db.membershipVenue.create({ data: { membershipId: operatorId, venueId: created.id } });
+  return created;
 }
 
 const ROUTER = { name: "Lobby", ipAddress: "127.0.0.1", apiUsername: "hashinet" };

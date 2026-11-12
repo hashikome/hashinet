@@ -5,7 +5,7 @@ import type { Principal } from "../access/principal.js";
 import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import { venueInput } from "./venue-input.js";
-import { type VenuesService } from "./venues.service.js";
+import { VenuesService } from "./venues.service.js";
 
 @Controller("api/venues")
 export class VenuesController {

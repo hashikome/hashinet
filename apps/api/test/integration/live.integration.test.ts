@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import WebSocket from "ws";
 import { LiveHub } from "../../src/live/live-hub.js";
 import { RouterLogger } from "../../src/services/router-log.js";
-import { addStaff } from "../../src/staff/add-staff.js";
 import {
   browser,
   type Client,
@@ -12,6 +11,7 @@ import {
   useApi,
 } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
@@ -62,26 +62,43 @@ function update(venueId: string) {
 describe("live view", () => {
   test("refuses anyone not signed in, other origins, and admins without an authenticator", async () => {
     await expect(connect(null)).rejects.toThrow("401");
-    await addStaff(t.db, { email: "m@example.com", name: "M", role: "manager" });
+    await businessMember(t.db, { email: "m@example.com", name: "M", role: "venue_manager" });
     const m = browser(api);
     await signInWithCode(api, m, "m@example.com");
     await expect(connect(m, "https://evil.example")).rejects.toThrow("403");
 
-    await addStaff(t.db, { email: "new@example.com", name: "New", role: "admin" });
+    await platformMember(t.db, { email: "new@example.com", name: "New", role: "admin" });
     const unenrolled = browser(api);
     await signInWithCode(api, unenrolled, "new@example.com");
     await expect(connect(unenrolled)).rejects.toThrow("401");
   });
 
   test("a manager gets their venues' hotspots only; admins get everything", async () => {
-    const { id } = await addStaff(t.db, { email: "m@example.com", name: "M", role: "manager" });
-    const mine = await t.db.venue.create({
-      data: { name: "Home", location: "Dar", operatorId: id },
+    const { membershipId: id } = await businessMember(t.db, {
+      email: "m@example.com",
+      name: "M",
+      role: "venue_manager",
     });
-    const theirs = await t.db.venue.create({ data: { name: "Other", location: "Arusha" } });
+    const mine = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Home",
+        region: "Dar es Salaam",
+        area: "Dar",
+      },
+    });
+    if (id) await t.db.membershipVenue.create({ data: { membershipId: id, venueId: mine.id } });
+    const theirs = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Other",
+        region: "Dar es Salaam",
+        area: "Arusha",
+      },
+    });
     const m = browser(api);
     await signInWithCode(api, m, "m@example.com");
-    await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const a = browser(api);
     await enrollAuthenticatorFor(api, a, "admin@example.com");
 
@@ -108,12 +125,16 @@ describe("live view", () => {
     expect(hub.watching()).toBe(false);
   });
 
-  test("a suspended manager is disconnected at the next check", async () => {
-    const { id } = await addStaff(t.db, { email: "m@example.com", name: "M", role: "manager" });
+  test("a removed manager is disconnected at the next check", async () => {
+    const { membershipId: id } = await businessMember(t.db, {
+      email: "m@example.com",
+      name: "M",
+      role: "venue_manager",
+    });
     const m = browser(api);
     await signInWithCode(api, m, "m@example.com");
     const socket = await connect(m);
-    await t.db.staff.update({ where: { id }, data: { status: "suspended" } });
+    await t.db.membership.update({ where: { id }, data: { status: "removed" } });
     await api.app.get(LiveHub).revalidate();
     await settle();
     expect(socket.closedWith).toBe(4401);

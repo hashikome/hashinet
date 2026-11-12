@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
 import { DEFAULT_PORTAL_SETTINGS } from "../../src/portal/portal-input.js";
-import { addStaff } from "../../src/staff/add-staff.js";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi({ BRAND_STORE_DIR: join(tmpdir(), `hashinet-brand-${Date.now()}`) });
@@ -13,14 +13,16 @@ const api = useApi({ BRAND_STORE_DIR: join(tmpdir(), `hashinet-brand-${Date.now(
 const { isActive: _active, updatedAt: _updated, ...SETTINGS } = DEFAULT_PORTAL_SETTINGS;
 
 async function admin(): Promise<Client> {
-  await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
   const c = browser(api);
   await enrollAuthenticatorFor(api, c, "admin@example.com");
   return c;
 }
 
 async function venue(name = "Cafe") {
-  return t.db.venue.create({ data: { name, location: "Dar" } });
+  return t.db.venue.create({
+    data: { businessId: await testBusinessId(t.db), name, region: "Dar es Salaam", area: "Dar" },
+  });
 }
 
 /** A PNG with transparency, and metadata that must not survive. */
@@ -71,7 +73,7 @@ describe("venue branding", () => {
     const reset = await c.request("DELETE", `/api/venues/${cafe.id}/brand`);
     expect(reset.body).toMatchObject({ isCustom: false, brand: { brandName: "HashiNet" } });
     const actions = (await t.db.auditLog.findMany()).map((a) => a.action);
-    expect(actions).toEqual(["brand_updated", "brand_reset"]);
+    expect(actions).toEqual(["brand.update", "brand.reset"]);
   });
 
   test("a logo is re-encoded, keeps its transparency, loses its metadata, and is served", async () => {
@@ -127,8 +129,12 @@ describe("venue branding", () => {
     await admin();
     const mine = await venue("Mine");
     const theirs = await venue("Theirs");
-    const { id } = await addStaff(t.db, { email: "m@example.com", name: "M", role: "manager" });
-    await t.db.venue.update({ where: { id: mine.id }, data: { operatorId: id } });
+    const { membershipId: id } = await businessMember(t.db, {
+      email: "m@example.com",
+      name: "M",
+      role: "venue_manager",
+    });
+    await t.db.membershipVenue.create({ data: { membershipId: id, venueId: mine.id } });
     const m = browser(api);
     await signInWithCode(api, m, "m@example.com");
     const body = { ...SETTINGS, brandName: "Mine" };
@@ -179,7 +185,13 @@ describe("venue branding", () => {
     });
 
     const pkg = await t.db.package.create({
-      data: { name: "Day", durationMinutes: 1440, downloadSpeedMbps: 5, priceTsh: "2000" },
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Day",
+        durationMinutes: 1440,
+        downloadSpeedMbps: 5,
+        priceTsh: "2000",
+      },
     });
     const batch = await c.request("POST", "/api/vouchers/batches", {
       venueId: cafe.id,

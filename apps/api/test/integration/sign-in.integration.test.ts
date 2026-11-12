@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { addStaff } from "../../src/staff/add-staff.js";
 import {
   Client,
   enrollAuthenticatorFor,
@@ -9,6 +8,7 @@ import {
   useApi,
 } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
@@ -26,26 +26,34 @@ const enrollAuthenticator = (c: Client, email: string) => enrollAuthenticatorFor
 
 describe("sign-in", () => {
   test("an email code signs active staff in", async () => {
-    await addStaff(t.db, { email: "Manager@Example.com", name: "Manager", role: "manager" });
+    await businessMember(t.db, {
+      email: "Manager@Example.com",
+      name: "Manager",
+      role: "venue_manager",
+    });
     const c = client();
     expect((await c.request("GET", "/api/me")).status).toBe(401);
     expect((await signIn(c, "manager@example.com")).status).toBe(200);
     const me = await c.request("GET", "/api/me");
     expect(me.status).toBe(200);
+    // A new venue manager signed in with a code alone may get set up, not sell (ADR-0011, 9).
     expect(me.body).toMatchObject({
       email: "manager@example.com",
-      role: "manager",
-      twoFactorEnabled: false,
-      twoFactorEnrollmentRequired: false,
+      active: { role: "venue_manager", scope: "business", access: "setup" },
+      protection: { required: true, authenticator: false, passkeys: 0 },
     });
-    expect((await t.db.staff.findFirstOrThrow()).lastLoginAt).not.toBeNull();
+    expect((await t.db.membership.findFirstOrThrow()).lastUsedAt).not.toBeNull();
 
     expect((await c.request("POST", "/api/auth/sign-out", {})).status).toBe(200);
     expect((await c.request("GET", "/api/me")).status).toBe(401);
   });
 
   test("a stranger's email gets the same answers as staff, and no email", async () => {
-    await addStaff(t.db, { email: "staff@example.com", name: "Staff", role: "manager" });
+    await businessMember(t.db, {
+      email: "staff@example.com",
+      name: "Staff",
+      role: "venue_manager",
+    });
     const staff = await requestCode(client(), "staff@example.com");
     const stranger = await requestCode(client(), "stranger@example.com");
     expect(stranger).toEqual(staff);
@@ -65,7 +73,11 @@ describe("sign-in", () => {
   });
 
   test("codes are stored keyed, never as sent", async () => {
-    await addStaff(t.db, { email: "keyed@example.com", name: "Keyed", role: "manager" });
+    await businessMember(t.db, {
+      email: "keyed@example.com",
+      name: "Keyed",
+      role: "venue_manager",
+    });
     const before = api.email.sent.length;
     await requestCode(client(), "keyed@example.com");
     const code = await api.email.codeFor("keyed@example.com", before);
@@ -75,7 +87,11 @@ describe("sign-in", () => {
   });
 
   test("after five wrong codes the right one no longer works", async () => {
-    await addStaff(t.db, { email: "guess@example.com", name: "Guess", role: "manager" });
+    await businessMember(t.db, {
+      email: "guess@example.com",
+      name: "Guess",
+      role: "venue_manager",
+    });
     const before = api.email.sent.length;
     await requestCode(client(), "guess@example.com");
     const otp = await api.email.codeFor("guess@example.com", before);
@@ -103,7 +119,11 @@ describe("sign-in", () => {
   });
 
   test("one person receives at most five codes in fifteen minutes, from any address", async () => {
-    await addStaff(t.db, { email: "flood@example.com", name: "Flood", role: "manager" });
+    await businessMember(t.db, {
+      email: "flood@example.com",
+      name: "Flood",
+      role: "venue_manager",
+    });
     for (let i = 0; i < 7; i++) {
       expect((await requestCode(client(), "flood@example.com")).status).toBe(200);
     }
@@ -112,7 +132,11 @@ describe("sign-in", () => {
   });
 
   test("requests beyond the budget do not void the last code sent", async () => {
-    await addStaff(t.db, { email: "target@example.com", name: "Target", role: "manager" });
+    await businessMember(t.db, {
+      email: "target@example.com",
+      name: "Target",
+      role: "venue_manager",
+    });
     for (let i = 0; i < 5; i++) await requestCode(client(), "target@example.com");
     const fifth = await api.email.codeFor("target@example.com");
     await Bun.sleep(100);
@@ -126,15 +150,15 @@ describe("sign-in", () => {
     expect(signedIn.status).toBe(200);
   });
 
-  test("suspending a person ends their session and stops their codes", async () => {
-    const { id } = await addStaff(t.db, {
+  test("removing a person's membership ends their session and stops their codes", async () => {
+    const { membershipId: id } = await businessMember(t.db, {
       email: "leaver@example.com",
       name: "Leaver",
-      role: "manager",
+      role: "venue_manager",
     });
     const c = client();
     expect((await signIn(c, "leaver@example.com")).status).toBe(200);
-    await t.db.staff.update({ where: { id }, data: { status: "suspended" } });
+    await t.db.membership.update({ where: { id }, data: { status: "removed" } });
     expect((await c.request("GET", "/api/me")).status).toBe(401);
 
     const before = api.email.sent.length;
@@ -165,7 +189,7 @@ describe("sign-in", () => {
 
 describe("my profile", () => {
   test("anyone changes their own name, and only that", async () => {
-    await addStaff(t.db, { email: "me@example.com", name: "Old", role: "manager" });
+    await businessMember(t.db, { email: "me@example.com", name: "Old", role: "venue_manager" });
     const c = client();
     await signIn(c, "me@example.com");
     const reply = await c.request("PUT", "/api/me", { name: "  New Name ", role: "admin" });
@@ -178,7 +202,7 @@ describe("my profile", () => {
 
 describe("authenticator app", () => {
   test("an admin without one is told to set it up", async () => {
-    await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const c = client();
     expect((await signIn(c, "admin@example.com")).status).toBe(200);
     const me = await c.request("GET", "/api/me");
@@ -187,7 +211,7 @@ describe("authenticator app", () => {
   });
 
   test("once set up, sign-in needs both codes, and no device skips the second", async () => {
-    await addStaff(t.db, { email: "owner@example.com", name: "Owner", role: "admin" });
+    await platformMember(t.db, { email: "owner@example.com", name: "Owner", role: "admin" });
     const first = client();
     const uri = await enrollAuthenticator(first, "owner@example.com");
     const enrolled = await first.request("GET", "/api/me");

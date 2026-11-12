@@ -6,9 +6,9 @@ import { SMS_SENDER, type SmsSender } from "../../src/messaging/sms-sender.js";
 import { MOBILE_MONEY, type MobileMoneyGateway } from "../../src/payments/mobile-money.js";
 import { PaymentsService } from "../../src/payments/payments.service.js";
 import { RouterSync } from "../../src/services/router-sync.js";
-import { addStaff } from "../../src/staff/add-staff.js";
 import { browser, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const PAY_SECRET = "pay-secret";
 const SMS_SECRET = "sms-secret";
@@ -73,12 +73,25 @@ beforeEach(() => {
 });
 
 async function setting(price = "2000") {
-  const venue = await t.db.venue.create({ data: { name: "Cafe", location: "Dar" } });
+  const venue = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Cafe",
+      region: "Dar es Salaam",
+      area: "Dar",
+    },
+  });
   const router = await t.db.router.create({
     data: { venueId: venue.id, name: "Lobby", ipAddress: "192.168.88.2" },
   });
   const pkg = await t.db.package.create({
-    data: { name: "Day", durationMinutes: 1440, downloadSpeedMbps: 5, priceTsh: price },
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Day",
+      durationMinutes: 1440,
+      downloadSpeedMbps: 5,
+      priceTsh: price,
+    },
   });
   return { venue, router, pkg };
 }
@@ -142,9 +155,22 @@ describe("buying on the portal", () => {
   test("nobody is charged until everything is checked", async () => {
     const { router, pkg } = await setting();
     const other = await t.db.package.create({
-      data: { name: "Hidden", durationMinutes: 60, downloadSpeedMbps: 1, priceTsh: "1000" },
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Hidden",
+        durationMinutes: 60,
+        downloadSpeedMbps: 1,
+        priceTsh: "1000",
+      },
     });
-    const venue2 = await t.db.venue.create({ data: { name: "Other", location: "Dar" } });
+    const venue2 = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Other",
+        region: "Dar es Salaam",
+        area: "Dar",
+      },
+    });
     await t.db.venuePackage.create({ data: { venueId: venue2.id, packageId: pkg.id } });
     await t.db.venuePackage.create({ data: { venueId: router.venueId, packageId: other.id } });
     expect((await buy(router.id, pkg.id)).body).toMatchObject({ code: "PACKAGE_NOT_ON_SALE" });
@@ -435,7 +461,7 @@ describe("delivery reports", () => {
 
 describe("sales and records", () => {
   async function adminClient() {
-    await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const c = browser(api);
     await enrollAuthenticatorFor(api, c, "admin@example.com");
     return c;
@@ -468,15 +494,26 @@ describe("sales and records", () => {
       method: "cash",
     });
     expect(unsent.body).toMatchObject({ sms: null });
-    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain("sale_recorded");
+    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain("sale.record");
   });
 
   test("a manager sees their own venues' payments and customers, and sells only there", async () => {
     const c = await adminClient();
     const { venue, pkg } = await setting();
-    const theirs = await t.db.venue.create({ data: { name: "Theirs", location: "Dar" } });
-    const { id } = await addStaff(t.db, { email: "m@example.com", name: "M", role: "manager" });
-    await t.db.venue.update({ where: { id: theirs.id }, data: { operatorId: id } });
+    const theirs = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Theirs",
+        region: "Dar es Salaam",
+        area: "Dar",
+      },
+    });
+    const { membershipId: id } = await businessMember(t.db, {
+      email: "m@example.com",
+      name: "M",
+      role: "venue_manager",
+    });
+    await t.db.membershipVenue.create({ data: { membershipId: id, venueId: theirs.id } });
     await c.request("POST", "/api/sales", {
       venueId: venue.id,
       packageId: pkg.id,

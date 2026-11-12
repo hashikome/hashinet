@@ -1,22 +1,26 @@
 import { describe, expect, test } from "bun:test";
-import { addStaff } from "../../src/staff/add-staff.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
 async function admin(): Promise<Client> {
-  await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
   const c = browser(api);
   await enrollAuthenticatorFor(api, c, "admin@example.com");
   return c;
 }
 
 async function manager(email: string): Promise<{ client: Client; id: string }> {
-  const { id } = await addStaff(t.db, { email, name: email, role: "manager" });
+  const { membershipId: id } = await businessMember(t.db, {
+    email,
+    name: email,
+    role: "venue_manager",
+  });
   const client = browser(api);
-  expect((await signInWithCode(api, client, email)).status).toBe(200);
+  await enrollAuthenticatorFor(api, client, email);
   return { client, id };
 }
 
@@ -29,9 +33,23 @@ let macs = 0;
 async function world() {
   const own = await manager("own@example.com");
   const mine = await t.db.venue.create({
-    data: { name: "Home", location: "Dar", operatorId: own.id },
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Home",
+      region: "Dar es Salaam",
+      area: "Dar",
+    },
   });
-  const theirs = await t.db.venue.create({ data: { name: "Other", location: "Arusha" } });
+  if (own.id)
+    await t.db.membershipVenue.create({ data: { membershipId: own.id, venueId: mine.id } });
+  const theirs = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Other",
+      region: "Dar es Salaam",
+      area: "Arusha",
+    },
+  });
   macs += 1;
   const mac = `AA:BB:CC:00:00:${String(macs).padStart(2, "0")}`;
   const phone = await t.db.device.create({ data: { macAddress: mac, deviceName: "Pixel" } });
@@ -128,7 +146,7 @@ describe("devices", () => {
     expect(blocked.body).toMatchObject({ device: { status: "blocked", isOnline: false } });
     expect(
       await t.db.wifiSession.findUniqueOrThrow({ where: { id: w.atTheirs.id } }),
-    ).toMatchObject({ status: "terminated", terminationReason: "device_blocked" });
+    ).toMatchObject({ status: "terminated", terminationReason: "device.block" });
     const stats = ((await c.request("GET", "/api/devices")).body as { stats: Body }).stats;
     expect(stats).toEqual({ total: 2, online: 0, offline: 1, blocked: 1 });
 
@@ -141,7 +159,7 @@ describe("devices", () => {
     const actions = (await t.db.auditLog.findMany({ orderBy: { createdAt: "asc" } })).map(
       (a) => a.action,
     );
-    expect(actions).toEqual(["device_blocked", "device_unblocked", "device_deleted"]);
+    expect(actions).toEqual(["device.block", "device.unblock", "device.delete"]);
     expect(JSON.stringify(await t.db.auditLog.findMany())).not.toContain("AA:BB");
   });
 });
@@ -201,6 +219,6 @@ describe("sessions", () => {
     const again = await w.own.client.request("POST", `/api/sessions/${live.id}/terminate`);
     expect(again.status).toBe(409);
     expect(again.body).toMatchObject({ code: "SESSION_NOT_ACTIVE" });
-    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toEqual(["session_terminated"]);
+    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toEqual(["session.terminate"]);
   });
 });

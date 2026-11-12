@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { generateWireguardKeyPair } from "../../src/services/router-provision/tunnel.js";
-import { addStaff } from "../../src/staff/add-staff.js";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const platform = generateWireguardKeyPair();
@@ -21,10 +21,17 @@ interface Script {
 
 describe("bootstrap with the management tunnel", () => {
   test("allocates the router's tunnel once, and the script opens it to the platform", async () => {
-    await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const c = browser(api);
     await enrollAuthenticatorFor(api, c, "admin@example.com");
-    const venue = await t.db.venue.create({ data: { name: "Home", location: "Dar es Salaam" } });
+    const venue = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Home",
+        region: "Dar es Salaam",
+        area: "Dar es Salaam",
+      },
+    });
     const router = await t.db.router.create({
       data: {
         venueId: venue.id,

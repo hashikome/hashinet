@@ -1,15 +1,29 @@
 import { describe, expect, test } from "bun:test";
 import { packageRecord, voucherRecord } from "../../src/serializers/records.js";
 import { useTestDatabase } from "./harness.js";
+import { testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 
 describe("API records from real rows", () => {
   test("money as an exact decimal string, timestamps as UTC ISO, bytes as numbers", async () => {
     const pkg = await t.db.package.create({
-      data: { name: "Day", durationMinutes: 1440, downloadSpeedMbps: 20, priceTsh: "2500.5" },
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Day",
+        durationMinutes: 1440,
+        downloadSpeedMbps: 20,
+        priceTsh: "2500.5",
+      },
     });
-    const venue = await t.db.venue.create({ data: { name: "Home", location: "Dar es Salaam" } });
+    const venue = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Home",
+        region: "Dar es Salaam",
+        area: "Dar es Salaam",
+      },
+    });
     const voucher = await t.db.voucher.create({
       data: {
         code: "WIFI-REC",

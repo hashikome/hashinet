@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { addStaff } from "../../src/staff/add-staff.js";
 import {
   browser,
   type Client,
@@ -9,26 +8,31 @@ import {
   useApi,
 } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
 /** A signed-in admin with an authenticator app. */
 async function admin(): Promise<Client> {
-  await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
   const c = browser(api);
   await enrollAuthenticatorFor(api, c, "admin@example.com");
   return c;
 }
 
 async function manager(email: string): Promise<{ client: Client; id: string }> {
-  const { id } = await addStaff(t.db, { email, name: email, role: "manager" });
+  const { membershipId: id } = await businessMember(t.db, {
+    email,
+    name: email,
+    role: "venue_manager",
+  });
   const client = browser(api);
-  expect((await signInWithCode(api, client, email)).status).toBe(200);
+  await enrollAuthenticatorFor(api, client, email);
   return { client, id };
 }
 
-const VENUE = { name: "Home", location: "Dar es Salaam" };
+const VENUE = { name: "Home", region: "Dar es Salaam", area: "Dar es Salaam" };
 
 describe("venues", () => {
   test("nobody signed in gets 401, and an admin without an authenticator 403", async () => {
@@ -39,57 +43,65 @@ describe("venues", () => {
       body: { code: "SIGN_IN_REQUIRED", message: "Sign in to continue.", details: null },
     });
 
-    await addStaff(t.db, { email: "new-admin@example.com", name: "New", role: "admin" });
+    await platformMember(t.db, { email: "new-admin@example.com", name: "New", role: "admin" });
     const unenrolled = browser(api);
     await signInWithCode(api, unenrolled, "new-admin@example.com");
     const held = await unenrolled.request("GET", "/api/venues");
     expect(held.status).toBe(403);
-    expect(held.body).toMatchObject({ code: "TWO_FACTOR_ENROLLMENT_REQUIRED" });
+    expect(held.body).toMatchObject({ code: "PROTECTION_REQUIRED" });
   });
 
   test("an admin creates, reads, updates and deletes a venue, and each is audited", async () => {
     const c = await admin();
-    const { id: operatorId } = await addStaff(t.db, {
-      email: "op@example.com",
-      name: "Operator",
-      role: "manager",
-    });
-    const created = await c.request("POST", "/api/venues", {
-      ...VENUE,
-    });
+    const businessId = await testBusinessId(t.db);
+    const created = await c.request("POST", "/api/venues", { ...VENUE, businessId });
     expect(created.status).toBe(201);
     const venue = (created.body as { venue: Record<string, unknown> }).venue;
     expect(venue).toMatchObject({
       name: "Home",
-      operatorId: null,
+      businessId,
       routerCount: 0,
     });
     const id = String(venue.id);
-    // Who operates a venue is the Team page's; saving the venue leaves it alone.
-    await t.db.venue.update({ where: { id }, data: { operatorId } });
 
     const list = await c.request("GET", "/api/venues");
     expect((list.body as { venues: unknown[] }).venues.length).toBe(1);
 
-    const updated = await c.request("PUT", `/api/venues/${id}`, { ...VENUE, name: "Home 2" });
+    // An update never moves a venue to another business.
+    const elsewhere = await testBusinessId(t.db, "Elsewhere");
+    const updated = await c.request("PUT", `/api/venues/${id}`, {
+      ...VENUE,
+      name: "Home 2",
+      businessId: elsewhere,
+    });
     expect(updated.status).toBe(200);
-    expect(updated.body).toMatchObject({ venue: { name: "Home 2", operatorId } });
+    expect(updated.body).toMatchObject({ venue: { name: "Home 2", businessId } });
 
     expect((await c.request("DELETE", `/api/venues/${id}`)).status).toBe(204);
     expect((await c.request("GET", `/api/venues/${id}`)).status).toBe(404);
     const actions = (await t.db.auditLog.findMany({ orderBy: { createdAt: "asc" } })).map(
       (entry) => entry.action,
     );
-    expect(actions).toEqual(["venue_created", "venue_updated", "venue_deleted"]);
+    expect(actions).toEqual(["venue.create", "venue.update", "venue.delete"]);
   });
 
   test("a manager sees only their own venues, and cannot change any", async () => {
     const own = await manager("own@example.com");
     const other = await manager("other@example.com");
-    const mine = await t.db.venue.create({ data: { ...VENUE, operatorId: own.id } });
-    const theirs = await t.db.venue.create({
-      data: { ...VENUE, name: "Theirs", operatorId: other.id },
+    const mine = await t.db.venue.create({
+      data: { businessId: await testBusinessId(t.db), ...VENUE },
     });
+    if (own.id)
+      await t.db.membershipVenue.create({ data: { membershipId: own.id, venueId: mine.id } });
+    const theirs = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        ...VENUE,
+        name: "Theirs",
+      },
+    });
+    if (other.id)
+      await t.db.membershipVenue.create({ data: { membershipId: other.id, venueId: theirs.id } });
 
     const list = await own.client.request("GET", "/api/venues");
     expect((list.body as { venues: { id: string }[] }).venues.map((v) => v.id)).toEqual([mine.id]);
@@ -124,14 +136,16 @@ describe("venues", () => {
     const c = await admin();
     const bad = await c.request("POST", "/api/venues", {
       name: "Line\nbreak",
-      location: "",
+      region: "Dar es Salaam",
+      area: "",
     });
     expect(bad.status).toBe(400);
     expect(bad.body).toMatchObject({
       code: "VALIDATION_FAILED",
       details: {
         name: "must be one line of text",
-        location: "is required",
+        region: "Dar es Salaam",
+        area: "is required",
       },
     });
     expect((await c.request("GET", "/api/venues/not-a-uuid")).status).toBe(404);
@@ -139,7 +153,9 @@ describe("venues", () => {
 
   test("a venue with routers cannot be deleted", async () => {
     const c = await admin();
-    const venue = await t.db.venue.create({ data: VENUE });
+    const venue = await t.db.venue.create({
+      data: { businessId: await testBusinessId(t.db), ...VENUE },
+    });
     await t.db.router.create({
       data: { venueId: venue.id, name: "r1", ipAddress: "192.168.88.1" },
     });

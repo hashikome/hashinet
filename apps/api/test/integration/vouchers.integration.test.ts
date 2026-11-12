@@ -1,22 +1,26 @@
 import { describe, expect, test } from "bun:test";
-import { addStaff } from "../../src/staff/add-staff.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
 async function admin(): Promise<Client> {
-  await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
   const c = browser(api);
   await enrollAuthenticatorFor(api, c, "admin@example.com");
   return c;
 }
 
 async function manager(email: string): Promise<{ client: Client; id: string }> {
-  const { id } = await addStaff(t.db, { email, name: email, role: "manager" });
+  const { membershipId: id } = await businessMember(t.db, {
+    email,
+    name: email,
+    role: "venue_manager",
+  });
   const client = browser(api);
-  expect((await signInWithCode(api, client, email)).status).toBe(200);
+  await enrollAuthenticatorFor(api, client, email);
   return { client, id };
 }
 
@@ -24,9 +28,18 @@ const DAY = { name: "Day", durationMinutes: 1440, downloadSpeedMbps: 10, priceTs
 
 async function setting(operatorId: string | null) {
   const venue = await t.db.venue.create({
-    data: { name: "Home", location: "Dar es Salaam", operatorId },
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Home",
+      region: "Dar es Salaam",
+      area: "Dar es Salaam",
+    },
   });
-  const pkg = await t.db.package.create({ data: { ...DAY, dataLimitGb: 5 } });
+  if (operatorId)
+    await t.db.membershipVenue.create({ data: { membershipId: operatorId, venueId: venue.id } });
+  const pkg = await t.db.package.create({
+    data: { businessId: await testBusinessId(t.db), ...DAY, dataLimitGb: 5 },
+  });
   return { venue, pkg };
 }
 
@@ -77,7 +90,7 @@ describe("vouchers", () => {
     const stored = await t.db.voucher.findFirstOrThrow();
     const days = ((stored.expiresAt?.getTime() ?? 0) - Date.now()) / 86_400_000;
     expect(days).toBeGreaterThan(29.9);
-    expect((await t.db.auditLog.findFirstOrThrow()).action).toBe("vouchers_generated");
+    expect((await t.db.auditLog.findFirstOrThrow()).action).toBe("voucher.print");
 
     const again = await own.client.request("GET", `/api/vouchers/batches/${detail.batch.id}`);
     expect((again.body as Detail).vouchers.map((v) => v.code).sort()).toEqual(
@@ -119,9 +132,20 @@ describe("vouchers", () => {
   test("only a package on sale at the venue, and only in the manager's venues", async () => {
     const own = await manager("own@example.com");
     const { venue, pkg } = await setting(own.id);
-    const other = await t.db.venue.create({ data: { name: "Other", location: "Arusha" } });
-    const week = await t.db.package.create({ data: { ...DAY, name: "Week" } });
-    const retired = await t.db.package.create({ data: { ...DAY, name: "Old", isActive: false } });
+    const other = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Other",
+        region: "Dar es Salaam",
+        area: "Arusha",
+      },
+    });
+    const week = await t.db.package.create({
+      data: { businessId: await testBusinessId(t.db), ...DAY, name: "Week" },
+    });
+    const retired = await t.db.package.create({
+      data: { businessId: await testBusinessId(t.db), ...DAY, name: "Old", isActive: false },
+    });
     await t.db.venuePackage.create({ data: { venueId: venue.id, packageId: week.id } });
 
     const batch = (packageId: string, venueId = venue.id) =>
@@ -142,7 +166,14 @@ describe("vouchers", () => {
     const own = await manager("own@example.com");
     const { venue, pkg } = await setting(own.id);
     const c = await admin();
-    const other = await t.db.venue.create({ data: { name: "Other", location: "Arusha" } });
+    const other = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Other",
+        region: "Dar es Salaam",
+        area: "Arusha",
+      },
+    });
     const mine = (
       await own.client.request("POST", "/api/vouchers/batches", {
         venueId: venue.id,
@@ -215,7 +246,7 @@ describe("vouchers", () => {
     expect(after.get(unused.id)?.revokedAt).not.toBeNull();
     expect(after.get(active.id)?.status).toBe("active");
     expect(after.get(finished.id)?.status).toBe("used");
-    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain("vouchers_revoked");
+    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain("voucher.revoke");
     const again = await c.request("POST", "/api/vouchers/revoke", { ids: [unused.id] });
     expect(again.body).toEqual({ revoked: 0 });
   });
@@ -224,7 +255,14 @@ describe("vouchers", () => {
     const own = await manager("own@example.com");
     const { venue, pkg } = await setting(own.id);
     const c = await admin();
-    const other = await t.db.venue.create({ data: { name: "Other", location: "Arusha" } });
+    const other = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Other",
+        region: "Dar es Salaam",
+        area: "Arusha",
+      },
+    });
     const mine = (
       await own.client.request("POST", "/api/vouchers/batches", {
         venueId: venue.id,

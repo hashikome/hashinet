@@ -1,19 +1,32 @@
 import { describe, expect, test } from "bun:test";
-import { addStaff } from "../../src/staff/add-staff.js";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { platformMember, testBusinessId } from "./people.js";
 
 /** No provider credentials: what launches. Printed vouchers need neither provider. */
 const t = useTestDatabase();
 const api = useApi();
 
 async function setting() {
-  const venue = await t.db.venue.create({ data: { name: "Cafe", location: "Dar" } });
+  const venue = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Cafe",
+      region: "Dar es Salaam",
+      area: "Dar",
+    },
+  });
   const router = await t.db.router.create({
     data: { venueId: venue.id, name: "Lobby", ipAddress: "192.168.88.2" },
   });
   const pkg = await t.db.package.create({
-    data: { name: "Day", durationMinutes: 1440, downloadSpeedMbps: 5, priceTsh: "2000" },
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Day",
+      durationMinutes: 1440,
+      downloadSpeedMbps: 5,
+      priceTsh: "2000",
+    },
   });
   return { venue, router, pkg };
 }
@@ -42,7 +55,7 @@ describe("without mobile money or SMS", () => {
   });
 
   test("staff see what is on, and a sale waits with the rest", async () => {
-    await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const c = browser(api);
     await enrollAuthenticatorFor(api, c, "admin@example.com");
     expect((await c.request("GET", "/api/capabilities")).body).toEqual({

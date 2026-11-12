@@ -1,22 +1,26 @@
 import { describe, expect, test } from "bun:test";
-import { addStaff } from "../../src/staff/add-staff.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
 async function admin(): Promise<Client> {
-  await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
   const c = browser(api);
   await enrollAuthenticatorFor(api, c, "admin@example.com");
   return c;
 }
 
 async function manager(email: string): Promise<{ client: Client; id: string }> {
-  const { id } = await addStaff(t.db, { email, name: email, role: "manager" });
+  const { membershipId: id } = await businessMember(t.db, {
+    email,
+    name: email,
+    role: "venue_manager",
+  });
   const client = browser(api);
-  expect((await signInWithCode(api, client, email)).status).toBe(200);
+  await enrollAuthenticatorFor(api, client, email);
   return { client, id };
 }
 
@@ -31,10 +35,32 @@ let codes = 0;
  * payment).
  */
 async function october(operatorId: string | null) {
-  const home = await t.db.venue.create({ data: { name: "Home", location: "Dar", operatorId } });
-  const other = await t.db.venue.create({ data: { name: "Other", location: "Arusha" } });
+  const home = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Home",
+      region: "Dar es Salaam",
+      area: "Dar",
+    },
+  });
+  if (operatorId)
+    await t.db.membershipVenue.create({ data: { membershipId: operatorId, venueId: home.id } });
+  const other = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Other",
+      region: "Dar es Salaam",
+      area: "Arusha",
+    },
+  });
   const day = await t.db.package.create({
-    data: { name: "Day", durationMinutes: 1440, downloadSpeedMbps: 10, priceTsh: 1000 },
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Day",
+      durationMinutes: 1440,
+      downloadSpeedMbps: 10,
+      priceTsh: 1000,
+    },
   });
   const batch = await t.db.voucherBatch.create({
     data: { venueId: home.id, packageId: day.id, quantity: 6, prefix: "WIFI" },

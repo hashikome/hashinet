@@ -7,6 +7,7 @@ import { RouterSync } from "../../src/services/router-sync.js";
 import { VoucherExpiry } from "../../src/vouchers/voucher-expiry.js";
 import { VoucherReconciler } from "../../src/vouchers/voucher-reconciler.js";
 import { useTestDatabase } from "./harness.js";
+import { testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 
@@ -30,9 +31,22 @@ async function venueWithVouchers(
     expiresIn: number;
   }[],
 ) {
-  const venue = await t.db.venue.create({ data: { name: "Home", location: "Dar es Salaam" } });
+  const venue = await t.db.venue.create({
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Home",
+      region: "Dar es Salaam",
+      area: "Dar es Salaam",
+    },
+  });
   const pkg = await t.db.package.create({
-    data: { name: "Hour", durationMinutes: 60, downloadSpeedMbps: 10, priceTsh: "1000" },
+    data: {
+      businessId: await testBusinessId(t.db),
+      name: "Hour",
+      durationMinutes: 60,
+      downloadSpeedMbps: 10,
+      priceTsh: "1000",
+    },
   });
   for (const v of vouchers) {
     await t.db.voucher.create({

@@ -1,22 +1,26 @@
 import { describe, expect, test } from "bun:test";
-import { addStaff } from "../../src/staff/add-staff.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
 async function admin(): Promise<Client> {
-  await addStaff(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
   const c = browser(api);
   await enrollAuthenticatorFor(api, c, "admin@example.com");
   return c;
 }
 
 async function manager(email: string): Promise<{ client: Client; id: string }> {
-  const { id } = await addStaff(t.db, { email, name: email, role: "manager" });
+  const { membershipId: id } = await businessMember(t.db, {
+    email,
+    name: email,
+    role: "venue_manager",
+  });
   const client = browser(api);
-  expect((await signInWithCode(api, client, email)).status).toBe(200);
+  await enrollAuthenticatorFor(api, client, email);
   return { client, id };
 }
 
@@ -57,7 +61,7 @@ describe("packages", () => {
     const actions = (await t.db.auditLog.findMany({ orderBy: { createdAt: "asc" } })).map(
       (entry) => entry.action,
     );
-    expect(actions).toEqual(["package_created", "package_updated", "package_deleted"]);
+    expect(actions).toEqual(["package.create", "package.update", "package.delete"]);
   });
 
   test("the API enforces the form's rules and the ones that make throttling work", async () => {
@@ -115,7 +119,9 @@ describe("packages", () => {
 
   test("a package that vouchers still use cannot be deleted", async () => {
     const c = await admin();
-    const pkg = await t.db.package.create({ data: DAY });
+    const pkg = await t.db.package.create({
+      data: { businessId: await testBusinessId(t.db), ...DAY },
+    });
     await t.db.voucher.create({
       data: { packageId: pkg.id, code: "LIVE01", durationMinutes: 1440, priceTsh: "2000" },
     });
@@ -129,8 +135,12 @@ describe("packages", () => {
 
   test("a manager reads what is on sale and changes nothing", async () => {
     const { client } = await manager("m@example.com");
-    const active = await t.db.package.create({ data: DAY });
-    const retired = await t.db.package.create({ data: { ...DAY, name: "Old", isActive: false } });
+    const active = await t.db.package.create({
+      data: { businessId: await testBusinessId(t.db), ...DAY },
+    });
+    const retired = await t.db.package.create({
+      data: { businessId: await testBusinessId(t.db), ...DAY, name: "Old", isActive: false },
+    });
 
     const list = await client.request("GET", "/api/packages");
     expect((list.body as { packages: Body[] }).packages.map((p) => p.id)).toEqual([active.id]);
@@ -144,12 +154,32 @@ describe("packages", () => {
     const c = await admin();
     const own = await manager("own@example.com");
     const venue = await t.db.venue.create({
-      data: { name: "Home", location: "Dar es Salaam", operatorId: own.id },
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Home",
+        region: "Dar es Salaam",
+        area: "Dar es Salaam",
+      },
     });
-    const other = await t.db.venue.create({ data: { name: "Other", location: "Arusha" } });
-    const day = await t.db.package.create({ data: DAY });
-    const week = await t.db.package.create({ data: { ...DAY, name: "Week", priceTsh: 9000 } });
-    await t.db.package.create({ data: { ...DAY, name: "Old", isActive: false } });
+    if (own.id)
+      await t.db.membershipVenue.create({ data: { membershipId: own.id, venueId: venue.id } });
+    const other = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "Other",
+        region: "Dar es Salaam",
+        area: "Arusha",
+      },
+    });
+    const day = await t.db.package.create({
+      data: { businessId: await testBusinessId(t.db), ...DAY },
+    });
+    const week = await t.db.package.create({
+      data: { businessId: await testBusinessId(t.db), ...DAY, name: "Week", priceTsh: 9000 },
+    });
+    await t.db.package.create({
+      data: { businessId: await testBusinessId(t.db), ...DAY, name: "Old", isActive: false },
+    });
 
     const all = await own.client.request("GET", `/api/venues/${venue.id}/packages`);
     expect(all.body).toMatchObject({ sellsAll: true, assignedPackageIds: [] });
@@ -179,6 +209,10 @@ describe("packages", () => {
     );
     expect(managerAssign.status).toBe(403);
     const actions = (await t.db.auditLog.findMany()).map((entry) => entry.action);
-    expect(actions.sort()).toEqual(["package_assigned", "package_assigned", "package_unassigned"]);
+    expect(actions.sort()).toEqual([
+      "package.venue.assign",
+      "package.venue.assign",
+      "package.venue.unassign",
+    ]);
   });
 });
