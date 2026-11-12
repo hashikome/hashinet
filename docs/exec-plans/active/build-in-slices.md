@@ -221,6 +221,14 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   Rationale: each needs a journey that is not in slice 1.
   Date/Author: 2026-11-13 / Claude.
 
+- Decision: slice 1's router page keeps the first build's setup: Add router asks the router's address
+  on the venue's network (the script sets it statically), not the prototype's "from the ISP router,
+  automatically". The script's API password is stored on the router when the script is made, so the
+  first build's warning to copy it into a form went.
+  Rationale: the setup flow carries over unchanged in slice 1; taking the address by DHCP changes
+  provisioning and is tested on the physical router (build-hashinet M8).
+  Date/Author: 2026-11-13 / Claude.
+
 ## Outcomes & Retrospective
 
 Not started.

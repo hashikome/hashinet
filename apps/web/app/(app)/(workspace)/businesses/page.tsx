@@ -6,6 +6,7 @@ import type {
   InvitationList,
   InvitationRecord,
 } from "@hashinet/types";
+import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { Dialog } from "@/components/hearth/dialog";
 import {
@@ -169,6 +170,16 @@ export default function BusinessesPage() {
                       <div key="n">
                         <div className="name">{b.name}</div>
                         <div className="sub">{b.owner?.name ?? "No owner yet"}</div>
+                        <div className="sub">
+                          {b.venues.map((v, i) => (
+                            <span key={v.id}>
+                              {i ? " · " : ""}
+                              <Link className="link" href={`/venues/${v.id}/router`}>
+                                {v.name}&apos;s router
+                              </Link>
+                            </span>
+                          ))}
+                        </div>
                       </div>,
                       b.region,
                       b.area,

@@ -216,12 +216,6 @@ export function buildBootstrapScript(input: BootstrapInput): BootstrapScript {
         `able to reach it, and the default route will not work.`,
     );
   }
-  if (apiPasswordGenerated) {
-    warnings.push(
-      "A strong API password was generated. Copy it into the API Password field on this form " +
-        "before saving — it is not stored anywhere until you do.",
-    );
-  }
   if (!input.adminPassword?.trim()) {
     warnings.push(
       "No admin password given, so the script leaves it alone. A freshly reset MikroTik has a " +
