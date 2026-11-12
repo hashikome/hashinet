@@ -63,7 +63,7 @@ async function october(operatorId: string | null) {
     },
   });
   const batch = await t.db.voucherBatch.create({
-    data: { venueId: home.id, packageId: day.id, quantity: 6, prefix: "WIFI" },
+    data: { venueId: home.id, packageId: day.id, quantity: 6 },
   });
   const card = (status: "active" | "used" | "expired" | "unused", activatedAt: Date | null) => {
     codes += 1;
@@ -172,7 +172,7 @@ describe("revenue", () => {
     ]);
     expect(JSON.stringify(tx)).not.toContain("+255");
     expect(tx.transactions[0]).toMatchObject({ source: "cash", reference: "REF-1" });
-    expect(tx.transactions.at(-1)).toMatchObject({ source: "cash", reference: "WIFI" });
+    expect(tx.transactions.at(-1)).toMatchObject({ source: "cash", reference: null });
 
     const bad = await c.request("GET", "/api/revenue/summary?month=2026-13");
     expect(bad.status).toBe(400);
@@ -325,7 +325,7 @@ describe("a business's day", () => {
       [cafe.id, "T-3"],
     ] as const) {
       const batch = await t.db.voucherBatch.create({
-        data: { venueId, packageId: hour.id, quantity: 1, prefix: code },
+        data: { venueId, packageId: hour.id, quantity: 1 },
       });
       await t.db.voucher.create({
         data: {

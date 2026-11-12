@@ -25,12 +25,11 @@ describe("portal settings", () => {
     const saved = await c.request("PUT", "/api/portal", {
       ...SETTINGS,
       brandName: "Home WiFi",
-      voucherPrefix: "home",
       message: "Line one\nLine two",
     });
     expect(saved.status).toBe(200);
     expect(saved.body).toMatchObject({
-      settings: { brandName: "Home WiFi", voucherPrefix: "HOME", message: "Line one\nLine two" },
+      settings: { brandName: "Home WiFi", message: "Line one\nLine two" },
     });
     await c.request("PUT", "/api/portal", { ...SETTINGS, brandName: "Again" });
     expect(await t.db.portalSetting.count()).toBe(1);
@@ -55,7 +54,6 @@ describe("portal settings", () => {
       brandName: "",
       primaryColor: "red",
       headline: "Two\nlines",
-      voucherPrefix: "A-B",
       // Not a field any more: unknown fields are ignored, never stored.
       logoUrl: "https://tracker.example/logo.png",
     });
@@ -64,7 +62,6 @@ describe("portal settings", () => {
       "brandName",
       "headline",
       "primaryColor",
-      "voucherPrefix",
     ]);
   });
 });

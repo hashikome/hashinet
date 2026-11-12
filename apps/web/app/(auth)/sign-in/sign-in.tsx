@@ -375,7 +375,10 @@ function safeNext(raw: string | null): string {
   if (!raw) return "/";
   try {
     const url = new URL(raw, window.location.origin);
-    return url.origin === window.location.origin ? `${url.pathname}${url.search}${url.hash}` : "/";
+    if (url.origin !== window.location.origin) return "/";
+    // "/.//evil.example" resolves to the path "//evil.example", which a browser reads as another
+    // site: the path keeps one leading slash.
+    return `${url.pathname.replace(/^[/\\]+/, "/")}${url.search}${url.hash}`;
   } catch {
     return "/";
   }

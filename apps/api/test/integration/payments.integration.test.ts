@@ -211,7 +211,7 @@ describe("buying on the portal", () => {
 
     const seen = (await status(paymentId, secret)).body as Record<string, unknown>;
     expect(seen).toMatchObject({ state: "paid", online: true, owed: false, sms: "sent" });
-    expect(seen.code).toMatch(/^WIFI-/);
+    expect(seen.code).toMatch(/^\d{12}$/);
     expect(seen.dst).toBe("http://example.com/");
     expect(signedIn).toBe(1);
 
@@ -304,7 +304,7 @@ describe("buying on the portal", () => {
     await t.db.payment.update({ where: { id: paymentId }, data: { lastCheckedAt: new Date() } });
     const owed = (await status(paymentId, secret)).body as Record<string, unknown>;
     expect(owed).toMatchObject({ state: "paid", owed: true, online: false });
-    expect(owed.code).toMatch(/^WIFI-/);
+    expect(owed.code).toMatch(/^\d{12}$/);
     expect((await t.db.payment.findFirstOrThrow()).provisionError).toContain("unreachable");
 
     routerUp = true;
@@ -323,7 +323,7 @@ describe("buying on the portal", () => {
     await t.db.payment.update({ where: { id: paymentId }, data: { lastCheckedAt: new Date() } });
     const seen = (await status(paymentId, secret)).body as Record<string, unknown>;
     expect(seen).toMatchObject({ online: true, sms: "failed" });
-    expect(seen.code).toMatch(/^WIFI-/);
+    expect(seen.code).toMatch(/^\d{12}$/);
   });
 });
 
@@ -345,7 +345,7 @@ describe("when things take a while", () => {
     await t.db.payment.update({ where: { id: paymentId }, data: { lastCheckedAt: new Date() } });
     const seen = (await status(paymentId, secret)).body;
     expect(seen).toMatchObject({ state: "paid", online: false, owed: false, ended: false });
-    expect(seen.code).toMatch(/^WIFI-/);
+    expect(seen.code).toMatch(/^\d{12}$/);
   });
 
   test("when the voucher ends the purchase is over, and the code is gone", async () => {
@@ -479,7 +479,7 @@ describe("sales and records", () => {
     });
     expect(sale.status).toBe(201);
     expect(sale.body).toMatchObject({
-      code: expect.stringMatching(/^WIFI-/),
+      code: expect.stringMatching(/^\d{12}$/),
       routerConfirmed: true,
       sms: "sent",
     });

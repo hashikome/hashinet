@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalCode } from "../vouchers/voucher-codes.js";
 
 const MAC = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
@@ -18,7 +19,8 @@ export const contextInput = z.object(fromRouter);
 export const redeemInput = z.object({
   ...fromRouter,
   linkOrig: z.string().max(2000).default(""),
-  code: z.string().trim().min(1, "is required").max(80),
+  // Read off a card in groups ("4827 1693 6518"): stored without the spaces.
+  code: z.string().max(80).transform(normalCode).pipe(z.string().min(1, "is required")),
 });
 
 export const sessionInput = z.object({ router: fromRouter.router, mac: fromRouter.mac });

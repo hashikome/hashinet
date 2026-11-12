@@ -82,7 +82,6 @@ export interface VoucherBatchRecord {
   packageName: string | null;
   createdById: string | null;
   quantity: number;
-  prefix: string;
   /** The date by which its cards must be used, or null. */
   expiresAt: Timestamp | null;
   createdAt: Timestamp;
@@ -127,7 +126,6 @@ export interface PortalSettingsRecord {
   backgroundColor: string;
   radius: number;
   voucherLabel: string;
-  voucherPrefix: string;
   voucherHelp: string;
   ticketTitle: string;
   ticketFooter: string;
@@ -593,7 +591,7 @@ export interface RevenueTransactions {
     amountTsh: DecimalString;
     packageName: string | null;
     venueName: string | null;
-    /** The provider's reference for a payment, the batch prefix for a card. Never a phone. */
+    /** The provider's reference for a payment; null for a printed card. Never a phone. */
     reference: string | null;
     occurredAt: Timestamp;
   }[];

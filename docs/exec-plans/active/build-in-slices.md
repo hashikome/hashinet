@@ -112,8 +112,18 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
 
 ## Surprises & Discoveries
 
-- Observation: none yet.
-  Evidence: -
+- Observation: Better Auth runs its `after` hooks for failed calls too, with the error as the result,
+  so the first-enrollment upgrade in (c) turned an email-code session into an "authenticator" one on
+  a wrong code: a way past the protection rule.
+  Evidence: `better-auth/dist/api/dispatch.mjs` (`runAfterHooks` after an `APIError`); fixed in (g)
+  part 1 with a regression test ("a failed authenticator check never upgrades an email-code session").
+- Observation: the first build's form floor of TSh 1,000 on package prices survived into the API and
+  refused the approved default hour of TSh 500; voucher codes still had the old prefix form that
+  ADR-0008 had replaced with 12 digits.
+  Evidence: `package-input.ts`, `voucher-codes.ts` before (g).
+- Observation: Better Auth's own recovery codes mix cases and use 0, O, 1, I and l, hard to copy off
+  paper.
+  Evidence: `better-auth/dist/plugins/two-factor/backup-codes`.
 
 ## Decision Log
 
@@ -177,6 +187,39 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   session would have marked it protected, so an email inbox alone could lift ADR-0011, 9's limit.
   Regression test in `sign-in.integration.test.ts`.
   Date/Author: 2026-11-12 / Claude, from the automated security review.
+
+- Decision: a session records when it last proved the person's protection (`sessions.proved_at`: a
+  passkey, an authenticator code or a recovery code, at sign-in or since). Removing a passkey, new
+  recovery codes and replacing the authenticator need proof from the last 2 hours; replacing it
+  (`POST /api/me/authenticator/replace`) removes the old app, then the person sets up the new one.
+  Rationale: the prototype's 2-hour proof, as GitHub's sudo mode; Better Auth cannot enable a second
+  authenticator while one is verified. Left half done, the session asks for protection again, which
+  is safe; `/api/me` gives `provedUntil`, so a flow asks only when it must.
+  Date/Author: 2026-11-13 / Claude, from the approved prototype.
+- Decision: recovery codes are eight `XXXX-XXXX` codes from an alphabet without 0, O, 1, I or L,
+  accepted in any case and spacing.
+  Rationale: they are read off paper (prototype); 40 bits each, single use, rate-limited.
+  Date/Author: 2026-11-13 / Claude.
+- Decision: removing a package takes it off sale for good and keeps it; the lowest price is TSh 100.
+  Rationale: the prototype's Remove: printed or sold vouchers keep working and its sales stay in the
+  figures. The earlier refusal while vouchers lived, and the TSh 1,000 floor, came from the first
+  build and contradicted the approved defaults.
+  Date/Author: 2026-11-13 / Claude, from the approved prototype.
+- Decision: voucher codes are 12 digits with no prefix, as ADR-0008 decided; the batch, portal and
+  brand prefixes are dropped. A code typed in groups or with dashes is the code.
+  Rationale: the prototype's portal keypad and printed cards; no backward compatibility to keep.
+  Date/Author: 2026-11-13 / Claude, from ADR-0008.
+- Decision: new API for slice 1's screens: `GET /api/businesses` (HashiNet's team), a business's
+  `GET /api/analytics/today`, and the theme and setup deadline in `/api/me`.
+  Rationale: the prototype's Businesses and Overview need them; the old summary hid a business's own
+  revenue from its owner.
+  Date/Author: 2026-11-13 / Claude.
+- Decision: deferred from slice 1's screens: the signed-out "Contact support" and "Send feedback"
+  forms are `mailto:` links until the email form and its Turnstile check exist; the phone tab bar
+  waits for selling at the counter (slice 2); a recovery code signs in after an email code, as Better
+  Auth's second factor, not in place of it.
+  Rationale: each needs a journey that is not in slice 1.
+  Date/Author: 2026-11-13 / Claude.
 
 ## Outcomes & Retrospective
 

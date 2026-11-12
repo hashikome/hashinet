@@ -72,11 +72,11 @@ describe("vouchers", () => {
     });
     expect(created.status).toBe(201);
     const detail = created.body as Detail;
-    expect(detail.batch).toMatchObject({ prefix: "WIFI", quantity: 25, counts: { unused: 25 } });
+    expect(detail.batch).toMatchObject({ quantity: 25, counts: { unused: 25 } });
     expect(detail.vouchers).toHaveLength(25);
     expect(new Set(detail.vouchers.map((v) => v.code)).size).toBe(25);
     for (const voucher of detail.vouchers) {
-      expect(voucher.code).toMatch(/^WIFI-[A-HJKMNP-Z2-9]{8}$/);
+      expect(voucher.code).toMatch(/^\d{12}$/); // ADR-0008: no prefix
       expect(voucher).toMatchObject({
         status: "unused",
         durationMinutes: 1440,
@@ -97,37 +97,6 @@ describe("vouchers", () => {
     expect((again.body as Detail).vouchers.map((v) => v.code).sort()).toEqual(
       detail.vouchers.map((v) => v.code).sort(),
     );
-  });
-
-  test("the prefix is upper-cased, defaults to the portal's, and never changes the portal", async () => {
-    const c = await owner();
-    const { venue, pkg } = await setting(null);
-    await t.db.portalSetting.create({
-      data: {
-        brandName: "Home",
-        headline: "Welcome",
-        message: "Hi",
-        primaryColor: "#000000",
-        accentColor: "#000000",
-        backgroundColor: "#ffffff",
-        voucherLabel: "Code",
-        voucherHelp: "Type it",
-        ticketTitle: "WiFi",
-        ticketFooter: "Thanks",
-        voucherPrefix: "HOME",
-      },
-    });
-    const base = { venueId: venue.id, packageId: pkg.id, quantity: 1 };
-    const defaulted = (await c.request("POST", "/api/vouchers/batches", base)).body as Detail;
-    expect(defaulted.vouchers[0]?.code).toMatch(/^HOME-/);
-    const own = (await c.request("POST", "/api/vouchers/batches", { ...base, prefix: "cafe" }))
-      .body as Detail;
-    expect(own.vouchers[0]?.code).toMatch(/^CAFE-/);
-    expect((await t.db.portalSetting.findFirstOrThrow()).voucherPrefix).toBe("HOME");
-
-    const bad = await c.request("POST", "/api/vouchers/batches", { ...base, prefix: "A-B" });
-    expect(bad.status).toBe(400);
-    expect(bad.body).toMatchObject({ details: { prefix: expect.any(String) } });
   });
 
   test("only a package on sale at the venue, and only in the manager's venues", async () => {

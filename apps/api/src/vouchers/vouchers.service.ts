@@ -131,15 +131,14 @@ export class VouchersService {
         }),
       );
     }
-    const prefix = input.prefix ?? (await this.brand.resolve(input.venueId)).voucherPrefix;
     const expiresAt =
       input.expiryDays === null ? null : new Date(Date.now() + input.expiryDays * DAY_MS);
 
-    const { batchId, codes } = await this.insertBatch(staff, input, prefix, expiresAt);
+    const { batchId, codes } = await this.insertBatch(staff, input, expiresAt);
     await this.audit.record(staff, {
       action: "voucher.print",
       target: { type: "voucher_batch", id: batchId },
-      change: { before: {}, after: { quantity: input.quantity, venueId: input.venueId, prefix } },
+      change: { before: {}, after: { quantity: input.quantity, venueId: input.venueId } },
     });
 
     const row = await this.db.package.findUniqueOrThrow({ where: { id: input.packageId } });
@@ -184,12 +183,11 @@ export class VouchersService {
   private async insertBatch(
     staff: Principal,
     input: BatchInput,
-    prefix: string,
     expiresAt: Date | null,
   ): Promise<{ batchId: string; codes: string[] }> {
     const pkg = await this.db.package.findUniqueOrThrow({ where: { id: input.packageId } });
     for (let attempt = 0; attempt < 3; attempt++) {
-      const codes = await generateCodes(prefix, input.quantity, async (candidates) => {
+      const codes = await generateCodes(input.quantity, async (candidates) => {
         const taken = await this.db.voucher.findMany({
           where: { code: { in: candidates } },
           select: { code: true },
@@ -204,7 +202,6 @@ export class VouchersService {
               venueId: input.venueId,
               createdById: staff.membershipId,
               quantity: input.quantity,
-              prefix,
               expiresAt,
             },
           });
@@ -248,7 +245,6 @@ export class VouchersService {
       packageName: row.package?.name ?? null,
       createdById: row.createdById,
       quantity: row.quantity,
-      prefix: row.prefix,
       expiresAt: row.expiresAt?.toISOString() ?? null,
       createdAt: row.createdAt.toISOString(),
       counts,

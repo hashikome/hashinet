@@ -11,7 +11,6 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettingsRecord = {
   backgroundColor: "#0D1B2A",
   radius: 18,
   voucherLabel: "Voucher code",
-  voucherPrefix: "WIFI",
   voucherHelp: "Ask at the counter for a voucher.",
   ticketTitle: "Internet Access Voucher",
   ticketFooter: "Thank you for your purchase",
@@ -51,11 +50,6 @@ export const portalInput = z.object({
   backgroundColor: colour,
   radius: z.number().int("must be a whole number").min(0).max(32),
   voucherLabel: line(100).min(1, "is required"),
-  voucherPrefix: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z0-9]{1,12}$/, "letters and digits only, up to 12"),
   voucherHelp: paragraph(500),
   ticketTitle: line(160).min(1, "is required"),
   ticketFooter: line(255),

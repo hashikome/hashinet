@@ -275,10 +275,7 @@ export class PaymentsService {
       captureFailure(new Error(`Payment ${paymentId}: the amount reported does not match`));
       return;
     }
-    const { voucherPrefix } = await this.brand.resolve(row.venueId);
-    const [code = ""] = await generateCodes(voucherPrefix, 1, (candidates) =>
-      this.takenCodes(candidates),
-    );
+    const [code = ""] = await generateCodes(1, (candidates) => this.takenCodes(candidates));
 
     const done = await this.db.$transaction(async (tx) => {
       if (event !== null && !(await firstTime(tx, event))) return false;
@@ -490,10 +487,7 @@ export class PaymentsService {
         }),
       );
     }
-    const { voucherPrefix } = await this.brand.resolve(input.venueId);
-    const [code = ""] = await generateCodes(voucherPrefix, 1, (candidates) =>
-      this.takenCodes(candidates),
-    );
+    const [code = ""] = await generateCodes(1, (candidates) => this.takenCodes(candidates));
     const { phone } = input;
     const payment = await this.db.$transaction(async (tx) => {
       const customer =

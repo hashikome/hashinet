@@ -60,11 +60,10 @@ describe("venue branding", () => {
     const saved = await c.request("PUT", `/api/venues/${cafe.id}/brand`, {
       ...SETTINGS,
       brandName: "Cafe WiFi",
-      voucherPrefix: "cafe",
     });
     expect(saved.body).toMatchObject({
       isCustom: true,
-      brand: { brandName: "Cafe WiFi", voucherPrefix: "CAFE" },
+      brand: { brandName: "Cafe WiFi" },
     });
     const other = await venue("Other");
     expect((await c.request("GET", `/api/venues/${other.id}/brand`)).body).toMatchObject({
@@ -160,7 +159,7 @@ describe("venue branding", () => {
     expect((await fetch(`${api.url}/api/guest/brand/not-a-uuid/logo.webp`)).status).toBe(404);
   });
 
-  test("a batch takes its venue's prefix, and the portal shows the venue's brand", async () => {
+  test("the portal shows the venue's brand", async () => {
     const c = await owner();
     const cafe = await venue();
     const router = await t.db.router.create({
@@ -169,7 +168,6 @@ describe("venue branding", () => {
     await c.request("PUT", `/api/venues/${cafe.id}/brand`, {
       ...SETTINGS,
       brandName: "Cafe WiFi",
-      voucherPrefix: "CAFE",
     });
     await upload(c, cafe.id, "background", await png());
     const reply = await fetch(`${api.url}/api/guest/context`, {
@@ -184,21 +182,5 @@ describe("venue branding", () => {
         backgroundUrl: expect.stringContaining(`/api/guest/brand/${cafe.id}/background-`),
       },
     });
-
-    const pkg = await t.db.package.create({
-      data: {
-        businessId: await testBusinessId(t.db),
-        name: "Day",
-        durationMinutes: 1440,
-        downloadSpeedMbps: 5,
-        priceTsh: "2000",
-      },
-    });
-    const batch = await c.request("POST", "/api/vouchers/batches", {
-      venueId: cafe.id,
-      packageId: pkg.id,
-      quantity: 1,
-    });
-    expect(batch.body).toMatchObject({ vouchers: [{ code: expect.stringMatching(/^CAFE-/) }] });
   });
 });

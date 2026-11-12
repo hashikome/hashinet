@@ -600,8 +600,6 @@ model VoucherBatch {
   venueId     String?   @map("venue_id") @db.Uuid
   createdById String?   @map("created_by_id") @db.Uuid
   quantity    Int
-  /// Upper-case (CHECK), as voucher codes are.
-  prefix      String    @default("WIFI") @db.VarChar(24)
   expiresAt   DateTime? @map("expires_at") @db.Timestamptz(3)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -844,7 +842,6 @@ model PortalSetting {
   radius          Int      @default(18)
   voucherLabel    String   @map("voucher_label") @db.VarChar(100)
   /// Upper-case (CHECK), as voucher codes are.
-  voucherPrefix   String   @default("WIFI") @map("voucher_prefix") @db.VarChar(24)
   voucherHelp     String   @map("voucher_help")
   ticketTitle     String   @map("ticket_title") @db.VarChar(160)
   ticketFooter    String   @map("ticket_footer") @db.VarChar(255)
@@ -867,7 +864,6 @@ model VenueBrand {
   backgroundColor String   @map("background_color") @db.VarChar(16)
   radius          Int      @default(18)
   voucherLabel    String   @map("voucher_label") @db.VarChar(100)
-  voucherPrefix   String   @map("voucher_prefix") @db.VarChar(12)
   voucherHelp     String   @map("voucher_help")
   ticketTitle     String   @map("ticket_title") @db.VarChar(160)
   ticketFooter    String   @map("ticket_footer") @db.VarChar(255)

@@ -35,7 +35,7 @@ async function setting(deviceLimit = 1) {
     data: {
       venueId: venue.id,
       packageId: pkg.id,
-      code: "WIFI-TESTCODE",
+      code: "482716936518",
       durationMinutes: 1440,
       priceTsh: 2000,
     },
@@ -56,7 +56,8 @@ function redeem(routerId: string, changes: Record<string, unknown> = {}) {
     router: routerId,
     mac: MAC,
     ip: "10.5.50.20",
-    code: "wifi-testcode",
+    // As read off the card: three groups of four.
+    code: "4827 1693 6518",
     ...changes,
   });
 }
@@ -132,7 +133,7 @@ describe("the guest portal", () => {
       return true;
     };
     expect((await redeem(router.id)).status).toBe(200);
-    expect(signedIn).toEqual({ user: "WIFI-TESTCODE", ip: "10.5.50.20", mac: MAC });
+    expect(signedIn).toEqual({ user: "482716936518", ip: "10.5.50.20", mac: MAC });
   });
 
   test("redeeming starts the voucher only once the router confirms it", async () => {

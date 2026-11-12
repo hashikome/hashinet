@@ -23,7 +23,7 @@ export const REVENUE_EVENTS = Prisma.sql`
     FROM payments p
     WHERE p.status = 'paid' AND p.paid_at IS NOT NULL
     UNION ALL
-    SELECT v.id, 'cash', v.price_tsh, v.activated_at, v.venue_id, v.package_id, b.prefix
+    SELECT v.id, 'cash', v.price_tsh, v.activated_at, v.venue_id, v.package_id, NULL::text
     FROM vouchers v
     JOIN voucher_batches b ON b.id = v.batch_id
     WHERE v.activated_at IS NOT NULL

@@ -87,7 +87,6 @@ export function portalSettingsRecord(row: PortalSetting): PortalSettingsRecord {
     backgroundColor: row.backgroundColor,
     radius: row.radius,
     voucherLabel: row.voucherLabel,
-    voucherPrefix: row.voucherPrefix,
     voucherHelp: row.voucherHelp,
     ticketTitle: row.ticketTitle,
     ticketFooter: row.ticketFooter,
