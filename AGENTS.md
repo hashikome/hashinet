@@ -120,3 +120,8 @@ or discard user data without explicit approval.
 - **Screens start as prototypes.** Design new screens and flows as plain HTML in `prototypes/`, testing
   each view in browser DevTools as you go, and implement only what the owner approved
   ([prototypes/README.md](prototypes/README.md)). Publish artifacts only when explicitly asked.
+- **From prototype to product:** a journey and role review is the approval gate; the build ships in
+  vertical slices on local branches (never pushed, no pull requests), each merged with
+  `git merge --ff-only` and accepted live before the next; screens are audited as they are built,
+  and finish-work runs at each slice's end
+  ([prototypes/README.md](prototypes/README.md#from-the-approved-prototype-to-the-product)).

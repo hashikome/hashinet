@@ -32,6 +32,15 @@ workspace holds no copy of this product's plans. Where each kind of document goe
   `docs/engineering-decisions/`;
 - bulky, short-lived context while work is active: git-ignored `ref/`.
 
+## Building from an approved prototype
+
+A product built from an approved prototype ships in vertical slices, each one complete journey
+accepted live before the next, ordered by one slice plan that the detailed plans defer to
+([build-in-slices.md](docs/exec-plans/active/build-in-slices.md)). Each slice is a list of resumable
+steps, each ending with `bun run verify` and a commit. The ground rules (the review gate, local
+branches, per-screen audits, finish-work per slice, no backward compatibility) are in
+[prototypes/README.md](prototypes/README.md#from-the-approved-prototype-to-the-product).
+
 ## Required properties
 
 Every ExecPlan:
