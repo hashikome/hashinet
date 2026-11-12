@@ -229,6 +229,15 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   provisioning and is tested on the physical router (build-hashinet M8).
   Date/Author: 2026-11-13 / Claude.
 
+- Decision: slice 1's Help holds the guides for slice 1's journeys only (an owner's printing,
+  guests, an offline router, packages and sign-in; the platform's invitations and router script),
+  kept in the web (`apps/web/lib/help.tsx`); each later slice adds its guides with its screens.
+  "Was this guide helpful?" and serving Help from the API wait until there is somewhere to keep the
+  answers.
+  Rationale: Help never explains a page that isn't there; the prototype's API-served Help adds a
+  store and an endpoint that slice 1 does not need.
+  Date/Author: 2026-11-13 / Claude.
+
 ## Outcomes & Retrospective
 
 Not started.

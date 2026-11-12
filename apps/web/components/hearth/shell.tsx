@@ -164,6 +164,13 @@ function NavList({ entries, label }: { entries: NavEntry[]; label: string }) {
   return (
     <nav className="nav" aria-label={label}>
       {entries.map((entry) => {
+        if ("heading" in entry) {
+          return (
+            <div className="nav-group" key={`h-${entry.heading}`}>
+              {entry.heading}
+            </div>
+          );
+        }
         if ("links" in entry) {
           const open = entry.label === shown;
           return (

@@ -12,7 +12,11 @@ export interface NavGroup {
   icon: IconName;
   links: { href: string; label: string }[];
 }
-export type NavEntry = NavLink | NavGroup;
+/** A plain heading over the links that follow (Help's areas). */
+export interface NavHeading {
+  heading: string;
+}
+export type NavEntry = NavLink | NavGroup | NavHeading;
 
 /** The prototype's names for each role (app.js `roleName`). */
 export const ROLE_NAME: Record<MembershipRole, string> = {
