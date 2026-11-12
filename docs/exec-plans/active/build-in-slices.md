@@ -46,8 +46,16 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     prototype's personas with example.com addresses, safe to repeat. `REGIONS` and the role types
     in `@hashinet/types`. Verify does not pass yet: 86 type errors in 31 files that still read
     `staff` and `operatorId`, which (b) replaces; (a) and (b) close together.
-  - [ ] (b) The access policy, `Principal`, `GET /api/me` with capabilities, the audit log (ADR-0012);
-    every old module rewired or deleted.
+  - [x] (2026-11-12) (b) The access policy (`apps/api/src/access/`: one table of actions per role, the
+    principal from the session's active membership, the protection rule judged by how the session
+    signed in, the venue scope through the membership), `GET /api/me` with workspaces, access and
+    capabilities, `POST /api/me/membership` (audited), and the ADR-0012 audit log (typed actions,
+    bounded changes, no addresses; its own global module). Removed: the staff guard and module,
+    the team module, the request-origin plumbing, the first build's admin web (`app/(staff)`), 56
+    web files only it used and 11 web dependencies; the web is the captive portal alone until (g).
+    The router sim has its own business. `bun run verify` passes (258 unit tests) and
+    `bun run test:integration` passes (116); a security review and the tests found two leaks, both
+    fixed (cross-business revenue, a venue manager's scope), recorded in the Decision Log.
   - [ ] (c) Sign-in: passkeys, the authenticator, recovery codes, and the session-based protection
     rule, with tests (ADR-0011 §9).
   - [ ] (d) Inviting a new business's owner, and acceptance.

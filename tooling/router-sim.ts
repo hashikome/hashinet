@@ -19,6 +19,7 @@ import { AuditLog } from "../apps/api/src/audit/audit-log.js";
 import { SecretBox } from "../apps/api/src/crypto/secret-box.js";
 import { createPrismaClient, type PrismaClient } from "../apps/api/src/database/client.js";
 import type { Router } from "../apps/api/src/generated/prisma/client.js";
+import { bootstrapPlatform } from "../apps/api/src/platform/bootstrap.js";
 import {
   closeConnection,
   connectToRouter,
@@ -54,7 +55,6 @@ import {
 } from "../apps/api/src/services/router-provision/tunnel.js";
 import { probeVerify } from "../apps/api/src/services/router-provision/verify.js";
 import { describeFailures, outcomeOk, RouterSync } from "../apps/api/src/services/router-sync.js";
-import { addStaff } from "../apps/api/src/staff/add-staff.js";
 
 const ROOT = resolve(import.meta.dir, "..");
 const SIM = join(ROOT, "data", "router-sim");
@@ -561,12 +561,15 @@ async function simServices(state: SimState): Promise<SimServices> {
   const existing = state.routerId
     ? await db.router.findUnique({ where: { id: state.routerId } })
     : null;
+  const businessId = await simBusinessId(db);
   const router = existing
     ? await db.router.update({ where: { id: existing.id }, data: fields })
     : await db.router.create({
         data: {
           ...fields,
-          venue: { create: { name: "Router sim venue", location: "Dar es Salaam" } },
+          venue: {
+            create: { businessId, name: "Router sim venue", region: "Dar es Salaam", area: "Sim" },
+          },
         },
       });
   if (router.id !== state.routerId || encryptionKey !== state.encryptionKey) {
@@ -770,6 +773,7 @@ async function voucher(): Promise<void> {
   try {
     const pkg = await db.package.create({
       data: {
+        businessId: await simBusinessId(db),
         name: `Sim ${minutes} min`,
         durationMinutes: minutes,
         downloadSpeedMbps: 2,
@@ -879,9 +883,7 @@ async function demo(): Promise<void> {
 
   const services = await simServices(state);
   const email = "admin@example.com";
-  if (!(await services.db.user.findFirst({ where: { email } }))) {
-    await addStaff(services.db, { email, name: "Demo Admin", role: "admin" });
-  }
+  await bootstrapPlatform(services.db, { email, name: "Demo Admin" });
   const issued = Bun.spawnSync(["bun", "tooling/router-sim.ts", "voucher", "60"], {
     stdout: "pipe",
     cwd: ROOT,
@@ -900,7 +902,9 @@ async function demo(): Promise<void> {
   ];
   for (const pkg of packages) {
     if (!(await services.db.package.findFirst({ where: { name: pkg.name } }))) {
-      await services.db.package.create({ data: pkg });
+      await services.db.package.create({
+        data: { ...pkg, businessId: await simBusinessId(services.db) },
+      });
     }
   }
 
@@ -1421,3 +1425,13 @@ if (!action) {
   process.exit(2);
 }
 await action();
+
+/** The business the router sim's venue and packages belong to, created on first use. */
+async function simBusinessId(db: { business: PrismaClient["business"] }): Promise<string> {
+  const found = await db.business.findFirst({ where: { name: "Router sim business" } });
+  if (found) return found.id;
+  const created = await db.business.create({
+    data: { name: "Router sim business", region: "Dar es Salaam", area: "Sim" },
+  });
+  return created.id;
+}
