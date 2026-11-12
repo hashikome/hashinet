@@ -61,6 +61,27 @@ and are built by [business-scopes.md](business-scopes.md); branding from
 
 ## Decision Log
 
+- Decision: the journey and role review of 12 November 2026 (every persona's screens and actions walked
+  in the browser, the interface audited, the logic code-reviewed against PRODUCT.md and ADR-0011)
+  settled these rules, now in the prototype:
+  - Platform staff see a business's guests only as counts: Live sessions and Devices show devices per
+    venue, with no MAC address, code, session or action (ADR-0014).
+  - Protection is judged by the session as well as the person: someone required to protect their
+    sign-in who has only a passkey, signed in this time with an email code alone, reaches only Account
+    and security until they use the passkey or set up the authenticator (ADR-0011 §9).
+  - Only platform staff reset an authenticator, after confirming the person; a business's team cannot,
+    and sign-in help points to HashiNet's support.
+  - Nothing sellable is made before sign-in is protected: Print vouchers waits, as Sell does.
+  - Issue claims are kept per workspace: the platform and a business each claim a router issue on
+    their own, and a holder's rank is read from that workspace's own team.
+  - A business manager edits General (the business profile is not the owner's to keep) and does not
+    see Yours to keep (the billing relationship is the owner's). A venue manager's Team lists the
+    people of every venue they run. A platform role change offers only platform roles.
+  - A counter sale counts the same everywhere: in the operator's Today (cash ones in the cash to hand
+    over), the owner's overview and Payments. The build stores each sale's price when it is made, so
+    a later price change never re-prices past sales (the prototype prices takings at today's prices).
+  - "Add a router" asks for another router once a venue's first serves; the first comes through setup.
+
 - Decision: Invitations is the platform's page for finding and acting on invitations, not for issuing
   them: HashiNet's team and new businesses' owners, with Search, Kind and State filters and
   Resend, Revoke or Invite again. A business has the same page, beside Team and the audit log, for an
