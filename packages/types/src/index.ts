@@ -582,6 +582,33 @@ export interface RevenueByVenue {
   venues: { venueId: string | null; venueName: string | null; revenueTsh: DecimalString }[];
 }
 
+/**
+ * `GET /api/payments/received` (a business's own): what guests paid in a month, by the one
+ * definition of revenue: every sale recorded or paid online, and every printed voucher once a
+ * guest used it. Newest first, a page at a time.
+ */
+export interface PaymentsReceived {
+  month: BusinessMonth;
+  /** The months with payments, newest first, for choosing another. */
+  months: BusinessMonth[];
+  totalTsh: DecimalString;
+  count: number;
+  payments: {
+    id: string;
+    source: RevenueSource;
+    /** A sale recorded or paid online, or a printed voucher a guest used. */
+    kind: "sale" | "printed";
+    amountTsh: DecimalString;
+    packageName: string | null;
+    venueName: string | null;
+    /** The provider's reference for a mobile-money payment. Never a phone. */
+    reference: string | null;
+    occurredAt: Timestamp;
+  }[];
+  /** Pass as `before` for the next page; null on the last. */
+  nextBefore: Timestamp | null;
+}
+
 /** `GET /api/revenue/transactions` (admins): the month's latest 50. */
 export interface RevenueTransactions {
   month: BusinessMonth;

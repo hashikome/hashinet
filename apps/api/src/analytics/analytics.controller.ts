@@ -4,6 +4,7 @@ import type {
   DeviceTypeShares,
   MonthlyTrend,
   PackageShares,
+  PaymentsReceived,
   RevenueByPackage,
   RevenueByVenue,
   RevenueSummary,
@@ -15,7 +16,13 @@ import { Controller, Get, Query } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
 import { parseInput } from "../http/validation.js";
-import { AnalyticsService, monthQuery, rangeQuery, todayQuery } from "./analytics.service.js";
+import {
+  AnalyticsService,
+  monthQuery,
+  rangeQuery,
+  receivedQuery,
+  todayQuery,
+} from "./analytics.service.js";
 
 /** Usage over the caller's venues; a business's own day; revenue reports for HashiNet's staff. */
 @Controller("api/analytics")
@@ -92,5 +99,20 @@ export class RevenueController {
   @Can("revenue.read")
   transactions(@Query() query: unknown): Promise<RevenueTransactions> {
     return this.analytics.transactions(parseInput(monthQuery, query));
+  }
+}
+
+/** What guests paid a business, by the one definition of revenue. */
+@Controller("api/payments/received")
+export class PaymentsReceivedController {
+  constructor(private readonly analytics: AnalyticsService) {}
+
+  @Get()
+  @Can("payment.read")
+  received(
+    @CurrentPrincipal() staff: Principal,
+    @Query() query: unknown,
+  ): Promise<PaymentsReceived> {
+    return this.analytics.received(staff, parseInput(receivedQuery, query));
   }
 }

@@ -5,6 +5,7 @@ import type {
   DeviceTypeShares,
   MonthlyTrend,
   PackageShares,
+  PaymentsReceived,
   RevenueByPackage,
   RevenueByVenue,
   RevenueSource,
@@ -26,6 +27,7 @@ import { businessMonthSql, moneySum, REVENUE_EVENTS, venueFilter } from "./reven
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 86_400_000;
+const RECEIVED_PAGE = 100;
 
 export const monthQuery = z.object({
   month: z
@@ -33,6 +35,16 @@ export const monthQuery = z.object({
     .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "must be YYYY-MM")
     .nullable()
     .default(null),
+});
+
+export const receivedQuery = z.object({
+  month: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "must be YYYY-MM")
+    .nullable()
+    .default(null),
+  venueId: z.uuid().nullable().default(null),
+  before: z.iso.datetime().nullable().default(null),
 });
 
 export const todayQuery = z.object({ venueId: z.uuid().nullable().default(null) });
@@ -145,6 +157,72 @@ export class AnalyticsService {
         sold: r.sold,
         takingsTsh: r.takings,
       })),
+    };
+  }
+
+  /** What guests paid a business in a month, newest first, 100 at a time (`PaymentsReceived`). */
+  async received(
+    staff: Principal,
+    query: z.infer<typeof receivedQuery>,
+  ): Promise<PaymentsReceived> {
+    if (staff.scope === "platform") {
+      throw new ForbiddenException(apiError("FORBIDDEN", "Payments are a business's own."));
+    }
+    const all = (await this.venueIds(staff)) ?? [];
+    const venues = query.venueId === null ? all : all.filter((id) => id === query.venueId);
+    const inScope = venueFilter(Prisma.sql`e.venue_id`, venues);
+    const months = await this.db.$queryRaw<{ month: string }[]>`
+      WITH ${REVENUE_EVENTS}
+      SELECT DISTINCT to_char(${businessMonthSql(Prisma.sql`e.occurred_at`)}, 'YYYY-MM') AS month
+      FROM revenue_events e WHERE ${inScope} ORDER BY month DESC`;
+    const month = query.month ?? months[0]?.month ?? this.currentMonth();
+    const inMonth = Prisma.sql`${businessMonthSql(Prisma.sql`e.occurred_at`)} = ${`${month}-01`}::date`;
+    const [total] = await this.db.$queryRaw<{ amount: string; n: number }[]>`
+      WITH ${REVENUE_EVENTS}
+      SELECT ${moneySum(Prisma.sql`e.amount`)} AS amount, count(*)::int AS n
+      FROM revenue_events e WHERE ${inMonth} AND ${inScope}`;
+    const before =
+      query.before === null
+        ? Prisma.sql`TRUE`
+        : Prisma.sql`e.occurred_at < ${new Date(query.before)}`;
+    const rows = await this.db.$queryRaw<
+      {
+        id: string;
+        source: RevenueSource;
+        kind: "sale" | "printed";
+        amount: string;
+        package_name: string | null;
+        venue_name: string | null;
+        reference: string | null;
+        occurred_at: Date;
+      }[]
+    >`
+      WITH ${REVENUE_EVENTS}
+      SELECT e.id, e.source, e.kind, e.amount::numeric(14,2)::text AS amount,
+             p.name AS package_name, v.name AS venue_name, e.reference, e.occurred_at
+      FROM revenue_events e
+      LEFT JOIN packages p ON p.id = e.package_id
+      LEFT JOIN venues v ON v.id = e.venue_id
+      WHERE ${inMonth} AND ${inScope} AND ${before}
+      ORDER BY e.occurred_at DESC, e.id DESC LIMIT ${RECEIVED_PAGE + 1}`;
+    const shown = rows.slice(0, RECEIVED_PAGE);
+    return {
+      month,
+      months: months.map((m) => m.month),
+      totalTsh: total?.amount ?? "0.00",
+      count: total?.n ?? 0,
+      payments: shown.map((r) => ({
+        id: r.id,
+        source: r.source,
+        kind: r.kind,
+        amountTsh: r.amount,
+        packageName: r.package_name,
+        venueName: r.venue_name,
+        reference: r.reference,
+        occurredAt: r.occurred_at.toISOString(),
+      })),
+      nextBefore:
+        rows.length > RECEIVED_PAGE ? (shown.at(-1)?.occurred_at.toISOString() ?? null) : null,
     };
   }
 

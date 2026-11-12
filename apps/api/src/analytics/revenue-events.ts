@@ -3,7 +3,7 @@ import { BUSINESS_TIME_ZONE } from "./business-day.js";
 
 /**
  * HashiNet's one definition of revenue, as a SQL CTE named `revenue_events`
- * (id, source, amount, occurred_at, venue_id, package_id, reference):
+ * (id, source, amount, occurred_at, venue_id, package_id, reference, kind):
  *
  * - every paid payment, when it was paid, by provider (a staff-recorded `manual` payment is
  *   cash);
@@ -19,11 +19,12 @@ export const REVENUE_EVENTS = Prisma.sql`
     SELECT p.id, (CASE WHEN p.provider = 'mobile_money' THEN 'mobile_money'
                        WHEN p.provider = 'card' THEN 'card' ELSE 'cash' END) AS source,
            p.amount_tsh AS amount, p.paid_at AS occurred_at, p.venue_id, p.package_id,
-           p.provider_reference AS reference
+           p.provider_reference AS reference, 'sale' AS kind
     FROM payments p
     WHERE p.status = 'paid' AND p.paid_at IS NOT NULL
     UNION ALL
-    SELECT v.id, 'cash', v.price_tsh, v.activated_at, v.venue_id, v.package_id, NULL::text
+    SELECT v.id, 'cash', v.price_tsh, v.activated_at, v.venue_id, v.package_id, NULL::text,
+           'printed'
     FROM vouchers v
     JOIN voucher_batches b ON b.id = v.batch_id
     WHERE v.activated_at IS NOT NULL

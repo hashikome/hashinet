@@ -381,3 +381,50 @@ describe("a business's day", () => {
     expect((await staff.request("GET", "/api/analytics/today")).status).toBe(403);
   });
 });
+
+describe("payments received", () => {
+  test("a business's month: sales and used printed cards, by month and venue, never another's", async () => {
+    await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
+    const owner = browser(api);
+    await enrollAuthenticatorFor(api, owner, "owner@example.com");
+    const { home, other } = await october(null);
+
+    const october2026 = (await owner.request("GET", "/api/payments/received?month=2026-10"))
+      .body as Body & { payments: Body[] };
+    expect(october2026).toMatchObject({ month: "2026-10", totalTsh: "9000.00", count: 4 });
+    expect(october2026.months).toEqual(["2026-10", "2026-09"]);
+    expect(october2026.payments.map((p) => p.kind).sort()).toEqual([
+      "printed",
+      "printed",
+      "sale",
+      "sale",
+    ]);
+    // Newest first, and the latest month by default.
+    expect((await owner.request("GET", "/api/payments/received")).body).toMatchObject({
+      month: "2026-10",
+    });
+    expect(
+      (await owner.request("GET", `/api/payments/received?month=2026-10&venueId=${other.id}`)).body,
+    ).toMatchObject({ totalTsh: "5000.00", count: 1 });
+    expect(
+      (await owner.request("GET", `/api/payments/received?month=2026-10&venueId=${home.id}`)).body,
+    ).toMatchObject({ totalTsh: "4000.00", count: 3 });
+
+    const elsewhere = await t.db.business.create({
+      data: { name: "Elsewhere", region: "Arusha", area: "Njiro" },
+    });
+    await businessMember(t.db, {
+      email: "far@example.com",
+      name: "Far",
+      role: "owner",
+      businessId: elsewhere.id,
+    });
+    const far = browser(api);
+    await enrollAuthenticatorFor(api, far, "far@example.com");
+    expect((await far.request("GET", "/api/payments/received?month=2026-10")).body).toMatchObject({
+      count: 0,
+      totalTsh: "0.00",
+    });
+    expect((await (await admin()).request("GET", "/api/payments/received")).status).toBe(403);
+  });
+});
