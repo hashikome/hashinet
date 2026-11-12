@@ -204,7 +204,9 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
 
 - Decision: a session records when it last proved the person's protection (`sessions.proved_at`: a
   passkey, an authenticator code or a recovery code, at sign-in or since). Removing a passkey, new
-  recovery codes and replacing the authenticator need proof from the last 2 hours; replacing it
+  recovery codes, replacing the authenticator, and adding a passkey or an authenticator for someone
+  already protected need proof from the last 2 hours; registering a factor never proves a session,
+  except a person's first protection (finish-work's security review); replacing it
   (`POST /api/me/authenticator/replace`) removes the old app, then the person sets up the new one.
   Rationale: the prototype's 2-hour proof, as GitHub's sudo mode; Better Auth cannot enable a second
   authenticator while one is verified. Left half done, the session asks for protection again, which

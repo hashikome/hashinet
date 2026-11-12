@@ -30,7 +30,7 @@ interface Passkey {
 }
 
 /** What a flow does, and so its title and steps. */
-type Kind = "setup" | "replace" | "codes" | "remove";
+type Kind = "setup" | "replace" | "codes" | "remove" | "passkey";
 type Step = "confirm" | "scan" | "codes";
 interface Flow {
   kind: Kind;
@@ -52,6 +52,7 @@ const TITLE: Record<Kind, string> = {
   replace: "Replace your authenticator app",
   codes: "Make new recovery codes",
   remove: "Remove a passkey",
+  passkey: "Add a passkey",
 };
 const PROOF_HOURS = 2;
 
@@ -83,11 +84,13 @@ function SignInSettings() {
 
   /** Starts a flow: proof first when the change needs it and the session has none. */
   async function start(kind: Kind, passkey?: Passkey) {
-    const needsProof = kind !== "setup" && !proved;
+    // Changing protection asks for proof first; so does adding to protection already there.
+    const adds = kind === "setup" || kind === "passkey";
+    const needsProof = !proved && (!adds || authenticator || keys.length > 0);
     const steps: Step[] = [
       ...(needsProof ? (["confirm"] as Step[]) : []),
       ...(kind === "setup" || kind === "replace" ? (["scan"] as Step[]) : []),
-      ...(kind === "remove" ? [] : (["codes"] as Step[])),
+      ...(kind === "remove" || kind === "passkey" ? [] : (["codes"] as Step[])),
     ];
     const next: Flow = { kind, steps, step: steps[0] ?? "codes", passkey };
     if (needsProof) return setFlow(next);
@@ -98,6 +101,17 @@ function SignInSettings() {
   async function proceed(f: Flow) {
     setBusy(true);
     try {
+      if (f.kind === "passkey") {
+        try {
+          await addPasskey();
+          toast("Passkey added");
+        } catch (e) {
+          if (!cancelled(e)) toast(messageOf(e));
+        }
+        setFlow(null);
+        await Promise.all([passkeys.reload(), refresh()]);
+        return;
+      }
       if (f.kind === "remove" && f.passkey) {
         await api.post("/api/auth/passkey/delete-passkey", { id: f.passkey.id });
         setFlow(null);
@@ -207,21 +221,7 @@ function SignInSettings() {
             sub="Sign in with your fingerprint, face or device PIN, without an email code."
             action={
               passkeysSupported() ? (
-                <Button
-                  busy={busy}
-                  onClick={async () => {
-                    setBusy(true);
-                    try {
-                      await addPasskey();
-                      await Promise.all([passkeys.reload(), refresh()]);
-                      toast("Passkey added");
-                    } catch (e) {
-                      if (!cancelled(e)) toast(messageOf(e));
-                    } finally {
-                      setBusy(false);
-                    }
-                  }}
-                >
+                <Button busy={busy} onClick={() => void start("passkey")}>
                   Add a passkey
                 </Button>
               ) : null

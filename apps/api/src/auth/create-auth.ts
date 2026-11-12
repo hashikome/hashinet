@@ -146,17 +146,19 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           }
         }
         if (ADDS_PROTECTION.has(ctx.path)) {
-          // Someone who already has protection adds more only from a session that used it:
-          // otherwise an email inbox alone could add its own second factor (ADR-0011, 9).
+          // Someone who already has protection adds more only with proof from the last 2 hours:
+          // otherwise an email inbox, or a stolen session that signed in with protection long
+          // ago, could add a factor of its own and use it to take over the rest (ADR-0011, 9).
           const current = await getSessionFromCtx(ctx);
-          if (current && (await hasProtection(db, current.user.id))) {
-            const row = await db.session.findUnique({ where: { id: current.session.id } });
-            if (row === null || row.signedInWith === null || row.signedInWith === "email_code") {
-              throw new APIError("FORBIDDEN", {
-                code: "PROTECTION_REQUIRED",
-                message: "Sign in with your passkey or authenticator app to add another.",
-              });
-            }
+          if (
+            current &&
+            (await hasProtection(db, current.user.id)) &&
+            !(await provedRecently(db, current.session.id))
+          ) {
+            throw new APIError("FORBIDDEN", {
+              code: "PROOF_REQUIRED",
+              message: "Confirm it's you with your passkey, authenticator app or a recovery code.",
+            });
           }
         }
       }),
@@ -190,7 +192,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
         if (!current) return;
         await db.session.updateMany({
           where: { id: current.session.id, signedInWith: "email_code" },
-          data: { signedInWith: proved },
+          data: { signedInWith: proved, provedAt: new Date() },
         });
       }),
     },
@@ -263,12 +265,14 @@ const PROVING_METHODS: ReadonlySet<SignInMethod> = new Set([
   "passkey",
 ]);
 
-/** The routes whose success proves the person's protection. */
+/**
+ * The routes whose success proves the person's protection. Registering a passkey is not one:
+ * adding a factor never proves the session by itself, except a person's first protection (below).
+ */
 const PROVES: ReadonlySet<string> = new Set([
   "/two-factor/verify-totp",
   "/two-factor/verify-backup-code",
   "/passkey/verify-authentication",
-  "/passkey/verify-registration",
 ]);
 
 /** How long a proof lets someone change their protection without asking again. */

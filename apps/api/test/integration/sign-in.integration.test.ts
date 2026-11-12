@@ -240,7 +240,7 @@ describe("protection is the session's, not the inbox's", () => {
     });
     const enable = await c.request("POST", "/api/auth/two-factor/enable", {});
     expect(enable.status).toBe(403);
-    expect(enable.body).toMatchObject({ code: "PROTECTION_REQUIRED" });
+    expect(enable.body).toMatchObject({ code: "PROOF_REQUIRED" });
     expect((await c.request("GET", "/api/me")).body).toMatchObject({
       active: { access: "account" },
       protection: { authenticator: false, passkeys: 1 },
@@ -473,5 +473,43 @@ describe("recovery codes are read off paper", () => {
     expect(
       (await c.request("POST", "/api/auth/two-factor/verify-backup-code", { code: typed })).status,
     ).toBe(200);
+  });
+});
+
+describe("adding a factor needs fresh proof", () => {
+  test("a session that signed in with protection hours ago cannot add a factor until it proves again", async () => {
+    const person = await businessMember(t.db, {
+      email: "old@example.com",
+      name: "Old",
+      role: "owner",
+    });
+    await t.db.passkey.create({
+      data: {
+        id: Bun.randomUUIDv7(),
+        userId: person.id,
+        publicKey: "test-key",
+        credentialID: "test-credential-old",
+        counter: 0,
+        deviceType: "singleDevice",
+        backedUp: false,
+      },
+    });
+    const c = client();
+    await signIn(c, "old@example.com");
+    // As if this session had signed in with the passkey, three hours ago.
+    await t.db.session.updateMany({
+      data: { signedInWith: "passkey", provedAt: new Date(Date.now() - 3 * 3_600_000) },
+    });
+    const options = await c.request("GET", "/api/auth/passkey/generate-register-options");
+    expect(options.status).toBe(403);
+    expect(options.body).toMatchObject({ code: "PROOF_REQUIRED" });
+    const enable = await c.request("POST", "/api/auth/two-factor/enable", {});
+    expect(enable.status).toBe(403);
+    expect(await t.db.twoFactor.count()).toBe(0);
+
+    await t.db.session.updateMany({ data: { provedAt: new Date() } });
+    expect((await c.request("GET", "/api/auth/passkey/generate-register-options")).status).toBe(
+      200,
+    );
   });
 });
