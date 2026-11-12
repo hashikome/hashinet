@@ -10,7 +10,12 @@ import type { Principal } from "./principal.js";
 export function venueScope(principal: Principal): VenueWhereInput {
   if (principal.scope === "platform") return {};
   if (principal.venueIds === null) return { businessId: principal.businessId ?? "" };
-  return { businessId: principal.businessId ?? "", id: { in: principal.venueIds } };
+  // Through the membership, never as an `id` filter: callers spread this next to their own
+  // `{ id }`, and an `id` key here would replace the one they asked for.
+  return {
+    businessId: principal.businessId ?? "",
+    members: { some: { membershipId: principal.membershipId } },
+  };
 }
 
 /** The business a principal acts in; null on the platform, which reaches every business. */

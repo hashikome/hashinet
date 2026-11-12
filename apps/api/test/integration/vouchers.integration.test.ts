@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+import { businessMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
-async function admin(): Promise<Client> {
-  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+/** The test business's owner, signed in with an authenticator app. */
+async function owner(): Promise<Client> {
+  await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
   const c = browser(api);
-  await enrollAuthenticatorFor(api, c, "admin@example.com");
+  await enrollAuthenticatorFor(api, c, "owner@example.com");
   return c;
 }
 
@@ -99,7 +100,7 @@ describe("vouchers", () => {
   });
 
   test("the prefix is upper-cased, defaults to the portal's, and never changes the portal", async () => {
-    const c = await admin();
+    const c = await owner();
     const { venue, pkg } = await setting(null);
     await t.db.portalSetting.create({
       data: {
@@ -165,7 +166,7 @@ describe("vouchers", () => {
   test("a manager lists and opens only their venues' vouchers, a page at a time", async () => {
     const own = await manager("own@example.com");
     const { venue, pkg } = await setting(own.id);
-    const c = await admin();
+    const c = await owner();
     const other = await t.db.venue.create({
       data: {
         businessId: await testBusinessId(t.db),
@@ -215,7 +216,7 @@ describe("vouchers", () => {
   });
 
   test("revoking stops unused vouchers, keeps their records, and never cuts off a guest", async () => {
-    const c = await admin();
+    const c = await owner();
     const own = await manager("own@example.com");
     const { venue, pkg } = await setting(own.id);
     const detail = (
@@ -254,7 +255,7 @@ describe("vouchers", () => {
   test("reprinting by id returns only vouchers in the manager's venues", async () => {
     const own = await manager("own@example.com");
     const { venue, pkg } = await setting(own.id);
-    const c = await admin();
+    const c = await owner();
     const other = await t.db.venue.create({
       data: {
         businessId: await testBusinessId(t.db),

@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+import { businessMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
-async function admin(): Promise<Client> {
-  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+/** The test business's owner, signed in with an authenticator app. */
+async function owner(): Promise<Client> {
+  await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
   const c = browser(api);
-  await enrollAuthenticatorFor(api, c, "admin@example.com");
+  await enrollAuthenticatorFor(api, c, "owner@example.com");
   return c;
 }
 
@@ -32,7 +33,7 @@ const details = (reply: { body: unknown }) => (reply.body as { details: Body }).
 
 describe("packages", () => {
   test("an admin creates, replaces and deletes a package, each audited", async () => {
-    const c = await admin();
+    const c = await owner();
     const created = await c.request("POST", "/api/packages", {
       ...DAY,
       features: ["Fast"],
@@ -65,7 +66,7 @@ describe("packages", () => {
   });
 
   test("the API enforces the form's rules and the ones that make throttling work", async () => {
-    const c = await admin();
+    const c = await owner();
     const cases: [Body, string, RegExp][] = [
       [{ priceTsh: 999 }, "priceTsh", /1000/],
       [{ priceTsh: 1500.5 }, "priceTsh", /whole number/],
@@ -118,7 +119,7 @@ describe("packages", () => {
   });
 
   test("a package that vouchers still use cannot be deleted", async () => {
-    const c = await admin();
+    const c = await owner();
     const pkg = await t.db.package.create({
       data: { businessId: await testBusinessId(t.db), ...DAY },
     });
@@ -151,7 +152,7 @@ describe("packages", () => {
   });
 
   test("a venue sells its assigned active packages, or every active one when none are assigned", async () => {
-    const c = await admin();
+    const c = await owner();
     const own = await manager("own@example.com");
     const venue = await t.db.venue.create({
       data: {

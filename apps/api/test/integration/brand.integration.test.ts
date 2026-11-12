@@ -5,17 +5,18 @@ import sharp from "sharp";
 import { DEFAULT_PORTAL_SETTINGS } from "../../src/portal/portal-input.js";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+import { businessMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi({ BRAND_STORE_DIR: join(tmpdir(), `hashinet-brand-${Date.now()}`) });
 
 const { isActive: _active, updatedAt: _updated, ...SETTINGS } = DEFAULT_PORTAL_SETTINGS;
 
-async function admin(): Promise<Client> {
-  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+/** The test business's owner, signed in with an authenticator app. */
+async function owner(): Promise<Client> {
+  await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
   const c = browser(api);
-  await enrollAuthenticatorFor(api, c, "admin@example.com");
+  await enrollAuthenticatorFor(api, c, "owner@example.com");
   return c;
 }
 
@@ -48,7 +49,7 @@ const logoUrlOf = (reply: { body: unknown }) =>
 
 describe("venue branding", () => {
   test("a venue shows the HashiNet default until it sets its own, and can go back", async () => {
-    const c = await admin();
+    const c = await owner();
     const cafe = await venue();
     const before = await c.request("GET", `/api/venues/${cafe.id}/brand`);
     expect(before.body).toMatchObject({
@@ -77,7 +78,7 @@ describe("venue branding", () => {
   });
 
   test("a logo is re-encoded, keeps its transparency, loses its metadata, and is served", async () => {
-    const c = await admin();
+    const c = await owner();
     const cafe = await venue();
     const reply = await upload(c, cafe.id, "logo", await png());
     expect(reply.status).toBe(200);
@@ -97,7 +98,7 @@ describe("venue branding", () => {
   });
 
   test("replacing a logo gives it a new address, and removes the old file", async () => {
-    const c = await admin();
+    const c = await owner();
     const cafe = await venue();
     const first = await upload(c, cafe.id, "logo", await png());
     const url = logoUrlOf(first);
@@ -110,7 +111,7 @@ describe("venue branding", () => {
   });
 
   test("what is not an accepted image is refused, whatever it claims to be", async () => {
-    const c = await admin();
+    const c = await owner();
     const cafe = await venue();
     const svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
     for (const text of [svg, "not an image"]) {
@@ -126,7 +127,7 @@ describe("venue branding", () => {
   });
 
   test("a manager brands their own venues; another's is not found", async () => {
-    await admin();
+    await owner();
     const mine = await venue("Mine");
     const theirs = await venue("Theirs");
     const { membershipId: id } = await businessMember(t.db, {
@@ -160,7 +161,7 @@ describe("venue branding", () => {
   });
 
   test("a batch takes its venue's prefix, and the portal shows the venue's brand", async () => {
-    const c = await admin();
+    const c = await owner();
     const cafe = await venue();
     const router = await t.db.router.create({
       data: { venueId: cafe.id, name: "Lobby", ipAddress: "192.168.88.2" },

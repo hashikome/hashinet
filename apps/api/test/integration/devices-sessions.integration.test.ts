@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+import { businessMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
 
-async function admin(): Promise<Client> {
-  await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+/** The test business's owner, signed in with an authenticator app. */
+async function owner(): Promise<Client> {
+  await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
   const c = browser(api);
-  await enrollAuthenticatorFor(api, c, "admin@example.com");
+  await enrollAuthenticatorFor(api, c, "owner@example.com");
   return c;
 }
 
@@ -104,7 +105,7 @@ describe("devices", () => {
     expect(list.stats).toEqual({ total: 1, online: 0, offline: 1, blocked: 0 });
     expect((await w.own.client.request("GET", `/api/devices/${w.only.id}`)).status).toBe(404);
 
-    const all = (await (await admin()).request("GET", "/api/devices")).body as {
+    const all = (await (await owner()).request("GET", "/api/devices")).body as {
       devices: Body[];
       stats: Body;
     };
@@ -115,7 +116,7 @@ describe("devices", () => {
 
   test("search and status filters, a page at a time", async () => {
     const w = await world();
-    const c = await admin();
+    const c = await owner();
     const online = (await c.request("GET", "/api/devices?status=online")).body as {
       devices: Body[];
     };
@@ -141,7 +142,7 @@ describe("devices", () => {
     ).toBe(403);
     expect((await w.own.client.request("DELETE", path)).status).toBe(403);
 
-    const c = await admin();
+    const c = await owner();
     const blocked = await c.request("PUT", `${path}/status`, { status: "blocked" });
     expect(blocked.body).toMatchObject({ device: { status: "blocked", isOnline: false } });
     expect(
@@ -181,7 +182,7 @@ describe("sessions", () => {
     expect(list.sessions[0]).toMatchObject({ venueName: "Home", deviceId: w.phone.id });
     expect((await w.own.client.request("GET", `/api/sessions/${w.atTheirs.id}`)).status).toBe(404);
 
-    const c = await admin();
+    const c = await owner();
     const connected = (await c.request("GET", "/api/sessions?status=connected")).body as {
       sessions: Body[];
       stats: Body;

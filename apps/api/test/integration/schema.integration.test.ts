@@ -76,7 +76,10 @@ describe("the schema on PostgreSQL 18", () => {
     await t.db.user.create({ data: { id, email: "member@example.com", name: "Member" } });
     await t.db.membership.create({ data: { userId: id, scope: "platform", role: "admin" } });
     await expect(
-      t.db.membership.create({ data: { userId: id, scope: "platform", role: "manager" } }),
+      (async () =>
+        await t.db.membership.create({
+          data: { userId: id, scope: "platform", role: "manager" },
+        }))(),
     ).rejects.toThrow();
     await t.db.user.delete({ where: { id } });
     expect(await t.db.membership.count({ where: { userId: id } })).toBe(0);
@@ -86,7 +89,8 @@ describe("the schema on PostgreSQL 18", () => {
     const id = Bun.randomUUIDv7();
     await t.db.user.create({ data: { id, email: "scoped@example.com", name: "Scoped" } });
     await expect(
-      t.db.membership.create({ data: { userId: id, scope: "platform", role: "owner" } }),
+      (async () =>
+        await t.db.membership.create({ data: { userId: id, scope: "platform", role: "owner" } }))(),
     ).rejects.toThrow(/memberships_scope_role/);
   });
 
