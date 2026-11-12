@@ -1,4 +1,5 @@
 import { createHmac } from "node:crypto";
+import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
@@ -36,6 +37,7 @@ export type Auth = ReturnType<typeof createAuth>;
  * - Rate limits are on in every environment and kept in PostgreSQL, shared by every process;
  *   a per-person budget (`consumeSignInCode`) limits codes sent whatever address asks.
  * - Someone with no active membership cannot get a code or a session.
+ * - Passkeys sign in on their own, and only with user verification (ADR-0011, 9).
  * - Library telemetry is off.
  */
 export function createAuth({ config, db, email }: AuthDependencies) {
@@ -116,6 +118,20 @@ export function createAuth({ config, db, email }: AuthDependencies) {
             });
           }
         }
+        if (CHANGES_PROTECTION.has(ctx.path)) {
+          // Removing a passkey or making new recovery codes asks for proof first: only a session
+          // that signed in with protection may (ADR-0011, 9).
+          const current = await getSessionFromCtx(ctx);
+          const row = current
+            ? await db.session.findUnique({ where: { id: current.session.id } })
+            : null;
+          if (row === null || row.signedInWith === null || row.signedInWith === "email_code") {
+            throw new APIError("FORBIDDEN", {
+              code: "PROTECTION_REQUIRED",
+              message: "Sign in with your passkey or authenticator app first.",
+            });
+          }
+        }
         if (ADDS_PROTECTION.has(ctx.path)) {
           // Someone who already has protection adds more only from a session that used it:
           // otherwise an email inbox alone could add its own second factor (ADR-0011, 9).
@@ -167,6 +183,15 @@ export function createAuth({ config, db, email }: AuthDependencies) {
         },
       }),
       withEmailCodeGate(twoFactor({ issuer: "HashiNet", allowPasswordless: true })),
+      // A passkey counts only with user verification (the device unlock), requested and checked
+      // at registration and at every sign-in, so it is two factors whatever holds it
+      // (ADR-0011, 9). It is bound to the web's host; WebAuthn allows `localhost` without HTTPS.
+      passkey({
+        rpID: new URL(config.frontendOrigin).hostname,
+        rpName: "HashiNet",
+        origin: config.frontendOrigin,
+        authenticatorSelection: { userVerification: "required", residentKey: "preferred" },
+      }),
     ],
   });
 }
@@ -176,6 +201,12 @@ const ADDS_PROTECTION: ReadonlySet<string> = new Set([
   "/two-factor/enable",
   "/passkey/generate-register-options",
   "/passkey/verify-registration",
+]);
+
+/** The routes that change the protection a person already has. */
+const CHANGES_PROTECTION: ReadonlySet<string> = new Set([
+  "/passkey/delete-passkey",
+  "/two-factor/generate-backup-codes",
 ]);
 
 /** Whether the person already has an authenticator app or a passkey. */

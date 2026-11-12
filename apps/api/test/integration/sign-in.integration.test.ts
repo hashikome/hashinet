@@ -175,6 +175,7 @@ describe("sign-in", () => {
       ["POST", "/api/auth/two-factor/disable", {}],
       ["POST", "/api/auth/update-user", { name: "x" }],
       ["POST", "/api/auth/email-otp/verify-email", { email: "x@example.com", otp: "1" }],
+      ["POST", "/api/auth/passkey/update-passkey", { id: "x", name: "x" }],
     ];
     for (const [method, path, body] of routes) {
       expect((await c.request(method, path, body)).status).toBe(404);
@@ -230,6 +231,83 @@ describe("protection is the session's, not the inbox's", () => {
       active: { access: "account" },
       protection: { authenticator: false, passkeys: 1 },
     });
+  });
+});
+
+describe("passkeys", () => {
+  test("registration and sign-in both ask for user verification (ADR-0011, 9)", async () => {
+    const c = client();
+    const signInOptions = await c.request("GET", "/api/auth/passkey/generate-authenticate-options");
+    expect(signInOptions.status).toBe(200);
+    expect(signInOptions.body).toMatchObject({ userVerification: "required", rpId: "localhost" });
+
+    await businessMember(t.db, {
+      email: "pk@example.com",
+      name: "Passkey",
+      role: "venue_operator",
+    });
+    const operator = client();
+    expect((await signIn(operator, "pk@example.com")).status).toBe(200);
+    const register = await operator.request("GET", "/api/auth/passkey/generate-register-options");
+    expect(register.status).toBe(200);
+    expect(register.body).toMatchObject({
+      rp: { id: "localhost", name: "HashiNet" },
+      authenticatorSelection: { userVerification: "required" },
+    });
+  });
+
+  test("removing a passkey asks for proof first: an email code alone cannot", async () => {
+    const person = await businessMember(t.db, {
+      email: "rm@example.com",
+      name: "Rm",
+      role: "owner",
+    });
+    const id = Bun.randomUUIDv7();
+    await t.db.passkey.create({
+      data: {
+        id,
+        userId: person.id,
+        publicKey: "test-key",
+        credentialID: "test-credential",
+        counter: 0,
+        deviceType: "singleDevice",
+        backedUp: false,
+      },
+    });
+    const c = client();
+    expect((await signIn(c, "rm@example.com")).status).toBe(200);
+    const removed = await c.request("POST", "/api/auth/passkey/delete-passkey", { id });
+    expect(removed.status).toBe(403);
+    expect(removed.body).toMatchObject({ code: "PROTECTION_REQUIRED" });
+    expect(await t.db.passkey.count({ where: { userId: person.id } })).toBe(1);
+  });
+});
+
+describe("recovery codes", () => {
+  test("new codes need a protected session, and a code signs in once", async () => {
+    await platformMember(t.db, { email: "rc@example.com", name: "Rc", role: "admin" });
+    const first = client();
+    await enrollAuthenticator(first, "rc@example.com");
+    const made = await first.request("POST", "/api/auth/two-factor/generate-backup-codes", {});
+    expect(made.status).toBe(200);
+    const codes = (made.body as { backupCodes: string[] }).backupCodes;
+    expect(codes.length).toBeGreaterThan(0);
+
+    const c = client();
+    expect((await signIn(c, "rc@example.com")).body).toMatchObject({ twoFactorRedirect: true });
+    const used = await c.request("POST", "/api/auth/two-factor/verify-backup-code", {
+      code: codes[0],
+    });
+    expect(used.status).toBe(200);
+    // A recovery code is proof enough: the session may act.
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({ active: { access: "full" } });
+
+    const again = client();
+    await signIn(again, "rc@example.com");
+    const reused = await again.request("POST", "/api/auth/two-factor/verify-backup-code", {
+      code: codes[0],
+    });
+    expect(reused.status).toBe(401);
   });
 });
 

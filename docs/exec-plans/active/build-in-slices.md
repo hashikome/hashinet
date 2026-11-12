@@ -56,8 +56,17 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     The router sim has its own business. `bun run verify` passes (258 unit tests) and
     `bun run test:integration` passes (116); a security review and the tests found two leaks, both
     fixed (cross-business revenue, a venue manager's scope), recorded in the Decision Log.
-  - [ ] (c) Sign-in: passkeys, the authenticator, recovery codes, and the session-based protection
-    rule, with tests (ADR-0011 §9).
+  - [x] (2026-11-12) (c) Sign-in: the passkey plugin (`@better-auth/passkey`), bound to the web's host,
+    with user verification required at registration and every sign-in; its register, sign-in, list
+    and delete routes on the allowlist (renaming refused). A session records how it signed in
+    (email code, authenticator, passkey, recovery code); deleting a passkey or making new recovery
+    codes needs a session that used protection; someone already protected adds a factor only from
+    such a session; a first protection set up in an email-code session protects it. Tests: the
+    options ask for verification, an email code alone cannot remove a passkey or add a factor, a
+    recovery code signs in once and counts as protected. Verify passes; integration 120/120.
+    Left for (g), which needs a browser: a WebAuthn ceremony through Chrome's virtual authenticator
+    (an assertion without user verification refused), and replacing the authenticator behind the
+    flows' 2-hour proof.
   - [ ] (d) Inviting a new business's owner, and acceptance.
   - [ ] (e) Packages per business (M4); a sale stores its price when its voucher is issued.
   - [ ] (f) Routers under the access policy: add, bootstrap script, setup, readiness.
