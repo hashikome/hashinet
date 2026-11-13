@@ -187,7 +187,6 @@ function AddRouter({
             id="ri"
             className="input"
             inputMode="decimal"
-            placeholder="192.168.1.2"
             value={form.ipAddress}
             onChange={set("ipAddress")}
           />

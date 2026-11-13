@@ -300,14 +300,14 @@ export function AcceptInvitation() {
             id={`${prefix}-a`}
             className="input"
             type="text"
-            placeholder="Mjimwema, Kigamboni"
             value={shownArea}
             disabled={disabled}
             onChange={set(area)}
             aria-invalid={errors[`${prefix}.area`] ? true : undefined}
           />
           <div className={`hint${errors[`${prefix}.area`] ? " danger" : ""}`}>
-            {errors[`${prefix}.area`] ?? "A street, or a landmark and area"}
+            {errors[`${prefix}.area`] ??
+              "A street, or a landmark and area, like Mjimwema, Kigamboni"}
           </div>
         </div>
       </div>
@@ -339,15 +339,14 @@ export function AcceptInvitation() {
           <>
             {field("inv-n", "Your full name", "name", errors["person.name"], {
               autoComplete: "name",
-              placeholder: "Baraka Mollel",
             })}
             {field(
               "inv-m",
               "Mobile number",
               "phone",
               errors["person.phone"],
-              { type: "tel", autoComplete: "tel", placeholder: "0754 300 118", inputMode: "tel" },
-              "HashiNet's team calls you on this to plan your setup",
+              { type: "tel", autoComplete: "tel", inputMode: "tel" },
+              "Like 0754 300 118. HashiNet's team calls you on this to plan your setup",
             )}
           </>
         ) : step === 1 ? (
@@ -357,7 +356,7 @@ export function AcceptInvitation() {
               "Business name",
               "business",
               errors["business.name"],
-              { autoComplete: "organization", placeholder: "Bahari Beach Bar" },
+              { autoComplete: "organization" },
               "As your guests know it",
             )}
             {place(
@@ -373,7 +372,7 @@ export function AcceptInvitation() {
               "Venue name",
               "venue",
               errors["venue.name"],
-              { placeholder: "Bahari Beach Bar" },
+              {},
               "Keep the business name if there is one place",
             )}
             <label className="check">

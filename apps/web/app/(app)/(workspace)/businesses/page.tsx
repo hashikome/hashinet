@@ -129,7 +129,7 @@ export default function BusinessesPage() {
                   id="biz-q"
                   className="input"
                   type="search"
-                  placeholder="Neema Hospitality"
+                  placeholder="Name, owner or region"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />

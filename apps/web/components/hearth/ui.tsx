@@ -9,6 +9,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useRef,
   useState,
 } from "react";
@@ -303,8 +304,9 @@ function LinkedRow({ row, cells }: { row: Row; cells: (row: ReactNode[]) => Reac
 }
 
 /**
- * Six boxes for a six-digit code: typing moves on, Backspace moves back, a pasted or autofilled code
- * fills them all. The value keeps a space for each empty box.
+ * A six-digit code, drawn as six boxes but kept in one real input, so a password manager's autofill,
+ * a pasted code and the phone's one-time-code suggestion all land whole, however they fill it. The
+ * value is the digits typed so far.
  */
 export function OtpBoxes({
   label,
@@ -319,62 +321,42 @@ export function OtpBoxes({
   value: string;
   onChange: (digits: string) => void;
 }) {
-  const boxes = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(6, " ").slice(0, 6).split("");
-  const fill = (start: number, typed: string) => {
-    const clean = typed.replace(/\D/g, "");
-    const next = digits.slice();
-    if (clean.length === 0) {
-      next[start] = " ";
-      onChange(next.join(""));
-      return;
-    }
-    clean
-      .slice(0, 6 - start)
-      .split("")
-      .forEach((d, i) => {
-        next[start + i] = d;
-      });
-    onChange(next.join(""));
-    boxes.current[Math.min(start + clean.length, 5)]?.focus();
-  };
+  const id = useId();
+  const [focused, setFocused] = useState(false);
+  const digits = value.replace(/\D/g, "").slice(0, 6);
   return (
     <fieldset className="otp-set">
-      <legend className={hiddenLabel ? "sr" : undefined}>{label}</legend>
+      <legend className={hiddenLabel ? "sr" : undefined}>
+        <label htmlFor={id}>{label}</label>
+      </legend>
       <div className="otp-boxes">
-        {digits.map((d, i) => (
-          <input
+        <input
+          id={id}
+          className="otp-input"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          pattern="[0-9]*"
+          spellCheck={false}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          value={digits}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+        />
+        {Array.from({ length: 6 }, (_, i) => (
+          <span
             // biome-ignore lint/suspicious/noArrayIndexKey: six fixed positions
             key={i}
-            ref={(el) => {
-              boxes.current[i] = el;
-            }}
-            className="otp-box"
-            inputMode="numeric"
-            autoComplete={i === 0 ? "one-time-code" : "off"}
-            aria-label={`Digit ${i + 1} of 6`}
-            aria-invalid={error ? true : undefined}
-            value={d.trim()}
-            onChange={(e) => fill(i, e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Backspace" && !d.trim() && i > 0) {
-                e.preventDefault();
-                const next = digits.slice();
-                next[i - 1] = " ";
-                onChange(next.join(""));
-                boxes.current[i - 1]?.focus();
-              }
-            }}
-            onPaste={(e) => {
-              const pasted = e.clipboardData.getData("text").replace(/\D/g, "");
-              if (pasted.length < 2) return;
-              e.preventDefault();
-              fill(0, pasted);
-            }}
-          />
+            className={`otp-box${focused && i === Math.min(digits.length, 5) ? " now" : ""}`}
+            aria-hidden="true"
+          >
+            {digits[i] ?? ""}
+          </span>
         ))}
       </div>
-      <div className="otp-error" role="alert">
+      <div className="otp-error" id={`${id}-error`} role="alert">
         {error}
       </div>
     </fieldset>

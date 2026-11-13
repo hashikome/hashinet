@@ -547,10 +547,13 @@ export function GuestPortal() {
             id="gmobile"
             inputMode="tel"
             autoComplete="tel"
-            placeholder="07XX XXX XXX"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+            aria-describedby="gmobile-hint"
           />
+          <p className="g-hint" id="gmobile-hint">
+            Like 0712 345 678
+          </p>
           {error ? (
             <p className="g-bad" role="alert">
               {error}
@@ -598,14 +601,13 @@ export function GuestPortal() {
               id="gcode"
               inputMode="numeric"
               autoComplete="one-time-code"
-              placeholder="4827 1693 6518"
               value={groupedCode(digits)}
               onChange={(e) => {
                 setError(null);
                 setDigits(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH));
               }}
               aria-invalid={error ? true : undefined}
-              aria-describedby={error ? "gcode-error" : undefined}
+              aria-describedby={error ? "gcode-error" : "gcode-hint"}
             />
             <button
               className="g-scan"
@@ -616,6 +618,11 @@ export function GuestPortal() {
               <ScanIcon />
             </button>
           </div>
+          {error ? null : (
+            <p className="g-hint" id="gcode-hint">
+              The 12 digits on your voucher
+            </p>
+          )}
           {error ? (
             <p className="g-bad" id="gcode-error" role="alert">
               {error}

@@ -212,8 +212,10 @@ respects `prefers-reduced-motion`.
 - **Tables:** rules and alignment; no zebra, no header band, no uppercase headers.
 - **A picture beside a name and a second line** (avatar, business logo, workspace) is exactly as tall
   as the two lines: 32px, for 17px and 15px lines.
-- **Placeholders are sample inputs** (`Amina Salum`, `Mjimwema, Kigamboni`), never instructions;
-  guidance goes in the hint under the field.
+- **No example values inside fields.** A sample in a field (`Baraka Mollel`) reads as an answer
+  already given, and people delete it or skip the field. An example or format is a hint under the
+  field ("Like 0754 300 118", "The 12 digits on your voucher"), linked with `aria-describedby`.
+  Only a search box carries a placeholder, as an instruction ("Search a code"), in the muted colour.
 - **Empty states:** keep the frame and say one sentence. A real zero prints as a zero, and a missing
   value as a grey dash.
 

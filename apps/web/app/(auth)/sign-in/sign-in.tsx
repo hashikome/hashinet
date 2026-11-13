@@ -329,11 +329,14 @@ export function SignIn() {
             className="input big"
             type="email"
             autoComplete="username webauthn"
-            placeholder="you@yourbusiness.co.tz"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            aria-describedby="email-hint"
           />
+          <div className="hint" id="email-hint">
+            The email you were invited with
+          </div>
         </div>
         <button className="btn primary big" type="submit">
           Continue
