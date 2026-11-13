@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common";
 import { z } from "zod";
 import type { Principal } from "../access/principal.js";
+import { ownerProtected } from "../access/owner-protected.js";
 import { venueScope } from "../access/venue-scope.js";
 import { businessDayOf } from "../analytics/business-day.js";
 import { AuditLog } from "../audit/audit-log.js";
@@ -325,13 +326,8 @@ export class OnboardingService {
 
   private async record(staff: Principal, venue: VenueRow): Promise<VenueOnboarding> {
     const o = this.onboarding(venue);
-    const [owner, issue] = await Promise.all([
-      this.db.membership.findFirst({
-        where: { businessId: venue.businessId, role: "owner", status: "active" },
-        select: {
-          user: { select: { twoFactorEnabled: true, _count: { select: { passkeys: true } } } },
-        },
-      }),
+    const [isProtected, issue] = await Promise.all([
+      ownerProtected(this.db, venue.businessId),
       staff.scope === "platform"
         ? this.db.issue.findFirst({
             where: {
@@ -373,9 +369,7 @@ export class OnboardingService {
           : null,
       setupDate: o.setupDate?.toISOString().slice(0, 10) ?? null,
       completedAt: o.completedAt?.toISOString() ?? null,
-      ownerProtected: Boolean(
-        owner && (owner.user.twoFactorEnabled === true || owner.user._count.passkeys > 0),
-      ),
+      ownerProtected: isProtected,
       changeable: !o.setupDate && !o.paidAt,
       issueId: issue?.id ?? null,
     };

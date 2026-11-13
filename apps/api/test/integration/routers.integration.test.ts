@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { RouterJourney } from "@hashinet/types";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+import { businessMember, platformMember, scheduledSetup, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 // Nothing listens on port 9, so a router here is unreachable at once.
@@ -37,6 +37,7 @@ async function venue(operatorId: string | null = null) {
   });
   if (operatorId)
     await t.db.membershipVenue.create({ data: { membershipId: operatorId, venueId: created.id } });
+  await scheduledSetup(t.db, created.id);
   return created;
 }
 
@@ -315,5 +316,24 @@ describe("routers", () => {
       403,
     );
     expect((await operator.request("DELETE", `/api/routers/${router.id}`)).status).toBe(403);
+  });
+  test("a router comes only from a venue's scheduled setup", async () => {
+    const c = await admin();
+    const v = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db),
+        name: "New",
+        region: "Dar es Salaam",
+        area: "Dar",
+      },
+    });
+    await t.db.venueOnboarding.create({ data: { venueId: v.id } });
+    expect((await c.request("POST", "/api/routers", { ...ROUTER, venueId: v.id })).status).toBe(
+      409,
+    );
+    await scheduledSetup(t.db, v.id);
+    expect((await c.request("POST", "/api/routers", { ...ROUTER, venueId: v.id })).status).toBe(
+      201,
+    );
   });
 });

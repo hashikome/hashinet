@@ -112,6 +112,17 @@ export class RoutersService {
 
   async create(staff: Principal, input: RouterInput): Promise<RouterRecord> {
     await this.checkVenue(staff, input.venueId);
+    // A router comes only from a venue's scheduled setup, never without an issue behind it
+    // (ADR-0013, 1).
+    const onboarding = await this.db.venueOnboarding.findUnique({
+      where: { venueId: input.venueId },
+      select: { setupDate: true, completedAt: true },
+    });
+    if (!onboarding?.setupDate && !onboarding?.completedAt) {
+      throw new ConflictException(
+        apiError("CONFLICT", "Agree the venue's package and schedule its setup first."),
+      );
+    }
     const { apiPassword, ...fields } = input;
     const row = await this.db.router.create({
       data: {

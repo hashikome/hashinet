@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { RouterSync } from "../../src/services/router-sync.js";
 import { useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { testBusinessId } from "./people.js";
+import { protectedOwner, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi({ ROUTER_MANAGEMENT_URL: "http://10.0.2.2:8080" });
@@ -10,6 +10,7 @@ const api = useApi({ ROUTER_MANAGEMENT_URL: "http://10.0.2.2:8080" });
 const MAC = "AA:BB:CC:00:00:01";
 
 async function setting(deviceLimit = 1) {
+  await protectedOwner(t.db);
   const venue = await t.db.venue.create({
     data: {
       businessId: await testBusinessId(t.db),
@@ -281,5 +282,19 @@ describe("the guest portal", () => {
     expect(await status.text()).toContain(`router: "${router.id}"`);
     const refused = await fetch(`${api.url}/portal/hotspot-files/${router.id}/config.txt`);
     expect(refused.status).toBe(404);
+  });
+});
+
+describe("before the owner protects their sign-in", () => {
+  test("the venue serves no guest", async () => {
+    const { router } = await setting();
+    await t.db.user.updateMany({ data: { twoFactorEnabled: false } });
+    const reply = await fetch(`${api.url}/api/guest/context`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ router: router.id, mac: MAC, ip: "10.5.50.20" }),
+    });
+    expect(reply.status).toBe(403);
+    expect(((await reply.json()) as { code: string }).code).toBe("NOT_OPEN");
   });
 });

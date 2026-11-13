@@ -9,7 +9,7 @@ import { PaymentsService } from "../../src/payments/payments.service.js";
 import { RouterSync } from "../../src/services/router-sync.js";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+import { businessMember, platformMember, protectedOwner, testBusinessId } from "./people.js";
 
 const PAY_SECRET = "pay-secret";
 const SMS_SECRET = "sms-secret";
@@ -74,6 +74,7 @@ beforeEach(() => {
 });
 
 async function setting(price = "2000") {
+  await protectedOwner(t.db);
   const venue = await t.db.venue.create({
     data: {
       businessId: await testBusinessId(t.db),

@@ -74,3 +74,32 @@ export async function assignVenue(
 ): Promise<void> {
   await db.membershipVenue.create({ data: { membershipId: person.membershipId, venueId } });
 }
+
+/** The business's owner (found, or created), with their sign-in protected, so its venues serve
+ * guests (ADR-0011, 9). */
+export async function protectedOwner(db: PrismaClient, businessId?: string): Promise<void> {
+  const business = businessId ?? (await testBusinessId(db));
+  const found = await db.membership.findFirst({
+    where: { businessId: business, role: "owner", status: "active" },
+  });
+  const userId =
+    found?.userId ??
+    (
+      await businessMember(db, {
+        email: "owner@example.com",
+        name: "Owner",
+        role: "owner",
+        businessId: business,
+      })
+    ).id;
+  await db.user.update({ where: { id: userId }, data: { twoFactorEnabled: true } });
+}
+
+/** A venue whose setup is scheduled, so a router may be added to it (ADR-0013, 1). */
+export async function scheduledSetup(db: PrismaClient, venueId: string): Promise<void> {
+  await db.venueOnboarding.upsert({
+    where: { venueId },
+    create: { venueId, setupDate: new Date() },
+    update: { setupDate: new Date() },
+  });
+}

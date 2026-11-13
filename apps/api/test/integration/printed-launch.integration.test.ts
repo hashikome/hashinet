@@ -1,13 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, testBusinessId } from "./people.js";
+import { businessMember, protectedOwner, testBusinessId } from "./people.js";
 
 /** No provider credentials: what launches. Printed vouchers need neither provider. */
 const t = useTestDatabase();
 const api = useApi();
 
 async function setting() {
+  await protectedOwner(t.db);
   const venue = await t.db.venue.create({
     data: {
       businessId: await testBusinessId(t.db),

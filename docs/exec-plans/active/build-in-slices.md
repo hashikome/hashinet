@@ -135,9 +135,20 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     claims an unheld issue first; a resolved issue keeps its page and takes no more steps. A held
     issue with no step for a day is stalled. Tests: `issues.integration.test.ts`. Verify passes;
     integration 144/144.
-  - [ ] (c) Onboarding: the owner chooses how the router comes (Connect, Install, Launch, or talk
-    first); the platform confirms the package, router, price and setup date; the setup steps tick from
-    the router's state; a venue serves and sells only once the owner's sign-in is protected; the 7 days.
+  - [x] (2026-11-13) (c) Onboarding (API), `apps/api/src/onboarding/`: a row per venue
+    (`venue_onboardings`) and its stage, decided by `onboardingStage` (choose, confirm, pay,
+    schedule, add-router, set-up, first-guest, done). Every new venue, from an accepted invitation or
+    Add a venue, starts with its package issue. The owner or a business manager sends a preference
+    (Connect, Install, Launch, or talk first) until the package is agreed; the platform's admin and
+    managers confirm the package, router model, price (0: nothing to charge) and notes, record the
+    payment by hand in full (cash, mobile money or bank transfer), and schedule the setup day, which
+    resolves the package issue and opens the setup issue for the whole team, held by whoever goes. A
+    job closes the setup when the first guest is online at a serving router. A router is added only
+    to a venue whose setup is scheduled, and no venue serves a guest until the business's owner has
+    protected their sign-in (the portal's context, redeeming and buying refuse with `NOT_OPEN`).
+    Steps go on the issue's log as structured data (`IssueEventData`) the web words. Existing venues
+    are backfilled: with a router, done; without, at their package. Tests:
+    `onboarding.integration.test.ts`, `onboarding-stage.test.ts`. Verify passes; integration 149/149.
   - [ ] (d) Counts-only reach into a business's guests for HashiNet's team.
   - [ ] (e) The screens, against the prototype, each audited as it is built: Issues and an issue's page,
     Businesses and a business's page, the platform's Venues and Routers, the Team for platform roles,
@@ -157,6 +168,14 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
 `hashinet.hashikome.com`).
 
 ## Surprises & Discoveries
+
+- Observation: the API has no signal for "installed at the venue" apart from the router reaching
+  HashiNet, which an office setup also does, so the setup issue's steps are add the router (it
+  reaches HashiNet), set it up (it serves) and the first guest; the prototype's separate install
+  step has nothing to tick it. Open for the owner: ADR-0013 gives the setup issue to the whole team,
+  operators included, but adding and setting up a router is `router.manage`, the admin's and
+  managers' only (ADR-0011, 2: operators help with setup). Until decided, operators hold and log a
+  setup, and an admin or manager adds the router.
 
 - Observation: Better Auth runs its `after` hooks for failed calls too, with the error as the result,
   so the first-enrollment upgrade in (c) turned an email-code session into an "authenticator" one on
@@ -181,6 +200,13 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   Evidence: `better-auth/dist/plugins/two-factor/backup-codes`.
 
 ## Decision Log
+
+- Decision: in slice 3, a venue's package changes only until it is paid or its setup scheduled; a
+  payment is recorded once, in full (ADR-0013, 6). Rationale: payments by hand have no ledger to
+  reverse; slice 4's invoices bring corrections. Date/Author: 2026-11-13 / Claude.
+- Decision: the 7 days in slice 3 are the owner's setup window that access already enforces
+  (ADR-0011, 9); removing a venue left without a router (the prototype's "removed in N days") is
+  for added venues, slice 5. Date/Author: 2026-11-13 / Claude.
 
 - Decision: build in vertical slices ordered by journey, not by layer.
   Rationale: with no users, the fastest way to a product someone relies on is one complete journey at a

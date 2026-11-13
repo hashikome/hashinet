@@ -15,6 +15,7 @@ import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Router, Voucher } from "../generated/prisma/client.js";
+import { ownerProtected } from "../access/owner-protected.js";
 import { apiError } from "../http/error-envelope.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
@@ -282,12 +283,21 @@ export class GuestService {
     });
   }
 
+  /** The router a guest is at, refused until its venue may serve: once the business's owner has
+   * protected their sign-in (ADR-0011, 9). */
   async routerOf(id: string): Promise<Router> {
-    const router = await this.db.router.findUnique({ where: { id } });
+    const router = await this.db.router.findUnique({
+      where: { id },
+      include: { venue: { select: { businessId: true } } },
+    });
     if (!router) {
       throw new NotFoundException(apiError("UNKNOWN_ROUTER", "This network is not recognised."));
     }
-    return router;
+    if (!(await ownerProtected(this.db, router.venue.businessId))) {
+      throw new ForbiddenException(apiError("NOT_OPEN", "This WiFi is not open to guests yet."));
+    }
+    const { venue: _venue, ...rest } = router;
+    return rest;
   }
 }
 
