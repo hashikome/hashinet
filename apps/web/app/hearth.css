@@ -1583,6 +1583,7 @@ pre.csv {
 }
 .g-sub {
   font-size: 16px;
+  line-height: 1.4;
   font-weight: 600;
   margin-top: 20px;
 }
@@ -1692,7 +1693,7 @@ pre.csv {
   position: relative;
   margin-top: auto;
   padding: 14px 20px 18px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--g-muted);
 }
 /* The camera: the printed voucher held up to it, its QR code in the square, the rest running off under

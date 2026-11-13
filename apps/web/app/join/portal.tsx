@@ -567,7 +567,7 @@ export function GuestPortal() {
             Pay {pick ? tsh(pick.priceTsh) : ""}
           </button>
           {terms("buy")}
-          <h3 className="g-sub">Have a voucher?</h3>
+          <h2 className="g-sub">Have a voucher?</h2>
           <p className="g-say">
             <button className="g-link" type="button" onClick={() => setStage({ kind: "voucher" })}>
               Scan the QR code on it, or enter its code
@@ -629,7 +629,7 @@ export function GuestPortal() {
             Join the WiFi
           </button>
           {terms("voucher")}
-          <h3 className="g-sub">No voucher?</h3>
+          <h2 className="g-sub">No voucher?</h2>
           <p className="g-say">
             {sells ? (
               <>

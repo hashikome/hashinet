@@ -28,6 +28,10 @@ export function Head({
   actions?: ReactNode;
   crumb?: ReactNode;
 }) {
+  // The tab, history and screen readers name the page by its title (WCAG 2.4.2).
+  useEffect(() => {
+    document.title = `${title} · HashiNet`;
+  }, [title]);
   return (
     <div className="head">
       <div>
