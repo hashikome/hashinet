@@ -2,7 +2,7 @@
 
 import type { IssueKind, IssueList } from "@hashinet/types";
 import { useState } from "react";
-import { Button, ButtonLink, Head, Panel, Pill, Table } from "@/components/hearth/ui";
+import { Button, Head, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { when } from "@/lib/dates";
 import { issuePill, issueTitle, issueWhere, KIND_NAME } from "@/lib/issues";
@@ -126,7 +126,6 @@ export default function IssuesPage() {
                 ["Status"],
                 ["Started"],
                 ["Responsible"],
-                [""],
               ]}
               rows={rows.map((i) => {
                 const [label, pill] = issuePill(i);
@@ -161,13 +160,6 @@ export default function IssuesPage() {
                       <span className="muted nowrap" key="n">
                         Nobody yet
                       </span>
-                    ),
-                    i.status === "open" ? (
-                      <ButtonLink key="a" href={`/issues/${i.id}`}>
-                        Open issue
-                      </ButtonLink>
-                    ) : (
-                      ""
                     ),
                   ],
                 };

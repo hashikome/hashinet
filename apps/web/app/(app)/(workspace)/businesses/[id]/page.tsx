@@ -4,7 +4,7 @@ import type { BusinessDetail, IssueList } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect } from "react";
 import { BusinessMark } from "@/components/hearth/icons";
-import { ButtonLink, CopyText, Panel, Pill, Table } from "@/components/hearth/ui";
+import { CopyText, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { longDate } from "@/lib/dates";
 import { issueTitle, venueStatus } from "@/lib/issues";
@@ -93,7 +93,7 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
       {open.length ? (
         <Panel title={`Needs someone · ${open.length}`}>
           <Table
-            cols={[["What"], ["Responsible"], [""]]}
+            cols={[["What"], ["Responsible"]]}
             rows={open.map((i) => ({
               key: i.id,
               href: `/issues/${i.id}`,
@@ -102,9 +102,6 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
                   {issueTitle(i)}
                 </div>,
                 i.holder ? (i.mine ? "You" : i.holder.name) : "Nobody yet",
-                <ButtonLink key="a" href={`/issues/${i.id}`}>
-                  Open issue
-                </ButtonLink>,
               ],
             }))}
           />
