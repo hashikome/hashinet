@@ -114,8 +114,8 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (i) finish-work on the branch: review, security, simplify, the journey-level design audit
     across the slice's screens, docs, CHANGELOG and the handbook.
   - [ ] (j) Production reset (owner-run, Concrete Steps), deploy, and live acceptance.
+- [ ] Slice 3: onboarding a business (before slice 2: owner, 13 November 2026).
 - [ ] Slice 2: the counter.
-- [ ] Slice 3: onboarding a business.
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).
@@ -269,6 +269,12 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   Rationale: Help never explains a page that isn't there; the prototype's API-served Help adds a
   store and an endpoint that slice 1 does not need.
   Date/Author: 2026-11-13 / Claude.
+
+- Decision: slice 3 (onboarding a business) comes before slice 2 (the counter).
+  Rationale: onboarding is the first thing a new owner meets; walking slice 1 live, the owner looked
+  for Issues and the getting-started steps, and found slice 1's stand-in. Slice 3 needs nothing of
+  slice 2: its team is the platform's, invited in slice 3 itself.
+  Date/Author: 2026-11-13 / owner.
 
 ## Outcomes & Retrospective
 
