@@ -1,9 +1,19 @@
 "use client";
 
-import type { RouterList, RouterRecord, TodaySummary } from "@hashinet/types";
+import {
+  ONBOARDING_PLANS,
+  type OnboardingPlan,
+  type RouterList,
+  type RouterRecord,
+  type TodaySummary,
+  type VenueOnboarding,
+} from "@hashinet/types";
+import { useState } from "react";
+import { Breakdown, SetupRail, type Step } from "@/components/hearth/onboarding";
 import { ProtectNotice } from "@/components/hearth/protect";
 import {
   Attention,
+  Button,
   ButtonLink,
   CONDITION,
   Figs,
@@ -11,9 +21,11 @@ import {
   Panel,
   SettingRow,
   Table,
+  useToast,
 } from "@/components/hearth/ui";
-import { api } from "@/lib/api";
-import { clock, dayName, weekday } from "@/lib/dates";
+import { api, messageOf } from "@/lib/api";
+import { clock, dayName, longDate, weekday } from "@/lib/dates";
+import { PLAN, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
@@ -137,23 +149,31 @@ const routerDetail = (r: RouterRecord) =>
   [r.model, r.rosVersion ? `RouterOS ${r.rosVersion}` : null].filter(Boolean).join(" · ") || r.name;
 
 /**
- * Before any router serves: HashiNet's team sets the router up (slice 1 has no self-service setup),
- * and the owner gets ready meanwhile. No figures yet, so none are shown.
+ * Before any router serves (prototype `ownerSettingUp`): the steps to guests getting online, the
+ * current one open beside them, and what the owner can get ready meanwhile. No figures yet.
  */
 function SettingUp({ sub }: { sub: string }) {
   const { me } = useSession();
   const can = useCan();
+  const { shown } = useVenues();
   const first = me.name.split(/\s+/)[0] ?? me.name;
+  const venue = shown[0];
+  const onboarding = useLoad(
+    () =>
+      venue && can("onboarding.read")
+        ? api.get<VenueOnboarding>(`/api/venues/${venue.id}/onboarding`)
+        : Promise.resolve(null),
+    [venue?.id, me.active.id],
+  );
   return (
     <>
-      <Head title={`Karibu, ${first}`} sub={sub} />
+      <Head
+        title={`Karibu, ${first}`}
+        sub={venue ? `${venue.name} is created. Four steps and your guests are online.` : sub}
+      />
       <ProtectNotice />
-      <Panel title="HashiNet's team is setting up your router">
-        <p className="muted">
-          Once it is installed and serving, guests join your WiFi, see your portal and get online
-          with your vouchers. This page then shows who is online and what sold today.
-        </p>
-      </Panel>
+      {onboarding.error ? <LoadFailed error={onboarding.error} retry={onboarding.reload} /> : null}
+      {onboarding.data ? <GettingStarted o={onboarding.data} reload={onboarding.reload} /> : null}
       <Panel title="Get ready meanwhile">
         <ul className="rows">
           {can("package.read") ? (
@@ -172,4 +192,168 @@ function SettingUp({ sub }: { sub: string }) {
       </Panel>
     </>
   );
+}
+
+/** A venue's way online, as its owner sees it: one set of steps wherever it starts. */
+function GettingStarted({ o, reload }: { o: VenueOnboarding; reload: () => Promise<void> }) {
+  const can = useCan();
+  const toast = useToast();
+  const [plan, setPlan] = useState<OnboardingPlan | "">(o.preference?.plan ?? "");
+  const [busy, setBusy] = useState(false);
+  const mayChoose = can("onboarding.prefer") && !o.agreed;
+  const now =
+    o.stage === "choose"
+      ? 0
+      : o.stage === "confirm" || o.stage === "pay" || o.stage === "schedule"
+        ? 1
+        : o.stage === "add-router" || o.stage === "set-up"
+          ? 2
+          : 3;
+  const send = async (choice: OnboardingPlan | null) => {
+    setBusy(true);
+    try {
+      await api.put(`/api/venues/${o.venue.id}/onboarding/preference`, { plan: choice });
+      await reload();
+      toast(
+        choice
+          ? `${PLAN[choice].name} sent. HashiNet's team calls you within a working day.`
+          : "Asked. HashiNet's team calls you within a working day to advise.",
+      );
+    } catch (e) {
+      toast(messageOf(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const chosen = o.preference?.plan ? PLAN[o.preference.plan] : null;
+  const agreed = o.agreed;
+  const steps: Step[] = [
+    {
+      title: "Choose how its router comes",
+      todo: "A few seconds",
+      done: chosen ? chosen.name : o.preference ? "You asked to talk first" : "Agreed on the call",
+      body: (
+        <>
+          <p>
+            HashiNet runs on a <b>MikroTik router</b> at {o.venue.name}. It sits behind your
+            internet router, puts your WiFi behind the portal, and sells your vouchers. Tell us how
+            you would like it to come; this is a preference, and nothing is charged until we agree
+            it with you.
+          </p>
+          {mayChoose ? (
+            <form
+              className="form wide"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (plan) void send(plan);
+              }}
+            >
+              <div className="pkg-pick three" role="radiogroup" aria-label="How the router comes">
+                {ONBOARDING_PLANS.map((p) => (
+                  <label className="pkg" key={p}>
+                    <input
+                      type="radio"
+                      name="pref"
+                      value={p}
+                      checked={plan === p}
+                      onChange={() => setPlan(p)}
+                    />
+                    <span>
+                      <b>{PLAN[p].name}</b>
+                      <span className="sub">{PLAN[p].text}</span>
+                      <span className="needs">You need: {PLAN[p].needs}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="actions">
+                <Button kind="primary" type="submit" busy={busy} disabled={!plan}>
+                  Send my choice
+                </Button>
+                <Button busy={busy} onClick={() => void send(null)}>
+                  Talk to the team first
+                </Button>
+              </div>
+              <p className="muted small">
+                Not sure which fits? Talk to the team first; we call you and advise.
+              </p>
+            </form>
+          ) : (
+            <p className="muted">The owner chooses this.</p>
+          )}
+        </>
+      ),
+    },
+    {
+      title: "HashiNet's team calls you",
+      todo: "Within a working day",
+      done: agreed
+        ? `${PLAN[agreed.plan].name}${agreed.totalTsh ? ` · ${tsh(agreed.totalTsh)}${o.paid ? " paid" : " due"}` : ""}`
+        : "",
+      body: (
+        <>
+          <p>
+            We call you within a working day. We go over {o.venue.name}: how big it is, how many
+            guests at peak, where the internet line comes in and where the router can go. Then we
+            agree the package and what it costs, line by line, and a day for the setup.
+          </p>
+          {agreed ? (
+            <>
+              <Breakdown agreed={agreed} />
+              <p>
+                {o.paid
+                  ? `Paid ${tsh(o.paid.amountTsh)}. We agree the setup day with you next.`
+                  : agreed.totalTsh
+                    ? `${tsh(agreed.totalTsh)} is due by ${longDate(`${agreed.dueOn}T12:00:00+03:00`)}, all on one bill from HashiNet. The setup is scheduled once it is paid.`
+                    : "Nothing to charge. We agree the setup day with you next."}
+              </p>
+            </>
+          ) : (
+            <p className="muted">
+              {chosen
+                ? `You chose ${chosen.name}: ${chosen.text} You can change your mind on the call.`
+                : "You asked to talk it through first: we advise you which fits on the call."}
+            </p>
+          )}
+        </>
+      ),
+    },
+    {
+      title: "The setup visit",
+      todo: o.setupDate ? setupDay(o.setupDate) : "A day we agree",
+      done: "Done",
+      body: (
+        <p>
+          {o.setupDate ? (
+            <>
+              <b>{setupDay(o.setupDate)}</b>.{" "}
+            </>
+          ) : null}
+          HashiNet&apos;s team{" "}
+          {agreed?.plan === "connect"
+            ? "sets up your MikroTik router"
+            : "brings your MikroTik router and installs it"}{" "}
+          at {o.venue.name}
+          {agreed?.plan === "launch"
+            ? ", with the provider's seller for the new line; you register it in the business's name there"
+            : ""}
+          . Have someone there who can let us in to the internet router.
+        </p>
+      ),
+    },
+    {
+      title: "Guests get online",
+      todo: o.ownerProtected ? "Then you start selling" : "Once your sign-in is protected",
+      done: "",
+      body: o.ownerProtected ? (
+        <p>Check it with your own phone, then print vouchers and start selling.</p>
+      ) : (
+        <p>
+          Before {o.venue.name} starts serving, protect your sign-in with an authenticator app or a
+          passkey, from Account and security.
+        </p>
+      ),
+    },
+  ];
+  return <SetupRail title={`Getting ${o.venue.name} online`} steps={steps} now={now} />;
 }
