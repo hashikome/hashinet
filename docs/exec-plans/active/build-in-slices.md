@@ -114,7 +114,26 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (i) finish-work on the branch: review, security, simplify, the journey-level design audit
     across the slice's screens, docs, CHANGELOG and the handbook.
   - [ ] (j) Production reset (owner-run, Concrete Steps), deploy, and live acceptance.
-- [ ] Slice 3: onboarding a business (before slice 2: owner, 13 November 2026).
+- [ ] Slice 3: onboarding a business (before slice 2: owner, 13 November 2026). Built on the local branch
+  `slice-3`. Steps, each ending with `bun run verify` and the integration tests passing, and a commit:
+  - [ ] (a) Platform roles by invitation (business-scopes M3): the admin invites managers and operators;
+    manage, operate and remove them; the platform's people API.
+  - [ ] (b) Issues (ADR-0011, 11; redesign-admin's Issues decisions): one model for what needs someone,
+    router issues derived from router state, a venue's setup as two issues in turn (its package, then
+    its setup), claims kept per workspace, Release, Hand to and Take over with a reason by rank, and
+    each step logged with who and when; resolved issues keep their page.
+  - [ ] (c) Onboarding: the owner chooses how the router comes (Connect, Install, Launch, or talk
+    first); the platform confirms the package, router, price and setup date; the setup steps tick from
+    the router's state; a venue serves and sells only once the owner's sign-in is protected; the 7 days.
+  - [ ] (d) Counts-only reach into a business's guests for HashiNet's team.
+  - [ ] (e) The screens, against the prototype, each audited as it is built: Issues and an issue's page,
+    Businesses and a business's page, the platform's Venues and Routers, the Team for platform roles,
+    the owner's getting-started overview (replacing slice 1's stand-in), the platform's Help.
+  - [ ] (f) Leftovers of slice 1's stand-ins removed.
+  - [ ] (g) finish-work on the branch.
+  - [ ] (h) Release and live acceptance: Asha invites a test business; its owner accepts, protects
+    their sign-in and chooses how the router comes; Asha confirms the package and sets up its router
+    (`chr-test`); the venue serves.
 - [ ] Slice 2: the counter.
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
