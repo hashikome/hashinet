@@ -1,5 +1,6 @@
 "use client";
 
+import type { RouterCondition } from "@hashinet/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +9,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -420,9 +420,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
-  const value = useMemo(() => show, [show]);
   return (
-    <ToastContext.Provider value={value}>
+    <ToastContext.Provider value={show}>
       {children}
       <div className="toast-slot" role="status" aria-live="polite">
         {text ? <div className="toast">{text}</div> : null}
@@ -433,5 +432,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
 export const useToast = () => useContext(ToastContext);
 
-/** Money is whole shillings: "TSh 1,500". */
-export const tsh = (amount: number) => `TSh ${Math.floor(amount).toLocaleString("en-US")}`;
+/** How each page says a router's or a business's condition (the API decides which it is). */
+export const CONDITION: Record<RouterCondition, [string, PillKind]> = {
+  "setting-up": ["Setting up", "wait"],
+  serving: ["Serving", "ok"],
+  offline: ["Offline", "bad"],
+  "needs-attention": ["Needs attention", "bad"],
+};

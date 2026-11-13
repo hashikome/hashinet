@@ -1,6 +1,6 @@
 "use client";
 
-import type { Me } from "@hashinet/types";
+import { type Me, PROOF_HOURS } from "@hashinet/types";
 import { useSearchParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { type FormEvent, type ReactNode, Suspense, useEffect, useState } from "react";
@@ -54,7 +54,6 @@ const TITLE: Record<Kind, string> = {
   remove: "Remove a passkey",
   passkey: "Add a passkey",
 };
-const PROOF_HOURS = 2;
 
 export default function SignInSettingsPage() {
   return (
@@ -78,15 +77,13 @@ function SignInSettings() {
   const [asking, setAsking] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { required, authenticator } = me.protection;
-  const proved =
-    me.protection.provedUntil !== null && Date.parse(me.protection.provedUntil) > Date.now();
   const keys = passkeys.data ?? [];
 
   /** Starts a flow: proof first when the change needs it and the session has none. */
   async function start(kind: Kind, passkey?: Passkey) {
-    // Changing protection asks for proof first; so does adding to protection already there.
+    // The API says what asks for proof first; a refusal on the way still lands on Confirm.
     const adds = kind === "setup" || kind === "passkey";
-    const needsProof = !proved && (!adds || authenticator || keys.length > 0);
+    const needsProof = adds ? me.protection.proofNeeded.add : me.protection.proofNeeded.change;
     const steps: Step[] = [
       ...(needsProof ? (["confirm"] as Step[]) : []),
       ...(kind === "setup" || kind === "replace" ? (["scan"] as Step[]) : []),

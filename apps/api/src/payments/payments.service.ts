@@ -1,11 +1,12 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import type {
-  Capabilities,
-  CustomerRecord,
-  GuestPaymentStarted,
-  GuestPaymentStatus,
-  PaymentRecord,
-  SaleResult,
+import {
+  type Capabilities,
+  type CustomerRecord,
+  type GuestPaymentStarted,
+  type GuestPaymentStatus,
+  groupedCode,
+  type PaymentRecord,
+  type SaleResult,
 } from "@hashinet/types";
 import {
   BadGatewayException,
@@ -33,7 +34,7 @@ import { captureFailure } from "../observability/telemetry.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { describeFailures, outcomeOk, RouterSync } from "../services/router-sync.js";
-import { generateCodes, groupedCode } from "../vouchers/voucher-codes.js";
+import { generateCodes } from "../vouchers/voucher-codes.js";
 import { type ChargeState, MOBILE_MONEY, type MobileMoneyGateway } from "./mobile-money.js";
 import type {
   PaymentListInput,

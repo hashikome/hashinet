@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { routerJourney, SETUP_STALE_MS, type StoredSetup } from "./router-journey.js";
+import {
+  conditionOf,
+  routerJourney,
+  SETUP_STALE_MS,
+  type StoredSetup,
+  worstCondition,
+} from "./router-journey.js";
 
 const now = new Date("2026-11-01T10:00:00Z");
 const idle = { status: "offline", setupStartedAt: null, setupPhase: null, lastSetupAt: null };
@@ -49,5 +55,22 @@ describe("a router's journey", () => {
     const journey = routerJourney({ ...idle, setupStartedAt: started }, null, now);
     expect(journey.running).toBe(false);
     expect(journey.interrupted).toBe(true);
+  });
+});
+
+describe("a router's condition", () => {
+  test("setting up until it first serves, then what it last reported", () => {
+    expect(conditionOf("connect", "offline")).toBe("setting-up");
+    expect(conditionOf("set-up", "online")).toBe("setting-up");
+    expect(conditionOf("serving", "online")).toBe("serving");
+    expect(conditionOf("serving", "offline")).toBe("offline");
+    expect(conditionOf("serving", "error")).toBe("needs-attention");
+  });
+
+  test("a business is as its worst router, and setting up with none", () => {
+    expect(worstCondition([])).toBe("setting-up");
+    expect(worstCondition(["serving", "serving"])).toBe("serving");
+    expect(worstCondition(["serving", "offline"])).toBe("offline");
+    expect(worstCondition(["offline", "needs-attention"])).toBe("needs-attention");
   });
 });

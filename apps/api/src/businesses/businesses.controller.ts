@@ -1,7 +1,13 @@
-import type { BusinessList, Region, RouterStatus } from "@hashinet/types";
+import type { BusinessList, Region } from "@hashinet/types";
 import { Controller, Get } from "@nestjs/common";
 import { Can } from "../access/access.guard.js";
 import { PrismaService } from "../database/prisma.service.js";
+import {
+  conditionOf,
+  routerJourney,
+  type StoredSetup,
+  worstCondition,
+} from "../routers/router-journey.js";
 
 /** The businesses on HashiNet, as its team sees them. Each business's own page comes in slice 3. */
 @Controller("api/businesses")
@@ -22,7 +28,19 @@ export class BusinessesController {
         },
         venues: {
           orderBy: { createdAt: "asc" },
-          select: { id: true, name: true, routers: { select: { status: true } } },
+          select: {
+            id: true,
+            name: true,
+            routers: {
+              select: {
+                status: true,
+                setupStartedAt: true,
+                setupPhase: true,
+                lastSetupAt: true,
+                lastSetup: true,
+              },
+            },
+          },
         },
       },
     });
@@ -33,11 +51,14 @@ export class BusinessesController {
         region: b.region as Region,
         area: b.area,
         owner: b.memberships[0]?.user ?? null,
-        venues: b.venues.map((v) => ({
-          id: v.id,
-          name: v.name,
-          routers: v.routers.map((r) => r.status as RouterStatus),
-        })),
+        venues: b.venues.map((v) => ({ id: v.id, name: v.name, routers: v.routers.length })),
+        condition: worstCondition(
+          b.venues.flatMap((v) =>
+            v.routers.map((r) =>
+              conditionOf(routerJourney(r, r.lastSetup as StoredSetup | null).stage, r.status),
+            ),
+          ),
+        ),
         createdAt: b.createdAt.toISOString(),
       })),
     };

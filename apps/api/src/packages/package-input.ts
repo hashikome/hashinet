@@ -1,7 +1,5 @@
+import { MINIMUM_PRICE_TSH } from "@hashinet/types";
 import { z } from "zod";
-
-/** The lowest price a package, and so a voucher, sells for, in whole shillings (owner's rule). */
-export const MINIMUM_PRICE_TSH = 500;
 
 const whole = (min: number, max: number) =>
   z

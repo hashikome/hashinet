@@ -1,5 +1,6 @@
 import { createHmac, randomInt } from "node:crypto";
 import { passkey } from "@better-auth/passkey";
+import { PROOF_HOURS } from "@hashinet/types";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
@@ -139,10 +140,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           // authenticator code or a recovery code in the last 2 hours (ADR-0011, 9).
           const current = await getSessionFromCtx(ctx);
           if (!current || !(await provedRecently(db, current.session.id))) {
-            throw new APIError("FORBIDDEN", {
-              code: "PROOF_REQUIRED",
-              message: "Confirm it's you with your passkey, authenticator app or a recovery code.",
-            });
+            throw new APIError("FORBIDDEN", proofRequired());
           }
         }
         if (ADDS_PROTECTION.has(ctx.path)) {
@@ -155,10 +153,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
             (await hasProtection(db, current.user.id)) &&
             !(await provedRecently(db, current.session.id))
           ) {
-            throw new APIError("FORBIDDEN", {
-              code: "PROOF_REQUIRED",
-              message: "Confirm it's you with your passkey, authenticator app or a recovery code.",
-            });
+            throw new APIError("FORBIDDEN", proofRequired());
           }
         }
       }),
@@ -275,13 +270,23 @@ const PROVES: ReadonlySet<string> = new Set([
   "/passkey/verify-authentication",
 ]);
 
-/** How long a proof lets someone change their protection without asking again. */
-export const PROOF_HOURS = 2;
+/** The refusal when a change needs proof the session doesn't have (one code, one message). */
+export const proofRequired = () => ({
+  code: "PROOF_REQUIRED",
+  message: "Confirm it's you with your passkey, authenticator app or a recovery code.",
+});
+
+/** Until when a proof made at `provedAt` holds; null once it has run out, or with none. */
+export function proofHoldsUntil(provedAt: Date | null | undefined): Date | null {
+  if (!provedAt) return null;
+  const until = new Date(provedAt.getTime() + PROOF_HOURS * 3_600_000);
+  return until.getTime() > Date.now() ? until : null;
+}
 
 /** Whether the session proved the person's protection in the last 2 hours. */
 export async function provedRecently(db: PrismaClient, sessionId: string): Promise<boolean> {
   const row = await db.session.findUnique({ where: { id: sessionId }, select: { provedAt: true } });
-  return row?.provedAt != null && Date.now() - row.provedAt.getTime() < PROOF_HOURS * 3_600_000;
+  return proofHoldsUntil(row?.provedAt) !== null;
 }
 
 /** The routes that change the protection a person already has. */
@@ -291,7 +296,7 @@ const CHANGES_PROTECTION: ReadonlySet<string> = new Set([
 ]);
 
 /** Whether the person already has an authenticator app or a passkey. */
-async function hasProtection(db: PrismaClient, userId: string): Promise<boolean> {
+export async function hasProtection(db: PrismaClient, userId: string): Promise<boolean> {
   const [user, passkeys] = await Promise.all([
     db.user.findUnique({ where: { id: userId }, select: { twoFactorEnabled: true } }),
     db.passkey.count({ where: { userId } }),

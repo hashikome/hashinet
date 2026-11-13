@@ -186,12 +186,9 @@ export interface BusinessSummary {
   area: string;
   /** Its owner, once the invitation is accepted. */
   owner: { name: string; email: string } | null;
-  venues: {
-    id: string;
-    name: string;
-    /** Its routers' states, so the list shows whether it is serving. */
-    routers: RouterStatus[];
-  }[];
+  venues: { id: string; name: string; routers: number }[];
+  /** Across its routers: the worst of them, or setting up while none has served. */
+  condition: RouterCondition;
   createdAt: Timestamp;
 }
 
@@ -229,6 +226,8 @@ export interface Me {
      * the authenticator ask for proof first after it. Null when it has none.
      */
     provedUntil: Timestamp | null;
+    /** Whether a change to protection, or adding to it, asks for proof first now. */
+    proofNeeded: { change: boolean; add: boolean };
   };
 }
 
@@ -306,12 +305,19 @@ export interface RouterRecord {
   status: RouterStatus;
   /** What the owner does next with this router. */
   stage: RouterStage;
+  condition: RouterCondition;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
 /** Where a router stands in the owner's journey: what to do next. */
 export type RouterStage = "connect" | "set-up" | "serving";
+
+/**
+ * How a router, or a business across its routers, is doing, as every page says it: being set up
+ * until it first serves; then serving, offline, or needing attention (an error).
+ */
+export type RouterCondition = "setting-up" | "serving" | "offline" | "needs-attention";
 
 export type RouterSetupPhaseStatus = "pending" | "running" | "pass" | "warn" | "fail" | "skipped";
 
@@ -320,6 +326,23 @@ export interface RouterSetupPhase {
   title: string;
   status: RouterSetupPhaseStatus;
   detail: string | null;
+}
+
+/** `POST /api/routers/:id/verify`: the router's health, check by check. */
+export interface RouterChecks {
+  /** False when something proves the hotspot is not serving. */
+  ok: boolean;
+  checks: {
+    id: string;
+    title: string;
+    status: "pass" | "warn" | "fail" | "skipped";
+    detail: string;
+    /** What to do about it, when there is something to do. */
+    fix?: string;
+  }[];
+  /** What a machine cannot prove: it still needs a phone. */
+  manual: string[];
+  summary: { pass: number; warn: number; fail: number; skipped: number };
 }
 
 /** `GET /api/routers/:id/journey`, and the answer to starting a setup. */
@@ -376,9 +399,12 @@ export interface BootstrapScriptResponse {
   tunnel: boolean;
 }
 
-/** `GET /api/packages`: every package for an admin, the active ones for a manager. */
+/** `GET /api/packages`: the packages on sale, each with where it sells. */
 export interface PackageList {
-  packages: PackageRecord[];
+  packages: (PackageRecord & {
+    /** The venues it is sold at; empty means every venue. */
+    venueIds: string[];
+  })[];
 }
 
 /** `GET` and `PUT /api/packages/:id`, and `POST /api/packages`. */
@@ -591,7 +617,9 @@ export interface RevenueByVenue {
  */
 export interface PaymentsReceived {
   month: BusinessMonth;
-  /** The months with payments, newest first, for choosing another. */
+  /** Whether `month` is this month, so its figures are "so far". */
+  current: boolean;
+  /** This month and the months with payments, newest first, for choosing another. */
   months: BusinessMonth[];
   totalTsh: DecimalString;
   count: number;
@@ -860,6 +888,28 @@ export interface GuestSession {
 }
 
 /** Tanzania's 31 regions: a business's and a venue's region is chosen from these, never typed. */
+/**
+ * Voucher codes are 12 digits (ADR-0008), printed and read aloud in three groups of four, stored
+ * without spaces.
+ */
+export const CODE_LENGTH = 12;
+
+/** "4827 1693 6518": a code in the three groups it is printed and read aloud in. */
+export function groupedCode(code: string): string {
+  return code.replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+
+/** A code as someone typed or printed it ("4827 1693 6518"), in the form it is stored. */
+export function normalCode(typed: string): string {
+  return typed.replace(/[\s-]/g, "");
+}
+
+/** The lowest price of a package, and so of a voucher, in whole shillings. */
+export const MINIMUM_PRICE_TSH = 500;
+
+/** How long proving it's you lets someone change their sign-in without asking again. */
+export const PROOF_HOURS = 2;
+
 export const REGIONS = [
   "Arusha",
   "Dar es Salaam",

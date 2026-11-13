@@ -5,16 +5,17 @@ import { ProtectNotice } from "@/components/hearth/protect";
 import {
   Attention,
   ButtonLink,
+  CONDITION,
   Figs,
   Head,
   Panel,
   SettingRow,
   Table,
-  tsh,
 } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { clock, dayName, weekday } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
+import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
 
@@ -34,8 +35,8 @@ export default function OverviewPage() {
   const routers = useLoad(() => api.get<RouterList>("/api/routers"), [me.active.id]);
   const one = shown.length === 1 ? shown[0] : null;
   const inView = (routers.data?.routers ?? []).filter((r) => shown.some((v) => v.id === r.venueId));
-  const serving = inView.filter((r) => r.stage === "serving");
-  const mayPrint = can("voucher.print") && me.active.access === "full";
+  const serving = inView.filter((r) => r.condition !== "setting-up");
+  const mayPrint = can("voucher.print");
   const sub = `${one ? `${one.name} · ` : ""}${dayName(new Date())}${today.at ? ` · updated ${clock(today.at)}` : ""}`;
 
   if (today.error || routers.error) {
@@ -57,13 +58,15 @@ export default function OverviewPage() {
   if (serving.length === 0) return <SettingUp sub={sub} />;
 
   const t = today.data;
-  const offline = inView.filter((r) => r.status === "offline" || r.status === "error");
+  const offline = inView.filter(
+    (r) => r.condition === "offline" || r.condition === "needs-attention",
+  );
   const routerFact: [string, string, string] =
     inView.length === 1 && inView[0]
-      ? ["Router", inView[0].status === "online" ? "Serving" : "Offline", routerDetail(inView[0])]
+      ? ["Router", CONDITION[inView[0].condition][0], routerDetail(inView[0])]
       : [
           "Routers serving",
-          String(inView.filter((r) => r.status === "online").length),
+          String(inView.filter((r) => r.condition === "serving").length),
           offline.length === 0
             ? "all serving"
             : offline.length === 1
@@ -103,8 +106,8 @@ export default function OverviewPage() {
           ["Online now", String(t.onlineNow), "devices on the WiFi"],
           [
             "Takings today",
-            tsh(Number(t.takingsTsh)),
-            `${tsh(Number(t.lastWeekTakingsTsh))} by now last ${weekday(new Date(Date.now() - 7 * 86_400_000))}`,
+            tsh(t.takingsTsh),
+            `${tsh(t.lastWeekTakingsTsh)} by now last ${weekday(new Date(Date.now() - 7 * 86_400_000))}`,
           ],
           ["Vouchers sold today", String(t.sold), "printed and sold here"],
           routerFact,
@@ -116,9 +119,9 @@ export default function OverviewPage() {
             cols={[["Package"], ["Sold", true], ["Takings", true]]}
             rows={t.byPackage.map((p) => ({
               key: p.packageId ?? "none",
-              cells: [p.name ?? "A package since removed", p.sold, tsh(Number(p.takingsTsh))],
+              cells: [p.name ?? "A package since removed", p.sold, tsh(p.takingsTsh)],
             }))}
-            total={["Today", t.sold, tsh(Number(t.takingsTsh))]}
+            total={["Today", t.sold, tsh(t.takingsTsh)]}
           />
         ) : (
           <p className="muted empty">

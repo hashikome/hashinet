@@ -1,11 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import {
-  CODE_LENGTH,
-  generateCode,
-  generateCodes,
-  groupedCode,
-  normalCode,
-} from "./voucher-codes.js";
+import { CODE_LENGTH, groupedCode, normalCode } from "@hashinet/types";
+import { generateCode, generateCodes } from "./voucher-codes.js";
 
 describe("voucher codes", () => {
   test("twelve digits, with no prefix (ADR-0008)", () => {

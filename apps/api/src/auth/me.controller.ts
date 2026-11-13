@@ -11,13 +11,13 @@ import {
 } from "@nestjs/common";
 import { z } from "zod";
 import { AccountRoute, CurrentPrincipal } from "../access/access.guard.js";
-import { capabilitiesOf } from "../access/policy.js";
+import { capabilitiesOf, needsProtectedSession } from "../access/policy.js";
 import { mustProtect, type Principal, SETUP_DAYS } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { parseInput } from "../http/validation.js";
-import { PROOF_HOURS, provedRecently } from "./create-auth.js";
+import { proofHoldsUntil, proofRequired, provedRecently } from "./create-auth.js";
 
 const profileInput = z
   .object({
@@ -115,12 +115,8 @@ export class MeController {
   @AccountRoute()
   async replaceAuthenticator(@CurrentPrincipal() principal: Principal): Promise<Me> {
     if (!(await provedRecently(this.db, principal.sessionId))) {
-      throw new ForbiddenException(
-        apiError(
-          "PROOF_REQUIRED",
-          "Confirm it's you with your passkey, authenticator app or a recovery code.",
-        ),
-      );
+      const { code, message } = proofRequired();
+      throw new ForbiddenException(apiError(code, message));
     }
     await this.db.$transaction(async (tx) => {
       const user = await tx.user.findUniqueOrThrow({ where: { id: principal.userId } });
@@ -159,9 +155,8 @@ export class MeController {
         select: { provedAt: true },
       }),
     ]);
-    const provedUntil = session?.provedAt
-      ? new Date(session.provedAt.getTime() + PROOF_HOURS * 3_600_000)
-      : null;
+    const provedUntil = proofHoldsUntil(session?.provedAt);
+    const isProtected = user.twoFactorEnabled === true || passkeys > 0;
     const summaries: MembershipSummary[] = memberships.map((m) => ({
       id: m.id,
       scope: m.scope,
@@ -183,7 +178,14 @@ export class MeController {
         ...active,
         venueIds: principal.venueIds,
         access: principal.access,
-        capabilities: principal.access === "account" ? [] : capabilitiesOf(principal.role),
+        // What this session may do now: nothing beyond Account and security until it may act,
+        // and nothing sellable while it gets set up without protection (ADR-0011, 9).
+        capabilities:
+          principal.access === "account"
+            ? []
+            : capabilitiesOf(principal.role).filter(
+                (action) => principal.access === "full" || !needsProtectedSession(action),
+              ),
       },
       protection: {
         required: mustProtect(principal.role),
@@ -193,8 +195,10 @@ export class MeController {
           principal.access === "setup"
             ? new Date(started.getTime() + SETUP_DAYS * 86_400_000).toISOString()
             : null,
-        provedUntil:
-          provedUntil && provedUntil.getTime() > Date.now() ? provedUntil.toISOString() : null,
+        provedUntil: provedUntil?.toISOString() ?? null,
+        // What asks for proof first (create-auth's hooks): changing protection always does;
+        // adding to it does only for someone already protected.
+        proofNeeded: { change: provedUntil === null, add: provedUntil === null && isProtected },
       },
     };
   }

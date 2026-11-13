@@ -2,10 +2,11 @@
 
 import type { PaymentsReceived, RevenueSource, TodaySummary } from "@hashinet/types";
 import { useState } from "react";
-import { Button, CopyText, Figs, Head, Panel, Pill, Table, tsh } from "@/components/hearth/ui";
+import { Button, CopyText, Figs, Head, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
+import { tsh } from "@/lib/money";
 import { useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
 
@@ -17,11 +18,7 @@ const METHOD: Record<RevenueSource, string> = {
 
 /** "November 2026", from "2026-11". */
 const monthName = (month: string) =>
-  new Date(`${month}-15T12:00:00Z`).toLocaleDateString("en-GB", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  new Date(`${month}-15T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
 /**
  * Payments (prototype `payments`): what guests paid this business in a month. In slice 1 every
@@ -55,7 +52,7 @@ export default function PaymentsPage() {
   );
   const data = list.data;
   const label = data ? monthName(data.month) : "";
-  const current = data ? data.month === data.months[0] : true;
+  const current = data?.current ?? true;
   const scope = shown.length === 1 ? shown[0]?.name : "All venues";
   const rows = data ? [...data.payments, ...more] : [];
   const showsVenue = all.length > 1;
@@ -68,10 +65,10 @@ export default function PaymentsPage() {
         <>
           <Figs
             items={[
-              ["Received", tsh(Number(data.totalTsh)), `${label}${current ? " so far" : ""}`],
+              ["Received", tsh(data.totalTsh), `${label}${current ? " so far" : ""}`],
               [
                 "Today",
-                tsh(Number(today.data?.takingsTsh ?? 0)),
+                tsh(today.data?.takingsTsh ?? 0),
                 `${today.data?.sold ?? 0} ${today.data?.sold === 1 ? "voucher" : "vouchers"} so far`,
               ],
             ]}
@@ -127,7 +124,7 @@ export default function PaymentsPage() {
                         )}
                       </div>
                     </span>,
-                    tsh(Number(p.amountTsh)),
+                    tsh(p.amountTsh),
                     <Pill key="s" kind="ok">
                       Paid
                     </Pill>,

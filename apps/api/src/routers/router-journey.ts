@@ -1,4 +1,9 @@
-import type { RouterJourney, RouterSetupPhase, RouterStage } from "@hashinet/types";
+import type {
+  RouterCondition,
+  RouterJourney,
+  RouterSetupPhase,
+  RouterStage,
+} from "@hashinet/types";
 import { PHASE_TITLES, type SetupPhaseId } from "../services/router-provision/setup.js";
 
 /** A run this old with no finish was ended by a restart; setup itself takes minutes. */
@@ -28,6 +33,19 @@ function runningPhases(current: string | null): RouterSetupPhase[] {
     status: index < at ? "pass" : index === at ? "running" : "pending",
     detail: null,
   }));
+}
+
+/** A router's condition, from its stage and what it last reported. */
+export function conditionOf(stage: RouterStage, status: string): RouterCondition {
+  if (stage !== "serving") return "setting-up";
+  return status === "online" ? "serving" : status === "error" ? "needs-attention" : "offline";
+}
+
+const WORST: RouterCondition[] = ["needs-attention", "offline", "setting-up", "serving"];
+
+/** A business's condition across its routers: the worst one; setting up while it has none. */
+export function worstCondition(conditions: RouterCondition[]): RouterCondition {
+  return WORST.find((c) => conditions.includes(c)) ?? "setting-up";
 }
 
 function stageOf(row: JourneyRow, ok: boolean | null): RouterStage {

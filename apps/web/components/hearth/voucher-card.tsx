@@ -1,11 +1,9 @@
 "use client";
 
+import { groupedCode } from "@hashinet/types";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef } from "react";
-import { tsh } from "./ui";
-
-/** "4827 1693 6518": a code in the three groups it is printed and read aloud in. */
-export const grouped = (code: string) => code.replace(/(\d{4})(?=\d)/g, "$1 ");
+import { tsh } from "@/lib/money";
 
 /** Where a printed card's QR code opens: the portal, the code in the fragment (ADR-0008). */
 export function voucherLink(code: string): string {
@@ -31,7 +29,7 @@ export function VoucherCard({ face, n }: { face: CardFace; n: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const price = tsh(face.price);
   const devices = `${face.devices} ${face.devices === 1 ? "device" : "devices"}`;
-  const code = grouped(face.code);
+  const code = groupedCode(face.code);
   // On a phone the card scales to the width it has; on paper it is always 100 mm.
   useEffect(() => {
     const fit = () => {

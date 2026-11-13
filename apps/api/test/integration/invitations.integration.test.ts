@@ -127,7 +127,8 @@ describe("accepting an invitation to start a business", () => {
         {
           name: "Bahari Beach Bar",
           owner: { name: "Baraka Mollel", email: "baraka@example.com" },
-          venues: [{ name: "Bahari Beach Bar", routers: [] }],
+          venues: [{ name: "Bahari Beach Bar", routers: 0 }],
+          condition: "setting-up",
         },
       ],
     });
@@ -147,6 +148,14 @@ describe("accepting an invitation to start a business", () => {
       active: { role: "owner", business: { name: "Bahari Beach Bar" }, access: "setup" },
       protection: { required: true, passkeys: 0, setupEndsAt: expect.any(String) },
     });
+    // Getting set up, nothing sellable is offered yet.
+    const capabilities = (
+      (await owner.request("GET", "/api/me")).body as {
+        active: { capabilities: string[] };
+      }
+    ).active.capabilities;
+    expect(capabilities).toContain("package.manage");
+    expect(capabilities).not.toContain("voucher.print");
   });
 
   test("a replaced, revoked, expired or unknown link is not found", async () => {

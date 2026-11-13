@@ -1,12 +1,18 @@
 "use client";
 
-import type { PackageList, PackageRecord, PackageResponse, VenuePackages } from "@hashinet/types";
+import {
+  MINIMUM_PRICE_TSH,
+  type PackageList,
+  type PackageRecord,
+  type PackageResponse,
+} from "@hashinet/types";
 import { type FormEvent, useState } from "react";
 import { Dialog } from "@/components/hearth/dialog";
-import { Button, Field, Head, Panel, Table, tsh, useToast } from "@/components/hearth/ui";
+import { Button, Field, Head, Panel, Table, useToast } from "@/components/hearth/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { DURATION_UNITS, type DurationUnit, formatDuration, toMinutes } from "@/lib/duration";
 import { LoadFailed, useLoad } from "@/lib/load";
+import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
 
@@ -26,16 +32,10 @@ export default function PackagesPage() {
   const { all: venues } = useVenues();
   const owner = can("package.manage");
   const [open, setOpen] = useState<Open | null>(null);
-  const list = useLoad(async () => {
-    const [{ packages }, sold] = await Promise.all([
-      api.get<PackageList>("/api/packages"),
-      Promise.all(venues.map((v) => api.get<VenuePackages>(`/api/venues/${v.id}/packages`))),
-    ]);
-    return { packages, sold };
-  }, [me.active.id, venues.map((v) => v.id).join()]);
+  const list = useLoad(() => api.get<PackageList>("/api/packages"), [me.active.id]);
 
-  const soldAt = (p: PackageRecord) => {
-    const at = venues.filter((_, i) => list.data?.sold[i]?.packages.some((x) => x.id === p.id));
+  const soldAt = (p: PackageList["packages"][number]) => {
+    const at = p.venueIds.length ? venues.filter((v) => p.venueIds.includes(v.id)) : venues;
     if (venues.length === 1) return at.length ? venues[0]?.name : "Not sold";
     return at.length === venues.length ? "All venues" : `${at.length} of ${venues.length} venues`;
   };
@@ -87,7 +87,7 @@ export default function PackagesPage() {
                   </span>,
                   formatDuration(p.durationMinutes),
                   p.deviceLimit,
-                  tsh(Number(p.priceTsh)),
+                  tsh(p.priceTsh),
                   soldAt(p),
                   owner ? (
                     <div className="actions row-actions" key="a">
@@ -203,7 +203,7 @@ function PriceDialog({
             className="input"
             type="number"
             inputMode="numeric"
-            min={500}
+            min={MINIMUM_PRICE_TSH}
             step={100}
             value={price}
             onChange={(e) => setPrice(e.target.value)}
@@ -370,7 +370,12 @@ function AddDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => P
           </Field>
         </div>
         <Field label="Price in TSh" id="pr" error={errors.priceTsh}>
-          {input("pr", "price", "priceTsh", { ...number, required: true, min: 500, step: 100 })}
+          {input("pr", "price", "priceTsh", {
+            ...number,
+            required: true,
+            min: MINIMUM_PRICE_TSH,
+            step: 100,
+          })}
         </Field>
         <details
           open={Boolean(errors.downloadSpeedMbps || errors.uploadSpeedMbps || errors.dataLimitGb)}

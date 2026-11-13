@@ -1,22 +1,17 @@
 "use client";
 
-import type {
-  BusinessList,
-  BusinessSummary,
-  InvitationList,
-  InvitationRecord,
-} from "@hashinet/types";
+import type { BusinessList, InvitationList, InvitationRecord } from "@hashinet/types";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { Dialog } from "@/components/hearth/dialog";
 import {
   Button,
+  CONDITION,
   CopyText,
   Field,
   Head,
   Panel,
   Pill,
-  type PillKind,
   Table,
   useToast,
 } from "@/components/hearth/ui";
@@ -24,14 +19,6 @@ import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { shortDate, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan, useSession } from "@/lib/session";
-
-/** Whether a business serves: any router online; setting up until one is; offline otherwise. */
-function stateOf(b: BusinessSummary): [string, PillKind] {
-  const routers = b.venues.flatMap((v) => v.routers);
-  if (routers.length === 0) return ["Setting up", "wait"];
-  if (routers.every((r) => r === "online")) return ["Serving", "ok"];
-  return routers.some((r) => r === "online") ? ["Needs attention", "bad"] : ["Offline", "bad"];
-}
 
 /**
  * Businesses (prototype `businesses`), slice 1's minimal list: every business, whether it serves,
@@ -163,7 +150,7 @@ export default function BusinessesPage() {
                   ["Routers", true],
                 ]}
                 rows={businesses.map((b) => {
-                  const [state, kind] = stateOf(b);
+                  const [state, kind] = CONDITION[b.condition];
                   return {
                     key: b.id,
                     cells: [
@@ -187,7 +174,7 @@ export default function BusinessesPage() {
                         {state}
                       </Pill>,
                       b.venues.length,
-                      b.venues.reduce((n, v) => n + v.routers.length, 0),
+                      b.venues.reduce((n, v) => n + v.routers, 0),
                     ],
                   };
                 })}

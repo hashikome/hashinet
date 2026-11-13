@@ -3,11 +3,12 @@
 import type { VenuePackages, VoucherBatchDetail } from "@hashinet/types";
 import Link from "next/link";
 import { type FormEvent, useEffect, useState } from "react";
-import { Button, ButtonLink, Field, Head, Panel, tsh, useToast } from "@/components/hearth/ui";
+import { Button, ButtonLink, Field, Head, Panel, useToast } from "@/components/hearth/ui";
 import { type CardFace, VoucherCard } from "@/components/hearth/voucher-card";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
-import { useSession } from "@/lib/session";
+import { tsh } from "@/lib/money";
+import { useCan } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
 
 /** Twelve 100 by 46 mm cards fit on one A4 sheet, two across. */
@@ -19,7 +20,7 @@ const SAMPLE_CODES = ["482716936518", "730164528194"];
  * protected sign-in (ADR-0011, 9); the cards print alone, twelve to an A4 page.
  */
 export default function PrintPage() {
-  const { me } = useSession();
+  const can = useCan();
   const toast = useToast();
   const { all, shown } = useVenues();
   const [venueId, setVenueId] = useState(shown[0]?.id ?? all[0]?.id ?? "");
@@ -52,7 +53,7 @@ export default function PrintPage() {
     return () => clearTimeout(timer);
   }, [sheet]);
 
-  if (me.active.access !== "full") {
+  if (!can("voucher.print")) {
     return (
       <>
         <Head title="Print vouchers" sub="A sheet of codes to sell at the counter" />
@@ -148,7 +149,7 @@ export default function PrintPage() {
               >
                 {packages.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} · {tsh(Number(p.priceTsh))}
+                    {p.name} · {tsh(p.priceTsh)}
                   </option>
                 ))}
               </select>

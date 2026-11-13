@@ -1,27 +1,14 @@
 import { randomInt } from "node:crypto";
+import { CODE_LENGTH } from "@hashinet/types";
 
 /**
- * 12 digits (ADR-0008): typed on a phone's number keypad, printed and read aloud in three groups
- * of four. 10^12 codes (39.9 bits), so with 100,000 codes live a guess succeeds about once in 10
- * million tries; redemption is rate-limited as well. Stored without spaces; a leading 0 is fine.
+ * A voucher code (ADR-0008: 12 digits, 10^12 codes, about 40 bits) from a cryptographic
+ * generator; `randomInt` draws each digit without bias.
  */
-export const CODE_LENGTH = 12;
-
-/** A voucher code from a cryptographic generator; `randomInt` draws each digit without bias. */
 export function generateCode(): string {
   let code = "";
   for (let i = 0; i < CODE_LENGTH; i++) code += String(randomInt(10));
   return code;
-}
-
-/** "4827 1693 6518": a code in the three groups it is printed and read aloud in. */
-export function groupedCode(code: string): string {
-  return code.replace(/(\d{4})(?=\d)/g, "$1 ");
-}
-
-/** A code as someone typed or printed it ("4827 1693 6518"), in the form it is stored. */
-export function normalCode(typed: string): string {
-  return typed.replace(/[\s-]/g, "");
 }
 
 /**

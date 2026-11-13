@@ -2,16 +2,19 @@
 
 import type {
   BootstrapScriptResponse,
+  RouterChecks,
   RouterJourney,
   RouterList,
   RouterRecord,
   RouterResponse,
+  RouterSetupPhaseStatus,
   VenueResponse,
 } from "@hashinet/types";
 import Link from "next/link";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import {
   Button,
+  CONDITION,
   CopyText,
   Field,
   Head,
@@ -26,26 +29,15 @@ import { longDate, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan } from "@/lib/session";
 
-/** `POST /api/routers/:id/verify`: the router's health, check by check. */
-interface Checks {
-  ok: boolean;
-  checks: {
-    id: string;
-    title: string;
-    status: "pass" | "warn" | "fail" | "skipped";
-    detail: string;
-    fix?: string;
-  }[];
-  summary: { pass: number; warn: number; fail: number; skipped: number };
-}
-
-const STATUS: Record<RouterRecord["status"], [string, PillKind]> = {
-  online: ["Serving", "ok"],
-  offline: ["Offline", "bad"],
-  provisioning: ["Setting up", "wait"],
-  error: ["Needs attention", "bad"],
+const PHASE: Record<RouterSetupPhaseStatus, [string, PillKind]> = {
+  pending: ["Waiting", "neutral"],
+  running: ["Running", "wait"],
+  pass: ["Done", "ok"],
+  warn: ["Warning", "wait"],
+  fail: ["Failed", "bad"],
+  skipped: ["Skipped", "neutral"],
 };
-const CHECK: Record<Checks["checks"][number]["status"], [string, PillKind]> = {
+const CHECK: Record<RouterChecks["checks"][number]["status"], [string, PillKind]> = {
   pass: ["Passed", "ok"],
   warn: ["Warning", "wait"],
   fail: ["Failed", "bad"],
@@ -250,18 +242,21 @@ function RouterView({
     [router.id],
   );
   const [script, setScript] = useState<BootstrapScriptResponse | null>(null);
-  const [checks, setChecks] = useState<Checks | null>(null);
+  const [checks, setChecks] = useState<RouterChecks | null>(null);
   const [busy, setBusy] = useState("");
   const j = journey.data;
   const running = j?.running ?? false;
   const reloadJourney = journey.reload;
 
-  // While a setup runs, its progress is read every few seconds.
+  // While a setup runs, its progress is read every few seconds (not while the tab is hidden);
+  // the router itself is read again once, when the run ends.
+  const wasRunning = useRef(false);
   useEffect(() => {
+    if (wasRunning.current && !running) void reload();
+    wasRunning.current = running;
     if (!running) return;
     const timer = setInterval(() => {
-      void reloadJourney();
-      void reload();
+      if (!document.hidden) void reloadJourney();
     }, 3000);
     return () => clearInterval(timer);
   }, [running, reloadJourney, reload]);
@@ -277,9 +272,7 @@ function RouterView({
     }
   };
   const stage = j?.stage ?? router.stage;
-  // Until it first serves, a router is being set up, whatever it last reported.
-  const [label, kind] =
-    stage === "serving" ? STATUS[router.status] : (["Setting up", "wait"] as const);
+  const [label, kind] = CONDITION[router.condition];
   const at = stage === "connect" ? 0 : stage === "set-up" ? 1 : 2;
   const step = (n: number) => (at > n ? "done" : at === n ? "now" : "");
 
@@ -310,7 +303,7 @@ function RouterView({
           <SettingRow title="Address" sub={<span className="num">{router.ipAddress}</span>} />
           <SettingRow
             title="Hotspot network"
-            sub={<span className="num">{router.networkRange ?? "10.5.50.0/24"}</span>}
+            sub={<span className="num">{router.networkRange}</span>}
           />
           <SettingRow title="Devices online" sub={`${router.connectedDevices} now`} />
           <SettingRow title="Added" sub={longDate(router.createdAt)} />
@@ -429,30 +422,7 @@ function RouterView({
                           key={p.id}
                           title={p.title}
                           sub={p.detail ?? ""}
-                          action={
-                            <Pill
-                              kind={
-                                p.status === "pass"
-                                  ? "ok"
-                                  : p.status === "fail"
-                                    ? "bad"
-                                    : p.status === "running"
-                                      ? "wait"
-                                      : "neutral"
-                              }
-                            >
-                              {
-                                {
-                                  pending: "Waiting",
-                                  running: "Running",
-                                  pass: "Done",
-                                  warn: "Warning",
-                                  fail: "Failed",
-                                  skipped: "Skipped",
-                                }[p.status]
-                              }
-                            </Pill>
-                          }
+                          action={<Pill kind={PHASE[p.status][1]}>{PHASE[p.status][0]}</Pill>}
                         />
                       ))}
                     </ul>
@@ -519,7 +489,9 @@ function RouterView({
                 onClick={() =>
                   run("checks", async () => {
                     setChecks(
-                      await api.post<Checks>(`/api/routers/${router.id}/verify?skipWriteTest=1`),
+                      await api.post<RouterChecks>(
+                        `/api/routers/${router.id}/verify?skipWriteTest=1`,
+                      ),
                     );
                   })
                 }

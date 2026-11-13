@@ -405,17 +405,27 @@ describe("payments received", () => {
 
     const october2026 = (await owner.request("GET", "/api/payments/received?month=2026-10"))
       .body as Body & { payments: Body[] };
-    expect(october2026).toMatchObject({ month: "2026-10", totalTsh: "9000.00", count: 4 });
-    expect(october2026.months).toEqual(["2026-10", "2026-09"]);
+    expect(october2026).toMatchObject({
+      month: "2026-10",
+      current: false,
+      totalTsh: "9000.00",
+      count: 4,
+    });
+    // This month is always offered, then every month with payments.
+    const thisMonth = new Date()
+      .toLocaleDateString("en-CA", { timeZone: "Africa/Dar_es_Salaam" })
+      .slice(0, 7);
+    expect(october2026.months).toEqual([thisMonth, "2026-10", "2026-09"]);
     expect(october2026.payments.map((p) => p.kind).sort()).toEqual([
       "printed",
       "printed",
       "sale",
       "sale",
     ]);
-    // Newest first, and the latest month by default.
+    // This month by default.
     expect((await owner.request("GET", "/api/payments/received")).body).toMatchObject({
-      month: "2026-10",
+      month: thisMonth,
+      current: true,
     });
     expect(
       (await owner.request("GET", `/api/payments/received?month=2026-10&venueId=${other.id}`)).body,

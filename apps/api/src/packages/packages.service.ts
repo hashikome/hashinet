@@ -1,4 +1,4 @@
-import type { AuditAction, PackageRecord, VenuePackages } from "@hashinet/types";
+import type { AuditAction, PackageList, PackageRecord, VenuePackages } from "@hashinet/types";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
 import { businessScope } from "../access/venue-scope.js";
@@ -25,12 +25,16 @@ export class PackagesService {
   ) {}
 
   /** Admins see the whole catalogue; managers only what can be sold. */
-  async list(staff: Principal): Promise<PackageRecord[]> {
+  async list(staff: Principal): Promise<PackageList["packages"]> {
     const rows = await this.db.package.findMany({
       where: { ...businessScope(staff), isActive: true },
+      include: { venues: { select: { venueId: true } } },
       orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
     });
-    return rows.map(packageRecord);
+    return rows.map((row) => ({
+      ...packageRecord(row),
+      venueIds: row.venues.map((v) => v.venueId),
+    }));
   }
 
   /**
@@ -77,7 +81,7 @@ export class PackagesService {
             .sort()
             .join("; "),
     ]);
-    return [header, ...lines].map((cells) => cells.map(csvCell).join(",")).join("\r\n") + "\r\n";
+    return `${[header, ...lines].map((cells) => cells.map(csvCell).join(",")).join("\r\n")}\r\n`;
   }
 
   async get(staff: Principal, id: string): Promise<PackageRecord> {

@@ -1,6 +1,7 @@
 import type {
   BootstrapScriptResponse,
   ProvisioningBacklog,
+  RouterChecks,
   RouterList,
   RouterResponse,
 } from "@hashinet/types";
@@ -131,7 +132,7 @@ export class RoutersController {
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Query("skipWriteTest") skipWriteTest: unknown,
-  ) {
+  ): Promise<RouterChecks> {
     return this.routers.verify(staff, id, !flagOf(skipWriteTest));
   }
 

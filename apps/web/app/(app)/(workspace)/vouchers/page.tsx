@@ -1,10 +1,11 @@
 "use client";
 
-import type {
-  VoucherBatchList,
-  VoucherList,
-  VoucherListItem,
-  VoucherStatus,
+import {
+  groupedCode,
+  type VoucherBatchList,
+  type VoucherList,
+  type VoucherListItem,
+  type VoucherStatus,
 } from "@hashinet/types";
 import { useEffect, useState } from "react";
 import {
@@ -17,7 +18,6 @@ import {
   type PillKind,
   Table,
 } from "@/components/hearth/ui";
-import { grouped } from "@/components/hearth/voucher-card";
 import { api } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
@@ -87,7 +87,7 @@ export default function VouchersPage() {
   const scope = shown.length === 1 ? shown[0]?.name : "All venues";
   const showsVenue = all.length > 1;
   const rows = [...(list.data ?? []), ...more];
-  const mayPrint = can("voucher.print") && me.active.access === "full";
+  const mayPrint = can("voucher.print");
 
   return (
     <>
@@ -141,7 +141,7 @@ export default function VouchersPage() {
               key: v.id,
               cells: [
                 <span className="mono" key="c">
-                  <CopyText text={v.code} label={grouped(v.code)} />
+                  <CopyText text={v.code} label={groupedCode(v.code)} />
                 </span>,
                 v.packageName ?? "A package since removed",
                 shortDate(v.createdAt),

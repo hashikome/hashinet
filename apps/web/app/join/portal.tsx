@@ -1,13 +1,18 @@
 "use client";
 
-import type {
-  ApiError,
-  GuestContext,
-  GuestPaymentStarted,
-  GuestPaymentStatus,
-  RedeemResult,
+import {
+  type ApiError,
+  CODE_LENGTH,
+  type GuestContext,
+  type GuestPaymentStarted,
+  type GuestPaymentStatus,
+  groupedCode,
+  type RedeemResult,
 } from "@hashinet/types";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { clock, weekday } from "@/lib/dates";
+import { formatDuration } from "@/lib/duration";
+import { tsh } from "@/lib/money";
 import { portalVars } from "@/lib/portal-colours";
 
 /** Any plain http address: the router intercepts it and sends the guest back here, with context. */
@@ -90,17 +95,8 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 }
 
 /** "4827 1693 6518", as it is printed. */
-const grouped = (digits: string) =>
-  [digits.slice(0, 4), digits.slice(4, 8), digits.slice(8, 12)].filter(Boolean).join(" ");
-const tsh = (amount: string | number) =>
-  `TSh ${Math.floor(Number(amount)).toLocaleString("en-US")}`;
-const until = (iso: string) =>
-  new Date(iso).toLocaleString("en-GB", {
-    weekday: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Africa/Dar_es_Salaam",
-  });
+/** "Friday 18:04": when a voucher ends, in Dar es Salaam time. */
+const until = (iso: string) => `${weekday(iso)} ${clock(iso)}`;
 /** "23h 59m" left until `iso`. */
 function left(iso: string): string {
   const minutes = Math.max(0, Math.round((Date.parse(iso) - Date.now()) / 60_000));
@@ -108,20 +104,6 @@ function left(iso: string): string {
   const hours = Math.floor((minutes % 1440) / 60);
   return days ? `${days}d ${hours}h` : `${hours}h ${minutes % 60}m`;
 }
-const durationName = (minutes: number) => {
-  for (const [size, word] of [
-    [43200, "month"],
-    [10080, "week"],
-    [1440, "day"],
-    [60, "hour"],
-    [1, "minute"],
-  ] as const) {
-    if (minutes >= size && minutes % size === 0)
-      return `${minutes / size} ${word}${minutes / size === 1 ? "" : "s"}`;
-  }
-  return `${minutes} minutes`;
-};
-
 type Stage =
   | { kind: "loading" }
   | { kind: "not-on-wifi"; cardHeld: boolean }
@@ -173,7 +155,7 @@ export function GuestPortal() {
     }
     // This also runs a second time on one load in development, by when the card has gone.
     const card = (store.get(CARD_KEY) ?? "").replace(/\D/g, "");
-    if (card !== "") setDigits(card.slice(0, 12));
+    if (card !== "") setDigits(card.slice(0, CODE_LENGTH));
     store.set(CARD_KEY, null);
     setRequest(fromRouter);
     post<GuestContext>("/api/guest/context", {
@@ -550,7 +532,7 @@ export function GuestPortal() {
                   onChange={() => setChosen(p.id)}
                 />
                 <span>
-                  {durationName(p.durationMinutes)}
+                  {formatDuration(p.durationMinutes)}
                   <small>{p.name}</small>
                 </span>
                 <b>{tsh(p.priceTsh)}</b>
@@ -601,7 +583,7 @@ export function GuestPortal() {
           noValidate
           onSubmit={(e) => {
             e.preventDefault();
-            if (digits.length === 12) void redeem(digits);
+            if (digits.length === CODE_LENGTH) void redeem(digits);
           }}
         >
           <Say title={welcome}>
@@ -617,10 +599,10 @@ export function GuestPortal() {
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="4827 1693 6518"
-              value={grouped(digits)}
+              value={groupedCode(digits)}
               onChange={(e) => {
                 setError(null);
-                setDigits(e.target.value.replace(/\D/g, "").slice(0, 12));
+                setDigits(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH));
               }}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? "gcode-error" : undefined}
@@ -639,7 +621,11 @@ export function GuestPortal() {
               {error}
             </p>
           ) : null}
-          <button className="g-btn g-join" type="submit" disabled={digits.length < 12 || busy}>
+          <button
+            className="g-btn g-join"
+            type="submit"
+            disabled={digits.length < CODE_LENGTH || busy}
+          >
             Join the WiFi
           </button>
           {terms("voucher")}
@@ -725,7 +711,7 @@ function Shown({ code }: { code: string }) {
         Voucher code
       </label>
       <div className="g-field">
-        <input className="g-input g-mono" id="gshown" readOnly value={grouped(code)} />
+        <input className="g-input g-mono" id="gshown" readOnly value={groupedCode(code)} />
       </div>
     </>
   );
@@ -739,7 +725,7 @@ function CopyCode({ code }: { code: string }) {
       className="g-copy"
       type="button"
       onClick={() => {
-        void navigator.clipboard?.writeText(grouped(code)).catch(() => undefined);
+        void navigator.clipboard?.writeText(groupedCode(code)).catch(() => undefined);
         setCopied(true);
       }}
     >
@@ -767,7 +753,7 @@ const ScanIcon = () => (
 function codeIn(text: string): string | null {
   const fromLink = /[#&?]code=([\d\s-]+)/.exec(text)?.[1] ?? text;
   const digits = fromLink.replace(/\D/g, "");
-  return digits.length === 12 ? digits : null;
+  return digits.length === CODE_LENGTH ? digits : null;
 }
 
 /**

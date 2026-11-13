@@ -15,7 +15,8 @@ import type {
   Voucher,
   WifiSession,
 } from "../generated/prisma/client.js";
-import { routerJourney, type StoredSetup } from "../routers/router-journey.js";
+import { conditionOf, routerJourney, type StoredSetup } from "../routers/router-journey.js";
+import { DEFAULT_HOTSPOT_NETWORK } from "../services/router-provision/context.js";
 
 /**
  * The only place database rows become API records (`@hashinet/types`): decimals as strings,
@@ -117,6 +118,7 @@ export function routerRecord(
   /** Whether the reader sets up routers: only they see the setup command. */
   managesRouters: boolean,
 ): RouterRecord {
+  const stage = routerJourney(row, row.lastSetup as StoredSetup | null).stage;
   return {
     id: row.id,
     venueId: row.venueId,
@@ -133,7 +135,8 @@ export function routerRecord(
     hotspotName: row.hotspotName,
     hotspotInterface: row.hotspotInterface,
     ssid: row.ssid,
-    networkRange: row.networkRange,
+    // The network setup uses: its own, or the default it falls back to.
+    networkRange: row.networkRange?.includes("/") ? row.networkRange : DEFAULT_HOTSPOT_NETWORK,
     provisioningCommand: managesRouters ? row.provisioningCommand : null,
     tunnelAddress: row.tunnelAddress,
     rosVersion: row.rosVersion,
@@ -143,7 +146,8 @@ export function routerRecord(
     uptimeSeconds: row.uptimeSeconds,
     connectedDevices: row.connectedDevices,
     status: row.status,
-    stage: routerJourney(row, row.lastSetup as StoredSetup | null).stage,
+    stage,
+    condition: conditionOf(stage, row.status),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };
