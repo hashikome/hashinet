@@ -398,6 +398,9 @@ Slice 1's reset, 13 November 2026 (UTC), with the owner's go:
   application stack promoted.
 - 08:28: `platform:bootstrap` in the API container: the admin (admin@hashikome.com, Paul John) and the
   default packages created; `/api/health/ready` 200.
+- 08:44: the runtime role's rights on `_prisma_migrations` revoked by hand, as `allocate-hashinet.sql`
+  asks after migrations; migration `20261113180000_runtime_never_edits_history` now does it in every
+  release (runbook [rebuild-from-nothing](../../runbooks/rebuild-from-nothing.md)).
 - Pending: `chr-test` set up again from the router page, and live acceptance.
 
 ## Validation And Acceptance

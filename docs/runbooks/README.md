@@ -6,6 +6,7 @@ and how to confirm the result.
 | Runbook | Use it for |
 | --- | --- |
 | [reference-context.md](reference-context.md) | the disposable `ref/` area |
+| [rebuild-from-nothing.md](rebuild-from-nothing.md) | bringing HashiNet back on a new server or an empty database, and what is not yet codified |
 | [database.md](database.md) | local PostgreSQL, migrations, the seed and integration tests |
 | [router-sim.md](router-sim.md) | onboarding and provisioning a virtual MikroTik (CHR) without hardware |
 | [router-onboarding.md](router-onboarding.md) | putting a new or reset MikroTik into service |
