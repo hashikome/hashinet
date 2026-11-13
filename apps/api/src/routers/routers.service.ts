@@ -48,7 +48,12 @@ import { probeVerify, type VerifyReport } from "../services/router-provision/ver
 import { RouterSync } from "../services/router-sync.js";
 import { VoucherReconciler } from "../vouchers/voucher-reconciler.js";
 import { backendSettings } from "./backend-settings.js";
-import type { bootstrapInput, RouterInput, testConnectionInput } from "./router-input.js";
+import type {
+  bootstrapInput,
+  hotspotPortInput,
+  RouterInput,
+  testConnectionInput,
+} from "./router-input.js";
 import { routerJourney, SETUP_STALE_MS, type StoredSetup } from "./router-journey.js";
 import { TUNNEL_ALLOCATOR, type TunnelAllocator } from "./tunnel-allocator.js";
 
@@ -183,6 +188,24 @@ export class RoutersService {
     await this.record(staff, "router.delete", id, {
       tunnelAddress: row.tunnelAddress,
     });
+  }
+
+  /** Sets the port the hotspot runs on; it takes effect at the next Set up. */
+  async setHotspotPort(
+    staff: Principal,
+    id: string,
+    input: z.infer<typeof hotspotPortInput>,
+  ): Promise<RouterRecord> {
+    const before = await this.installRow(staff, id);
+    await this.db.router.update({
+      where: { id },
+      data: { hotspotInterface: input.hotspotInterface },
+    });
+    await this.record(staff, "router.update", id, {
+      hotspotInterface: input.hotspotInterface,
+      before: before.hotspotInterface,
+    });
+    return this.get(staff, id);
   }
 
   /** Pushes the venue's live vouchers to the router now. */

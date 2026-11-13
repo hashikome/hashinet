@@ -22,7 +22,12 @@ import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
 import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
-import { bootstrapInput, routerInput, testConnectionInput } from "./router-input.js";
+import {
+  bootstrapInput,
+  hotspotPortInput,
+  routerInput,
+  testConnectionInput,
+} from "./router-input.js";
 import { RoutersService } from "./routers.service.js";
 
 const listQuery = z.object({ venueId: z.uuid().nullable().default(null) });
@@ -93,6 +98,18 @@ export class RoutersController {
     @Param("id", idParam()) id: string,
   ): Promise<void> {
     await this.routers.remove(staff, id);
+  }
+
+  @Put(":id/hotspot-port")
+  @Can("router.install")
+  async setHotspotPort(
+    @CurrentPrincipal() staff: Principal,
+    @Param("id", idParam()) id: string,
+    @Body() body: unknown,
+  ): Promise<RouterResponse> {
+    return {
+      router: await this.routers.setHotspotPort(staff, id, parseInput(hotspotPortInput, body)),
+    };
   }
 
   @Post(":id/sync")

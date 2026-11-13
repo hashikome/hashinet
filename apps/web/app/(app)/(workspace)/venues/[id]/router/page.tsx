@@ -12,6 +12,7 @@ import type {
 } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
+import { Dialog } from "@/components/hearth/dialog";
 import {
   Button,
   CONDITION,
@@ -28,6 +29,7 @@ import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { longDate, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan } from "@/lib/session";
+import { useSubmit } from "@/lib/submit";
 
 const PHASE: Record<RouterSetupPhaseStatus, [string, PillKind]> = {
   pending: ["Waiting", "neutral"],
@@ -115,6 +117,7 @@ function AddRouter({
     model: "hAP ax²",
     ipAddress: "",
     networkRange: "10.5.50.0/24",
+    hotspotInterface: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -141,6 +144,7 @@ function AddRouter({
               apiUsername: "hashinet",
               ssid: form.name,
               networkRange: form.networkRange,
+              hotspotInterface: form.hotspotInterface.trim(),
             });
             await onAdded();
             toast("Router added. Get its setup script next.");
@@ -209,6 +213,19 @@ function AddRouter({
                 onChange={set("networkRange")}
               />
             </Field>
+            <Field
+              label="Hotspot port"
+              id="rp"
+              error={errors.hotspotInterface ? `The port ${errors.hotspotInterface}.` : undefined}
+              hint="Leave empty to use the router's WiFi. A board without WiFi names its port, such as ether2"
+            >
+              <input
+                id="rp"
+                className="input"
+                value={form.hotspotInterface}
+                onChange={set("hotspotInterface")}
+              />
+            </Field>
           </div>
         </details>
         <div className="form-save">
@@ -245,6 +262,9 @@ function RouterView({
   const [script, setScript] = useState<BootstrapScriptResponse | null>(null);
   const [checks, setChecks] = useState<RouterChecks | null>(null);
   const [busy, setBusy] = useState("");
+  const [porting, setPorting] = useState(false);
+  // The script's default route: the ISP router, most often the first address on its network.
+  const [gateway, setGateway] = useState(router.ipAddress.replace(/\.\d+$/, ".1"));
   const j = journey.data;
   const running = j?.running ?? false;
   const reloadJourney = journey.reload;
@@ -306,6 +326,11 @@ function RouterView({
             title="Hotspot network"
             sub={<span className="num">{router.networkRange}</span>}
           />
+          <SettingRow
+            title="Hotspot port"
+            sub={router.hotspotInterface ?? "The router's WiFi"}
+            action={install ? <Button onClick={() => setPorting(true)}>Change</Button> : null}
+          />
           <SettingRow title="Devices online" sub={`${router.connectedDevices} now`} />
           <SettingRow title="Added" sub={longDate(router.createdAt)} />
         </ul>
@@ -329,6 +354,21 @@ function RouterView({
                   ) : (
                     <p>HashiNet&apos;s team runs the router&apos;s setup script at the venue.</p>
                   )}
+                  {install && at === 0 && !script ? (
+                    <Field
+                      label="The ISP router's address"
+                      id="rg"
+                      hint="Where the router sends its traffic: the venue's internet router, found as the gateway on any device on its network"
+                    >
+                      <input
+                        id="rg"
+                        className="input num"
+                        inputMode="decimal"
+                        value={gateway}
+                        onChange={(e) => setGateway(e.target.value)}
+                      />
+                    </Field>
+                  ) : null}
                   {script ? (
                     <>
                       {script.warnings.map((w) => (
@@ -382,7 +422,7 @@ function RouterView({
                           setScript(
                             await api.post<BootstrapScriptResponse>(
                               `/api/routers/${router.id}/bootstrap-script`,
-                              { lanPrefix: 24 },
+                              { lanPrefix: 24, gatewayIp: gateway.trim() },
                             ),
                           );
                         })
@@ -521,11 +561,73 @@ function RouterView({
           )}
         </Panel>
       ) : null}
+      {porting ? (
+        <HotspotPortDialog
+          router={router}
+          onClose={() => setPorting(false)}
+          onSaved={async () => {
+            setPorting(false);
+            await reload();
+          }}
+        />
+      ) : null}
       {stage === "serving" && router.tunnelAddress && install ? (
         <p className="muted small">
           Tunnel address <CopyText text={router.tunnelAddress} />
         </p>
       ) : null}
     </>
+  );
+}
+
+/** Which port the hotspot runs on: the router's WiFi, or a named port on a board without one. */
+function HotspotPortDialog({
+  router,
+  onClose,
+  onSaved,
+}: {
+  router: RouterRecord;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const { busy, errors, run } = useSubmit();
+  const [port, setPort] = useState(router.hotspotInterface ?? "");
+  return (
+    <Dialog label="Hotspot port" onClose={onClose}>
+      <h2>Hotspot port</h2>
+      <p className="muted">It takes effect the next time you run Set up.</p>
+      <form
+        className="form"
+        noValidate
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const saved = await run(
+            () =>
+              api.put(`/api/routers/${router.id}/hotspot-port`, {
+                hotspotInterface: port.trim() || null,
+              }),
+            port.trim() ? `The hotspot runs on ${port.trim()}.` : "The hotspot runs on its WiFi.",
+          );
+          if (saved) await onSaved();
+        }}
+      >
+        <Field
+          label="Port"
+          id="hp"
+          error={errors.hotspotInterface ? `The port ${errors.hotspotInterface}.` : undefined}
+          hint="Leave empty to use the router's WiFi. A board without WiFi names its port, such as ether2"
+        >
+          <input id="hp" className="input" value={port} onChange={(e) => setPort(e.target.value)} />
+        </Field>
+        <div className="dialog-actions">
+          <Button kind="primary" type="submit" busy={busy}>
+            Save
+          </Button>
+          <Button data-cancel onClick={onClose}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Dialog>
   );
 }

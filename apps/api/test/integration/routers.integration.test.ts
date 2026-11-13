@@ -336,4 +336,36 @@ describe("routers", () => {
       201,
     );
   });
+  test("the hotspot port is set and cleared on its own, and the script takes the ISP router's address", async () => {
+    const c = await admin();
+    const v = await venue();
+    const id = String(
+      routerOf(await c.request("POST", "/api/routers", { ...ROUTER, venueId: v.id })).id,
+    );
+    const set = await c.request("PUT", `/api/routers/${id}/hotspot-port`, {
+      hotspotInterface: "ether2",
+    });
+    expect(set.status).toBe(200);
+    expect(routerOf(set)).toMatchObject({ hotspotInterface: "ether2", name: "Lobby" });
+    expect(
+      (await c.request("PUT", `/api/routers/${id}/hotspot-port`, { hotspotInterface: "ether 2" }))
+        .status,
+    ).toBe(400);
+    expect(
+      routerOf(
+        await c.request("PUT", `/api/routers/${id}/hotspot-port`, { hotspotInterface: null }),
+      ),
+    ).toMatchObject({ hotspotInterface: null });
+    const { client: vm } = await manager("vm@example.com");
+    expect(
+      (await vm.request("PUT", `/api/routers/${id}/hotspot-port`, { hotspotInterface: "ether2" }))
+        .status,
+    ).toBe(403);
+
+    // The router's address is 127.0.0.1, whose ".1" guess would be wrong: the form names it.
+    const script = (
+      await c.request("POST", `/api/routers/${id}/bootstrap-script`, { gatewayIp: "127.0.0.254" })
+    ).body as { script: string };
+    expect(script.script).toContain("gateway=127.0.0.254");
+  });
 });

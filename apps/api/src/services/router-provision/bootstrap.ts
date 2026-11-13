@@ -230,10 +230,10 @@ export function buildBootstrapScript(input: BootstrapInput): BootstrapScript {
     `# Paste into the MikroTik terminal (WinBox -> New Terminal) AFTER:`,
     `#     /system reset-configuration no-defaults=yes skip-backup=yes`,
     `#`,
-    `# Sets up only what the billing system connects *through* and therefore cannot create`,
+    `# Sets up only what HashiNet connects *through* and therefore cannot create`,
     `# for itself: the LAN address, the API service and its user, the bridge, and the radio.`,
     `# Everything else (hotspot, DHCP, firewall, walled garden, portal pages) is done by`,
-    `# Provision in the admin panel afterwards.`,
+    `# Set up on the router's page in HashiNet afterwards.`,
     `#`,
     `# Safe to paste more than once; every step checks before it changes anything.`,
     ``,
@@ -288,7 +288,7 @@ export function buildBootstrapScript(input: BootstrapInput): BootstrapScript {
           ``,
         ]
       : []),
-    `# 8. RouterOS API, and the account the billing system authenticates with`,
+    `# 8. RouterOS API, and the account HashiNet signs in with`,
     input.tunnel
       ? `/ip service set api disabled=no port=${apiPort} address=${input.tunnel.serverAddress}/32`
       : `/ip service set api disabled=no port=${apiPort}`,

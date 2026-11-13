@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A router's page names the port its hotspot runs on (its WiFi, or a port such as `ether2` on a board
+  without WiFi), changeable before Set up, and the setup script asks for the ISP router's address
+  instead of assuming the network's first one.
 - Onboarding a business (slice 3 of `build-in-slices.md`):
   - HashiNet's admin invites managers and operators to its team, each only to a role below their
     own; removing someone signs them out and gives back what they held.

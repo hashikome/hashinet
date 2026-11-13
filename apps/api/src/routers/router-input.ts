@@ -85,6 +85,20 @@ export const routerInput = z.object({
 
 export type RouterInput = z.infer<typeof routerInput>;
 
+/**
+ * The port a router's hotspot runs on: null for its WiFi, found by itself. A board without WiFi
+ * (a hEX, a test router) names an ethernet port, such as ether2.
+ */
+export const hotspotPortInput = z.object({
+  hotspotInterface: z
+    .string()
+    .trim()
+    .min(1)
+    .max(80)
+    .regex(/^[A-Za-z0-9_.-]*$/, "must be a port's name, such as ether2")
+    .nullable(),
+});
+
 /** What the bootstrap script needs beyond the stored router. */
 export const bootstrapInput = bootstrapSchema
   .pick({ lanPrefix: true, gatewayIp: true, apiPassword: true, adminPassword: true, ssid: true })
