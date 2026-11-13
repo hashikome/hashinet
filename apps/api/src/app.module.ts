@@ -9,6 +9,7 @@ import { configModule } from "./config/config.module.js";
 import { DatabaseModule } from "./database/database.module.js";
 import type { EmailSender } from "./email/email-sender.js";
 import { GuestModule } from "./guest/guest.module.js";
+import { GuestCountsModule } from "./guest-counts/guest-counts.controller.js";
 import { HealthController } from "./health/health.controller.js";
 import { InvitationsModule } from "./invitations/invitations.module.js";
 import { IssuesModule } from "./issues/issues.module.js";
@@ -35,6 +36,7 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
       AuthModule,
       InvitationsModule,
       BusinessesModule,
+      GuestCountsModule,
       IssuesModule,
       OnboardingModule,
       TeamModule,

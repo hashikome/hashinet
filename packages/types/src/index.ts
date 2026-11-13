@@ -268,6 +268,19 @@ export interface IssueDetail {
   handTo: IssuePerson[];
 }
 
+/** `GET /api/guest-counts`: a business's guests as HashiNet's team sees them, counts per venue only
+ * (ADR-0014, 1). */
+export interface GuestCounts {
+  venues: {
+    venue: { id: string; name: string };
+    business: { id: string; name: string };
+    /** Devices on a session at a router that answers. */
+    onlineNow: number;
+    /** Devices whose time runs while their router is down. */
+    midSession: number;
+  }[];
+}
+
 /** How a venue's router comes (ADR-0013, 2): connect its own, install one, launch with a line. */
 export const ONBOARDING_PLANS = ["connect", "install", "launch"] as const;
 export type OnboardingPlan = (typeof ONBOARDING_PLANS)[number];

@@ -151,7 +151,12 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     Steps go on the issue's log as structured data (`IssueEventData`) the web words. Existing venues
     are backfilled: with a router, done; without, at their package. Tests:
     `onboarding.integration.test.ts`, `onboarding-stage.test.ts`. Verify passes; integration 149/149.
-  - [ ] (d) Counts-only reach into a business's guests for HashiNet's team.
+  - [x] (2026-11-13) (d) Counts-only reach into a business's guests for HashiNet's team (ADR-0014, 1):
+    `GET /api/guest-counts` (`guest.count`, the whole platform team) gives each venue's devices online
+    now and mid-session (on a session at a router that is down), and nothing else. The platform
+    already reaches no guest list (sessions, devices, vouchers are `BUSINESS_ALL`; the live socket
+    sends hotspot updates only to `session.read`; analytics returns totals). Tests:
+    `guest-counts.integration.test.ts`. Verify passes; integration 150/150.
   - [ ] (e) The screens, against the prototype, each audited as it is built: Issues and an issue's page,
     Businesses and a business's page, the platform's Venues and Routers, the Team for platform roles,
     the owner's getting-started overview (replacing slice 1's stand-in), the platform's Help.

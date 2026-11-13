@@ -36,6 +36,7 @@ export const POLICY = {
   "session.read": BUSINESS_ALL,
   "session.terminate": BUSINESS_ALL,
   "device.read": BUSINESS_ALL,
+  "guest.count": PLATFORM_ALL,
   // A device's blocked status is shared by every business today; until blocking is per business
   // (slice 2), only those who reach the whole business block.
   "device.block": WHOLE_BUSINESS,
