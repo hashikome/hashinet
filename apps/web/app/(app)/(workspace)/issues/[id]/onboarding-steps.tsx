@@ -14,7 +14,7 @@ import {
 } from "@hashinet/types";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
-import { Breakdown, SetupRail, type Step } from "@/components/hearth/onboarding";
+import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/hearth/onboarding";
 import { Button, Field, Panel } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { calendarDay, longDate, todayIso } from "@/lib/dates";
@@ -157,6 +157,7 @@ export function SetupSteps({
     setChecking(false);
   };
   const model = o.agreed?.lines.find((l) => l.kind === "mikrotik_router")?.description;
+  const owner = detail.contact?.name.split(" ")[0] ?? "The owner";
   const openRouter = lock ?? (
     <div className="actions">
       <Link className="btn primary" href={`/venues/${o.venue.id}/router`}>
@@ -212,10 +213,12 @@ export function SetupSteps({
       body: (
         <>
           <p>
-            Join the WiFi on a phone, see {o.business.name}&apos;s portal, and get online with one
-            of {o.business.name}&apos;s vouchers: its owner prints them, so ask them for one to try.
-            The issue closes by itself within a minute of the first guest getting online.
+            With {owner} there, as they take their first steps: buy the first voucher from them, the
+            hourly package, as {o.business.name}&apos;s first customer. Join the WiFi on your phone,
+            see the portal, and get online with it. The issue closes by itself within a minute of
+            the first guest getting online.
           </p>
+          <ReadyList o={o} owner={owner} />
           {lock ?? (
             <div className="actions">
               <Button kind="primary" busy={checking} onClick={() => void check()}>

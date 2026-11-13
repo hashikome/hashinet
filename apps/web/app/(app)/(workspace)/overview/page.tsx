@@ -10,7 +10,7 @@ import {
   type VenueOnboarding,
 } from "@hashinet/types";
 import { useState } from "react";
-import { Breakdown, SetupRail, type Step } from "@/components/hearth/onboarding";
+import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/hearth/onboarding";
 import { ProtectNotice } from "@/components/hearth/protect";
 import {
   Attention,
@@ -319,22 +319,26 @@ function GettingStarted({ o, reload }: { o: VenueOnboarding; reload: () => Promi
       todo: o.setupDate ? setupDay(o.setupDate) : "A day we agree",
       done: "Done",
       body: (
-        <p>
-          {o.setupDate ? (
-            <>
-              <b>{setupDay(o.setupDate)}</b>.{" "}
-            </>
-          ) : null}
-          HashiNet&apos;s team{" "}
-          {agreed?.plan === "connect"
-            ? "sets up your MikroTik router"
-            : "brings your MikroTik router and installs it"}{" "}
-          at {o.venue.name}
-          {agreed?.plan === "launch"
-            ? ", with the provider's seller for the new line; you register it in the business's name there"
-            : ""}
-          . Have someone there who can let us in to the internet router.
-        </p>
+        <>
+          <p>
+            {o.setupDate ? (
+              <>
+                <b>{setupDay(o.setupDate)}</b>.{" "}
+              </>
+            ) : null}
+            HashiNet&apos;s team{" "}
+            {agreed?.plan === "connect"
+              ? "sets up your MikroTik router"
+              : "brings your MikroTik router and installs it"}{" "}
+            at {o.venue.name}
+            {agreed?.plan === "launch"
+              ? ", with the provider's seller for the new line; you register it in the business's name there"
+              : ""}
+            . Be there yourself: you take the first steps with us, and sell us the first voucher,
+            the hourly package. Before the day:
+          </p>
+          <ReadyList o={o} owner={null} />
+        </>
       ),
     },
     {

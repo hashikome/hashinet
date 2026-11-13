@@ -73,6 +73,11 @@ and the guests. Owners are not network technicians, so the team installs it.
    happens; it closes when the first guest is online. The admin and managers do everything that is
    theirs and hand a setup to a platform operator, the technician who goes: an operator sees only the
    issues handed to them, and a handed setup is their pass to add its router and set it up.
+   The owner is there for the setup and takes the first steps; HashiNet's team is the first guest,
+   buying the first voucher (the hourly package) from them. There is no test voucher: an operator
+   who tested alone could move on with the owner never having sold one (14 November 2026). So the
+   setup shows, to both, what the owner gets ready before the day: their protected sign-in and a
+   package on sale.
    Issues lists setups by date, soonest first.
 3. **One plan, a percentage of sales, per venue.** 5% of each voucher's price, so a TSh 500
    voucher pays TSh 25, with a minimum of TSh 5,000 a month per venue: a venue that sells little or

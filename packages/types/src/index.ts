@@ -393,6 +393,11 @@ export interface VenueOnboarding {
   completedAt: Timestamp | null;
   /** The business's owner has an authenticator or a passkey: the venue may serve. */
   ownerProtected: boolean;
+  /** What the owner gets ready for the first guest, who buys the first voucher (ADR-0013, 2). */
+  ready: {
+    /** Packages the venue sells. */
+    packagesOnSale: number;
+  };
   /** What the reader may do now, decided where each step is guarded. */
   may: { prefer: boolean; confirm: boolean; pay: boolean; schedule: boolean };
   /** The open package or setup issue, for HashiNet's team; null for a business. */

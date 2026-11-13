@@ -70,6 +70,8 @@ describe("Onboarding a venue", () => {
       issueId: null,
       ownerProtected: true,
       may: { prefer: true, confirm: false, pay: false, schedule: false },
+      // What the owner gets ready for the first guest: nothing yet.
+      ready: { packagesOnSale: 0 },
     });
     const packageIssue = (await onboarding(admin, venueId)).issueId;
     expect(packageIssue).not.toBeNull();

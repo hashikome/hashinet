@@ -7,6 +7,7 @@ import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { packageRecord } from "../serializers/records.js";
 import { VenuesService } from "../venues/venues.service.js";
+import { onSaleWhere } from "./on-sale.js";
 import type { PackageInput } from "./package-input.js";
 
 export const packageNotFound = () =>
@@ -139,25 +140,12 @@ export class PackagesService {
     return { packages, assignedPackageIds, sellsAll: assignedPackageIds.length === 0 };
   }
 
-  /**
-   * The rule for what a venue sells, for the guest portal, which has no principal: its business's
-   * active packages, narrowed to the ones assigned to it when there are any. Never another
-   * business's.
-   */
+  /** What a venue sells (`onSaleWhere`), for the guest portal, which has no principal. */
   async onSaleAt(venueId: string): Promise<PackageRecord[]> {
-    const venue = await this.db.venue.findUnique({ where: { id: venueId } });
-    if (!venue) return [];
-    const assigned = await this.db.venuePackage.findMany({
-      where: { venueId },
-      select: { packageId: true },
-    });
-    const ids = assigned.map((a) => a.packageId);
+    const where = await onSaleWhere(this.db, venueId);
+    if (!where) return [];
     const rows = await this.db.package.findMany({
-      where: {
-        businessId: venue.businessId,
-        isActive: true,
-        ...(ids.length === 0 ? {} : { id: { in: ids } }),
-      },
+      where,
       orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
     });
     return rows.map(packageRecord);

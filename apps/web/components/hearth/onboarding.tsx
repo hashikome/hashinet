@@ -80,3 +80,37 @@ export function Breakdown({ agreed }: { agreed: NonNullable<VenueOnboarding["agr
     </table>
   );
 }
+
+/**
+ * What the owner gets ready before the first guest (ADR-0013, 2): their protected sign-in and a
+ * package on sale. The first guest is HashiNet's team, buying the first voucher from them.
+ */
+export function ReadyList({ o, owner }: { o: VenueOnboarding; owner: string | null }) {
+  // Said to the owner themselves (null), or to HashiNet's team about them.
+  const todo = (yours: string, theirs: string) => (owner ? `${owner} ${theirs}` : yours);
+  const items: [boolean, string, string][] = [
+    [
+      o.ownerProtected,
+      "Sign-in protected",
+      todo(
+        "Protect your sign-in, in Account and security",
+        "protects their sign-in, in Account and security",
+      ),
+    ],
+    [
+      o.ready.packagesOnSale > 0,
+      `${o.ready.packagesOnSale} ${o.ready.packagesOnSale === 1 ? "package" : "packages"} on sale`,
+      todo("Put a package on sale, in Packages", "puts a package on sale, in Packages"),
+    ],
+  ];
+  return (
+    <ul className="ready">
+      {items.map(([done, yes, todo]) => (
+        <li key={todo} className={done ? "done" : ""}>
+          <span className="sr-only">{done ? "Done: " : "Still to do: "}</span>
+          {done ? yes : todo}
+        </li>
+      ))}
+    </ul>
+  );
+}

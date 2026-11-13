@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A venue's setup shows what its owner gets ready before the visit (their protected sign-in and a
+  package on sale), on the owner's Overview and on the setup issue: the owner is
+  there and sells HashiNet's team the first voucher.
 - Set up replaces a router's portal pages left over from an earlier install, such as a router reset
   and reused, which pointed guests at the old router. It marks the pages it installs with a file
   named by their hash, which Set up and Health check, since a stale page has the same size. Steps on
