@@ -1,7 +1,8 @@
 # ADR-0013: Onboarding packages and pricing
 
 Status: accepted, 4 November 2026, by the owner. Figures are starting points, set in the platform's
-Settings; the model is the decision.
+Settings; the model is the decision. Widened 13 November 2026: the agreed package is itemized, all
+on HashiNet's bill, and platform operators work the setups handed to them.
 
 ## Context
 
@@ -45,25 +46,33 @@ and the guests. Owners are not network technicians, so the team installs it.
      owner is there on the day to register it with the seller.
    The names step up (connect what is there, install a router, launch with a line), each with a
    one-line summary, so they read the same to an owner and to the team.
-   Routers are sold at their price. The onboarding fee covers travel and time: free in town, charged
-   by distance otherwise.
+   **What a package costs is itemized, all on HashiNet's bill.** An onboarding fee, agreed per business
+   for whatever getting it onto HashiNet takes (travel, time, coordinating the partners), and what the
+   plan brings, each a line at its price: the MikroTik router, and for Launch the internet line or fibre
+   and the ISP router, or anything else agreed. Connect starts with the onboarding fee alone, Install
+   adds the MikroTik router, Launch the line too; the team changes them on the call. HashiNet deals
+   with the partner sellers and the business pays one bill, so the owner sees why the total is what
+   it is and never deals with a seller over money.
    The owner chooses a package as a preference, or asks to talk to the team first, as the first thing
    after signing in to a new business; adding a venue asks the same, and leaving it unchosen means
    talk it through. It commits nobody: hashifi's team always calls the owner to go over the venue, how the team
-   will help and what is already there, then confirms the package and its price. No router is added
-   and nothing is charged before that, and the team can change the package until the router is added.
+   will help and what is already there, then confirms the package and its lines. No router is added
+   and nothing is charged before that, and the team can change the package until it is paid or its
+   setup scheduled.
    A package says what it includes, never a price or a model: the router that fits depends on the
-   venue, so its model and price are agreed on that call, and the model is set when the router is added.
+   venue, so its model and price are agreed on that call, as the router's line.
    Every venue includes one site open before paying, its business website; each further one takes
    a slot paid for once, TSh 10,000, issued
    when the site is added, due 7 days later, and the site opens once it is paid. A paid slot stays
    with the venue if its site is removed. Blocking sites is free.
    A venue goes through two issues, one after the other. **Its package**, for the platform's owner
-   and managers only: call the owner, confirm the package, router model, agreed price (router and
-   onboarding together, on the business's bill) and notes; get it paid when there is a charge, due 7
+   and managers only: call the owner, confirm the package, its lines and notes; get it paid in full
+   when there is a charge, due 7
    days after the package is confirmed (the platform admin or a platform manager records it); then schedule the setup with a date and, optionally, who
-   goes. **Its setup**, for the whole team, operators included, once scheduled: add the router,
-   install it on the date, set it up and check a phone; it closes when the first guest is online.
+   goes. **Its setup**, once scheduled: add the router, set it up and check a phone, wherever the setup
+   happens; it closes when the first guest is online. The admin and managers do everything that is
+   theirs and hand a setup to a platform operator, the technician who goes: an operator sees only the
+   issues handed to them, and a handed setup is their pass to add its router and set it up.
    Issues lists setups by date, soonest first.
 3. **One plan, a percentage of sales, per venue.** 5% of each voucher's price, so a TSh 500
    voucher pays TSh 25, with a minimum of TSh 5,000 a month per venue: a venue that sells little or

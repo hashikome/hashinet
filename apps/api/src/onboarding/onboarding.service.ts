@@ -1,5 +1,6 @@
 import {
   ONBOARDING_DUE_DAYS,
+  ONBOARDING_LINE_KINDS,
   ONBOARDING_PAID_BY,
   ONBOARDING_PLANS,
   type OnboardingPlan,
@@ -33,23 +34,52 @@ const line = (max: number) =>
     .regex(/^[^\p{Cc}]*$/u, "must be one line of text");
 
 export const preferInput = z.object({ plan: z.enum(ONBOARDING_PLANS).nullable() });
+const onboardingLine = z.object({
+  kind: z.enum(ONBOARDING_LINE_KINDS),
+  description: line(160).nullable().default(null),
+  amountTsh: z.number().int().min(0).max(100_000_000),
+});
+
+/**
+ * What the team agreed on the call, line by line: one onboarding fee, agreed for the business, and
+ * what the plan brings. Connect sets up the venue's own router, so it has no MikroTik router line;
+ * Install and Launch bring one, named by its model.
+ */
 export const confirmInput = z
   .object({
     plan: z.enum(ONBOARDING_PLANS),
-    routerModel: line(120).nullable().default(null),
-    priceTsh: z.number().int().min(0).max(100_000_000),
+    lines: z.array(onboardingLine).min(1).max(12),
     note: z.string().trim().max(1000).nullable().default(null),
   })
   .superRefine((v, ctx) => {
-    // Connect sets up the venue's own router; the others bring the one agreed on the call.
-    if (v.plan === "connect" ? v.routerModel : !v.routerModel) {
+    const fees = v.lines.filter((l) => l.kind === "onboarding_fee").length;
+    if (fees !== 1) {
+      ctx.addIssue({ code: "custom", path: ["lines"], message: "needs one onboarding fee" });
+    }
+    const routers = v.lines.filter((l) => l.kind === "mikrotik_router");
+    if (v.plan === "connect" && routers.length > 0) {
       ctx.addIssue({
         code: "custom",
-        path: ["routerModel"],
-        message: v.plan === "connect" ? "must be empty for Connect" : "is required",
+        path: ["lines"],
+        message: "Connect uses the venue's own MikroTik router",
       });
     }
+    if (v.plan !== "connect" && routers.length === 0) {
+      ctx.addIssue({ code: "custom", path: ["lines"], message: "needs the MikroTik router" });
+    }
+    v.lines.forEach((l, n) => {
+      if ((l.kind === "mikrotik_router" || l.kind === "other") && !l.description) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["lines", n, "description"],
+          message: l.kind === "other" ? "say what it is" : "name the model",
+        });
+      }
+    });
   });
+
+const totalOf = (lines: { amountTsh: number }[]) => lines.reduce((sum, l) => sum + l.amountTsh, 0);
+
 export const paymentInput = z.object({
   amountTsh: z.number().int().positive(),
   by: z.enum(ONBOARDING_PAID_BY),
@@ -71,7 +101,7 @@ const venueNotFound = () =>
 const notNow = (message: string) => new ConflictException(apiError("CONFLICT", message));
 
 const withFacts = {
-  onboarding: true,
+  onboarding: { include: { lines: { orderBy: { position: "asc" } } } },
   business: { select: { id: true, name: true } },
   routers: {
     select: {
@@ -149,19 +179,26 @@ export class OnboardingService {
     if (o.setupDate) throw notNow("The setup is scheduled; the package no longer changes.");
     if (o.paidAt) throw notNow("It is paid; the package no longer changes.");
     await this.db.$transaction(async (tx) => {
+      // The fee first, then the rest as agreed.
+      const lines = [...input.lines].sort(
+        (a, b) => Number(b.kind === "onboarding_fee") - Number(a.kind === "onboarding_fee"),
+      );
       await tx.venueOnboarding.update({
         where: { venueId },
-        data: { ...input, confirmedAt: new Date() },
+        data: {
+          plan: input.plan,
+          note: input.note,
+          confirmedAt: new Date(),
+          lines: {
+            deleteMany: {},
+            create: lines.map((l, position) => ({ ...l, position })),
+          },
+        },
       });
       await this.issues.step(
         staff,
         packageKey(venueId),
-        {
-          step: "confirmed",
-          plan: input.plan,
-          routerModel: input.routerModel,
-          priceTsh: input.priceTsh,
-        },
+        { step: "confirmed", plan: input.plan, totalTsh: totalOf(input.lines) },
         { anyone: false },
         tx,
       );
@@ -169,7 +206,7 @@ export class OnboardingService {
         staff,
         "onboarding.confirm",
         venue,
-        { plan: input.plan, priceTsh: input.priceTsh },
+        { plan: input.plan, totalTsh: totalOf(input.lines) },
         tx,
       );
     });
@@ -181,8 +218,9 @@ export class OnboardingService {
     const venue = await this.venue(staff, venueId);
     const o = this.onboarding(venue);
     if (this.stage(venue) !== "pay") throw notNow("There is no payment to record.");
-    if (input.amountTsh < (o.priceTsh ?? 0)) {
-      throw invalid("amountTsh", `must be the agreed price, TSh ${o.priceTsh}, paid in full`);
+    const total = totalOf(o.lines);
+    if (input.amountTsh < total) {
+      throw invalid("amountTsh", `must be the agreed total, TSh ${total}, paid in full`);
     }
     await this.db.$transaction(async (tx) => {
       await tx.venueOnboarding.update({
@@ -319,6 +357,7 @@ export class OnboardingService {
     );
     return onboardingStage({
       ...o,
+      totalTsh: o.confirmedAt ? totalOf(o.lines) : null,
       routerReached: venue.routers.some((r) => r.lastSeenAt !== null || r.status === "online"),
       serving: conditions.includes("serving"),
     });
@@ -346,15 +385,19 @@ export class OnboardingService {
       stage: this.stage(venue),
       preference: o.preferredAt ? { plan: o.preference, at: o.preferredAt.toISOString() } : null,
       agreed:
-        o.confirmedAt && o.plan && o.priceTsh !== null
+        o.confirmedAt && o.plan
           ? {
               plan: o.plan,
-              routerModel: o.routerModel,
-              priceTsh: o.priceTsh,
+              lines: o.lines.map((l) => ({
+                kind: l.kind,
+                description: l.description,
+                amountTsh: l.amountTsh,
+              })),
+              totalTsh: totalOf(o.lines),
               note: o.note,
               confirmedAt: o.confirmedAt.toISOString(),
               dueOn:
-                o.priceTsh > 0
+                totalOf(o.lines) > 0
                   ? businessDayOf(new Date(o.confirmedAt.getTime() + ONBOARDING_DUE_DAYS * DAY_MS))
                   : null,
             }

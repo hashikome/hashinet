@@ -274,6 +274,27 @@ export type OnboardingPlan = (typeof ONBOARDING_PLANS)[number];
 /** How a by-hand payment for a venue's package arrived (until slice 4's invoices). */
 export const ONBOARDING_PAID_BY = ["cash", "mobile_money", "bank_transfer"] as const;
 export type OnboardingPaidBy = (typeof ONBOARDING_PAID_BY)[number];
+/** What a venue's onboarding is charged for, all on HashiNet's bill (ADR-0013, 2). */
+export const ONBOARDING_LINE_KINDS = [
+  "onboarding_fee",
+  "mikrotik_router",
+  "isp_router",
+  "internet_line",
+  "other",
+] as const;
+export type OnboardingLineKind = (typeof ONBOARDING_LINE_KINDS)[number];
+/** The lines each plan starts with, for the team to price and change on the call. */
+export const ONBOARDING_STARTING_LINES: Record<OnboardingPlan, OnboardingLineKind[]> = {
+  connect: ["onboarding_fee"],
+  install: ["onboarding_fee", "mikrotik_router"],
+  launch: ["onboarding_fee", "mikrotik_router", "internet_line"],
+};
+export interface OnboardingLine {
+  kind: OnboardingLineKind;
+  /** A router's model, what the fee covers, or what "other" is. */
+  description: string | null;
+  amountTsh: number;
+}
 /** A package's charge is due this many days after it is confirmed (ADR-0013, 2). */
 export const ONBOARDING_DUE_DAYS = 7;
 
@@ -302,10 +323,10 @@ export interface VenueOnboarding {
   preference: { plan: OnboardingPlan | null; at: Timestamp } | null;
   agreed: {
     plan: OnboardingPlan;
-    /** Null for Connect: the venue's own router. */
-    routerModel: string | null;
-    /** Router and onboarding together; 0 when there is nothing to charge. */
-    priceTsh: number;
+    /** In the order agreed; the onboarding fee first. */
+    lines: OnboardingLine[];
+    /** The lines together; 0 when there is nothing to charge. */
+    totalTsh: number;
     note: string | null;
     confirmedAt: Timestamp;
     /** The business day the charge is due; null when there is nothing to charge. */

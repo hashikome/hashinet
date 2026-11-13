@@ -4,7 +4,8 @@ import type { OnboardingStage } from "@hashinet/types";
 export interface OnboardingFacts {
   preferredAt: Date | null;
   confirmedAt: Date | null;
-  priceTsh: number | null;
+  /** The agreed lines together; null until agreed. */
+  totalTsh: number | null;
   paidAt: Date | null;
   setupDate: Date | null;
   completedAt: Date | null;
@@ -18,7 +19,7 @@ export interface OnboardingFacts {
 export function onboardingStage(f: OnboardingFacts): OnboardingStage {
   if (f.completedAt) return "done";
   if (!f.confirmedAt) return f.preferredAt ? "confirm" : "choose";
-  if ((f.priceTsh ?? 0) > 0 && !f.paidAt) return "pay";
+  if ((f.totalTsh ?? 0) > 0 && !f.paidAt) return "pay";
   if (!f.setupDate) return "schedule";
   if (!f.routerReached) return "add-router";
   if (!f.serving) return "set-up";

@@ -5,7 +5,7 @@ const at = new Date("2026-11-13T09:00:00Z");
 const none: OnboardingFacts = {
   preferredAt: null,
   confirmedAt: null,
-  priceTsh: null,
+  totalTsh: null,
   paidAt: null,
   setupDate: null,
   completedAt: null,
@@ -18,7 +18,7 @@ describe("onboardingStage", () => {
     expect(onboardingStage(none)).toBe("choose");
     const chosen = { ...none, preferredAt: at };
     expect(onboardingStage(chosen)).toBe("confirm");
-    const agreed = { ...chosen, confirmedAt: at, priceTsh: 270_000 };
+    const agreed = { ...chosen, confirmedAt: at, totalTsh: 270_000 };
     expect(onboardingStage(agreed)).toBe("pay");
     const paid = { ...agreed, paidAt: at };
     expect(onboardingStage(paid)).toBe("schedule");
@@ -32,6 +32,6 @@ describe("onboardingStage", () => {
   });
 
   test("a package with nothing to charge skips payment; the team may confirm before the owner chooses", () => {
-    expect(onboardingStage({ ...none, confirmedAt: at, priceTsh: 0 })).toBe("schedule");
+    expect(onboardingStage({ ...none, confirmedAt: at, totalTsh: 0 })).toBe("schedule");
   });
 });

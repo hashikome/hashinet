@@ -13,8 +13,6 @@ CREATE TABLE "venue_onboardings" (
     "preferred_at" TIMESTAMPTZ(3),
     "preference" "onboarding_plan",
     "plan" "onboarding_plan",
-    "router_model" VARCHAR(120),
-    "price_tsh" INTEGER,
     "note" VARCHAR(1000),
     "confirmed_at" TIMESTAMPTZ(3),
     "paid_at" TIMESTAMPTZ(3),
@@ -31,7 +29,28 @@ CREATE TABLE "venue_onboardings" (
 -- AddForeignKey
 ALTER TABLE "venue_onboardings" ADD CONSTRAINT "venue_onboardings_venue_id_fkey" FOREIGN KEY ("venue_id") REFERENCES "venues"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-ALTER TABLE "venue_onboardings" ADD CONSTRAINT "venue_onboardings_price" CHECK ("price_tsh" IS NULL OR "price_tsh" >= 0);
+-- CreateEnum
+CREATE TYPE "onboarding_line_kind" AS ENUM ('onboarding_fee', 'mikrotik_router', 'isp_router', 'internet_line', 'other');
+
+-- CreateTable
+CREATE TABLE "venue_onboarding_lines" (
+    "id" UUID NOT NULL DEFAULT uuidv7(),
+    "venue_id" UUID NOT NULL,
+    "position" INTEGER NOT NULL,
+    "kind" "onboarding_line_kind" NOT NULL,
+    "description" VARCHAR(160),
+    "amount_tsh" INTEGER NOT NULL,
+
+    CONSTRAINT "venue_onboarding_lines_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "venue_onboarding_lines_venue_id_position_key" ON "venue_onboarding_lines"("venue_id", "position");
+
+-- AddForeignKey
+ALTER TABLE "venue_onboarding_lines" ADD CONSTRAINT "venue_onboarding_lines_venue_id_fkey" FOREIGN KEY ("venue_id") REFERENCES "venue_onboardings"("venue_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "venue_onboarding_lines" ADD CONSTRAINT "venue_onboarding_lines_amount" CHECK ("amount_tsh" >= 0);
 ALTER TABLE "venue_onboardings" ADD CONSTRAINT "venue_onboardings_paid" CHECK ("paid_amount_tsh" IS NULL OR "paid_amount_tsh" > 0);
 
 -- Venues from before onboarding: one with a router already went through it by hand; one without

@@ -83,43 +83,39 @@ describe("Onboarding a venue", () => {
       .body as VenueOnboarding;
     expect(chose).toMatchObject({ stage: "confirm", preference: { plan: "install" } });
 
-    // Asha confirms what was agreed on the call, and so holds the issue.
-    expect(
-      (await asha.request("POST", `${base}/confirm`, { plan: "install", priceTsh: 270_000 }))
-        .status,
-    ).toBe(400);
-    expect(
-      (
-        await asha.request("POST", `${base}/confirm`, {
-          plan: "connect",
-          routerModel: "hAP ax2",
-          priceTsh: 0,
-        })
-      ).status,
-    ).toBe(400);
+    // Asha confirms what was agreed on the call, line by line, and so holds the issue.
+    const FEE = {
+      kind: "onboarding_fee",
+      description: "Two technicians, one day",
+      amountTsh: 80_000,
+    };
+    const MIKROTIK = { kind: "mikrotik_router", description: "hAP ax2", amountTsh: 190_000 };
+    for (const refused of [
+      { plan: "install", lines: [FEE] }, // Install brings a router
+      { plan: "connect", lines: [FEE, MIKROTIK] }, // Connect uses the venue's own
+      { plan: "install", lines: [MIKROTIK] }, // one onboarding fee
+      { plan: "install", lines: [FEE, FEE, MIKROTIK] },
+      { plan: "install", lines: [FEE, { ...MIKROTIK, description: null }] }, // the router's model
+      { plan: "install", lines: [FEE, MIKROTIK, { kind: "other", amountTsh: 5_000 }] },
+    ]) {
+      expect((await asha.request("POST", `${base}/confirm`, refused)).status).toBe(400);
+    }
     expect((await hamisi.request("POST", `${base}/confirm`, {})).status).toBe(403);
     const agreed = (
       await asha.request("POST", `${base}/confirm`, {
         plan: "install",
-        routerModel: "hAP ax2",
-        priceTsh: 270_000,
+        lines: [MIKROTIK, FEE],
         note: "Two floors, about 40 guests at peak",
       })
     ).body as VenueOnboarding;
     expect(agreed).toMatchObject({
       stage: "pay",
-      agreed: { plan: "install", routerModel: "hAP ax2", priceTsh: 270_000 },
+      agreed: { plan: "install", lines: [FEE, MIKROTIK], totalTsh: 270_000 },
     });
     expect(agreed.agreed?.dueOn).toBe(businessDayOf(new Date(Date.now() + 7 * 86_400_000)));
     // Someone else's issue: the admin takes it over to change it.
     expect(
-      (
-        await admin.request("POST", `${base}/confirm`, {
-          plan: "launch",
-          routerModel: "x",
-          priceTsh: 1,
-        })
-      ).status,
+      (await admin.request("POST", `${base}/confirm`, { plan: "connect", lines: [FEE] })).status,
     ).toBe(403);
     // The owner's preference no longer changes.
     expect((await baraka.request("PUT", `${base}/preference`, { plan: null })).status).toBe(409);
@@ -141,7 +137,7 @@ describe("Onboarding a venue", () => {
       changeable: false,
     });
     expect(
-      (await asha.request("POST", `${base}/confirm`, { plan: "connect", priceTsh: 0 })).status,
+      (await asha.request("POST", `${base}/confirm`, { plan: "connect", lines: [FEE] })).status,
     ).toBe(409);
 
     // Scheduled: the package is done and the setup goes to Hamisi.
@@ -161,11 +157,7 @@ describe("Onboarding a venue", () => {
       ["opened", null, null],
       ["step", "Baraka", { step: "preferred", plan: "install" }],
       ["claimed", "Asha", null],
-      [
-        "step",
-        "Asha",
-        { step: "confirmed", plan: "install", routerModel: "hAP ax2", priceTsh: 270_000 },
-      ],
+      ["step", "Asha", { step: "confirmed", plan: "install", totalTsh: 270_000 }],
       ["step", "Admin", { step: "paid", amountTsh: 270_000, by: "mobile_money" }],
       ["step", "Asha", { step: "scheduled", date: businessDayOf(new Date()) }],
       ["resolved", null, { reason: "scheduled" }],
@@ -226,7 +218,7 @@ describe("Onboarding a venue", () => {
     const agreed = (
       await asha.request("POST", `/api/venues/${venueId}/onboarding/confirm`, {
         plan: "connect",
-        priceTsh: 0,
+        lines: [{ kind: "onboarding_fee", description: "In town", amountTsh: 0 }],
       })
     ).body as VenueOnboarding;
     expect(agreed).toMatchObject({ stage: "schedule", agreed: { dueOn: null } });

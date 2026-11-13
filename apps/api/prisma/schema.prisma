@@ -1047,12 +1047,8 @@ model VenueOnboarding {
   /// When the owner chose; with no plan, they asked to talk first. Null: not asked yet.
   preferredAt   DateTime?         @map("preferred_at") @db.Timestamptz(3)
   preference    OnboardingPlan?
-  /// What the team agreed on the call.
+  /// What the team agreed on the call; its price is its lines.
   plan          OnboardingPlan?
-  /// The router that fits, agreed on the call; null for Connect (the venue's own).
-  routerModel   String?           @map("router_model") @db.VarChar(120)
-  /// Router and onboarding together; 0 when there is nothing to charge.
-  priceTsh      Int?              @map("price_tsh")
   note          String?           @db.VarChar(1000)
   confirmedAt   DateTime?         @map("confirmed_at") @db.Timestamptz(3)
   paidAt        DateTime?         @map("paid_at") @db.Timestamptz(3)
@@ -1064,7 +1060,35 @@ model VenueOnboarding {
   createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue Venue                 @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  lines VenueOnboardingLine[]
 
   @@map("venue_onboardings")
+}
+
+/// What a venue's onboarding is charged for, one line each, all on HashiNet's bill: the
+/// onboarding fee agreed for the business, and what the plan brings (ADR-0013, 2).
+enum OnboardingLineKind {
+  onboarding_fee
+  mikrotik_router
+  isp_router
+  internet_line
+  other
+
+  @@map("onboarding_line_kind")
+}
+
+model VenueOnboardingLine {
+  id          String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  venueId     String             @map("venue_id") @db.Uuid
+  position    Int
+  kind        OnboardingLineKind
+  /// What it is: a router's model, what the fee covers, what "other" is.
+  description String?            @db.VarChar(160)
+  amountTsh   Int                @map("amount_tsh")
+
+  onboarding VenueOnboarding @relation(fields: [venueId], references: [venueId], onDelete: Cascade)
+
+  @@unique([venueId, position])
+  @@map("venue_onboarding_lines")
 }

@@ -140,8 +140,10 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     schedule, add-router, set-up, first-guest, done). Every new venue, from an accepted invitation or
     Add a venue, starts with its package issue. The owner or a business manager sends a preference
     (Connect, Install, Launch, or talk first) until the package is agreed; the platform's admin and
-    managers confirm the package, router model, price (0: nothing to charge) and notes, record the
-    payment by hand in full (cash, mobile money or bank transfer), and schedule the setup day, which
+    managers confirm the package as lines on HashiNet's bill (one onboarding fee agreed for the business,
+    the MikroTik router for Install and Launch, the line or fibre, an ISP router, anything else; the
+    plan sets the starting lines, `ONBOARDING_STARTING_LINES`; a total of 0 is nothing to charge) and
+    notes, record the payment by hand in full (cash, mobile money or bank transfer), and schedule the setup day, which
     resolves the package issue and opens the setup issue for the whole team, held by whoever goes. A
     job closes the setup when the first guest is online at a serving router. A router is added only
     to a venue whose setup is scheduled, and no venue serves a guest until the business's owner has
@@ -195,6 +197,11 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   Evidence: `better-auth/dist/plugins/two-factor/backup-codes`.
 
 ## Decision Log
+
+- Decision: a venue's package is itemized, all on HashiNet's bill: an onboarding fee agreed per
+  business for whatever its onboarding takes, plus a line for each thing the plan brings (ADR-0013,
+  2, widened). Rationale: an owner sees why the total is what it is; HashiNet deals with the partner
+  sellers so the business pays one bill. Date/Author: 2026-11-13 / owner.
 
 - Decision: platform operators are the technicians who install routers at venues. They see only
   the issues handed to them, never an unhandled one or a venue's package; a handed setup is their
