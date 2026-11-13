@@ -84,7 +84,7 @@ export default function RouterPage({ params }: { params: Promise<{ id: string }>
           sub={`${venue.area}, ${venue.region}`}
           crumb={crumb}
         />
-        {can("router.manage") ? (
+        {can("router.install") ? (
           <AddRouter venueId={venue.id} venueName={venue.name} onAdded={data.reload} />
         ) : (
           <Panel title="What happens next">

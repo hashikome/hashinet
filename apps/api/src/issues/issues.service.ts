@@ -51,7 +51,7 @@ const heldByOther = () =>
 
 const include = {
   business: { select: { id: true, name: true } },
-  venue: { select: { id: true, name: true } },
+  venue: { select: { id: true, name: true, business: { select: { id: true, name: true } } } },
   router: { select: { id: true, name: true } },
   holder: { include: { user: { select: { name: true } } } },
   events: { orderBy: { at: "desc" }, take: 1, select: { at: true } },
@@ -85,7 +85,7 @@ export class IssuesService {
 
   async detail(staff: Principal, id: string): Promise<IssueDetail> {
     const row = await this.row(staff, id);
-    const [events, people] = await Promise.all([
+    const [events, people, owner] = await Promise.all([
       this.db.issueEvent.findMany({
         where: { issueId: id },
         include: {
@@ -95,6 +95,16 @@ export class IssuesService {
         orderBy: [{ at: "asc" }, { id: "asc" }],
       }),
       this.workspacePeople(staff, row.kind, row.venueId),
+      staff.scope === "platform" && row.venueId
+        ? this.db.membership.findFirst({
+            where: {
+              role: "owner",
+              status: "active",
+              business: { venues: { some: { id: row.venueId } } },
+            },
+            select: { user: { select: { name: true, email: true, phone: true } } },
+          })
+        : null,
     ]);
     return {
       issue: this.record(staff, row),
@@ -108,6 +118,7 @@ export class IssuesService {
       })),
       handTo:
         row.status === "open" ? people.filter((p) => p.membershipId !== staff.membershipId) : [],
+      contact: owner ? owner.user : null,
     };
   }
 
@@ -393,8 +404,9 @@ export class IssuesService {
       id: row.id,
       kind: row.kind,
       status: row.status,
-      business: row.business,
-      venue: row.venue,
+      // A platform issue names the business through its venue.
+      business: row.business ?? row.venue?.business ?? null,
+      venue: row.venue ? { id: row.venue.id, name: row.venue.name } : null,
       router: row.router,
       holder: row.holder ? person(row.holder) : null,
       mine: row.holderId === staff.membershipId,

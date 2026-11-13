@@ -1,10 +1,10 @@
 "use client";
 
-import type { Me, VenueRecord } from "@hashinet/types";
+import type { IssueList, Me, VenueRecord } from "@hashinet/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { messageOf } from "@/lib/api";
+import { api, messageOf } from "@/lib/api";
 import { homeOf, type NavEntry, navOf, ROLE_NAME } from "@/lib/nav";
 import { useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
@@ -151,7 +151,35 @@ function AccountMenu({ me }: { me: Me }) {
   );
 }
 
-function NavList({ entries, label }: { entries: NavEntry[]; label: string }) {
+/** Open issues in the workspace, for the count beside Issues; asked again on each page. */
+function useOpenIssues(me: Me): number {
+  const path = usePathname();
+  const [count, setCount] = useState(0);
+  const reads = me.active.capabilities.includes("issue.read");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: asked again on each page
+  useEffect(() => {
+    if (!reads) return;
+    let live = true;
+    api
+      .get<IssueList>("/api/issues?status=open")
+      .then((l) => live && setCount(l.openCount))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [reads, me.active.id, path]);
+  return reads ? count : 0;
+}
+
+function NavList({
+  entries,
+  label,
+  openIssues = 0,
+}: {
+  entries: NavEntry[];
+  label: string;
+  openIssues?: number;
+}) {
   const path = usePathname();
   // A space's first link is its own root, so it is on only there.
   const isOn = (href: string) =>
@@ -212,6 +240,12 @@ function NavList({ entries, label }: { entries: NavEntry[]; label: string }) {
           >
             {entry.icon ? <Icon name={entry.icon} /> : null}
             <span>{entry.label}</span>
+            {entry.href === "/issues" && openIssues > 0 ? (
+              <span className="count">
+                {openIssues}
+                <span className="sr-only"> open</span>
+              </span>
+            ) : null}
           </Link>
         );
       })}
@@ -244,6 +278,7 @@ export function Shell({
   // biome-ignore lint/correctness/useExhaustiveDependencies: closes on every path change
   useEffect(() => setSide(false), [path]);
   const entries = nav ?? navOf(me, venues);
+  const openIssues = useOpenIssues(me);
   const { filter, setFilter } = useVenues();
   return (
     <div
@@ -270,6 +305,7 @@ export function Shell({
         ) : null}
         <NavList
           entries={entries}
+          openIssues={space ? 0 : openIssues}
           label={space === "Account" ? "Account and security" : (space ?? "Main")}
         />
         <AccountMenu me={me} />

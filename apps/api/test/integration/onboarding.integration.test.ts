@@ -73,6 +73,10 @@ describe("Onboarding a venue", () => {
     });
     const packageIssue = (await onboarding(admin, venueId)).issueId;
     expect(packageIssue).not.toBeNull();
+    // Whom the team calls: the business's owner.
+    expect(
+      ((await admin.request("GET", `/api/issues/${packageIssue}`)).body as IssueDetail).contact,
+    ).toEqual({ name: "Baraka", email: "baraka@example.com", phone: null });
     expect((await onboarding(hamisi, venueId)).issueId).toBeNull();
 
     // The owner prefers Install; the team never sets a preference.

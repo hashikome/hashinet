@@ -4236,3 +4236,85 @@ body {
   color: var(--g-muted);
   margin-top: 6px;
 }
+
+/* A venue's package, line by line (ADR-0013, 2): what each thing costs, then the total. */
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.line {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(0, 1.6fr) minmax(120px, 0.7fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+.line .line-remove {
+  margin-top: 24px;
+}
+.line-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.line-total b {
+  font-size: 16px;
+}
+@media (max-width: 700px) {
+  .line {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .line .line-remove {
+    margin-top: 0;
+    justify-self: start;
+  }
+  .line:has(+ .line-total) {
+    border-bottom: 0;
+  }
+}
+.lines-table {
+  width: 100%;
+  max-width: 520px;
+  border-collapse: collapse;
+}
+.lines-table td {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.lines-table .sub {
+  display: block;
+  color: var(--muted-fg);
+  font-size: 13px;
+}
+.lines-table tfoot td {
+  border-bottom: 0;
+  font-weight: 600;
+}
+.setup-contact {
+  display: block;
+}
+.note-form {
+  margin-top: 16px;
+  max-width: 640px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.line-fixed {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}

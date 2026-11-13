@@ -39,12 +39,18 @@ export const homeOf = (me: Me) => (me.active.scope === "platform" ? "/businesses
  */
 export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   const can = (action: string) => me.active.capabilities.includes(action);
+  const issues: NavLink[] = can("issue.read")
+    ? [{ href: "/issues", label: "Issues", icon: "issues" }]
+    : [];
   if (me.active.scope === "platform") {
-    return can("business.read")
-      ? [{ href: "/businesses", label: "Businesses", icon: "businesses" }]
-      : [];
+    return [
+      ...issues,
+      ...(can("business.read")
+        ? [{ href: "/businesses", label: "Businesses", icon: "businesses" } as NavLink]
+        : []),
+    ];
   }
-  const top: NavLink[] = [{ href: "/overview", label: "Overview", icon: "overview" }];
+  const top: NavLink[] = [{ href: "/overview", label: "Overview", icon: "overview" }, ...issues];
   if (can("voucher.read")) top.push({ href: "/vouchers", label: "Vouchers", icon: "vouchers" });
   if (can("payment.read")) top.push({ href: "/payments", label: "Payments", icon: "payments" });
   const entries: NavEntry[] = [...top];

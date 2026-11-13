@@ -266,6 +266,9 @@ export interface IssueDetail {
     data: IssueEventData | null;
   }[];
   handTo: IssuePerson[];
+  /** Whom HashiNet's team calls about a venue's issue: its business's owner. Null for a business,
+   * which is calling no one but itself. */
+  contact: { name: string; email: string; phone: string | null } | null;
 }
 
 /** `GET /api/guest-counts`: a business's guests as HashiNet's team sees them, counts per venue only
