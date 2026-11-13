@@ -125,10 +125,16 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     out. The business invitation routes now act only on invitations to start a business, so a
     manager can't reach a manager's invitation through them. The invitation page takes a team
     invitation. Tests: `team.integration.test.ts`. Verify passes; integration 141/141.
-  - [ ] (b) Issues (ADR-0011, 11; redesign-admin's Issues decisions): one model for what needs someone,
-    router issues derived from router state, a venue's setup as two issues in turn (its package, then
-    its setup), claims kept per workspace, Release, Hand to and Take over with a reason by rank, and
-    each step logged with who and when; resolved issues keep their page.
+  - [x] (2026-11-13) (b) Issues (ADR-0011, 11; redesign-admin's Issues decisions), `apps/api/src/issues/`:
+    one model (`issues`, `issue_events`) kept per workspace (the platform's, or one business's, read
+    within a venue role's venues), at most one open issue per key there. A job every minute keeps
+    router issues in step: a router that has served and is offline or in error opens one in both
+    workspaces; serving again resolves both. `open` and `resolve` are for the journeys that own the
+    other kinds; (c) opens a venue's package and setup issues. Claim, Release, Hand to (someone in the
+    workspace who can work on it), Take over (only above the holder, with a reason), and a note, which
+    claims an unheld issue first; a resolved issue keeps its page and takes no more steps. A held
+    issue with no step for a day is stalled. Tests: `issues.integration.test.ts`. Verify passes;
+    integration 144/144.
   - [ ] (c) Onboarding: the owner chooses how the router comes (Connect, Install, Launch, or talk
     first); the platform confirms the package, router, price and setup date; the setup steps tick from
     the router's state; a venue serves and sells only once the owner's sign-in is protected; the 7 days.

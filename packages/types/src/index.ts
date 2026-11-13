@@ -197,6 +197,73 @@ export interface BusinessList {
   businesses: BusinessSummary[];
 }
 
+export type IssueKind = "router_offline" | "venue_package" | "venue_setup";
+export type IssueStatus = "open" | "resolved";
+export type IssueAction =
+  | "opened"
+  | "claimed"
+  | "released"
+  | "handed"
+  | "taken_over"
+  | "noted"
+  | "step"
+  | "resolved";
+
+/** A person an issue can be handed to, or who holds it. */
+export interface IssuePerson {
+  membershipId: string;
+  name: string;
+  role: MembershipRole;
+}
+
+/**
+ * Something that needs someone, in the reader's workspace (ADR-0011, 11). The API says who holds
+ * it and what the reader may do; the web words it.
+ */
+export interface IssueRecord {
+  id: string;
+  kind: IssueKind;
+  status: IssueStatus;
+  business: { id: string; name: string } | null;
+  venue: { id: string; name: string } | null;
+  router: { id: string; name: string } | null;
+  holder: IssuePerson | null;
+  /** The reader holds it. */
+  mine: boolean;
+  /** Claim: nobody holds it. */
+  canClaim: boolean;
+  /** Take over: someone below the reader holds it. */
+  canTakeOver: boolean;
+  /** Held with no activity for a day: flagged, never released by itself. */
+  stalled: boolean;
+  /** Bounded facts its kind needs. */
+  data: Record<string, string | number | boolean | null>;
+  openedAt: Timestamp;
+  resolvedAt: Timestamp | null;
+  lastActivityAt: Timestamp;
+}
+
+/** `GET /api/issues`. */
+export interface IssueList {
+  issues: IssueRecord[];
+  /** Open issues in the reader's reach, for the menu's count. */
+  openCount: number;
+}
+
+/** `GET /api/issues/:id`: the issue, what happened on it in order, and whom it can be handed to. */
+export interface IssueDetail {
+  issue: IssueRecord;
+  events: {
+    at: Timestamp;
+    /** Null: HashiNet itself. */
+    actor: IssuePerson | null;
+    action: IssueAction;
+    to: IssuePerson | null;
+    note: string | null;
+  }[];
+  handTo: IssuePerson[];
+}
+
 /** How the dashboard looks; `system` follows the device. */
 export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];

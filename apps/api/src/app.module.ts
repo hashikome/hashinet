@@ -11,6 +11,7 @@ import type { EmailSender } from "./email/email-sender.js";
 import { GuestModule } from "./guest/guest.module.js";
 import { HealthController } from "./health/health.controller.js";
 import { InvitationsModule } from "./invitations/invitations.module.js";
+import { IssuesModule } from "./issues/issues.module.js";
 import { PackagesModule } from "./packages/packages.module.js";
 import { PaymentsModule } from "./payments/payments.module.js";
 import { PortalModule } from "./portal/portal.module.js";
@@ -33,6 +34,7 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
       AuthModule,
       InvitationsModule,
       BusinessesModule,
+      IssuesModule,
       TeamModule,
       RoutersModule,
       VenuesModule,

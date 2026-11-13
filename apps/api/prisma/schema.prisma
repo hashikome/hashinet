@@ -332,6 +332,7 @@ model Business {
   invitations Invitation[]
   packages    Package[]
   auditLogs   AuditLog[]
+  issues      Issue[]
 
   @@map("businesses")
 }
@@ -357,6 +358,9 @@ model Membership {
   venues           MembershipVenue[]
   sessions         Session[]
   invitationsSent  Invitation[]
+  issuesHeld       Issue[]          @relation("IssueHolder")
+  issueEvents      IssueEvent[]     @relation("IssueActor")
+  issueEventsTo    IssueEvent[]     @relation("IssueTo")
   voucherBatches   VoucherBatch[]
   recordedPayments Payment[]
   auditLogs        AuditLog[]
@@ -451,6 +455,7 @@ model Venue {
   business       Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   members        MembershipVenue[]
   routers        Router[]
+  issues         Issue[]
   packages       VenuePackage[]
   brand          VenueBrand?
   voucherBatches VoucherBatch[]
@@ -508,6 +513,7 @@ model Router {
   createdAt                 DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt                 DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  issues   Issue[]
   venue    Venue         @relation(fields: [venueId], references: [id], onDelete: Cascade)
   sessions WifiSession[]
   payments Payment[]
@@ -928,4 +934,86 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+enum IssueKind {
+  /// A router that has served stopped answering; it resolves when the router serves again.
+  router_offline
+  /// A venue's package: call the owner and confirm, get it paid, schedule the setup.
+  venue_package
+  /// A venue's setup: add the router, install it, set it up; it resolves when a guest gets online.
+  venue_setup
+
+  @@map("issue_kind")
+}
+
+enum IssueStatus {
+  open
+  resolved
+
+  @@map("issue_status")
+}
+
+enum IssueAction {
+  opened
+  claimed
+  released
+  handed
+  taken_over
+  noted
+  step
+  resolved
+
+  @@map("issue_action")
+}
+
+/// Something that needs someone (redesign-admin, Issues). Issues are kept per workspace: the
+/// platform (`scope` platform, no business) and each business (`scope` business, its id) hold their
+/// own, each claimed by one of its own people (ADR-0011, 11). At most one open issue per key in a
+/// workspace (a partial unique index).
+model Issue {
+  id         String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  scope      MembershipScope
+  businessId String?     @map("business_id") @db.Uuid
+  kind       IssueKind
+  /// What makes it one issue, such as `router:<id>`.
+  key        String      @db.VarChar(120)
+  status     IssueStatus @default(open)
+  venueId    String?     @map("venue_id") @db.Uuid
+  routerId   String?     @map("router_id") @db.Uuid
+  holderId   String?     @map("holder_id") @db.Uuid
+  /// Bounded facts the kind needs (a preference, a price, a date); never names or addresses.
+  data       Json        @default("{}")
+  openedAt   DateTime    @default(now()) @map("opened_at") @db.Timestamptz(3)
+  resolvedAt DateTime?   @map("resolved_at") @db.Timestamptz(3)
+  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  business Business?    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  venue    Venue?       @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  router   Router?      @relation(fields: [routerId], references: [id], onDelete: SetNull)
+  holder   Membership?  @relation("IssueHolder", fields: [holderId], references: [id], onDelete: SetNull)
+  events   IssueEvent[]
+
+  @@index([scope, businessId, status])
+  @@map("issues")
+}
+
+/// What happened on an issue, in order, and who did it (null: HashiNet itself).
+model IssueEvent {
+  id       String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  issueId  String      @map("issue_id") @db.Uuid
+  at       DateTime    @default(now()) @db.Timestamptz(3)
+  actorId  String?     @map("actor_id") @db.Uuid
+  action   IssueAction
+  /// Who it was handed to.
+  toId     String?     @map("to_id") @db.Uuid
+  /// A step's name, a reason or a note, one line.
+  note     String?     @db.VarChar(500)
+
+  issue Issue       @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  actor Membership? @relation("IssueActor", fields: [actorId], references: [id], onDelete: SetNull)
+  to    Membership? @relation("IssueTo", fields: [toId], references: [id], onDelete: SetNull)
+
+  @@index([issueId, at])
+  @@map("issue_events")
 }

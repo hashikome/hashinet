@@ -56,6 +56,10 @@ export const POLICY = {
   // HashiNet's team: its admin and managers see and invite it; who may give which role is by rank
   // (access/rank.ts). A business's team comes with its own slice.
   "team.read": PLATFORM_STAFF,
+  // Issues: everything that needs someone, worked in each workspace by its own people; operators
+  // of a business see what is theirs on Today instead (redesign-admin, Issues).
+  "issue.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
+  "issue.work": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
   "team.manage": PLATFORM_STAFF,
   // The audit log: everyone but operators (ADR-0012).
   "audit.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
