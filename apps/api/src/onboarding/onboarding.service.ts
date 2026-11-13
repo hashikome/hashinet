@@ -337,9 +337,12 @@ export class OnboardingService {
     }
   }
 
-  /** Where each of a business's venues is on its way to serving guests. */
-  async stages(businessId: string): Promise<Map<string, OnboardingStage>> {
-    const venues = await this.db.venue.findMany({ where: { businessId }, include: withFacts });
+  /** Where each venue is on its way to serving guests: a business's, or every one. */
+  async stages(businessId?: string): Promise<Map<string, OnboardingStage>> {
+    const venues = await this.db.venue.findMany({
+      where: businessId ? { businessId } : {},
+      include: withFacts,
+    });
     return new Map(venues.filter((v) => v.onboarding).map((v) => [v.id, this.stage(v)] as const));
   }
 

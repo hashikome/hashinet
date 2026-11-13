@@ -1,4 +1,10 @@
-import type { BusinessDetail, BusinessList, Region } from "@hashinet/types";
+import type {
+  BusinessDetail,
+  BusinessList,
+  BusinessSummary,
+  OnboardingStage,
+  Region,
+} from "@hashinet/types";
 import { Controller, Get, NotFoundException, Param } from "@nestjs/common";
 import { Can } from "../access/access.guard.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -37,6 +43,8 @@ export class BusinessesController {
           select: {
             id: true,
             name: true,
+            region: true,
+            area: true,
             routers: {
               select: {
                 status: true,
@@ -50,6 +58,7 @@ export class BusinessesController {
         },
       },
     });
+    const stages = await this.onboarding.stages();
     return {
       businesses: rows.map((b) => ({
         id: b.id,
@@ -57,7 +66,7 @@ export class BusinessesController {
         region: b.region as Region,
         area: b.area,
         owner: b.memberships[0]?.user ?? null,
-        venues: b.venues.map((v) => ({ id: v.id, name: v.name, routers: v.routers.length })),
+        venues: b.venues.map((v) => venueOf(v, stages)),
         condition: worstCondition(
           b.venues.flatMap((v) =>
             v.routers.map((r) =>
@@ -122,19 +131,28 @@ export class BusinessesController {
         role: m.role,
         venues: m.venues.map((v) => v.venue.name),
       })),
-      venues: b.venues.map((v) => ({
-        id: v.id,
-        name: v.name,
-        region: v.region as Region,
-        area: v.area,
-        routers: v.routers.length,
-        condition: worstCondition(
-          v.routers.map((r) =>
-            conditionOf(routerJourney(r, r.lastSetup as StoredSetup | null).stage, r.status),
-          ),
-        ),
-        stage: stages.get(v.id) ?? "done",
-      })),
+      venues: b.venues.map((v) => venueOf(v, stages)),
     };
   }
+}
+
+type RouterFacts = Parameters<typeof routerJourney>[0] & { lastSetup: unknown };
+
+/** A venue as the platform lists it: where it is, its routers' worst condition, and its stage. */
+function venueOf(
+  v: { id: string; name: string; region: string; area: string; routers: RouterFacts[] },
+  stages: Map<string, OnboardingStage>,
+): BusinessSummary["venues"][number] {
+  const conditions = v.routers.map((r) =>
+    conditionOf(routerJourney(r, r.lastSetup as StoredSetup | null).stage, r.status),
+  );
+  return {
+    id: v.id,
+    name: v.name,
+    region: v.region as Region,
+    area: v.area,
+    routers: v.routers.length,
+    condition: worstCondition(conditions),
+    stage: stages.get(v.id) ?? "done",
+  };
 }

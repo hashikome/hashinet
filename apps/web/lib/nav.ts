@@ -43,11 +43,26 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
     ? [{ href: "/issues", label: "Issues", icon: "issues" }]
     : [];
   if (me.active.scope === "platform") {
+    const manage = can("business.read")
+      ? [
+          { href: "/businesses", label: "Businesses" },
+          { href: "/venues", label: "Venues" },
+          { href: "/routers", label: "Routers" },
+        ]
+      : [];
+    // Operators have a short list with no groups: sections would only add clicks.
+    if (!can("team.read")) {
+      const icons: Record<string, IconName> = {
+        "/businesses": "businesses",
+        "/venues": "venues",
+        "/routers": "routers",
+      };
+      return [...issues, ...manage.map((l) => ({ ...l, icon: icons[l.href] }))];
+    }
     return [
       ...issues,
-      ...(can("business.read")
-        ? [{ href: "/businesses", label: "Businesses", icon: "businesses" } as NavLink]
-        : []),
+      ...(manage.length ? [{ label: "Manage", icon: "manage" as const, links: manage }] : []),
+      { label: "Platform", icon: "platform", links: [{ href: "/team", label: "Team" }] },
     ];
   }
   const top: NavLink[] = [{ href: "/overview", label: "Overview", icon: "overview" }, ...issues];

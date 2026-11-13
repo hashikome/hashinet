@@ -186,7 +186,16 @@ export interface BusinessSummary {
   area: string;
   /** Its owner, once the invitation is accepted. */
   owner: { name: string; email: string } | null;
-  venues: { id: string; name: string; routers: number }[];
+  venues: {
+    id: string;
+    name: string;
+    region: Region;
+    area: string;
+    routers: number;
+    /** The worst of its routers; setting up while none has served. */
+    condition: RouterCondition;
+    stage: OnboardingStage;
+  }[];
   /** Across its routers: the worst of them, or setting up while none has served. */
   condition: RouterCondition;
   createdAt: Timestamp;
@@ -217,16 +226,7 @@ export interface BusinessDetail {
     /** A venue manager's venues; empty for those who reach the whole business. */
     venues: string[];
   }[];
-  venues: {
-    id: string;
-    name: string;
-    region: Region;
-    area: string;
-    routers: number;
-    /** The worst of its routers; setting up while none has served. */
-    condition: RouterCondition;
-    stage: OnboardingStage;
-  }[];
+  venues: BusinessSummary["venues"];
 }
 
 export type IssueKind = "router_offline" | "venue_package" | "venue_setup";

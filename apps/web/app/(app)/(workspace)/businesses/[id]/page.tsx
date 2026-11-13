@@ -1,27 +1,16 @@
 "use client";
 
-import type { BusinessDetail, GuestCounts, IssueList, OnboardingStage } from "@hashinet/types";
+import type { BusinessDetail, GuestCounts, IssueList } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect } from "react";
 import { BusinessMark } from "@/components/hearth/icons";
 import { ButtonLink, CONDITION, CopyText, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { longDate } from "@/lib/dates";
-import { issueTitle } from "@/lib/issues";
+import { issueTitle, STAGE } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { ROLE_NAME } from "@/lib/nav";
 import { useCan, useSession } from "@/lib/session";
-
-/** How far a venue is on its way to serving guests, before its router serves. */
-const STAGE: Record<Exclude<OnboardingStage, "done">, string> = {
-  choose: "Choosing how its router comes",
-  confirm: "Package to agree",
-  pay: "Waiting for payment",
-  schedule: "Setup to schedule",
-  "add-router": "Router to add",
-  "set-up": "Being set up",
-  "first-guest": "Waiting for its first guest",
-};
 
 /**
  * A business as HashiNet's team sees it (prototype `business`): who it is and who owns it, what

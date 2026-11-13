@@ -5,6 +5,7 @@ import type {
   OnboardingLineKind,
   OnboardingPaidBy,
   OnboardingPlan,
+  OnboardingStage,
 } from "@hashinet/types";
 import type { PillKind } from "@/components/hearth/ui";
 import { dayName } from "./dates";
@@ -134,3 +135,14 @@ export const actorOf = (e: Event) =>
 
 /** "Friday 20 November", from a business day (YYYY-MM-DD). */
 export const setupDay = (date: string) => dayName(`${date}T12:00:00+03:00`);
+
+/** How far a venue is on its way to serving guests, before its router serves. */
+export const STAGE: Record<Exclude<OnboardingStage, "done">, string> = {
+  choose: "Choosing how its router comes",
+  confirm: "Package to agree",
+  pay: "Waiting for payment",
+  schedule: "Setup to schedule",
+  "add-router": "Router to add",
+  "set-up": "Being set up",
+  "first-guest": "Waiting for its first guest",
+};
