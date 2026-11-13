@@ -657,6 +657,8 @@ export interface RevenueTransactions {
 /** Every action the audit log records (ADR-0012): a closed list, each with its own bounded change. */
 export const AUDIT_ACTIONS = [
   "membership.switch",
+  "membership.role",
+  "membership.remove",
   "profile.update",
   "authenticator.replace",
   "venue.create",
@@ -971,8 +973,38 @@ export interface InvitationList {
 /** What the invitation page shows before anything is entered: never a business or a person. */
 export interface InvitationPreview {
   email: string;
-  kind: "business_owner";
+  /** Starting a new business, or joining HashiNet's team in `role`. */
+  kind: "business_owner" | "platform_member";
+  /** For a platform member: the role offered. */
+  role: MembershipRole | null;
   expiresAt: Timestamp;
+}
+
+/** Accepting an invitation to HashiNet's team: the invitee's name, nothing else. */
+export interface AcceptMemberInvitation {
+  token: string;
+  person: { name: string };
+}
+
+/** One person on a team, as its Team page lists them. */
+export interface TeamMember {
+  membershipId: string;
+  name: string;
+  email: string;
+  role: MembershipRole;
+  joinedAt: Timestamp;
+  /** When they last worked in this workspace; null if never yet. */
+  lastUsedAt: Timestamp | null;
+  /** Whether the reader may change their role or remove them (by rank, ADR-0011, 6). */
+  manageable: boolean;
+}
+
+/** `GET /api/team`: the reader's team and its pending invitations. */
+export interface TeamList {
+  members: TeamMember[];
+  invitations: InvitationRecord[];
+  /** The roles the reader may invite, give or take away. */
+  assignable: MembershipRole[];
 }
 
 /** Accepting an invitation to start a business: three steps, saved only at the last. */
@@ -986,5 +1018,6 @@ export interface AcceptBusinessInvitation {
 /** After accepting, the person signs in with a code like everyone; nothing signs them in here. */
 export interface AcceptedInvitation {
   email: string;
-  businessId: string;
+  /** The new business, for an owner; null for HashiNet's team. */
+  businessId: string | null;
 }

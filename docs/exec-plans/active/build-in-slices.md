@@ -116,8 +116,15 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (j) Production reset (owner-run, Concrete Steps), deploy, and live acceptance.
 - [ ] Slice 3: onboarding a business (before slice 2: owner, 13 November 2026). Built on the local branch
   `slice-3`. Steps, each ending with `bun run verify` and the integration tests passing, and a commit:
-  - [ ] (a) Platform roles by invitation (business-scopes M3): the admin invites managers and operators;
-    manage, operate and remove them; the platform's people API.
+  - [x] (2026-11-13) (a) Platform roles by invitation (business-scopes M3), `apps/api/src/team/`:
+    `GET /api/team` (people and pending invitations, what the reader may assign, who they may manage),
+    invite, resend, revoke, change a role and remove, all by rank (`access/rank.ts`: the admin gives
+    manager and operator, a manager only operator; nobody acts on their own rank or above, or on
+    themselves). Accepting (`POST /api/invitations/accept/member`) asks only a name, creates or finds
+    the person and gives their one platform membership (back, if removed earlier); removing signs them
+    out. The business invitation routes now act only on invitations to start a business, so a
+    manager can't reach a manager's invitation through them. The invitation page takes a team
+    invitation. Tests: `team.integration.test.ts`. Verify passes; integration 141/141.
   - [ ] (b) Issues (ADR-0011, 11; redesign-admin's Issues decisions): one model for what needs someone,
     router issues derived from router state, a venue's setup as two issues in turn (its package, then
     its setup), claims kept per workspace, Release, Hand to and Take over with a reason by rank, and

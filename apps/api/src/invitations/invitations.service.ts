@@ -34,6 +34,11 @@ export const inviteBusinessInput = z.object({
 
 const place = { region: z.enum(REGIONS), area: line(160) };
 
+export const acceptMemberInput = z.object({
+  token: z.string().min(20).max(100),
+  person: z.object({ name: line(160) }),
+});
+
 export const acceptBusinessInput = z.object({
   token: z.string().min(20).max(100),
   person: z.object({
@@ -77,16 +82,7 @@ export class InvitationsService {
       include: { invitedBy: { include: { user: { select: { name: true } } } } },
       orderBy: { createdAt: "desc" },
     });
-    return rows.map((row) => ({
-      id: row.id,
-      email: row.email,
-      scope: row.scope,
-      role: row.role,
-      businessId: row.businessId,
-      invitedBy: row.invitedBy?.user.name ?? null,
-      createdAt: row.createdAt.toISOString(),
-      expiresAt: row.expiresAt.toISOString(),
-    }));
+    return rows.map(invitationRecordOf);
   }
 
   /** Invites someone to start a business. A pending invitation to the same email is replaced. */
@@ -122,7 +118,9 @@ export class InvitationsService {
 
   /** Sends a pending invitation again, with a new link; the old link stops working. */
   async resend(staff: Principal, id: string): Promise<InvitationRecord> {
-    const current = await this.db.invitation.findFirst({ where: { id, ...pending() } });
+    const current = await this.db.invitation.findFirst({
+      where: { id, ...pending(), ...NEW_BUSINESS },
+    });
     if (!current) throw invitationGone();
     const { token, digest } = newInvitationToken();
     await this.db.$transaction(async (tx) => {
@@ -148,7 +146,7 @@ export class InvitationsService {
   async revoke(staff: Principal, id: string): Promise<void> {
     await this.db.$transaction(async (tx) => {
       const revoked = await tx.invitation.updateMany({
-        where: { id, ...pending() },
+        where: { id, ...pending(), ...NEW_BUSINESS },
         data: { revokedAt: new Date() },
       });
       if (revoked.count === 0) throw invitationGone();
@@ -160,13 +158,68 @@ export class InvitationsService {
     });
   }
 
-  /** What the invitation page shows first: whom it is for, and until when. Nothing else. */
+  /** What the invitation page shows first: whom it is for, as what, and until when. Nothing else. */
   async preview(token: string): Promise<InvitationPreview> {
     const row = await this.db.invitation.findFirst({
       where: { tokenDigest: digestOf(token), ...pending() },
     });
-    if (row?.role !== "owner" || row.businessId !== null) throw invitationGone();
-    return { email: row.email, kind: "business_owner", expiresAt: row.expiresAt.toISOString() };
+    if (!row) throw invitationGone();
+    const expiresAt = row.expiresAt.toISOString();
+    if (row.scope === "platform") {
+      return { email: row.email, kind: "platform_member", role: row.role, expiresAt };
+    }
+    if (row.role !== "owner" || row.businessId !== null) throw invitationGone();
+    return { email: row.email, kind: "business_owner", role: null, expiresAt };
+  }
+
+  /**
+   * Accepts an invitation to HashiNet's team, in one transaction: the token is claimed first; the
+   * person is found or created, and their platform membership made or given back. It never signs
+   * anyone in.
+   */
+  async acceptMember(input: z.infer<typeof acceptMemberInput>): Promise<AcceptedInvitation> {
+    return this.db.$transaction(async (tx) => {
+      const now = new Date();
+      const digest = digestOf(input.token);
+      const claimed = await tx.invitation.updateMany({
+        where: { tokenDigest: digest, ...pending(now), scope: "platform" },
+        data: { acceptedAt: now },
+      });
+      if (claimed.count === 0) throw invitationGone();
+      const invitation = await tx.invitation.findUniqueOrThrow({ where: { tokenDigest: digest } });
+      const user =
+        (await tx.user.findUnique({ where: { email: invitation.email } })) ??
+        (await tx.user.create({
+          data: {
+            id: Bun.randomUUIDv7(),
+            email: invitation.email,
+            name: input.person.name,
+            emailVerified: true,
+          },
+        }));
+      // One platform membership per person: someone removed earlier is given it back.
+      const existing = await tx.membership.findFirst({
+        where: { userId: user.id, scope: "platform" },
+      });
+      const membership = existing
+        ? await tx.membership.update({
+            where: { id: existing.id },
+            data: { role: invitation.role, status: "active" },
+          })
+        : await tx.membership.create({
+            data: { userId: user.id, scope: "platform", role: invitation.role },
+          });
+      await this.audit.record(
+        { membershipId: membership.id, userId: user.id, businessId: null },
+        {
+          action: "invitation.accept",
+          target: { type: "invitation", id: invitation.id },
+          change: { before: {}, after: { role: invitation.role } },
+        },
+        tx,
+      );
+      return { email: invitation.email, businessId: null };
+    });
   }
 
   /**
@@ -264,7 +317,33 @@ export class InvitationsService {
   }
 }
 
+/** An invitation to start a business: the only kind these routes resend or revoke. */
+const NEW_BUSINESS = { scope: "business", role: "owner", businessId: null } as const;
+
+/** An invitation as the pages list it. */
+export function invitationRecordOf(row: {
+  id: string;
+  email: string;
+  scope: InvitationRecord["scope"];
+  role: InvitationRecord["role"];
+  businessId: string | null;
+  invitedBy: { user: { name: string } } | null;
+  createdAt: Date;
+  expiresAt: Date;
+}): InvitationRecord {
+  return {
+    id: row.id,
+    email: row.email,
+    scope: row.scope,
+    role: row.role,
+    businessId: row.businessId,
+    invitedBy: row.invitedBy?.user.name ?? null,
+    createdAt: row.createdAt.toISOString(),
+    expiresAt: row.expiresAt.toISOString(),
+  };
+}
+
 /** An invitation that can still be accepted. */
-function pending(now = new Date()) {
+export function pending(now = new Date()) {
   return { acceptedAt: null, revokedAt: null, expiresAt: { gt: now } };
 }

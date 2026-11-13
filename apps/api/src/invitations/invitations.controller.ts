@@ -12,6 +12,7 @@ import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import {
   acceptBusinessInput,
+  acceptMemberInput,
   InvitationsService,
   inviteBusinessInput,
 } from "./invitations.service.js";
@@ -79,5 +80,11 @@ export class AcceptInvitationController {
   @HttpCode(201)
   accept(@Body() body: unknown): Promise<AcceptedInvitation> {
     return this.invitations.acceptBusiness(parseInput(acceptBusinessInput, body));
+  }
+
+  @Post("member")
+  @HttpCode(201)
+  acceptMember(@Body() body: unknown): Promise<AcceptedInvitation> {
+    return this.invitations.acceptMember(parseInput(acceptMemberInput, body));
   }
 }

@@ -53,6 +53,10 @@ export const POLICY = {
   // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.
   "business.read": PLATFORM_ALL,
   "business.invite": PLATFORM_STAFF,
+  // HashiNet's team: its admin and managers see and invite it; who may give which role is by rank
+  // (access/rank.ts). A business's team comes with its own slice.
+  "team.read": PLATFORM_STAFF,
+  "team.manage": PLATFORM_STAFF,
   // The audit log: everyone but operators (ADR-0012).
   "audit.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
 } as const satisfies Record<string, readonly MembershipRole[]>;

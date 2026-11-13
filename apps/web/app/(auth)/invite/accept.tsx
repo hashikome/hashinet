@@ -174,7 +174,7 @@ export function AcceptInvitation() {
     setCodeError("");
     try {
       await api.post("/api/auth/sign-in/email-otp", { email: created.email, otp: code });
-      router.replace("/overview");
+      router.replace("/");
     } catch {
       setCodeError("That code didn't work. Check it, or sign in from the sign-in page.");
     } finally {
@@ -203,7 +203,10 @@ export function AcceptInvitation() {
       <AuthFrame>
         <h1>Check your email</h1>
         <p className="lead">
-          {v.business} is created. To sign in, enter the code we sent to <b>{created.email}</b>.
+          {invite.kind === "platform_member"
+            ? "You're on HashiNet's team."
+            : `${v.business} is created.`}{" "}
+          To sign in, enter the code we sent to <b>{created.email}</b>.
         </p>
         <form className="form" noValidate onSubmit={signIn}>
           <OtpBoxes
@@ -223,6 +226,67 @@ export function AcceptInvitation() {
             Send another code
           </button>
           , or sign in later from the sign-in page.
+        </p>
+      </AuthFrame>
+    );
+  }
+
+  // Joining HashiNet's team asks only for a name.
+  if (invite.kind === "platform_member") {
+    return (
+      <AuthFrame>
+        <h1>Join HashiNet&apos;s team</h1>
+        <p className="lead">
+          You were invited as {invite.role === "manager" ? "a manager" : "an operator"}, with{" "}
+          <b>{invite.email}</b>.
+        </p>
+        <form
+          className="form"
+          noValidate
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!v.name.trim()) return setErrors({ "person.name": "Your name is required." });
+            if (!token) return;
+            setBusy(true);
+            setErrors({});
+            try {
+              const done = await api.post<AcceptedInvitation>("/api/invitations/accept/member", {
+                token,
+                person: { name: v.name },
+              });
+              setCreated(done);
+              await sendCode(done.email);
+            } catch (err) {
+              if (err instanceof ApiRequestError && err.status === 404) setGone(true);
+              else setErrors({ "person.name": messageOf(err) });
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <div className="field">
+            <label htmlFor="inv-n">Your full name</label>
+            <input
+              id="inv-n"
+              className="input"
+              autoComplete="name"
+              value={v.name}
+              onChange={(e) => setV((now) => ({ ...now, name: e.target.value }))}
+              aria-invalid={errors["person.name"] ? true : undefined}
+              aria-describedby={errors["person.name"] ? "inv-n-note" : undefined}
+            />
+            {errors["person.name"] ? (
+              <div className="hint danger" id="inv-n-note">
+                {errors["person.name"]}
+              </div>
+            ) : null}
+          </div>
+          <button className="btn primary big" type="submit" disabled={busy}>
+            Join the team
+          </button>
+        </form>
+        <p className="auth-terms auth-rule">
+          Not you, or not expecting this? Ignore it: nothing changes unless you join.
         </p>
       </AuthFrame>
     );

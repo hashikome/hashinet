@@ -15,3 +15,20 @@ export function businessInvitationEmail(to: string, link: string): EmailMessage 
     ].join("\n"),
   };
 }
+
+const ROLE_WORDS: Record<string, string> = { manager: "a manager", operator: "an operator" };
+
+/** The invitation to join HashiNet's team in `role`. The link's fragment carries the token. */
+export function memberInvitationEmail(to: string, role: string, link: string): EmailMessage {
+  return {
+    to,
+    subject: "Join HashiNet's team",
+    text: [
+      `You have been invited to join HashiNet's team as ${ROLE_WORDS[role] ?? role}.`,
+      "",
+      `Open this link to give your name, then sign in with a code: ${link}`,
+      "",
+      `It works once, for ${INVITATION_HOURS} hours. If you were not expecting it, ignore this email.`,
+    ].join("\n"),
+  };
+}
