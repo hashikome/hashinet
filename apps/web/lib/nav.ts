@@ -29,13 +29,12 @@ export const ROLE_NAME: Record<MembershipRole, string> = {
   venue_operator: "Venue operator",
 };
 
-/** Where a workspace opens. */
-export const homeOf = (me: Me) => (me.active.scope === "platform" ? "/businesses" : "/overview");
+/** Where a workspace opens: the platform's worklist, or the business's Overview. */
+export const homeOf = (me: Me) => (me.active.scope === "platform" ? "/issues" : "/overview");
 
 /**
- * The menu, from what the workspace may do (`capabilities`) and only the screens that exist. Slice 1
- * builds a business's Overview, Vouchers, Payments, its router and Packages, and the platform's
- * Businesses; the prototype's other entries arrive with their slices.
+ * The menu, from what the workspace may do (`capabilities`) and only the screens that exist; the
+ * prototype's other entries arrive with their slices.
  */
 export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   const can = (action: string) => me.active.capabilities.includes(action);

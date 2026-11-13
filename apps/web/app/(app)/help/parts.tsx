@@ -13,7 +13,7 @@ export function BackHome() {
   const { me } = useSession();
   return (
     <ButtonLink href={homeOf(me)}>
-      Back to {me.active.scope === "platform" ? "Businesses" : "Overview"}
+      Back to {me.active.scope === "platform" ? "Issues" : "Overview"}
     </ButtonLink>
   );
 }

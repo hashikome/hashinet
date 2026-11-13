@@ -167,7 +167,9 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     as the prototype does; operators keep a flat list. Walked as the admin, a manager, an operator
     and owners at 1280 and 375, light and dark: no overflow and every text at AA contrast, measured.
     Prices are hidden from operators on the page (the API still serves them to the platform).
-  - [ ] (f) Leftovers of slice 1's stand-ins removed.
+  - [x] (2026-11-13) (f) Leftovers of slice 1's stand-ins removed: the owner's "team is setting up
+    your router" panel (now getting started), the Businesses rows' router links (rows open the
+    business), and the platform's home, which is Issues, its worklist, in place of Businesses.
   - [ ] (g) finish-work on the branch.
   - [ ] (h) Release and live acceptance: Asha invites a test business; its owner accepts, protects
     their sign-in and chooses how the router comes; Asha confirms the package and sets up its router
