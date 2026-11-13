@@ -92,7 +92,7 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
         <PackageSteps onboarding={onboarding} detail={detail} lock={lock} reload={data.reload} />
       ) : null}
       {issue.kind === "venue_setup" && onboarding && open ? (
-        <SetupSteps onboarding={onboarding} detail={detail} lock={lock} />
+        <SetupSteps onboarding={onboarding} detail={detail} lock={lock} reload={data.reload} />
       ) : null}
       {onboarding?.issueId && onboarding.issueId !== issue.id ? (
         <Attention

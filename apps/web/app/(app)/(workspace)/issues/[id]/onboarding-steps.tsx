@@ -143,11 +143,19 @@ export function SetupSteps({
   onboarding: o,
   detail,
   lock,
+  reload,
 }: {
   onboarding: VenueOnboarding;
   detail: IssueDetail;
   lock: ReactNode | null;
+  reload: () => Promise<void>;
 }) {
+  const [checking, setChecking] = useState(false);
+  const check = async () => {
+    setChecking(true);
+    await reload();
+    setChecking(false);
+  };
   const model = o.agreed?.lines.find((l) => l.kind === "mikrotik_router")?.description;
   const openRouter = lock ?? (
     <div className="actions">
@@ -202,10 +210,23 @@ export function SetupSteps({
       todo: "Closes this issue",
       done: "",
       body: (
-        <p>
-          Join the WiFi on a phone, see {o.business.name}&apos;s portal, and get online with a
-          voucher. The issue closes when the first guest is online.
-        </p>
+        <>
+          <p>
+            Join the WiFi on a phone, see {o.business.name}&apos;s portal, and get online with one
+            of {o.business.name}&apos;s vouchers: its owner prints them, so ask them for one to try.
+            The issue closes by itself within a minute of the first guest getting online.
+          </p>
+          {lock ?? (
+            <div className="actions">
+              <Button kind="primary" busy={checking} onClick={() => void check()}>
+                Check now
+              </Button>
+              <Link className="btn secondary" href={`/venues/${o.venue.id}/router`}>
+                <span>Open router</span>
+              </Link>
+            </div>
+          )}
+        </>
       ),
     },
   ];
