@@ -3,8 +3,7 @@ import type { ReactNode } from "react";
 
 /**
  * Help (prototype help.js): guides and questions for the reader's role, each naming who it is
- * for. Slice 1 carries the guides for what slice 1 does; each later slice adds its own with its
- * screens, so Help never explains a page that isn't there.
+ * for. Each slice adds its own with its screens, so Help never explains a page that isn't there.
  */
 export type HelpRole = "owner" | "platform-staff" | "platform-operator";
 
@@ -33,14 +32,148 @@ export function helpRole(me: Me): HelpRole | null {
 }
 
 export const AREAS: Record<"business" | "platform", string[]> = {
-  business: ["Selling", "Guests and devices", "Your venues", "Your account"],
-  platform: ["Businesses", "Routers", "Your account"],
+  business: ["Getting started", "Selling", "Guests and devices", "Your venues", "Your account"],
+  platform: ["Issues", "Businesses", "Routers", "Your team", "Your account"],
 };
 
 const ALL: HelpRole[] = ["owner", "platform-staff", "platform-operator"];
 const PLATFORM: HelpRole[] = ["platform-staff", "platform-operator"];
 
 export const GUIDES: Guide[] = [
+  {
+    id: "start",
+    area: "Getting started",
+    for: ["owner"],
+    title: "Get your venue online",
+    gist: "Four steps from joining to guests on your WiFi.",
+    steps: [
+      <>
+        On your <b>Overview</b>, choose how your MikroTik router comes: <b>Connect</b> your own,{" "}
+        <b>Install</b> one we bring, or <b>Launch</b> with a new internet line too. Or ask to talk
+        first.
+      </>,
+      "HashiNet's team calls you within a working day, goes over the venue, and agrees the package and what it costs, line by line, all on one bill.",
+      "Once it is paid, we agree a day and the team sets the router up at your venue.",
+      "Protect your sign-in before then: your venue serves guests only once you have.",
+    ],
+    wrong: [
+      [
+        "Nobody called",
+        "Contact HashiNet's support from Help. Your choice is already with the team.",
+      ],
+    ],
+  },
+  {
+    id: "issue",
+    area: "Issues",
+    for: PLATFORM,
+    title: "Work an issue",
+    gist: "Claim it, do its steps, hand it on or let it go.",
+    steps: [
+      <>
+        Open <b>Issues</b>. Each row is something that needs someone; open it to see what to do.
+      </>,
+      <>
+        Tap <b>Claim</b> so others see you are on it. Adding a note or doing a step claims it too.
+      </>,
+      <>
+        Done with your part? <b>Hand to</b> a colleague, with a note, or <b>Release</b> it for
+        anyone.
+      </>,
+      <>
+        Someone below you is stuck or away? <b>Take over</b>, with a reason they see.
+      </>,
+      "A router issue closes itself once the router serves again; a setup closes when the venue's first guest gets online.",
+    ],
+    wrong: [
+      [
+        "An issue is marked Stalled",
+        "Its holder has done nothing on it for a day. Ask them, or take it over if you are above them.",
+      ],
+    ],
+  },
+  {
+    id: "onboard",
+    area: "Businesses",
+    for: ["platform-staff"],
+    title: "Onboard a venue",
+    gist: "Call the owner, agree the package, get it paid, schedule the setup.",
+    steps: [
+      <>
+        Open the venue&apos;s <b>Confirm … package</b> issue. It shows what the owner prefers and
+        how to reach them.
+      </>,
+      "Call them: the venue's size, guests at peak, where the line comes in and where the router can go.",
+      <>
+        Choose the package and enter what it costs line by line: the <b>onboarding fee</b> for this
+        business, the MikroTik router, and a line or ISP router for Launch. Then{" "}
+        <b>Confirm package</b>.
+      </>,
+      <>
+        When the money comes, <b>Record payment</b>, in full. The admin and managers record it
+        whoever holds the issue.
+      </>,
+      <>
+        <b>Schedule setup</b> with the day agreed and who goes. The setup becomes its own issue,
+        handed to them.
+      </>,
+    ],
+    wrong: [
+      [
+        "The package needs to change",
+        "Change the package works until it is paid or its setup is scheduled.",
+      ],
+    ],
+  },
+  {
+    id: "setup",
+    area: "Routers",
+    for: PLATFORM,
+    title: "Set up a venue handed to you",
+    gist: "Add the router, run its script, set it up, check a phone.",
+    steps: [
+      <>
+        Open the <b>Set up … router</b> issue in Issues. It shows the router to bring and the setup
+        day.
+      </>,
+      <>
+        <b>Open router</b> and add it: its name is the WiFi name guests see.
+      </>,
+      "Run its setup script on it, at the office or at the venue; the step ticks itself when it reaches HashiNet.",
+      "At the venue, the ISP router goes into port 1. Run Set up from the router page.",
+      "Join the WiFi on a phone and get online with a voucher. The issue closes with the first guest.",
+    ],
+    wrong: [
+      [
+        "Add router is refused",
+        "The venue's setup has to be handed to you first. Ask the admin or a manager.",
+      ],
+      [
+        "Set up finishes but no guest can get online",
+        "The business's owner has not protected their sign-in yet; the venue serves once they do.",
+      ],
+    ],
+  },
+  {
+    id: "team",
+    area: "Your team",
+    for: ["platform-staff"],
+    title: "Bring someone onto the team",
+    gist: "Managers run onboarding; operators install routers.",
+    steps: [
+      <>
+        Open <b>Team</b> under Platform and tap <b>Invite someone</b>.
+      </>,
+      "Enter their email and choose the role. You can give only roles below your own.",
+      "They give their name, sign in with a code, and protect their sign-in before they start.",
+    ],
+    wrong: [
+      [
+        "Someone is leaving",
+        "Remove them from Team: they lose access at once, and what they did stays in the audit log.",
+      ],
+    ],
+  },
   {
     id: "print",
     area: "Selling",
@@ -254,6 +387,18 @@ export const QUESTIONS: Question[] = [
     area: "Businesses",
     q: "Can we see a business's guests or devices?",
     a: "Only as counts. Device lists and sessions belong to the business.",
+  },
+  {
+    for: ["platform-operator"],
+    area: "Issues",
+    q: "Why don't I see every issue?",
+    a: "Operators see the issues handed to them: a setup handed to you is your go-ahead to install its router.",
+  },
+  {
+    for: ["owner"],
+    area: "Getting started",
+    q: "Why does my package cost what it does?",
+    a: "It is the onboarding fee agreed for your business and each thing your plan brings, line by line, on your Overview. HashiNet deals with the partners, so you pay one bill.",
   },
 ];
 

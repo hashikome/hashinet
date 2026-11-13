@@ -157,9 +157,16 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     already reaches no guest list (sessions, devices, vouchers are `BUSINESS_ALL`; the live socket
     sends hotspot updates only to `session.read`; analytics returns totals). Tests:
     `guest-counts.integration.test.ts`. Verify passes; integration 150/150.
-  - [ ] (e) The screens, against the prototype, each audited as it is built: Issues and an issue's page,
-    Businesses and a business's page, the platform's Venues and Routers, the Team for platform roles,
-    the owner's getting-started overview (replacing slice 1's stand-in), the platform's Help.
+  - [x] (2026-11-13) (e) The screens, against the prototype, each audited as it is built: Issues (open
+    count in the menu) and an issue's page (Claim, Hand to, Release, Take over, notes, history; a
+    venue's package confirmed line by line, its payment, its setup scheduled for whoever goes; the
+    setup's steps; a router issue's checks); Businesses and a business's page (`GET
+    /api/businesses/:id`: its owner, open issues, venues with their stage and guest counts, owners
+    and managers); the platform's Venues and Routers; Team for platform roles; the owner's
+    getting-started overview; Help's slice 3 guides. The platform's menu groups Manage and Platform
+    as the prototype does; operators keep a flat list. Walked as the admin, a manager, an operator
+    and owners at 1280 and 375, light and dark: no overflow and every text at AA contrast, measured.
+    Prices are hidden from operators on the page (the API still serves them to the platform).
   - [ ] (f) Leftovers of slice 1's stand-ins removed.
   - [ ] (g) finish-work on the branch.
   - [ ] (h) Release and live acceptance: Asha invites a test business; its owner accepts, protects
