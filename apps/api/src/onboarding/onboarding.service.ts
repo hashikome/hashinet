@@ -4,6 +4,7 @@ import {
   ONBOARDING_PAID_BY,
   ONBOARDING_PLANS,
   type OnboardingPlan,
+  type OnboardingStage,
   type VenueOnboarding,
 } from "@hashinet/types";
 import {
@@ -334,6 +335,12 @@ export class OnboardingService {
         );
       });
     }
+  }
+
+  /** Where each of a business's venues is on its way to serving guests. */
+  async stages(businessId: string): Promise<Map<string, OnboardingStage>> {
+    const venues = await this.db.venue.findMany({ where: { businessId }, include: withFacts });
+    return new Map(venues.filter((v) => v.onboarding).map((v) => [v.id, this.stage(v)] as const));
   }
 
   private async venue(staff: Principal, venueId: string): Promise<VenueRow> {

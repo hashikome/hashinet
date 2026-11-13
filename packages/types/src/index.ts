@@ -197,6 +197,38 @@ export interface BusinessList {
   businesses: BusinessSummary[];
 }
 
+/**
+ * `GET /api/businesses/:id`: a business as HashiNet's team sees it (ADR-0014, 1): who owns and
+ * manages it, and each venue's way to serving guests. Its operators and guests are its own.
+ */
+export interface BusinessDetail {
+  id: string;
+  name: string;
+  region: Region;
+  area: string;
+  createdAt: Timestamp;
+  owner: { name: string; email: string; phone: string | null } | null;
+  /** Its owners and managers, never its operators. */
+  people: {
+    membershipId: string;
+    name: string;
+    email: string;
+    role: MembershipRole;
+    /** A venue manager's venues; empty for those who reach the whole business. */
+    venues: string[];
+  }[];
+  venues: {
+    id: string;
+    name: string;
+    region: Region;
+    area: string;
+    routers: number;
+    /** The worst of its routers; setting up while none has served. */
+    condition: RouterCondition;
+    stage: OnboardingStage;
+  }[];
+}
+
 export type IssueKind = "router_offline" | "venue_package" | "venue_setup";
 export type IssueStatus = "open" | "resolved";
 export type IssueAction =

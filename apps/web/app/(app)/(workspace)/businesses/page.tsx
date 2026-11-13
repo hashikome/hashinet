@@ -1,7 +1,6 @@
 "use client";
 
 import type { BusinessList, InvitationList, InvitationRecord } from "@hashinet/types";
-import Link from "next/link";
 import { type FormEvent, useState } from "react";
 import { Dialog } from "@/components/hearth/dialog";
 import {
@@ -21,9 +20,8 @@ import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan, useSession } from "@/lib/session";
 
 /**
- * Businesses (prototype `businesses`), slice 1's minimal list: every business, whether it serves,
- * and the invitations to start one that are not yet accepted. A business's own page comes in
- * slice 3.
+ * Businesses (prototype `businesses`): every business and whether it serves, each row opening its
+ * page, and the invitations to start one that are not yet accepted.
  */
 export default function BusinessesPage() {
   const { me } = useSession();
@@ -153,20 +151,14 @@ export default function BusinessesPage() {
                   const [state, kind] = CONDITION[b.condition];
                   return {
                     key: b.id,
+                    href: `/businesses/${b.id}`,
                     cells: [
                       <div key="n">
                         <div className="name">{b.name}</div>
                         <div className="sub">{b.owner?.name ?? "No owner yet"}</div>
-                        <div className="sub">
-                          {b.venues.map((v, i) => (
-                            <span key={v.id}>
-                              {i ? " · " : ""}
-                              <Link className="link" href={`/venues/${v.id}/router`}>
-                                {v.name}&apos;s router
-                              </Link>
-                            </span>
-                          ))}
-                        </div>
+                        {b.venues.length ? (
+                          <div className="sub">{b.venues.map((v) => v.name).join(" · ")}</div>
+                        ) : null}
                       </div>,
                       b.region,
                       b.area,

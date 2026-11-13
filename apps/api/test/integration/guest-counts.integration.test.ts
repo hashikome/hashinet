@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { GuestCounts } from "@hashinet/types";
+import type { BusinessDetail, GuestCounts } from "@hashinet/types";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, testBusinessId } from "./people.js";
@@ -64,5 +64,41 @@ describe("a business's guests, for HashiNet's team", () => {
     }
     const owner = await signedIn("owner@example.com");
     expect((await owner.request("GET", "/api/guest-counts")).status).toBe(403);
+  });
+  test("a business's page names its owners and managers, never its operators", async () => {
+    await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
+    const businessId = await testBusinessId(t.db);
+    const cafe = await t.db.venue.create({
+      data: { businessId, name: "Cafe", region: "Dar es Salaam", area: "Dar" },
+    });
+    await t.db.venueOnboarding.create({ data: { venueId: cafe.id, preferredAt: new Date() } });
+    await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
+    await businessMember(t.db, {
+      email: "vm@example.com",
+      name: "Cafe manager",
+      role: "venue_manager",
+      venueIds: [cafe.id],
+    });
+    await businessMember(t.db, {
+      email: "op@example.com",
+      name: "Counter",
+      role: "venue_operator",
+      venueIds: [cafe.id],
+    });
+    const asha = await signedIn("asha@example.com");
+    const page = (await asha.request("GET", `/api/businesses/${businessId}`))
+      .body as BusinessDetail;
+    expect(page.owner).toEqual({ name: "Owner", email: "owner@example.com", phone: null });
+    expect(page.people.map((p) => [p.name, p.role, p.venues])).toEqual([
+      ["Owner", "owner", []],
+      ["Cafe manager", "venue_manager", ["Cafe"]],
+    ]);
+    expect(page.venues).toMatchObject([
+      { id: cafe.id, routers: 0, condition: "setting-up", stage: "confirm" },
+    ]);
+    expect(JSON.stringify(page)).not.toContain("op@example.com");
+    expect(
+      (await asha.request("GET", "/api/businesses/01a1d4dc-0abd-72b4-899c-c0ea84303684")).status,
+    ).toBe(404);
   });
 });
