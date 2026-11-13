@@ -196,6 +196,20 @@ describe("Onboarding a venue", () => {
     });
     expect(manager.membershipId).not.toBe(operator.membershipId);
 
+    // A scheduled setup waits for its date: not stalled while the day hasn't passed, though
+    // nothing is done; stalled once it has, with the router still not reached.
+    await t.db.issueEvent.updateMany({ data: { at: new Date(Date.now() - 3 * 86_400_000) } });
+    expect(
+      ((await hamisi.request("GET", "/api/issues")).body as IssueList).issues[0]?.stalled,
+    ).toBe(false);
+    await t.db.venueOnboarding.update({
+      where: { venueId },
+      data: { setupDate: new Date(Date.now() - 2 * 86_400_000) },
+    });
+    expect(
+      ((await hamisi.request("GET", "/api/issues")).body as IssueList).issues[0]?.stalled,
+    ).toBe(true);
+
     // Hamisi adds the router at the venue handed to him, and nowhere else.
     const otherVenue = await newVenue(admin);
     await t.db.venueOnboarding.update({

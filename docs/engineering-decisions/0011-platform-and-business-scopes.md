@@ -2,7 +2,7 @@
 
 Status: accepted, 3 November 2026; sign-in protection by role settled on 4 November 2026; the platform's
 top role named admin on 11 November 2026; the 2-hour proof widened to adding a factor on 13 November
-2026. Replaces the admin and manager roles of ADR-0007, which keeps
+2026; operators' handed-only reach and exclusive moves on 13 November 2026. Replaces the admin and manager roles of ADR-0007, which keeps
 sign-in itself.
 
 ## Context
@@ -118,7 +118,10 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
     for its date instead and stalls only if the date passes before its router reaches hashifi. A
     stalled issue is flagged: its status says so and Issues can filter for it; it is
     never released by itself. The API names these claim, release, hand
-    and take over.
+    and take over. A move is one conditional write, so two people claiming at once never both
+    hold it. The platform's operators are the technicians who go to venues: they see an issue only
+    once it is handed to them, and an issue they hold at a venue is their pass to install its router
+    (13 November 2026). Removing someone gives back every issue they hold, logged as such.
 
 ## What must hold
 

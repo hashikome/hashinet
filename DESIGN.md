@@ -130,6 +130,12 @@ addresses and file names.
 - Anything that calls for someone's action is an issue: it is in Issues, and its notice sits at the top of the
   page, under the title. Daily operations are not issues; confirming a payment or recording a sale stay as
   actions on their own page.
+- A row that opens a page is its one way there: no "Open" button or link inside it, so a screen reader
+  hears one link and the keyboard stops once. A row keeps a button only for an action that is not
+  opening its page (Resend, Revoke).
+- What a step needs is on its page, decided by the API: a person sees a step's form only when the API
+  says they may take it (`may`, `canNote`, `canRelease`), and otherwise who is responsible and what to
+  ask them. A step's rail and its current step sit side by side (`components/hearth/onboarding.tsx`).
 
 ## Order in lists
 

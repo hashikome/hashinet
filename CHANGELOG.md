@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Onboarding a business (slice 3 of `build-in-slices.md`):
+  - HashiNet's admin invites managers and operators to its team, each only to a role below their
+    own; removing someone signs them out and gives back what they held.
+  - Issues: everything that needs someone, per workspace. Claim it (or act first), release it,
+    hand it to a colleague, or take it over from someone below you with a reason; every step is on
+    its history. A router that stops serving opens one for HashiNet's team and its business, and
+    closes once it serves again or is removed. The menu shows how many are open.
+  - A venue gets online through its package, then its setup. The owner says how the router should
+    come (Connect, Install, Launch, or talk first); HashiNet's team agrees the package line by line,
+    an onboarding fee for the business and what the plan brings, all on one bill; records its
+    payment by hand; and schedules the setup for whoever goes. The setup closes when the venue's
+    first guest is online. The owner's Overview walks these steps.
+  - HashiNet's operators see only the issues handed to them; a handed setup lets them add its
+    router and set it up, and they never see what a package costs.
+  - No router is added before a venue's setup is scheduled, and no venue serves a guest before its
+    owner has protected their sign-in.
+  - HashiNet's team has Businesses with each business's page, Venues, Routers and Team, and sees a
+    business's guests only as counts. The platform opens on Issues. Help has the guides for each.
 - HashiNet is rebuilt as businesses with owners, on the approved Hearth design (slice 1 of
   `build-in-slices.md`):
   - HashiNet's admin invites a business by email; its owner gives their details, the business and

@@ -170,7 +170,27 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [x] (2026-11-13) (f) Leftovers of slice 1's stand-ins removed: the owner's "team is setting up
     your router" panel (now getting started), the Businesses rows' router links (rows open the
     business), and the platform's home, which is Issues, its worklist, in place of Businesses.
-  - [ ] (g) finish-work on the branch.
+  - [x] (2026-11-13) (g) finish-work on the branch:
+    - **Code review**, fixed:
+      - claims made exclusive;
+      - a removed router's issues closed;
+      - a removed person's issues given back;
+      - a race to open an issue no longer stops the sync;
+      - operators able to install from the router page;
+      - seeded venues begin their onboarding;
+      - absence is `null`.
+    - **Security review:** no findings.
+    - **Simplify:**
+      - the API serves who may act;
+      - one handed rule;
+      - operators get no prices;
+      - count route, set-based syncs, an index;
+      - guest counts on the businesses list;
+      - shared helpers.
+    - **Design audit:** 19/20; a row is its one link.
+    - **Docs:** a setup stalls by its date (ADR-0011, 11); docs, CHANGELOG, technical debt and
+      the handbook updated.
+    - Verify passes; integration 153/153.
   - [ ] (h) Release and live acceptance: Asha invites a test business; its owner accepts, protects
     their sign-in and chooses how the router comes; Asha confirms the package and sets up its router
     (`chr-test`); the venue serves.

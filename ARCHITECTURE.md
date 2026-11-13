@@ -34,6 +34,8 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 | --- | --- |
 | `apps/api` | NestJS API on Bun: business rules, authorization, router provisioning and sync, background jobs, persistence (Prisma, `prisma/schema.prisma`) |
 | `apps/api/src/services`, `routers`, `vouchers` | Router provisioning and dialects, `RouterSync`, `LiveMonitor`, tunnel allocation, voucher expiry and reconciliation |
+| `apps/api/src/access`, `team`, `invitations` | The access policy (one table of actions per role), rank, sign-in protection, and the people of each workspace by invitation |
+| `apps/api/src/issues`, `onboarding`, `businesses` | Issues per workspace (claimed, handed, taken over by rank, every step logged; router issues kept in step with the routers), a venue's way to serving (its package, then its setup), and the businesses as HashiNet's team sees them, guests as counts only |
 | `apps/api/src/observability`, `jobs`, `config` | Telemetry and wide events, interval jobs, validated configuration and secrets |
 | `apps/api/src/serializers` | Database rows to `@hashinet/types` records: the only place Prisma types become API shapes |
 | `apps/web` | Next.js: sign-in and invitations, the dashboard (a business's and HashiNet's team's), Account and security, Help, and the captive portal; screens built from `prototypes/hearth-design/prototype/` on its stylesheet (`app/hearth.css`) and building blocks (`components/hearth/`) |
@@ -50,8 +52,9 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 
 ## Runtime
 
-- One API service with background jobs: voucher expiry and reconciliation of anything the
-  router has not confirmed.
+- One API service with background jobs, every minute unless noted: voucher expiry and
+  reconciliation of anything the router has not confirmed, router issues kept in step with the
+  routers, venues' setups closed by their first guest, and payments whose report never came.
 - Live session and provisioning updates reach the admin over a WebSocket.
 
 ## Deployment shape
@@ -66,3 +69,8 @@ database on the shared platform instance, allocated by the infra repository.
   ([ADR-0003](docs/engineering-decisions/0003-api-owns-logic-web-presents.md)).
 - Access is reported only after the router confirms it.
 - A voucher code is never returned to a client that has not proved it holds it.
+- Every venue has its onboarding from the moment it exists, and a router is added only to a venue
+  whose setup is scheduled; no venue serves a guest until its business's owner has protected their
+  sign-in.
+- HashiNet's team sees a business's guests only as counts; a platform operator reaches only what
+  is handed to them.

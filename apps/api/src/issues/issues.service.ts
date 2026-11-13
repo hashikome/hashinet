@@ -19,6 +19,7 @@ import {
 import { z } from "zod";
 import type { Principal } from "../access/principal.js";
 import { outranks } from "../access/rank.js";
+import { businessDayOf } from "../analytics/business-day.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma, type PrismaClient } from "../generated/prisma/client.js";
 import type { IssueKind } from "../generated/prisma/enums.js";
@@ -56,7 +57,16 @@ const heldByOther = () =>
 
 const include = {
   business: { select: { id: true, name: true } },
-  venue: { select: { id: true, name: true, business: { select: { id: true, name: true } } } },
+  venue: {
+    select: {
+      id: true,
+      name: true,
+      business: { select: { id: true, name: true } },
+      // A setup stalls by its date (ADR-0011, 11).
+      onboarding: { select: { setupDate: true } },
+      routers: { select: { lastSeenAt: true, status: true } },
+    },
+  },
   router: { select: { id: true, name: true } },
   holder: { include: { user: { select: { name: true } } } },
   events: { orderBy: { at: "desc" }, take: 1, select: { at: true } },
@@ -476,6 +486,22 @@ export class IssuesService {
     return rows.map(person);
   }
 
+  /**
+   * Held with nothing done for a day; a scheduled setup instead waits for its date, and stalls
+   * only once the date has passed and its router hasn't reached HashiNet (ADR-0011, 11).
+   */
+  private stalled(row: Row, lastActivity: Date): boolean {
+    if (row.holderId === null) return false;
+    const setupDate = row.venue?.onboarding?.setupDate ?? null;
+    if (row.kind === "venue_setup" && setupDate) {
+      const reached = (row.venue?.routers ?? []).some(
+        (r) => r.lastSeenAt !== null || r.status === "online",
+      );
+      return !reached && setupDate.toISOString().slice(0, 10) < businessDayOf(new Date());
+    }
+    return Date.now() - lastActivity.getTime() > DAY_MS;
+  }
+
   private record(staff: Principal, row: Row): IssueRecord {
     const lastActivity = row.events[0]?.at ?? row.openedAt;
     const open = row.status === "open";
@@ -494,7 +520,7 @@ export class IssuesService {
       canTakeOver: open && row.holder !== null && !mine && outranks(staff.role, row.holder.role),
       canRelease: open && mine,
       canNote: open && (mine || row.holderId === null),
-      stalled: open && row.holderId !== null && Date.now() - lastActivity.getTime() > DAY_MS,
+      stalled: open && this.stalled(row, lastActivity),
       openedAt: row.openedAt.toISOString(),
       resolvedAt: row.resolvedAt?.toISOString() ?? null,
     };

@@ -65,9 +65,15 @@ first venue.
 
 ### 4.1 Venues and routers
 
-Admins create venues and add routers to them. Adding a router generates a bootstrap
-script for a freshly reset MikroTik. HashiNet then configures the hotspot automatically and
-safely repeatably, and a readiness checklist shows what is working.
+A venue gets online through two issues in turn (ADR-0013, 2). Its owner says how the router
+should come (Connect their own, Install one HashiNet brings, or Launch with a new internet line too,
+or talk first); HashiNet's admin or a manager calls them, agrees the package line by line (an
+onboarding fee agreed for the business and what the plan brings, all on one bill), records its
+payment and schedules the setup. The setup goes to whoever goes, a platform operator as a rule: they
+add the router, run its bootstrap script on a freshly reset MikroTik, and HashiNet configures the
+hotspot automatically and safely repeatably, with a readiness checklist of what is working. The
+setup closes when the venue's first guest is online. No router is added before its setup is
+scheduled, and no venue serves a guest before its owner has protected their sign-in.
 
 A venue can list sites guests may open before paying, such as its own website.
 
@@ -111,6 +117,12 @@ Owners, managers and operators, on the platform and in each business (ADR-0011).
 several venues sees all of them with a venue switcher; a business sees nothing of another. People
 are invited by email from a Team page, only to roles below the inviter's own. Sensitive actions,
 invitations and role changes are audited.
+
+Everything that needs someone is an issue in its workspace's Issues: a router that stopped serving,
+a venue's package, a venue's setup. Someone claims it (or acting first does), releases it, or hands
+it to a colleague; only someone above the holder takes it over, with a reason; every step is on its
+history. HashiNet's operators see only the issues handed to them. HashiNet's team sees a business's
+owners, managers, venues and its guests as counts, never a device, code or session.
 
 ### 4.7 Selling access: three paths, one mechanism
 

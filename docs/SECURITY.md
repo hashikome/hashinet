@@ -27,6 +27,13 @@ Every route requires a session unless it is declared public; the API's access po
 membership, and every query a venue role can reach is scoped to its venues. Hiding a control in the
 web is never the check.
 
+Within the platform, an operator reaches only what is handed to them: the issues they hold, a
+venue's onboarding and its router's install (add, script, setup, provision) only while they hold an
+open issue there (`IssuesService.handedAt`), and never what a package costs. A business's guests
+reach HashiNet's team only as counts per venue (ADR-0014, 1). An issue moves between people by one
+conditional write, so a claim is exclusive. No venue serves a guest, on the portal's routes, until
+its business's owner has protected their sign-in (`GuestService.routerOf`).
+
 ## Captive portal
 
 The portal is public and reachable before guests authenticate, so it is the most exposed
