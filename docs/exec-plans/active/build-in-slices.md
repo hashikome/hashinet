@@ -379,12 +379,26 @@ Expected result: every check passes. The prototype runs for comparison with
 
 **Production reset, slice 1 only, run with the owner just before its first deploy.** The baseline
 replaces the twelve applied migrations, so `prisma migrate deploy` cannot move the existing
-`hashinet` database forward; its rows are test data, but they include the owner's account and the
-routers' credentials and WireGuard peers. With the owner's explicit go at that time (the 4 November
-approval predates the cutover): take a final backup, drop and recreate the `hashinet` database's
-schema with the migrator role, deploy (the release's migrate stack applies the baseline), run the
+`hashinet` database forward; its rows are an early test deploy's, kept by nobody. With the owner's
+explicit go at that time: take a final backup, drop every object in the `hashinet` database's
+`public` schema (keep the schema: the runtime role's default privileges are attached to it), deploy (the release's migrate stack applies the baseline), run the
 production bootstrap for the platform admin, then set up `chr-test` and any physical router again so
 they regain management. Record each step's time and outcome here.
+
+Slice 1's reset, 13 November 2026 (UTC), with the owner's go:
+- 08:15: final backup, `pg_dump -Fc` of `hashinet` on the server (28 tables); deleted afterwards at
+  the owner's word, as the early test deploy's data is kept by nobody. The daily off-host backups
+  hold it until they age out.
+- 08:18: everything in the `public` schema dropped in one transaction (the early test deploy's
+  tables, rows and types; nothing kept). The schema itself stayed, because the migrator's default
+  privileges that let `hashinet_runtime`, the new API's role, use the tables migrations create are
+  attached to it; dropping it would have left the new release unable to read or write.
+- 08:18: `main` fast-forwarded to `slice-1` (`84422b4`) and pushed; release run 43392223246 passed
+  at 08:24: verify, images, the migration stack applied the five migrations from the baseline, the
+  application stack promoted.
+- 08:28: `platform:bootstrap` in the API container: the admin (admin@hashikome.com, Paul John) and the
+  default packages created; `/api/health/ready` 200.
+- Pending: `chr-test` set up again from the router page, and live acceptance.
 
 ## Validation And Acceptance
 
