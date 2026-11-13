@@ -16,7 +16,7 @@ guest phone ── venue WiFi ── MikroTik hotspot ──► ISP router ─�
                                   │   ▲
            portal redirect        │   │ RouterOS API over a router-initiated tunnel
                                   ▼   │
-admin browser ──► apps/web (Next.js: admin + captive portal)
+dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
                          │
                          ▼
                   apps/api (NestJS on Bun) ──► PostgreSQL 18 (shared platform)
@@ -36,7 +36,7 @@ admin browser ──► apps/web (Next.js: admin + captive portal)
 | `apps/api/src/services`, `routers`, `vouchers` | Router provisioning and dialects, `RouterSync`, `LiveMonitor`, tunnel allocation, voucher expiry and reconciliation |
 | `apps/api/src/observability`, `jobs`, `config` | Telemetry and wide events, interval jobs, validated configuration and secrets |
 | `apps/api/src/serializers` | Database rows to `@hashinet/types` records: the only place Prisma types become API shapes |
-| `apps/web` | Next.js: the admin interface and the captive portal pages |
+| `apps/web` | Next.js: sign-in and invitations, the dashboard (a business's and HashiNet's team's), Account and security, Help, and the captive portal; screens built from `prototypes/hearth-design/prototype/` on its stylesheet (`app/hearth.css`) and building blocks (`components/hearth/`) |
 | `packages/types` | The API's JSON contract, shared by the API and the web |
 | `tooling/router-sim.ts` | A virtual MikroTik, guest and tunnel hub for testing against real RouterOS |
 | `docs/` | Design documents, decisions, plans and runbooks |

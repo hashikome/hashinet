@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- HashiNet is rebuilt as businesses with owners, on the approved Hearth design (slice 1 of
+  `build-in-slices.md`):
+  - HashiNet's admin invites a business by email; its owner gives their details, the business and
+    its first venue, and signs in. The business starts with the platform's default packages.
+  - Sign-in is an email code or a passkey (with the device unlock); owners and HashiNet's team
+    protect their sign-in with an authenticator app or a passkey within their first 7 days.
+    Changing protection asks for proof that lasts 2 hours, and recovery codes are eight easy-to-read
+    codes.
+  - The owner has an Overview of today, Vouchers and Print vouchers (twelve cards to an A4 sheet),
+    Payments, Packages, Account and security, and Help; HashiNet's team has Businesses and each
+    venue's router page.
+  - The captive portal takes the 12-digit code from the voucher, in the venue's colours.
+  - Voucher codes are 12 digits with no prefix (ADR-0008); TSh 500 is the lowest price of a voucher;
+    removing a package stops it selling while its vouchers keep working.
+  - Every action is in the audit log, showing voucher codes included; the first build's admin,
+    staff and team, and the Tailwind and shadcn styling, are removed.
 - PRODUCT.md opens with the problem HashiNet solves, how the platform, businesses, venues, routers and
   guests fit together, every role, and where the product stands today. The platform's top role is
   its admin; a business's is its owner (ADR-0011).

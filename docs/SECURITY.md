@@ -2,29 +2,40 @@
 
 ## Access and authorization
 
-Admins and managers sign in with their email and a one-time code, through Better Auth
-([ADR-0007](engineering-decisions/0007-sign-in-with-better-auth.md)); admins must also use an
-authenticator app, and once anyone has one it is asked for at every sign-in (no trusted
-devices). There is no sign-up: `bun run platform:bootstrap` creates the platform's first admin, and
-an invitation is the only other way in (ADR-0011). A code goes only to someone with an active
-membership and every caller gets the same answer; codes are stored under an HMAC,
-allow five attempts and last ten minutes; requests are limited per client address (resolved
-through `TRUSTED_PROXIES`) and to five codes per person per fifteen minutes. Every route
-requires an active staff session unless it is declared public, and status is checked on each
-request, so a suspension takes effect at once. Only the Better Auth routes HashiNet uses are
-reachable. The API enforces every
-permission: admins manage everything; managers act only on their own venues, and every query
-a manager can reach is scoped to those venues. Hiding a control in the web is never the
-check.
+Everyone signs in with their email and a one-time code, or a passkey, through Better Auth
+([ADR-0007](engineering-decisions/0007-sign-in-with-better-auth.md)). There is no sign-up:
+`bun run platform:bootstrap` creates the platform's first admin, and an invitation is the only
+other way in ([ADR-0011](engineering-decisions/0011-platform-and-business-scopes.md)). A code goes
+only to someone with an active membership and every caller gets the same answer; codes are stored
+under an HMAC, allow five attempts and last ten minutes; requests are limited per client address
+(resolved through `TRUSTED_PROXIES`) and to five codes per person per fifteen minutes. Only the
+Better Auth routes HashiNet uses are reachable.
+
+Protection (ADR-0011, 9): HashiNet's team, owners and managers must protect their sign-in with an
+authenticator app or a passkey; a passkey counts only with user verification. Protection is judged
+by the session: one that signed in with an email code alone reaches only Account and security (an
+owner or manager may get set up for their first 7 days, without anything sellable). Once someone
+has an authenticator it is asked for at every email-code sign-in, and no device is trusted to skip
+it. Changing protection (removing a passkey, new recovery codes, replacing the authenticator) and
+adding to protection someone already has need proof from the last 2 hours: a passkey, an
+authenticator code or a recovery code (`sessions.proved_at`). Registering a factor proves nothing,
+except a person's first protection. Recovery codes are eight `XXXX-XXXX` codes without
+look-alike characters, each working once.
+
+Every route requires a session unless it is declared public; the API's access policy
+(`apps/api/src/access/policy.ts`) decides what each role may do, from the session's active
+membership, and every query a venue role can reach is scoped to its venues. Hiding a control in the
+web is never the check.
 
 ## Captive portal
 
 The portal is public and reachable before guests authenticate, so it is the most exposed
 surface:
 
-- Voucher codes are eight characters from a cryptographic generator (about 39.6 bits), never
+- Voucher codes are 12 digits from a cryptographic generator (about 39.9 bits), never
   `Math.random`, and never travel in a URL query: printing is by batch or voucher id, QR codes
-  and the router's redirects use fragments, which reach no server or log.
+  and the router's redirects use fragments, which reach no server or log. Showing codes to
+  staff is recorded in the audit log.
 - A voucher code is the hotspot username and password. It goes from the portal to the API and
   from the API to the router, never over the WiFi in clear, and no API response carries it
   ([ADR-0008](engineering-decisions/0008-captive-portal.md)).

@@ -1,7 +1,8 @@
 # ADR-0011: Platform and business scopes, with owners, managers and operators
 
 Status: accepted, 3 November 2026; sign-in protection by role settled on 4 November 2026; the platform's
-top role named admin on 11 November 2026. Replaces the admin and manager roles of ADR-0007, which keeps
+top role named admin on 11 November 2026; the 2-hour proof widened to adding a factor on 13 November
+2026. Replaces the admin and manager roles of ADR-0007, which keeps
 sign-in itself.
 
 ## Context
@@ -92,9 +93,12 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    staff reach only Account and security; a business's owner or manager can get set up for 7 days
    (onboarding, packages, portal, team), but no venue starts serving and nothing is sold, and after
    the 7 days only Account and security opens. Setting up the authenticator shows the recovery codes once.
-   Replacing the authenticator or making new recovery codes first asks the person to confirm it's
-   them, with a code from the current authenticator, a recovery code (which is then used up) or a
-   passkey, so an unlocked device can't move the second factor elsewhere.
+   Replacing the authenticator, making new recovery codes, removing a passkey, and adding a passkey
+   or an authenticator for someone already protected first ask the person to confirm it's them, with
+   a code from the current authenticator, a recovery code (which is then used up) or a passkey, so an
+   unlocked device or a stolen session can't move the second factor elsewhere. A confirmation holds
+   for 2 hours, as a sudo mode does; registering a factor is never a confirmation, except a person's
+   first protection.
    A passkey counts only with user verification (the device unlock: fingerprint, face, PIN, or a
    password manager's unlock): it is requested as required when a passkey is created and when it signs
    in, and the API rejects any assertion without the user-verified flag (7 November 2026). Business operators sign in

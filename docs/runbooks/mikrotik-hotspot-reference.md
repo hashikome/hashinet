@@ -557,22 +557,17 @@ users in MikroTik for each voucher you want to test.
 The backend uses the voucher code as both `username` and `password`:
 
 ```routeros
-/ip hotspot user add name=WIFI-XMZET0 password=WIFI-XMZET0
+/ip hotspot user add name=482716936518 password=482716936518
 ```
 
-Replace `WIFI-XMZET0` with the actual active voucher code from your database.
+Replace `482716936518` with an active voucher code (12 digits, no spaces) from your database.
 
-### 8.3 Generate fresh vouchers from the admin panel
+### 8.3 Print fresh vouchers
 
-1. Open `http://localhost:3006/admin/vouchers` in the browser
-2. Click "Generate Vouchers"
-3. Select a package and quantity
-4. Note the generated codes
-5. Add each code to MikroTik: `/ip hotspot user add name=<CODE> password=<CODE>`
-
-> **Phase 2 goal:** The RouterOS API integration will automate step 5 — when the
-> portal validates a voucher, the backend will call MikroTik's API to create the user
-> automatically. See §11.
+1. Open `http://localhost:3006/vouchers/print`, signed in as the business's owner
+2. Choose the package and how many, then print
+3. HashiNet pushes each code to the venue's routers; a router that missed the push gets the code
+   when a guest redeems it (§11)
 
 ---
 
@@ -963,7 +958,7 @@ retry-without-optional-params fallback cannot strip it.
 To read the state of a router:
 
 ```routeros
-/ip hotspot user print detail where name~"^WIFI-"     # which profile each voucher is on
+/ip hotspot user print detail where name~"^[0-9]{12}\$" # which profile each voucher is on
 /ip hotspot user profile print                        # what each profile actually caps
 ```
 

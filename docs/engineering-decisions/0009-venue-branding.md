@@ -18,7 +18,7 @@ another address.
    venue's brand (`venue_brands`: colours, background, wording, an optional logo) themes its captive
    portal, edited by the owner or a manager of that venue. A guest sees the venue's logo, else the
    business's, else HashiFi's default in `portal_settings`, which the platform admin edits. Printed
-   cards and new voucher prefixes follow the voucher's venue.
+   cards follow the voucher's venue; voucher codes have no prefix (ADR-0008).
 2. **The admin stays HashiFi's.** A business changes no colours or layout in the admin, so every
    business gets the same readable screens and support can describe them; the portal's foot and
    the admin sidebar's foot keep a small HashiFi credit.
@@ -40,7 +40,7 @@ another address.
 
 `brand.integration.test.ts`: the default and its fallback, per-venue saves, re-encoding with
 transparency kept and metadata gone, replacement, refused uploads, manager scope, public route
-names, prefix and guest context. `brand-store.test.ts` checks the R2 store's signed requests
+names and guest context. `brand-store.test.ts` checks the R2 store's signed requests
 against a local S3-style server. Walked in a browser: upload, preview, guest page, printed card.
 
 Against the real `hashifi` bucket on 31 October, with a key limited to it: an upload through the
