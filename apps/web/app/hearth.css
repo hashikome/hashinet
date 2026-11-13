@@ -2204,9 +2204,25 @@ pre.csv {
 .todo li:last-child {
   border-bottom: 0;
 }
-/* A step counts itself, not the lists inside it (a setup's phases). */
+/* A step counts itself; the lists inside it (a setup's phases) are dots, without numbers or the
+   line that joins the steps. */
 .todo li li {
   counter-increment: none;
+  padding-left: 22px;
+}
+.todo li li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  left: 4px;
+  top: calc(50% - 3px);
+  border-radius: 50%;
+  background: var(--muted-fg);
+  box-shadow: none;
+}
+.todo li li::after,
+.checklist li li:not(:last-child)::after {
+  content: none;
 }
 .todo li::before {
   content: counter(step);
