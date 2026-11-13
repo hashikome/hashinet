@@ -12,8 +12,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { z } from "zod";
-import type { Principal } from "../access/principal.js";
 import { ownerProtected } from "../access/owner-protected.js";
+import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { businessDayOf } from "../analytics/business-day.js";
 import { AuditLog } from "../audit/audit-log.js";
@@ -333,12 +333,8 @@ export class OnboardingService {
             where: {
               scope: "platform",
               status: "open",
-              key: {
-                in:
-                  staff.role === "operator"
-                    ? [setupKey(venue.id)]
-                    : [packageKey(venue.id), setupKey(venue.id)],
-              },
+              key: { in: [packageKey(venue.id), setupKey(venue.id)] },
+              ...(staff.role === "operator" ? { holderId: staff.membershipId } : {}),
             },
             select: { id: true },
           })

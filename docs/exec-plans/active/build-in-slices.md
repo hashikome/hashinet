@@ -170,13 +170,8 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
 ## Surprises & Discoveries
 
 - Observation: the API has no signal for "installed at the venue" apart from the router reaching
-  HashiNet, which an office setup also does, so the setup issue's steps are add the router (it
-  reaches HashiNet), set it up (it serves) and the first guest; the prototype's separate install
-  step has nothing to tick it. Open for the owner: ADR-0013 gives the setup issue to the whole team,
-  operators included, but adding and setting up a router is `router.manage`, the admin's and
-  managers' only (ADR-0011, 2: operators help with setup). Until decided, operators hold and log a
-  setup, and an admin or manager adds the router.
-
+  HashiNet, which an office setup also does. The owner settled it: where the setup happens makes no
+  difference, so a setup's steps are add the router, set it up, and the first guest.
 - Observation: Better Auth runs its `after` hooks for failed calls too, with the error as the result,
   so the first-enrollment upgrade in (c) turned an email-code session into an "authenticator" one on
   a wrong code: a way past the protection rule.
@@ -200,6 +195,14 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   Evidence: `better-auth/dist/plugins/two-factor/backup-codes`.
 
 ## Decision Log
+
+- Decision: platform operators are the technicians who install routers at venues. They see only
+  the issues handed to them, never an unhandled one or a venue's package; a handed setup is their
+  pass to add its router and run its script and setup (`router.install`, checked against the
+  issue). Editing and removing routers stay with the admin and managers (`router.manage`). Release
+  and Hand to answer 204, as the issue may leave the reader's sight.
+  Rationale: the admin and managers do everything that belongs to them and hand the rollout over.
+  Date/Author: 2026-11-13 / owner.
 
 - Decision: in slice 3, a venue's package changes only until it is paid or its setup scheduled; a
   payment is recorded once, in full (ADR-0013, 6). Rationale: payments by hand have no ledger to

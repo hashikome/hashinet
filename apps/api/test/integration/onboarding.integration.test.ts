@@ -170,6 +170,7 @@ describe("Onboarding a venue", () => {
       ["step", "Asha", { step: "scheduled", date: businessDayOf(new Date()) }],
       ["resolved", null, { reason: "scheduled" }],
     ]);
+    // Handed to Hamisi, it is his to see: his pass to install.
     const setup = (await hamisi.request("GET", "/api/issues")).body as IssueList;
     expect(setup.issues).toMatchObject([
       { kind: "venue_setup", mine: true, holder: { membershipId: operator.membershipId } },
@@ -177,7 +178,24 @@ describe("Onboarding a venue", () => {
     expect((await onboarding(hamisi, venueId)).issueId).toBe(setup.issues[0]?.id ?? "");
     expect(manager.membershipId).not.toBe(operator.membershipId);
 
-    // The router is added, reaches HashiNet and serves; the first guest closes the setup.
+    // Hamisi adds the router at the venue handed to him, and nowhere else.
+    const otherVenue = await newVenue(admin);
+    await t.db.venueOnboarding.update({
+      where: { venueId: otherVenue },
+      data: { setupDate: new Date() },
+    });
+    const ROUTER = { name: "Baraka's Cafe", ipAddress: "192.168.88.3", apiUsername: "hashinet" };
+    expect(
+      (await hamisi.request("POST", "/api/routers", { ...ROUTER, venueId: otherVenue })).status,
+    ).toBe(403);
+    const added = await hamisi.request("POST", "/api/routers", { ...ROUTER, venueId });
+    expect(added.status).toBe(201);
+    const addedId = (added.body as { router: { id: string } }).router.id;
+    // Editing and removing a router stay with the admin and managers.
+    expect((await hamisi.request("DELETE", `/api/routers/${addedId}`)).status).toBe(403);
+    await t.db.router.delete({ where: { id: addedId } });
+
+    // The router reaches HashiNet and serves; the first guest closes the setup.
     const router = await t.db.router.create({
       data: {
         venueId,

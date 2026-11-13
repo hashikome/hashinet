@@ -37,23 +37,20 @@ export class IssuesController {
   }
 
   @Post(":id/release")
-  @HttpCode(200)
+  @HttpCode(204)
   @Can("issue.work")
-  release(
-    @CurrentPrincipal() staff: Principal,
-    @Param("id", idParam()) id: string,
-  ): Promise<IssueDetail> {
+  release(@CurrentPrincipal() staff: Principal, @Param("id", idParam()) id: string): Promise<void> {
     return this.issues.release(staff, id);
   }
 
   @Post(":id/hand")
-  @HttpCode(200)
+  @HttpCode(204)
   @Can("issue.work")
   hand(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Body() body: unknown,
-  ): Promise<IssueDetail> {
+  ): Promise<void> {
     return this.issues.hand(staff, id, parseInput(handInput, body));
   }
 

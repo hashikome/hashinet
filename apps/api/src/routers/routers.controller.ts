@@ -65,7 +65,7 @@ export class RoutersController {
   }
 
   @Post()
-  @Can("router.manage")
+  @Can("router.install")
   async create(
     @CurrentPrincipal() staff: Principal,
     @Body() body: unknown,
@@ -96,7 +96,7 @@ export class RoutersController {
   }
 
   @Post(":id/sync")
-  @Can("router.manage")
+  @Can("router.install")
   @HttpCode(200)
   async sync(
     @CurrentPrincipal() staff: Principal,
@@ -107,7 +107,7 @@ export class RoutersController {
 
   /** Carries the router's API password, so no cache may keep it. */
   @Post(":id/bootstrap-script")
-  @Can("router.manage")
+  @Can("router.install")
   @HttpCode(200)
   @Header("Cache-Control", "no-store")
   bootstrapScript(
@@ -137,7 +137,7 @@ export class RoutersController {
   }
 
   @Post(":id/setup")
-  @Can("router.manage")
+  @Can("router.install")
   @HttpCode(202)
   setup(
     @CurrentPrincipal() staff: Principal,
@@ -154,7 +154,7 @@ export class RoutersController {
   }
 
   @Post(":id/provision")
-  @Can("router.manage")
+  @Can("router.install")
   @HttpCode(200)
   provision(
     @CurrentPrincipal() staff: Principal,

@@ -21,6 +21,9 @@ export const POLICY = {
   "router.read": [...PLATFORM_ALL, ...BUSINESS_ALL],
   "router.check": PLATFORM_ALL,
   "router.manage": PLATFORM_STAFF,
+  // Installing: adding a router, its script and its setup. An operator does it only for a venue's
+  // setup handed to them (`routers.service`'s `checkInstall`).
+  "router.install": PLATFORM_ALL,
   // Packages: business-wide prices are the owner's alone (ADR-0011, 3).
   "package.read": [...PLATFORM_ALL, ...BUSINESS_ALL],
   "package.manage": ["owner"],

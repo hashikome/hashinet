@@ -10,12 +10,12 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import type { z } from "zod";
+import { ownerProtected } from "../access/owner-protected.js";
 import { BrandService } from "../brand/brand.service.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Router, Voucher } from "../generated/prisma/client.js";
-import { ownerProtected } from "../access/owner-protected.js";
 import { apiError } from "../http/error-envelope.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";

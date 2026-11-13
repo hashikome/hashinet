@@ -140,10 +140,15 @@ describe("Issues", () => {
       (await v.request("POST", `/api/issues/${id}/hand`, { to: atBar.membershipId })).status,
     ).toBe(400);
 
-    const handed = (
-      await v.request("POST", `/api/issues/${id}/hand`, { to: manager.membershipId, note: "Yours" })
-    ).body as IssueDetail;
-    expect(handed.issue.holder?.membershipId).toBe(manager.membershipId);
+    expect(
+      (
+        await v.request("POST", `/api/issues/${id}/hand`, {
+          to: manager.membershipId,
+          note: "Yours",
+        })
+      ).status,
+    ).toBe(204);
+    expect((await issues(m)).issues[0]?.holder?.membershipId).toBe(manager.membershipId);
     // A venue manager is below a business manager: no take-over.
     expect((await issues(v)).issues[0]).toMatchObject({ mine: false, canTakeOver: false });
     expect(
@@ -159,7 +164,8 @@ describe("Issues", () => {
     ).body as IssueDetail;
     expect(taken.issue.holder?.membershipId).toBe(owner.membershipId);
     expect((await m.request("POST", `/api/issues/${id}/release`)).status).toBe(403);
-    const released = (await o.request("POST", `/api/issues/${id}/release`)).body as IssueDetail;
+    expect((await o.request("POST", `/api/issues/${id}/release`)).status).toBe(204);
+    const released = (await o.request("GET", `/api/issues/${id}`)).body as IssueDetail;
     expect(released.issue).toMatchObject({ holder: null, canClaim: true });
 
     expect(
@@ -211,7 +217,7 @@ describe("Issues", () => {
     expect((await issues(admin)).openCount).toBe(0);
     expect((await admin.request("GET", `/api/issues/${id}`)).status).toBe(404);
   });
-  test("a venue's package is for the platform's admin and managers; its operators don't see it", async () => {
+  test("a platform operator sees only what is handed to them, and never a venue's package", async () => {
     await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const op = await platformMember(t.db, {
       email: "op@example.com",
@@ -236,14 +242,28 @@ describe("Issues", () => {
     });
     const admin = await signedIn("admin@example.com");
     const operator = await signedIn(op.email);
-    expect((await issues(operator)).issues.map((i) => i.id)).toEqual([setup]);
-    expect((await operator.request("POST", `/api/issues/${pkg}/claim`)).status).toBe(404);
-    const detail = (await admin.request("GET", `/api/issues/${pkg}`)).body as IssueDetail;
-    expect(detail.handTo).toEqual([]);
+    expect((await issues(operator)).openCount).toBe(0);
+    expect((await operator.request("POST", `/api/issues/${setup}/claim`)).status).toBe(404);
+
+    // The package can't be handed to an operator; the setup can, as their pass to go ahead.
+    expect(((await admin.request("GET", `/api/issues/${pkg}`)).body as IssueDetail).handTo).toEqual(
+      [],
+    );
     expect(
       (await admin.request("POST", `/api/issues/${pkg}/hand`, { to: op.membershipId })).status,
     ).toBe(400);
-    const setupDetail = (await admin.request("GET", `/api/issues/${setup}`)).body as IssueDetail;
-    expect(setupDetail.handTo.map((p) => p.membershipId)).toEqual([op.membershipId]);
+    expect(
+      ((await admin.request("GET", `/api/issues/${setup}`)).body as IssueDetail).handTo.map(
+        (p) => p.membershipId,
+      ),
+    ).toEqual([op.membershipId]);
+    expect(
+      (await admin.request("POST", `/api/issues/${setup}/hand`, { to: op.membershipId })).status,
+    ).toBe(204);
+    expect((await issues(operator)).issues).toMatchObject([{ id: setup, mine: true }]);
+
+    // Given back, it leaves their sight.
+    expect((await operator.request("POST", `/api/issues/${setup}/release`)).status).toBe(204);
+    expect((await issues(operator)).openCount).toBe(0);
   });
 });

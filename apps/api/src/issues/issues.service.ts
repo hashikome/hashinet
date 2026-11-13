@@ -25,8 +25,8 @@ import { conditionOf, routerJourney, type StoredSetup } from "../routers/router-
 
 const DAY_MS = 86_400_000;
 
-/** Who in the platform works on each kind: a venue's package is for its admin and managers only
- * (ADR-0013, 2); everything else is for the whole team. */
+/** The kinds an issue can be handed to a platform operator in: a venue's package is for the
+ * admin and managers only (ADR-0013, 2). */
 const PLATFORM_KINDS_FOR_OPERATORS: IssueKind[] = ["router_offline", "venue_setup"];
 
 type Db = Prisma.TransactionClient;
@@ -119,15 +119,15 @@ export class IssuesService {
     return this.detail(staff, id);
   }
 
-  async release(staff: Principal, id: string): Promise<IssueDetail> {
+  /** Gives the issue back; it may leave the reader's sight (an operator's), so it answers nothing. */
+  async release(staff: Principal, id: string): Promise<void> {
     const row = await this.openRow(staff, id);
     if (row.holderId !== staff.membershipId) throw heldByOther();
     await this.act(staff, id, { holderId: null }, "released");
-    return this.detail(staff, id);
   }
 
   /** The holder, or anyone while nobody holds it, hands it to someone else in the workspace. */
-  async hand(staff: Principal, id: string, input: z.infer<typeof handInput>): Promise<IssueDetail> {
+  async hand(staff: Principal, id: string, input: z.infer<typeof handInput>): Promise<void> {
     const row = await this.openRow(staff, id);
     if (row.holderId !== null && row.holderId !== staff.membershipId) throw heldByOther();
     const people = await this.workspacePeople(staff, row.kind, row.venueId);
@@ -139,7 +139,6 @@ export class IssuesService {
       );
     }
     await this.act(staff, id, { holderId: input.to }, "handed", input.note, input.to);
-    return this.detail(staff, id);
   }
 
   /** Someone above the holder takes it over, with a reason the holder sees. */
@@ -275,8 +274,10 @@ export class IssuesService {
   /** The reader's workspace: the platform's issues, or their business's within their venues. */
   private inReach(staff: Principal): Prisma.IssueWhereInput {
     if (staff.scope === "platform") {
+      // Operators are the technicians who go to venues: they see an issue once it is handed to
+      // them, as a pass to go ahead with it.
       return staff.role === "operator"
-        ? { scope: "platform", kind: { in: PLATFORM_KINDS_FOR_OPERATORS } }
+        ? { scope: "platform", holderId: staff.membershipId }
         : { scope: "platform" };
     }
     return {
