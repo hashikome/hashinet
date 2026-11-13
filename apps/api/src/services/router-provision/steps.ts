@@ -14,7 +14,13 @@
 import { RouterError, RouterUnsupportedError } from "../mikrotik-errors.js";
 import type { ProvisionContext } from "./context.js";
 import type { RadioDialect } from "./dialect.js";
-import { PORTAL_FILES, renderPortalFile, routerPathFor } from "./portal-files.js";
+import {
+  PORTAL_FILES,
+  PORTAL_MARK_PREFIX,
+  portalMark,
+  renderPortalFile,
+  routerPathFor,
+} from "./portal-files.js";
 import { type RosClient, type RosRow, rowId, tagFor } from "./ros-client.js";
 
 /** The board's radio dialect. Radio steps apply only to boards that have one. */
@@ -750,7 +756,9 @@ const portalFiles: ProvisionStep = {
       const rendered = await renderPortalFile(name, ctx.endpoints.portal.origin, ctx.router.id);
       if (Number(row.get("size") ?? 0) !== Buffer.byteLength(rendered, "utf8")) return false;
     }
-    return true;
+    // The same size can be another router's pages: the mark says they are this router's.
+    const mark = await portalMark(ctx.endpoints.portal.origin, ctx.router.id);
+    return (await ros.print("/file", [`?name=${mark}`])).length > 0;
   },
   async apply({ ros, ctx }) {
     for (const name of PORTAL_FILES) {
@@ -780,6 +788,16 @@ const portalFiles: ProvisionStep = {
         `=dst-path=${path}`,
         "=mode=http",
       ]);
+    }
+    // Mark these pages as this router's, replacing an earlier install's mark.
+    const mark = await portalMark(ctx.endpoints.portal.origin, ctx.router.id);
+    for (const row of await ros.print("/file")) {
+      const name = row.get("name") ?? "";
+      if (name.startsWith(PORTAL_MARK_PREFIX) && name !== mark)
+        await ros.remove("/file", rowId(row));
+    }
+    if ((await ros.print("/file", [`?name=${mark}`])).length === 0) {
+      await ros.add("/file", [`=name=${mark}`, "=contents=HashiNet portal pages"]);
     }
   },
 };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { PORTAL_FILES, renderPortalFile, routerPathFor } from "./portal-files.js";
+import { PORTAL_FILES, portalMark, renderPortalFile, routerPathFor } from "./portal-files.js";
 
 /**
  * The hotspot pages are the only code in this system that runs on a customer's phone, served by the
@@ -108,5 +108,15 @@ describe("status.html", () => {
     // reference on a device with no internet until it logs in.
     expect(html).not.toMatch(/<link[^>]+stylesheet/i);
     expect(html).not.toMatch(/<script[^>]+src=/i);
+  });
+});
+
+describe("the mark", () => {
+  test("differs per router and per portal, so another router's pages never pass", async () => {
+    const one = await portalMark("https://hashinet.example", "router-1");
+    expect(one).toMatch(/^hotspot\/hashinet-pages-[0-9a-f]{16}\.txt$/);
+    expect(await portalMark("https://hashinet.example", "router-1")).toBe(one);
+    expect(await portalMark("https://hashinet.example", "router-2")).not.toBe(one);
+    expect(await portalMark("https://other.example", "router-1")).not.toBe(one);
   });
 });

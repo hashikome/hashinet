@@ -2204,6 +2204,10 @@ pre.csv {
 .todo li:last-child {
   border-bottom: 0;
 }
+/* A step counts itself, not the lists inside it (a setup's phases). */
+.todo li li {
+  counter-increment: none;
+}
 .todo li::before {
   content: counter(step);
   position: absolute;

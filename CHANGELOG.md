@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Set up replaces a router's portal pages left over from an earlier install, such as a router reset
+  and reused, which pointed guests at the old router. It marks the pages it installs with a file
+  named by their hash, which Set up and Health check, since a stale page has the same size. Steps on
+  the router page are numbered 1, 2, 3 again.
 - A router's page names the port its hotspot runs on (its WiFi, or a port such as `ether2` on a board
   without WiFi), changeable before Set up, and the setup script asks for the ISP router's address
   instead of assuming the network's first one.

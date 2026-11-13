@@ -8,6 +8,7 @@
  * on the way to the router.
  */
 
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,4 +50,21 @@ export async function renderPortalFile(
 /** Path on the router — RouterOS serves the hotspot pages from `hotspot/`. */
 export function routerPathFor(name: PortalFileName): string {
   return `hotspot/${name}`;
+}
+
+/** Every page set's mark starts so; an older install's mark is replaced. */
+export const PORTAL_MARK_PREFIX = "hotspot/hashinet-pages-";
+
+/**
+ * The mark Set up leaves beside the pages: a file named by a hash of exactly what was installed,
+ * the router's id and the portal's address included. RouterOS's API returns no contents for a
+ * file this large, and a page installed for another router has the same size, so the mark is how
+ * a check tells this router's pages from a stale copy.
+ */
+export async function portalMark(portalOrigin: string, routerId: string): Promise<string> {
+  const pages = await Promise.all(
+    PORTAL_FILES.map((name) => renderPortalFile(name, portalOrigin, routerId)),
+  );
+  const hash = createHash("sha256").update(pages.join("\0")).digest("hex").slice(0, 16);
+  return `${PORTAL_MARK_PREFIX}${hash}.txt`;
 }

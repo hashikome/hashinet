@@ -28,7 +28,7 @@ import type { RouterLogger } from "../router-log.js";
 import type { BackendEndpoints, HotspotPlan } from "./context.js";
 import type { Dialect } from "./dialect.js";
 import { hotspotUserParams } from "./dialect.js";
-import { PORTAL_FILES, renderPortalFile, routerPathFor } from "./portal-files.js";
+import { PORTAL_FILES, portalMark, renderPortalFile, routerPathFor } from "./portal-files.js";
 import type { RouterCapabilities } from "./probe.js";
 // Same check/report shape as readiness.ts on purpose: one frontend component renders both.
 import type { ReadinessCheck, ReadinessStatus } from "./readiness.js";
@@ -295,6 +295,12 @@ async function portalFilesCheck(
     const actual = Number(row.get("size") ?? 0);
     if (actual !== expected) wrong.push(`${name} is ${actual} bytes, expected ${expected}`);
   }
+  if (wrong.length === 0) {
+    const mark = await portalMark(portalOrigin, routerId);
+    if ((await ros.print("/file", [`?name=${mark}`])).length === 0) {
+      wrong.push("the pages are not this router's own install (no mark for this router)");
+    }
+  }
 
   if (wrong.length > 0) {
     return {
@@ -311,7 +317,7 @@ async function portalFilesCheck(
   return {
     ...base,
     status: "pass",
-    detail: `${PORTAL_FILES.length} pages present at the expected byte length.`,
+    detail: `${PORTAL_FILES.length} pages present, installed for this router.`,
   };
 }
 
