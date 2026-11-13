@@ -11,6 +11,7 @@ import { AuditLog } from "../audit/audit-log.js";
 import { BrandService } from "../brand/brand.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
+import { OnboardingService } from "../onboarding/onboarding.service.js";
 import { venueRecord } from "../serializers/records.js";
 import type { VenueInput } from "./venue-input.js";
 
@@ -23,6 +24,7 @@ export class VenuesService {
     private readonly db: PrismaService,
     private readonly audit: AuditLog,
     private readonly brand: BrandService,
+    private readonly onboarding: OnboardingService,
   ) {}
 
   /** Newest first, each with its number of routers. */
@@ -56,8 +58,17 @@ export class VenuesService {
     }
     const business = await this.db.business.findUnique({ where: { id: businessId } });
     if (!business) throw venueNotFound();
-    const row = await this.db.venue.create({ data: { ...fields, businessId } });
-    await this.record(staff, "venue.create", row.id);
+    // Every venue starts at its package: no router comes without an issue behind it (ADR-0013, 1).
+    const row = await this.db.$transaction(async (tx) => {
+      const created = await tx.venue.create({ data: { ...fields, businessId } });
+      await this.onboarding.begin(created.id, tx);
+      await this.audit.record(
+        staff,
+        { action: "venue.create", target: { type: "venue", id: created.id } },
+        tx,
+      );
+      return created;
+    });
     return venueRecord(row, 0);
   }
 

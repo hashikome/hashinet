@@ -457,6 +457,7 @@ model Venue {
   routers        Router[]
   issues         Issue[]
   packages       VenuePackage[]
+  onboarding     VenueOnboarding?
   brand          VenueBrand?
   voucherBatches VoucherBatch[]
   vouchers       Voucher[]
@@ -1007,8 +1008,10 @@ model IssueEvent {
   action   IssueAction
   /// Who it was handed to.
   toId     String?     @map("to_id") @db.Uuid
-  /// A step's name, a reason or a note, one line.
+  /// A reason or a note a person wrote, one line.
   note     String?     @db.VarChar(500)
+  /// What a step or a resolution was, as bounded facts the web words (`IssueEventData`).
+  data     Json?
 
   issue Issue       @relation(fields: [issueId], references: [id], onDelete: Cascade)
   actor Membership? @relation("IssueActor", fields: [actorId], references: [id], onDelete: SetNull)
@@ -1016,4 +1019,52 @@ model IssueEvent {
 
   @@index([issueId, at])
   @@map("issue_events")
+}
+
+/// How a venue's router comes (ADR-0013, 2): connect its own, install one, or launch with a line.
+enum OnboardingPlan {
+  connect
+  install
+  launch
+
+  @@map("onboarding_plan")
+}
+
+/// How a by-hand payment for a venue's package arrived, until slice 4's invoices replace it.
+enum OnboardingPaidBy {
+  cash
+  mobile_money
+  bank_transfer
+
+  @@map("onboarding_paid_by")
+}
+
+/// A venue's way to serving guests (ADR-0013, 2): the owner's preference, the package the team
+/// agreed on the call, its payment, the setup date, and when the first guest got online. The
+/// issues it moves through keep who did each step.
+model VenueOnboarding {
+  venueId       String            @id @map("venue_id") @db.Uuid
+  /// When the owner chose; with no plan, they asked to talk first. Null: not asked yet.
+  preferredAt   DateTime?         @map("preferred_at") @db.Timestamptz(3)
+  preference    OnboardingPlan?
+  /// What the team agreed on the call.
+  plan          OnboardingPlan?
+  /// The router that fits, agreed on the call; null for Connect (the venue's own).
+  routerModel   String?           @map("router_model") @db.VarChar(120)
+  /// Router and onboarding together; 0 when there is nothing to charge.
+  priceTsh      Int?              @map("price_tsh")
+  note          String?           @db.VarChar(1000)
+  confirmedAt   DateTime?         @map("confirmed_at") @db.Timestamptz(3)
+  paidAt        DateTime?         @map("paid_at") @db.Timestamptz(3)
+  paidAmountTsh Int?              @map("paid_amount_tsh")
+  paidBy        OnboardingPaidBy? @map("paid_by")
+  setupDate     DateTime?         @map("setup_date") @db.Date
+  /// The first guest got online: the venue is set up.
+  completedAt   DateTime?         @map("completed_at") @db.Timestamptz(3)
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@map("venue_onboardings")
 }

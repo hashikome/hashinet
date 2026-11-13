@@ -107,6 +107,15 @@ describe("accepting an invitation to start a business", () => {
     const business = await t.db.business.findFirstOrThrow({ include: { venues: true } });
     expect(business).toMatchObject({ name: "Bahari Beach Bar", region: "Dar es Salaam" });
     expect(business.venues).toHaveLength(1);
+    // Its venue starts at its package, an issue for HashiNet's team (ADR-0013, 2).
+    const venueId = business.venues[0]?.id ?? "";
+    expect(await t.db.venueOnboarding.findUnique({ where: { venueId } })).toMatchObject({
+      preferredAt: null,
+      confirmedAt: null,
+    });
+    expect(
+      await t.db.issue.findFirst({ where: { key: `venue-package:${venueId}`, status: "open" } }),
+    ).toMatchObject({ scope: "platform", kind: "venue_package", venueId });
     const packages = await t.db.package.findMany({
       where: { businessId: business.id },
       include: { venues: true },

@@ -14,6 +14,7 @@ import { PrismaService } from "../database/prisma.service.js";
 import { EMAIL_SENDER, type EmailSender } from "../email/email-sender.js";
 import { apiError } from "../http/error-envelope.js";
 import { captureFailure } from "../observability/telemetry.js";
+import { OnboardingService } from "../onboarding/onboarding.service.js";
 import { normalizeTzPhone } from "../utils/phone.js";
 import { businessInvitationEmail } from "./invitation-emails.js";
 import { digestOf, INVITATION_HOURS, newInvitationToken } from "./invitation-token.js";
@@ -73,6 +74,7 @@ export class InvitationsService {
     private readonly audit: AuditLog,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(EMAIL_SENDER) private readonly email: EmailSender,
+    private readonly onboarding: OnboardingService,
   ) {}
 
   /** The pending invitations to start a business, newest first. */
@@ -270,6 +272,7 @@ export class InvitationsService {
       });
       const venue = business.venues[0];
       if (!venue) throw new ConflictException(apiError("CONFLICT", "The venue was not created."));
+      await this.onboarding.begin(venue.id, tx);
 
       // A new business starts with the platform's default packages, sold at its first venue
       // (ADR-0011, 10); a later change to the defaults never reaches it.

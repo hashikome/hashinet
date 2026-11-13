@@ -61,6 +61,11 @@ export const POLICY = {
   "issue.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
   "issue.work": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
   "team.manage": PLATFORM_STAFF,
+  // A venue's way to serving guests (ADR-0013, 2): its owner says how the router should come;
+  // HashiNet's admin and managers agree the package, record its payment and schedule the setup.
+  "onboarding.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
+  "onboarding.prefer": WHOLE_BUSINESS,
+  "onboarding.manage": PLATFORM_STAFF,
   // The audit log: everyone but operators (ADR-0012).
   "audit.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
 } as const satisfies Record<string, readonly MembershipRole[]>;

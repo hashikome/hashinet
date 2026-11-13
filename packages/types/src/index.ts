@@ -209,6 +209,9 @@ export type IssueAction =
   | "step"
   | "resolved";
 
+/** What a step or a resolution was, as bounded facts the web words. */
+export type IssueEventData = Record<string, string | number | boolean | null>;
+
 /** A person an issue can be handed to, or who holds it. */
 export interface IssuePerson {
   membershipId: string;
@@ -260,8 +263,64 @@ export interface IssueDetail {
     action: IssueAction;
     to: IssuePerson | null;
     note: string | null;
+    data: IssueEventData | null;
   }[];
   handTo: IssuePerson[];
+}
+
+/** How a venue's router comes (ADR-0013, 2): connect its own, install one, launch with a line. */
+export const ONBOARDING_PLANS = ["connect", "install", "launch"] as const;
+export type OnboardingPlan = (typeof ONBOARDING_PLANS)[number];
+/** How a by-hand payment for a venue's package arrived (until slice 4's invoices). */
+export const ONBOARDING_PAID_BY = ["cash", "mobile_money", "bank_transfer"] as const;
+export type OnboardingPaidBy = (typeof ONBOARDING_PAID_BY)[number];
+/** A package's charge is due this many days after it is confirmed (ADR-0013, 2). */
+export const ONBOARDING_DUE_DAYS = 7;
+
+/**
+ * Where a venue is on its way to serving guests, decided by the API: the owner chooses how the
+ * router comes, the team confirms the package, it is paid (when there is a charge), the setup is
+ * scheduled, the router is added and reaches HashiNet, it is set up and serves, and the first
+ * guest gets online.
+ */
+export type OnboardingStage =
+  | "choose"
+  | "confirm"
+  | "pay"
+  | "schedule"
+  | "add-router"
+  | "set-up"
+  | "first-guest"
+  | "done";
+
+/** `GET /api/venues/:id/onboarding`. */
+export interface VenueOnboarding {
+  venue: { id: string; name: string };
+  business: { id: string; name: string };
+  stage: OnboardingStage;
+  /** Null: not asked yet. A null plan: the owner asked to talk first. */
+  preference: { plan: OnboardingPlan | null; at: Timestamp } | null;
+  agreed: {
+    plan: OnboardingPlan;
+    /** Null for Connect: the venue's own router. */
+    routerModel: string | null;
+    /** Router and onboarding together; 0 when there is nothing to charge. */
+    priceTsh: number;
+    note: string | null;
+    confirmedAt: Timestamp;
+    /** The business day the charge is due; null when there is nothing to charge. */
+    dueOn: string | null;
+  } | null;
+  paid: { amountTsh: number; by: OnboardingPaidBy; at: Timestamp } | null;
+  /** The agreed setup day, YYYY-MM-DD. */
+  setupDate: string | null;
+  completedAt: Timestamp | null;
+  /** The business's owner has an authenticator or a passkey: the venue may serve. */
+  ownerProtected: boolean;
+  /** The package may still change: no router is added yet. */
+  changeable: boolean;
+  /** The open package or setup issue, for HashiNet's team; null for a business. */
+  issueId: string | null;
 }
 
 /** How the dashboard looks; `system` follows the device. */
@@ -763,6 +822,10 @@ export const AUDIT_ACTIONS = [
   "invitation.revoke",
   "invitation.accept",
   "business.create",
+  "onboarding.prefer",
+  "onboarding.confirm",
+  "onboarding.pay",
+  "onboarding.schedule",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 export type AuditCategory = "change" | "read" | "auth";

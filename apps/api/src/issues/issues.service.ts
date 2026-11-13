@@ -1,6 +1,7 @@
 import type {
   IssueAction,
   IssueDetail,
+  IssueEventData,
   IssueList,
   IssuePerson,
   IssueRecord,
@@ -91,7 +92,7 @@ export class IssuesService {
           actor: { include: { user: { select: { name: true } } } },
           to: { include: { user: { select: { name: true } } } },
         },
-        orderBy: { at: "asc" },
+        orderBy: [{ at: "asc" }, { id: "asc" }],
       }),
       this.workspacePeople(staff, row.kind, row.venueId),
     ]);
@@ -103,6 +104,7 @@ export class IssuesService {
         action: e.action as IssueAction,
         to: e.to ? person(e.to) : null,
         note: e.note,
+        data: (e.data ?? null) as IssueEventData | null,
       })),
       handTo:
         row.status === "open" ? people.filter((p) => p.membershipId !== staff.membershipId) : [],
@@ -207,7 +209,7 @@ export class IssuesService {
             routerId: r.id,
           });
         } else {
-          await this.resolve(workspace, key, "It serves again");
+          await this.resolve(workspace, key, { reason: "serving" });
         }
       }
     }
@@ -248,11 +250,11 @@ export class IssuesService {
     return created.id;
   }
 
-  /** Resolves the open issue for a key in a workspace, if there is one, with how it ended. */
+  /** Resolves the open issue for a key in a workspace, if there is one, with why it ended. */
   async resolve(
     workspace: { scope: "platform" | "business"; businessId: string | null },
     key: string,
-    how: string,
+    why: IssueEventData,
     db: Db = this.db,
   ): Promise<void> {
     const found = await db.issue.findFirst({
@@ -265,7 +267,7 @@ export class IssuesService {
       data: {
         status: "resolved",
         resolvedAt: new Date(),
-        events: { create: { action: "resolved", note: how } },
+        events: { create: { action: "resolved", data: why } },
       },
     });
   }
@@ -298,6 +300,42 @@ export class IssuesService {
       throw new ConflictException(apiError("CONFLICT", "This issue is resolved."));
     }
     return row;
+  }
+
+  /**
+   * A step of the journey an open platform issue belongs to, on its log. The holder takes steps;
+   * taking one claims an issue nobody holds. `anyone` lets the step through whoever holds it, as
+   * recording a payment is (ADR-0013, 2). Returns the issue's id.
+   */
+  async step(
+    staff: Principal,
+    key: string,
+    data: IssueEventData,
+    options: { anyone: boolean },
+    db: Db,
+  ): Promise<string> {
+    const issue = await db.issue.findFirst({
+      where: { scope: "platform", businessId: null, key, status: "open" },
+      select: { id: true, holderId: true },
+    });
+    if (!issue) throw new ConflictException(apiError("CONFLICT", "This step is done already."));
+    if (!options.anyone && issue.holderId !== null && issue.holderId !== staff.membershipId) {
+      throw heldByOther();
+    }
+    const claim = !options.anyone && issue.holderId === null;
+    await db.issue.update({
+      where: { id: issue.id },
+      data: {
+        ...(claim ? { holderId: staff.membershipId } : {}),
+        events: {
+          create: [
+            ...(claim ? [{ action: "claimed" as const, actorId: staff.membershipId }] : []),
+            { action: "step" as const, actorId: staff.membershipId, data },
+          ],
+        },
+      },
+    });
+    return issue.id;
   }
 
   private async act(
