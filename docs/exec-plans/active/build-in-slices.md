@@ -289,6 +289,11 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   store and an endpoint that slice 1 does not need.
   Date/Author: 2026-11-13 / Claude.
 
+- Decision: in slice 3, a venue package's "get it paid" step is marked paid by hand: HashiNet's admin
+  or a manager records that it was paid, with the amount and how, logged on the issue. Slice 4's
+  onboarding-charge invoice and Record payment replace it.
+  Rationale: invoices are slice 4's; the step still needs a person to say the money came.
+  Date/Author: 2026-11-13 / owner.
 - Decision: slice 3 (onboarding a business) comes before slice 2 (the counter).
   Rationale: onboarding is the first thing a new owner meets; walking slice 1 live, the owner looked
   for Issues and the getting-started steps, and found slice 1's stand-in. Slice 3 needs nothing of
