@@ -296,7 +296,10 @@ const CHANGES_PROTECTION: ReadonlySet<string> = new Set([
 ]);
 
 /** Whether the person already has an authenticator app or a passkey. */
-export async function hasProtection(db: PrismaClient, userId: string): Promise<boolean> {
+export async function hasProtection(
+  db: Pick<PrismaClient, "user" | "passkey">,
+  userId: string,
+): Promise<boolean> {
   const [user, passkeys] = await Promise.all([
     db.user.findUnique({ where: { id: userId }, select: { twoFactorEnabled: true } }),
     db.passkey.count({ where: { userId } }),

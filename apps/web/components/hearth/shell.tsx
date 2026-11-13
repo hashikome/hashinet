@@ -1,6 +1,6 @@
 "use client";
 
-import type { IssueList, Me, VenueRecord } from "@hashinet/types";
+import type { IssueCount, Me, VenueRecord } from "@hashinet/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -161,7 +161,7 @@ function useOpenIssues(me: Me): number {
     if (!reads) return;
     let live = true;
     api
-      .get<IssueList>("/api/issues?status=open")
+      .get<IssueCount>("/api/issues/count")
       .then((l) => live && setCount(l.openCount))
       .catch(() => undefined);
     return () => {
@@ -174,11 +174,11 @@ function useOpenIssues(me: Me): number {
 function NavList({
   entries,
   label,
-  openIssues = 0,
+  openIssues,
 }: {
   entries: NavEntry[];
   label: string;
-  openIssues?: number;
+  openIssues: number;
 }) {
   const path = usePathname();
   // A space's first link is its own root, so it is on only there.

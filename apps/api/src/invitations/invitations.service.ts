@@ -13,20 +13,14 @@ import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { EMAIL_SENDER, type EmailSender } from "../email/email-sender.js";
 import { apiError } from "../http/error-envelope.js";
+import { oneLine } from "../http/validation.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { OnboardingService } from "../onboarding/onboarding.service.js";
 import { normalizeTzPhone } from "../utils/phone.js";
 import { businessInvitationEmail } from "./invitation-emails.js";
 import { digestOf, INVITATION_HOURS, newInvitationToken } from "./invitation-token.js";
 
-/** One line of text: trimmed, no control characters (names reach printed vouchers and the portal). */
-const line = (max: number) =>
-  z
-    .string()
-    .trim()
-    .min(1, "is required")
-    .max(max)
-    .regex(/^[^\p{Cc}]*$/u, "must be one line of text");
+const line = (max: number) => oneLine(max).min(1, "is required");
 
 export const inviteBusinessInput = z.object({
   // Trimmed and lower-cased before it is checked, as a pasted address often carries both.

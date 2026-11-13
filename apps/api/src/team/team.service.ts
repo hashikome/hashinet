@@ -19,6 +19,7 @@ import { apiError } from "../http/error-envelope.js";
 import { memberInvitationEmail } from "../invitations/invitation-emails.js";
 import { INVITATION_HOURS, newInvitationToken } from "../invitations/invitation-token.js";
 import { invitationRecordOf, pending } from "../invitations/invitations.service.js";
+import { IssuesService } from "../issues/issues.service.js";
 import { captureFailure } from "../observability/telemetry.js";
 
 export const inviteMemberInput = z.object({
@@ -47,6 +48,7 @@ export class TeamService {
     private readonly audit: AuditLog,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(EMAIL_SENDER) private readonly email: EmailSender,
+    private readonly issues: IssuesService,
   ) {}
 
   async list(staff: Principal): Promise<TeamList> {
@@ -177,6 +179,8 @@ export class TeamService {
     await this.db.$transaction(async (tx) => {
       await tx.membership.update({ where: { id: member.id }, data: { status: "removed" } });
       await tx.session.deleteMany({ where: { activeMembershipId: member.id } });
+      // What they held goes back to the team, so nobody waits on someone who has left.
+      await this.issues.releaseAllHeldBy(member.id, staff, tx);
       await this.audit.record(
         staff,
         {

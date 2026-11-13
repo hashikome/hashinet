@@ -1,3 +1,4 @@
+import type { OnApplicationBootstrap, OnApplicationShutdown } from "@nestjs/common";
 import { captureFailure } from "../observability/telemetry.js";
 import { withWideEvent } from "../observability/wide-event.js";
 
@@ -42,5 +43,24 @@ export class IntervalJob {
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
     await this.running;
+  }
+}
+
+/**
+ * A module's background jobs, run while the application is up when jobs are enabled; at once on
+ * start, to catch anything that changed while the API was down.
+ */
+export abstract class ScheduledJobs implements OnApplicationBootstrap, OnApplicationShutdown {
+  protected abstract readonly jobs: IntervalJob[];
+
+  constructor(private readonly enabled: boolean) {}
+
+  onApplicationBootstrap(): void {
+    if (!this.enabled) return;
+    for (const job of this.jobs) job.start(true);
+  }
+
+  async onApplicationShutdown(): Promise<void> {
+    await Promise.all(this.jobs.map((job) => job.stop()));
   }
 }

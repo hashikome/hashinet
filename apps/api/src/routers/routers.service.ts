@@ -25,6 +25,7 @@ import { toJsonValue } from "../database/json.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
+import { IssuesService } from "../issues/issues.service.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { routerRecord } from "../serializers/records.js";
 import { RouterError } from "../services/mikrotik-errors.js";
@@ -92,6 +93,7 @@ export class RoutersService {
     private readonly reconciler: VoucherReconciler,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(TUNNEL_ALLOCATOR) private readonly tunnels: TunnelAllocator | null,
+    private readonly issues: IssuesService,
   ) {}
 
   async list(staff: Principal, venueId: string | null): Promise<RouterRecord[]> {
@@ -185,7 +187,7 @@ export class RoutersService {
 
   /** Pushes the venue's live vouchers to the router now. */
   async syncNow(staff: Principal, id: string): Promise<RouterRecord> {
-    await this.checkInstall(staff, (await this.row(staff, id)).venueId);
+    await this.installRow(staff, id);
     await this.sync.syncRouter(id);
     return this.get(staff, id);
   }
@@ -200,8 +202,7 @@ export class RoutersService {
     id: string,
     input: z.infer<typeof bootstrapInput>,
   ): Promise<BootstrapScriptResponse> {
-    const router = await this.row(staff, id);
-    await this.checkInstall(staff, router.venueId);
+    const router = await this.installRow(staff, id);
     if (router.apiUsername === null) {
       throw new BadRequestException(
         apiError("VALIDATION_FAILED", "Check the highlighted fields.", {
@@ -372,7 +373,7 @@ export class RoutersService {
 
   /** Starts a setup and answers at once: it outlasts a request, and its state is on the row. */
   async startSetup(staff: Principal, id: string, force: boolean): Promise<RouterJourney> {
-    await this.checkInstall(staff, (await this.row(staff, id)).venueId);
+    await this.installRow(staff, id);
     const stale = new Date(Date.now() - SETUP_STALE_MS);
     const { count } = await this.db.router.updateMany({
       where: { id, OR: [{ setupStartedAt: null }, { setupStartedAt: { lt: stale } }] },
@@ -404,7 +405,7 @@ export class RoutersService {
   }
 
   async provision(staff: Principal, id: string, dryRun: boolean): Promise<ProvisionReport> {
-    await this.checkInstall(staff, (await this.row(staff, id)).venueId);
+    await this.installRow(staff, id);
     return provisionRouter(id, this.store, { dryRun });
   }
 
@@ -479,28 +480,23 @@ export class RoutersService {
     };
   }
 
-  /** A manager may not add routers, so only an admin reaches this; the venue must exist. */
-  /** An operator installs only at a venue whose setup is handed to them; the admin and managers
-   * anywhere. */
+  /** An operator installs only at a venue whose issue is handed to them (ADR-0013, 2). */
   private async checkInstall(staff: Principal, venueId: string): Promise<void> {
-    if (allows(staff.role, "router.manage")) return;
-    const handed = await this.db.issue.findFirst({
-      where: {
-        scope: "platform",
-        kind: "venue_setup",
-        venueId,
-        status: "open",
-        holderId: staff.membershipId,
-      },
-      select: { id: true },
-    });
-    if (!handed) {
+    if (!(await this.issues.handedAt(staff, venueId))) {
       throw new ForbiddenException(
         apiError("FORBIDDEN", "Install a router only when its venue's setup is handed to you."),
       );
     }
   }
 
+  /** A router to install on: within reach, and at a venue handed to an operator who asks. */
+  private async installRow(staff: Principal, id: string) {
+    const router = await this.row(staff, id);
+    await this.checkInstall(staff, router.venueId);
+    return router;
+  }
+
+  /** The venue a router is added to must be within the reader's reach. */
   private async checkVenue(staff: Principal, venueId: string): Promise<void> {
     const venue = await this.db.venue.findFirst({ where: { id: venueId, ...venueScope(staff) } });
     if (!venue) {

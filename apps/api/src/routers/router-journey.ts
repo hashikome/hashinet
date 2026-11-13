@@ -78,3 +78,17 @@ export function routerJourney(
     blockers: running ? [] : (last?.blockers ?? []),
   };
 }
+
+/** The router fields a journey and a condition are read from. */
+export const JOURNEY_SELECT = {
+  status: true,
+  setupStartedAt: true,
+  setupPhase: true,
+  lastSetupAt: true,
+  lastSetup: true,
+} as const;
+
+/** A router's condition, from the fields `JOURNEY_SELECT` reads. */
+export function routerCondition(row: JourneyRow & { lastSetup: unknown }): RouterCondition {
+  return conditionOf(routerJourney(row, row.lastSetup as StoredSetup | null).stage, row.status);
+}

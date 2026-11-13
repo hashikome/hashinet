@@ -17,6 +17,7 @@ import {
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { shortDate, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
+import { matchesSearch } from "@/lib/search";
 import { useCan, useSession } from "@/lib/session";
 
 /**
@@ -37,13 +38,8 @@ export default function BusinessesPage() {
     return { businesses: b.businesses, invitations: i.invitations };
   }, [me.active.id]);
   const mayInvite = can("business.invite");
-  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const businesses = (list.data?.businesses ?? []).filter((b) =>
-    words.every((w) =>
-      `${b.name} ${b.owner?.name ?? ""} ${b.owner?.email ?? ""} ${b.region} ${b.area}`
-        .toLowerCase()
-        .includes(w),
-    ),
+    matchesSearch(search, b.name, b.owner?.name ?? null, b.owner?.email ?? null, b.region, b.area),
   );
   const venueCount = (list.data?.businesses ?? []).reduce((n, b) => n + b.venues.length, 0);
 

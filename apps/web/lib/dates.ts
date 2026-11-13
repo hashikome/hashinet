@@ -39,3 +39,10 @@ export const when = (d: Date | string) =>
 /** "Friday", the weekday a week ago today. */
 export const weekday = (d: Date | string) =>
   new Date(d).toLocaleDateString("en-GB", { weekday: "long", timeZone: ZONE });
+
+/** A business day (YYYY-MM-DD) as an instant at its noon, for the formatters above. */
+export const calendarDay = (date: string) => `${date}T12:00:00+03:00`;
+
+/** Today's business day, YYYY-MM-DD (en-CA formats dates that way). */
+export const todayIso = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: ZONE }).format(new Date());

@@ -1,13 +1,13 @@
 "use client";
 
-import type { BusinessDetail, GuestCounts, IssueList } from "@hashinet/types";
+import type { BusinessDetail, IssueList } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect } from "react";
 import { BusinessMark } from "@/components/hearth/icons";
-import { ButtonLink, CONDITION, CopyText, Panel, Pill, Table } from "@/components/hearth/ui";
+import { ButtonLink, CopyText, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { longDate } from "@/lib/dates";
-import { issueTitle, STAGE } from "@/lib/issues";
+import { issueTitle, venueStatus } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { ROLE_NAME } from "@/lib/nav";
 import { useCan, useSession } from "@/lib/session";
@@ -22,12 +22,11 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
   const { me } = useSession();
   const can = useCan();
   const data = useLoad(async () => {
-    const [business, counts, issues] = await Promise.all([
+    const [business, issues] = await Promise.all([
       api.get<BusinessDetail>(`/api/businesses/${id}`),
-      api.get<GuestCounts>("/api/guest-counts"),
-      can("issue.read") ? api.get<IssueList>("/api/issues?status=open") : null,
+      can("issue.read") ? api.get<IssueList>(`/api/issues?status=open&businessId=${id}`) : null,
     ]);
-    return { business, counts, issues };
+    return { business, issues };
   }, [id, me.active.id]);
   const b = data.data?.business;
   useEffect(() => {
@@ -47,8 +46,7 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
     );
   }
   if (!data.data || !b) return crumb;
-  const counts = new Map(data.data.counts.venues.map((c) => [c.venue.id, c]));
-  const open = (data.data.issues?.issues ?? []).filter((i) => i.business?.id === b.id);
+  const open = data.data.issues?.issues ?? [];
 
   return (
     <>
@@ -123,8 +121,7 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
               ["Mid-session", true],
             ]}
             rows={b.venues.map((v) => {
-              const [state, kind] = CONDITION[v.condition];
-              const c = counts.get(v.id);
+              const [state, kind] = venueStatus(v);
               return {
                 key: v.id,
                 href: `/venues/${v.id}/router`,
@@ -135,18 +132,12 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
                       {v.area}, {v.region}
                     </div>
                   </div>,
-                  v.stage === "done" ? (
-                    <Pill key="s" kind={kind}>
-                      {state}
-                    </Pill>
-                  ) : (
-                    <Pill key="s" kind="wait">
-                      {STAGE[v.stage]}
-                    </Pill>
-                  ),
+                  <Pill key="s" kind={kind}>
+                    {state}
+                  </Pill>,
                   v.routers,
-                  c?.onlineNow ?? 0,
-                  c?.midSession ?? 0,
+                  v.onlineNow,
+                  v.midSession,
                 ],
               };
             })}

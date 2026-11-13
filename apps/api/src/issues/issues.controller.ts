@@ -1,4 +1,4 @@
-import type { IssueDetail, IssueList } from "@hashinet/types";
+import type { IssueCount, IssueDetail, IssueList, IssueMoved } from "@hashinet/types";
 import { Body, Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
@@ -14,7 +14,13 @@ export class IssuesController {
   @Get()
   @Can("issue.read")
   list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<IssueList> {
-    return this.issues.list(staff, parseInput(listQuery, query).status);
+    return this.issues.list(staff, parseInput(listQuery, query));
+  }
+
+  @Get("count")
+  @Can("issue.read")
+  count(@CurrentPrincipal() staff: Principal): Promise<IssueCount> {
+    return this.issues.count(staff);
   }
 
   @Get(":id")
@@ -37,20 +43,23 @@ export class IssuesController {
   }
 
   @Post(":id/release")
-  @HttpCode(204)
+  @HttpCode(200)
   @Can("issue.work")
-  release(@CurrentPrincipal() staff: Principal, @Param("id", idParam()) id: string): Promise<void> {
+  release(
+    @CurrentPrincipal() staff: Principal,
+    @Param("id", idParam()) id: string,
+  ): Promise<IssueMoved> {
     return this.issues.release(staff, id);
   }
 
   @Post(":id/hand")
-  @HttpCode(204)
+  @HttpCode(200)
   @Can("issue.work")
   hand(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Body() body: unknown,
-  ): Promise<void> {
+  ): Promise<IssueMoved> {
     return this.issues.hand(staff, id, parseInput(handInput, body));
   }
 

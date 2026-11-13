@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { BusinessDetail, GuestCounts } from "@hashinet/types";
+import type { BusinessDetail, BusinessList, IssueList } from "@hashinet/types";
+import { beginOnboarding } from "../../src/onboarding/begin.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, testBusinessId } from "./people.js";
@@ -13,17 +14,22 @@ async function signedIn(email: string): Promise<Client> {
   return c;
 }
 
+/** A venue as the app makes one: with its onboarding begun. */
+async function venue(businessId: string, name: string) {
+  const v = await t.db.venue.create({
+    data: { businessId, name, region: "Dar es Salaam", area: "Dar" },
+  });
+  await beginOnboarding(t.db, v.id);
+  return v;
+}
+
 describe("a business's guests, for HashiNet's team", () => {
   test("are counts per venue, never a device, code or session", async () => {
     await platformMember(t.db, { email: "hamisi@example.com", name: "Hamisi", role: "operator" });
     await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
     const businessId = await testBusinessId(t.db);
-    const cafe = await t.db.venue.create({
-      data: { businessId, name: "Cafe", region: "Dar es Salaam", area: "Dar" },
-    });
-    const bar = await t.db.venue.create({
-      data: { businessId, name: "Bar", region: "Dar es Salaam", area: "Dar" },
-    });
+    const cafe = await venue(businessId, "Cafe");
+    const bar = await venue(businessId, "Bar");
     const up = await t.db.router.create({
       data: { venueId: cafe.id, name: "Cafe", ipAddress: "192.168.88.2", status: "online" },
     });
@@ -40,21 +46,23 @@ describe("a business's guests, for HashiNet's team", () => {
     await session(bar.id, down.id, "02:00:00:00:00:04");
 
     const hamisi = await signedIn("hamisi@example.com");
-    const reply = await hamisi.request("GET", "/api/guest-counts");
+    const reply = await hamisi.request("GET", "/api/businesses");
     expect(reply.status).toBe(200);
-    expect((reply.body as GuestCounts).venues).toEqual([
-      {
-        venue: { id: bar.id, name: "Bar" },
-        business: { id: businessId, name: "Test Business" },
-        onlineNow: 0,
-        midSession: 1,
-      },
-      {
-        venue: { id: cafe.id, name: "Cafe" },
-        business: { id: businessId, name: "Test Business" },
-        onlineNow: 2,
-        midSession: 0,
-      },
+    expect(
+      (reply.body as BusinessList).businesses[0]?.venues.map((v) => [
+        v.name,
+        v.onlineNow,
+        v.midSession,
+      ]),
+    ).toEqual([
+      ["Cafe", 2, 0],
+      ["Bar", 0, 1],
+    ]);
+    const page = (await hamisi.request("GET", `/api/businesses/${businessId}`))
+      .body as BusinessDetail;
+    expect(page.venues.map((v) => [v.name, v.onlineNow, v.midSession])).toEqual([
+      ["Cafe", 2, 0],
+      ["Bar", 0, 1],
     ]);
     expect(JSON.stringify(reply.body)).not.toContain("02:00:00");
 
@@ -63,15 +71,16 @@ describe("a business's guests, for HashiNet's team", () => {
       expect((await hamisi.request("GET", path)).status).toBe(403);
     }
     const owner = await signedIn("owner@example.com");
-    expect((await owner.request("GET", "/api/guest-counts")).status).toBe(403);
+    expect((await owner.request("GET", "/api/businesses")).status).toBe(403);
   });
   test("a business's page names its owners and managers, never its operators", async () => {
     await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
     const businessId = await testBusinessId(t.db);
-    const cafe = await t.db.venue.create({
-      data: { businessId, name: "Cafe", region: "Dar es Salaam", area: "Dar" },
+    const cafe = await venue(businessId, "Cafe");
+    await t.db.venueOnboarding.update({
+      where: { venueId: cafe.id },
+      data: { preferredAt: new Date() },
     });
-    await t.db.venueOnboarding.create({ data: { venueId: cafe.id, preferredAt: new Date() } });
     await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
     await businessMember(t.db, {
       email: "vm@example.com",
@@ -97,6 +106,19 @@ describe("a business's guests, for HashiNet's team", () => {
       { id: cafe.id, routers: 0, condition: "setting-up", stage: "confirm" },
     ]);
     expect(JSON.stringify(page)).not.toContain("op@example.com");
+    // Its issues, asked for by business.
+    const other = await t.db.venue.create({
+      data: {
+        businessId: await testBusinessId(t.db, "Other"),
+        name: "Elsewhere",
+        region: "Dar es Salaam",
+        area: "Dar",
+      },
+    });
+    await beginOnboarding(t.db, other.id);
+    const theirs = (await asha.request("GET", `/api/issues?businessId=${businessId}`))
+      .body as IssueList;
+    expect(theirs.issues.map((i) => i.venue?.name)).toEqual(["Cafe"]);
     expect(
       (await asha.request("GET", "/api/businesses/01a1d4dc-0abd-72b4-899c-c0ea84303684")).status,
     ).toBe(404);

@@ -69,7 +69,7 @@ describe("Onboarding a venue", () => {
       preference: null,
       issueId: null,
       ownerProtected: true,
-      changeable: true,
+      may: { prefer: true, confirm: false, pay: false, schedule: false },
     });
     const packageIssue = (await onboarding(admin, venueId)).issueId;
     expect(packageIssue).not.toBeNull();
@@ -77,7 +77,14 @@ describe("Onboarding a venue", () => {
     expect(
       ((await admin.request("GET", `/api/issues/${packageIssue}`)).body as IssueDetail).contact,
     ).toEqual({ name: "Baraka", email: "baraka@example.com", phone: null });
-    expect((await onboarding(hamisi, venueId)).issueId).toBeNull();
+    // An operator reaches a venue only once its setup is handed to them.
+    expect((await hamisi.request("GET", base)).status).toBe(404);
+    expect((await onboarding(asha, venueId)).may).toEqual({
+      prefer: false,
+      confirm: true,
+      pay: false,
+      schedule: false,
+    });
 
     // The owner prefers Install; the team never sets a preference.
     expect((await admin.request("PUT", `${base}/preference`, { plan: "install" })).status).toBe(
@@ -138,8 +145,10 @@ describe("Onboarding a venue", () => {
     expect(paid).toMatchObject({
       stage: "schedule",
       paid: { amountTsh: 270_000, by: "mobile_money" },
-      changeable: false,
+      // Asha holds it: the admin recorded the payment, the rest is hers.
+      may: { confirm: false, pay: false, schedule: false },
     });
+    expect((await onboarding(asha, venueId)).may).toMatchObject({ schedule: true });
     expect(
       (await asha.request("POST", `${base}/confirm`, { plan: "connect", lines: [FEE] })).status,
     ).toBe(409);
@@ -171,7 +180,20 @@ describe("Onboarding a venue", () => {
     expect(setup.issues).toMatchObject([
       { kind: "venue_setup", mine: true, holder: { membershipId: operator.membershipId } },
     ]);
-    expect((await onboarding(hamisi, venueId)).issueId).toBe(setup.issues[0]?.id ?? "");
+    // What to bring, and when; never what it cost.
+    expect(await onboarding(hamisi, venueId)).toMatchObject({
+      issueId: setup.issues[0]?.id ?? "",
+      agreed: {
+        plan: "install",
+        lines: [
+          { kind: "onboarding_fee", amountTsh: null },
+          { kind: "mikrotik_router", description: "hAP ax2", amountTsh: null },
+        ],
+        totalTsh: null,
+        dueOn: null,
+      },
+      paid: null,
+    });
     expect(manager.membershipId).not.toBe(operator.membershipId);
 
     // Hamisi adds the router at the venue handed to him, and nowhere else.

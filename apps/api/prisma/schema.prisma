@@ -815,6 +815,7 @@ model WifiSession {
   @@index([status])
   @@index([startedAt])
   @@index([macAddress])
+  @@index([venueId])
   @@map("wifi_sessions")
 }
 
@@ -984,7 +985,6 @@ model Issue {
   routerId   String?     @map("router_id") @db.Uuid
   holderId   String?     @map("holder_id") @db.Uuid
   /// Bounded facts the kind needs (a preference, a price, a date); never names or addresses.
-  data       Json        @default("{}")
   openedAt   DateTime    @default(now()) @map("opened_at") @db.Timestamptz(3)
   resolvedAt DateTime?   @map("resolved_at") @db.Timestamptz(3)
   updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)

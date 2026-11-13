@@ -6,9 +6,10 @@ import type {
   OnboardingPaidBy,
   OnboardingPlan,
   OnboardingStage,
+  RouterCondition,
 } from "@hashinet/types";
-import type { PillKind } from "@/components/hearth/ui";
-import { dayName } from "./dates";
+import { CONDITION, type PillKind } from "@/components/hearth/ui";
+import { calendarDay, dayName } from "./dates";
 import { tsh } from "./money";
 import { ROLE_NAME } from "./nav";
 
@@ -91,7 +92,7 @@ export function eventText(e: Event): string {
     case "claimed":
       return "Claimed it";
     case "released":
-      return "Released it";
+      return d.reason === "holder_removed" ? "Released it: they left the team" : "Released it";
     case "handed":
       return `Handed it to ${to}${e.note ? `: ${e.note}` : ""}`;
     case "taken_over":
@@ -104,6 +105,7 @@ export function eventText(e: Event): string {
           serving: "The router serves again; the issue closed",
           scheduled: "Agreed and scheduled; its setup went to the team",
           first_guest: "The first guest got online; the issue closed",
+          router_removed: "The router was removed; the issue closed",
         }[String(d.reason)] ?? "Resolved"
       );
     case "step":
@@ -121,9 +123,9 @@ function stepText(d: Record<string, string | number | boolean | null>): string {
     case "paid":
       return `Recorded ${tsh(Number(d.amountTsh))} paid by ${PAID_BY[d.by as OnboardingPaidBy]?.toLowerCase() ?? "hand"}`;
     case "scheduled":
-      return `Scheduled the setup for ${dayName(`${d.date}T12:00:00+03:00`)}`;
+      return `Scheduled the setup for ${setupDay(String(d.date))}`;
     case "rescheduled":
-      return `Moved the setup to ${dayName(`${d.date}T12:00:00+03:00`)}`;
+      return `Moved the setup to ${setupDay(String(d.date))}`;
     default:
       return "A step";
   }
@@ -134,7 +136,7 @@ export const actorOf = (e: Event) =>
   e.actor ? `${e.actor.name}, ${ROLE_NAME[e.actor.role].toLowerCase()}` : "HashiNet";
 
 /** "Friday 20 November", from a business day (YYYY-MM-DD). */
-export const setupDay = (date: string) => dayName(`${date}T12:00:00+03:00`);
+export const setupDay = (date: string) => dayName(calendarDay(date));
 
 /** How far a venue is on its way to serving guests, before its router serves. */
 export const STAGE: Record<Exclude<OnboardingStage, "done">, string> = {
@@ -146,3 +148,11 @@ export const STAGE: Record<Exclude<OnboardingStage, "done">, string> = {
   "set-up": "Being set up",
   "first-guest": "Waiting for its first guest",
 };
+
+/** A venue's status in a list: its routers' condition once it serves, its stage until then. */
+export function venueStatus(v: {
+  stage: OnboardingStage;
+  condition: RouterCondition;
+}): [string, PillKind] {
+  return v.stage === "done" ? CONDITION[v.condition] : [STAGE[v.stage], "wait"];
+}

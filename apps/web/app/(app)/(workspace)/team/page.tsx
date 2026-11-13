@@ -4,11 +4,13 @@ import type { MembershipRole, TeamList, TeamMember } from "@hashinet/types";
 import { type FormEvent, useState } from "react";
 import { Dialog } from "@/components/hearth/dialog";
 import { Button, CopyText, Field, Head, Panel, Table, useToast } from "@/components/hearth/ui";
-import { ApiRequestError, api, messageOf } from "@/lib/api";
+import { api, messageOf } from "@/lib/api";
 import { shortDate, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { ROLE_NAME } from "@/lib/nav";
+import { matchesSearch } from "@/lib/search";
 import { useCan, useSession } from "@/lib/session";
+import { useSubmit } from "@/lib/submit";
 
 type Ask = { kind: "role" | "remove"; person: TeamMember } | { kind: "invite" } | null;
 
@@ -24,9 +26,8 @@ export default function TeamPage() {
   const [search, setSearch] = useState("");
   const team = useLoad(() => api.get<TeamList>("/api/team"), [me.active.id]);
   const mayInvite = can("team.manage") && (team.data?.assignable.length ?? 0) > 0;
-  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const members = (team.data?.members ?? []).filter((m) =>
-    words.every((w) => `${m.name} ${m.email} ${ROLE_NAME[m.role]}`.toLowerCase().includes(w)),
+    matchesSearch(search, m.name, m.email, ROLE_NAME[m.role]),
   );
   const act = async (what: () => Promise<unknown>, done: string) => {
     try {
@@ -265,25 +266,18 @@ function InviteDialog({
   onClose: () => void;
   onSent: () => Promise<void>;
 }) {
-  const toast = useToast();
+  const { busy, errors, run } = useSubmit();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<MembershipRole>(roles[roles.length - 1] ?? "operator");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [busy, setBusy] = useState(false);
   async function send(e: FormEvent) {
     e.preventDefault();
-    setBusy(true);
-    setErrors({});
-    try {
-      await api.post("/api/team/invitations", { email, role });
+    const sent = await run(
+      () => api.post("/api/team/invitations", { email, role }),
+      `Invitation sent to ${email.trim().toLowerCase()}.`,
+    );
+    if (sent) {
       await onSent();
       onClose();
-      toast(`Invitation sent to ${email.trim().toLowerCase()}.`);
-    } catch (err) {
-      if (err instanceof ApiRequestError && err.details) setErrors(err.details);
-      else toast(messageOf(err));
-    } finally {
-      setBusy(false);
     }
   }
   return (

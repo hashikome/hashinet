@@ -1,5 +1,6 @@
 import type { PortalSettingsRecord } from "@hashinet/types";
 import { z } from "zod";
+import { oneLine, paragraph } from "../http/validation.js";
 
 /** The HashiNet default, until an admin saves another; a venue may set its own. */
 export const DEFAULT_PORTAL_SETTINGS: PortalSettingsRecord = {
@@ -19,23 +20,7 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettingsRecord = {
   updatedAt: null,
 };
 
-/** One line, no control characters: these reach the portal page and printed cards. */
-const line = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .regex(/^[^\p{Cc}]*$/u, "must be one line of text");
-/** Paragraph text: line breaks allowed, other control characters not. */
-const paragraph = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .refine(
-      (text) => [...text].every((c) => c === "\n" || /^[^\p{Cc}]$/u.test(c)),
-      "cannot contain control characters",
-    );
+const line = oneLine;
 const colour = z
   .string()
   .trim()

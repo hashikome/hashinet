@@ -1,10 +1,5 @@
 import type { AuditAction, VenueRecord } from "@hashinet/types";
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
@@ -13,10 +8,8 @@ import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { OnboardingService } from "../onboarding/onboarding.service.js";
 import { venueRecord } from "../serializers/records.js";
+import { venueNotFound } from "./venue-errors.js";
 import type { VenueInput } from "./venue-input.js";
-
-export const venueNotFound = () =>
-  new NotFoundException(apiError("NOT_FOUND", "That venue does not exist."));
 
 @Injectable()
 export class VenuesService {

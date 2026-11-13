@@ -1,11 +1,12 @@
 "use client";
 
-import type { BusinessList, GuestCounts } from "@hashinet/types";
+import type { BusinessList } from "@hashinet/types";
 import { useState } from "react";
-import { CONDITION, Head, Panel, Pill, Table } from "@/components/hearth/ui";
+import { Head, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
-import { STAGE } from "@/lib/issues";
+import { venueStatus } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
+import { matchesSearch } from "@/lib/search";
 import { useSession } from "@/lib/session";
 
 /**
@@ -16,24 +17,14 @@ export default function VenuesPage() {
   const { me } = useSession();
   const [search, setSearch] = useState("");
   const [business, setBusiness] = useState("");
-  const data = useLoad(async () => {
-    const [b, counts] = await Promise.all([
-      api.get<BusinessList>("/api/businesses"),
-      api.get<GuestCounts>("/api/guest-counts"),
-    ]);
-    return { businesses: b.businesses, counts };
-  }, [me.active.id]);
+  const data = useLoad(() => api.get<BusinessList>("/api/businesses"), [me.active.id]);
   const all = (data.data?.businesses ?? []).flatMap((b) =>
     b.venues.map((v) => ({ ...v, business: { id: b.id, name: b.name } })),
   );
-  const counts = new Map((data.data?.counts.venues ?? []).map((c) => [c.venue.id, c]));
-  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const list = all.filter(
     (v) =>
       (!business || v.business.id === business) &&
-      words.every((w) =>
-        `${v.name} ${v.area} ${v.region} ${v.business.name}`.toLowerCase().includes(w),
-      ),
+      matchesSearch(search, v.name, v.area, v.region, v.business.name),
   );
   const businesses = data.data?.businesses ?? [];
   return (
@@ -81,7 +72,7 @@ export default function VenuesPage() {
             <Table
               cols={[["Venue"], ["Status"], ["Routers", true], ["Online now", true], ["Business"]]}
               rows={list.map((v) => {
-                const [state, kind] = CONDITION[v.condition];
+                const [state, kind] = venueStatus(v);
                 return {
                   key: v.id,
                   href: `/venues/${v.id}/router`,
@@ -92,17 +83,11 @@ export default function VenuesPage() {
                         {v.area}, {v.region}
                       </div>
                     </div>,
-                    v.stage === "done" ? (
-                      <Pill key="s" kind={kind}>
-                        {state}
-                      </Pill>
-                    ) : (
-                      <Pill key="s" kind="wait">
-                        {STAGE[v.stage]}
-                      </Pill>
-                    ),
+                    <Pill key="s" kind={kind}>
+                      {state}
+                    </Pill>,
                     v.routers,
-                    counts.get(v.id)?.onlineNow ?? 0,
+                    v.onlineNow,
                     v.business.name,
                   ],
                 };

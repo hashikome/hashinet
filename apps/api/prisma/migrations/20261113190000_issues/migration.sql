@@ -18,7 +18,6 @@ CREATE TABLE "issues" (
     "venue_id" UUID,
     "router_id" UUID,
     "holder_id" UUID,
-    "data" JSONB NOT NULL DEFAULT '{}',
     "opened_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "resolved_at" TIMESTAMPTZ(3),
     "updated_at" TIMESTAMPTZ(3) NOT NULL,

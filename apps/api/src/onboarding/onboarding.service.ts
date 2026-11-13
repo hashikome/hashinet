@@ -4,17 +4,12 @@ import {
   ONBOARDING_PAID_BY,
   ONBOARDING_PLANS,
   type OnboardingPlan,
-  type OnboardingStage,
   type VenueOnboarding,
 } from "@hashinet/types";
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
 import { z } from "zod";
 import { ownerProtected } from "../access/owner-protected.js";
+import { allows } from "../access/policy.js";
 import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { businessDayOf } from "../analytics/business-day.js";
@@ -22,22 +17,18 @@ import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
-import { IssuesService } from "../issues/issues.service.js";
-import { conditionOf, routerJourney, type StoredSetup } from "../routers/router-journey.js";
-import { onboardingStage } from "./onboarding-stage.js";
+import { oneLine, paragraph } from "../http/validation.js";
+import { IssuesService, PLATFORM_WORKSPACE } from "../issues/issues.service.js";
+import { venueNotFound } from "../venues/venue-errors.js";
+import { beginOnboarding, packageKey, setupKey } from "./begin.js";
+import { totalOf, VENUE_FACTS, type VenueFacts, venueStage } from "./onboarding-stage.js";
 
 const DAY_MS = 86_400_000;
-const line = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .regex(/^[^\p{Cc}]*$/u, "must be one line of text");
 
 export const preferInput = z.object({ plan: z.enum(ONBOARDING_PLANS).nullable() });
 const onboardingLine = z.object({
   kind: z.enum(ONBOARDING_LINE_KINDS),
-  description: line(160).nullable().default(null),
+  description: oneLine(160).nullable().default(null),
   amountTsh: z.number().int().min(0).max(100_000_000),
 });
 
@@ -50,7 +41,7 @@ export const confirmInput = z
   .object({
     plan: z.enum(ONBOARDING_PLANS),
     lines: z.array(onboardingLine).min(1).max(12),
-    note: z.string().trim().max(1000).nullable().default(null),
+    note: paragraph(1000).nullable().default(null),
   })
   .superRefine((v, ctx) => {
     const fees = v.lines.filter((l) => l.kind === "onboarding_fee").length;
@@ -79,8 +70,6 @@ export const confirmInput = z
     });
   });
 
-const totalOf = (lines: { amountTsh: number }[]) => lines.reduce((sum, l) => sum + l.amountTsh, 0);
-
 export const paymentInput = z.object({
   amountTsh: z.number().int().positive(),
   by: z.enum(ONBOARDING_PAID_BY),
@@ -90,38 +79,24 @@ export const scheduleInput = z.object({
   goesId: z.uuid().nullable().default(null),
 });
 
-const packageKey = (venueId: string) => `venue-package:${venueId}`;
-const setupKey = (venueId: string) => `venue-setup:${venueId}`;
-
 const invalid = (field: string, message: string) =>
   new BadRequestException(
     apiError("VALIDATION_FAILED", "Check the highlighted fields.", { [field]: message }),
   );
-const venueNotFound = () =>
-  new NotFoundException(apiError("NOT_FOUND", "That venue does not exist."));
 const notNow = (message: string) => new ConflictException(apiError("CONFLICT", message));
 
 const withFacts = {
-  onboarding: { include: { lines: { orderBy: { position: "asc" } } } },
+  ...VENUE_FACTS,
   business: { select: { id: true, name: true } },
-  routers: {
-    select: {
-      status: true,
-      lastSeenAt: true,
-      setupStartedAt: true,
-      setupPhase: true,
-      lastSetupAt: true,
-      lastSetup: true,
-    },
-  },
 } as const satisfies Prisma.VenueInclude;
 
 type VenueRow = Prisma.VenueGetPayload<{ include: typeof withFacts }>;
+type Onboarding = NonNullable<VenueFacts["onboarding"]>;
 
 /**
  * A venue's way to serving guests (ADR-0013, 2), through two issues in turn: its package (the
  * owner's preference, the call, the payment, the setup date), for the platform's admin and
- * managers, then its setup, for the whole team, which closes when the first guest is online.
+ * managers, then its setup, handed to whoever goes, which closes when the first guest is online.
  */
 @Injectable()
 export class OnboardingService {
@@ -132,30 +107,20 @@ export class OnboardingService {
   ) {}
 
   /** A new venue starts at its package, in the transaction that creates it. */
-  async begin(venueId: string, db: Prisma.TransactionClient): Promise<void> {
-    await db.venueOnboarding.create({ data: { venueId } });
-    await this.issues.open(
-      {
-        scope: "platform",
-        businessId: null,
-        kind: "venue_package",
-        key: packageKey(venueId),
-        venueId,
-      },
-      db,
-    );
+  begin(venueId: string, db: Prisma.TransactionClient): Promise<void> {
+    return beginOnboarding(db, venueId);
   }
 
   async get(staff: Principal, venueId: string): Promise<VenueOnboarding> {
-    const venue = await this.venue(staff, venueId);
-    return this.record(staff, venue);
+    return this.record(staff, await this.venue(staff, venueId));
   }
 
   /** The owner says how they would like the router to come, or asks to talk first. */
   async prefer(staff: Principal, venueId: string, plan: OnboardingPlan | null) {
     const venue = await this.venue(staff, venueId);
-    const o = this.onboarding(venue);
-    if (o.confirmedAt) throw notNow("The package is agreed; talk to HashiNet's team to change it.");
+    if (onboardingOf(venue).confirmedAt) {
+      throw notNow("The package is agreed; talk to HashiNet's team to change it.");
+    }
     await this.db.$transaction(async (tx) => {
       await tx.venueOnboarding.update({
         where: { venueId },
@@ -173,12 +138,13 @@ export class OnboardingService {
     return this.get(staff, venueId);
   }
 
-  /** What the team agreed on the call; it may change until the package is paid. */
+  /** What the team agreed on the call; it may change until it is paid or its setup scheduled. */
   async confirm(staff: Principal, venueId: string, input: z.infer<typeof confirmInput>) {
     const venue = await this.venue(staff, venueId);
-    const o = this.onboarding(venue);
+    const o = onboardingOf(venue);
     if (o.setupDate) throw notNow("The setup is scheduled; the package no longer changes.");
     if (o.paidAt) throw notNow("It is paid; the package no longer changes.");
+    const total = totalOf(input.lines);
     await this.db.$transaction(async (tx) => {
       // The fee first, then the rest as agreed.
       const lines = [...input.lines].sort(
@@ -190,16 +156,13 @@ export class OnboardingService {
           plan: input.plan,
           note: input.note,
           confirmedAt: new Date(),
-          lines: {
-            deleteMany: {},
-            create: lines.map((l, position) => ({ ...l, position })),
-          },
+          lines: { deleteMany: {}, create: lines.map((l, position) => ({ ...l, position })) },
         },
       });
       await this.issues.step(
         staff,
         packageKey(venueId),
-        { step: "confirmed", plan: input.plan, totalTsh: totalOf(input.lines) },
+        { step: "confirmed", plan: input.plan, totalTsh: total },
         { anyone: false },
         tx,
       );
@@ -207,7 +170,7 @@ export class OnboardingService {
         staff,
         "onboarding.confirm",
         venue,
-        { plan: input.plan, totalTsh: totalOf(input.lines) },
+        { plan: input.plan, totalTsh: total },
         tx,
       );
     });
@@ -217,9 +180,8 @@ export class OnboardingService {
   /** Recorded by the admin or a manager, whoever holds the issue; paid in full (ADR-0013, 6). */
   async recordPayment(staff: Principal, venueId: string, input: z.infer<typeof paymentInput>) {
     const venue = await this.venue(staff, venueId);
-    const o = this.onboarding(venue);
-    if (this.stage(venue) !== "pay") throw notNow("There is no payment to record.");
-    const total = totalOf(o.lines);
+    if (venueStage(venue) !== "pay") throw notNow("There is no payment to record.");
+    const total = totalOf(onboardingOf(venue).lines);
     if (input.amountTsh < total) {
       throw invalid("amountTsh", `must be the agreed total, TSh ${total}, paid in full`);
     }
@@ -252,7 +214,7 @@ export class OnboardingService {
    */
   async schedule(staff: Principal, venueId: string, input: z.infer<typeof scheduleInput>) {
     const venue = await this.venue(staff, venueId);
-    const stage = this.stage(venue);
+    const stage = venueStage(venue);
     if (stage !== "schedule" && stage !== "add-router") {
       throw notNow(
         stage === "choose" || stage === "confirm" || stage === "pay"
@@ -279,18 +241,18 @@ export class OnboardingService {
           tx,
         );
         await this.issues.resolve(
-          { scope: "platform", businessId: null },
+          PLATFORM_WORKSPACE,
           packageKey(venueId),
           { reason: "scheduled" },
           tx,
         );
         await this.issues.open(
           {
-            scope: "platform",
-            businessId: null,
+            ...PLATFORM_WORKSPACE,
             kind: "venue_setup",
             key: setupKey(venueId),
             venueId,
+            routerId: null,
             holderId: input.goesId,
           },
           tx,
@@ -311,25 +273,25 @@ export class OnboardingService {
 
   /** Closes a venue's setup once its first guest is online at a router that serves. */
   async syncSetups(): Promise<void> {
-    const venues = await this.db.venue.findMany({
-      where: { onboarding: { completedAt: null, setupDate: { not: null } } },
-      include: withFacts,
+    const waiting = (
+      await this.db.venue.findMany({
+        where: { onboarding: { completedAt: null, setupDate: { not: null } } },
+        include: VENUE_FACTS,
+      })
+    ).filter((v) => venueStage(v) === "first-guest");
+    if (waiting.length === 0) return;
+    const guests = await this.db.wifiSession.findMany({
+      where: { venueId: { in: waiting.map((v) => v.id) } },
+      distinct: ["venueId"],
+      select: { venueId: true },
     });
-    for (const venue of venues) {
-      if (this.stage(venue) !== "first-guest") continue;
-      const guest = await this.db.wifiSession.findFirst({
-        where: { venueId: venue.id },
-        select: { id: true },
-      });
-      if (!guest) continue;
+    for (const { venueId } of guests) {
+      if (!venueId) continue;
       await this.db.$transaction(async (tx) => {
-        await tx.venueOnboarding.update({
-          where: { venueId: venue.id },
-          data: { completedAt: new Date() },
-        });
+        await tx.venueOnboarding.update({ where: { venueId }, data: { completedAt: new Date() } });
         await this.issues.resolve(
-          { scope: "platform", businessId: null },
-          setupKey(venue.id),
+          PLATFORM_WORKSPACE,
+          setupKey(venueId),
           { reason: "first_guest" },
           tx,
         );
@@ -337,62 +299,52 @@ export class OnboardingService {
     }
   }
 
-  /** Where each venue is on its way to serving guests: a business's, or every one. */
-  async stages(businessId?: string): Promise<Map<string, OnboardingStage>> {
-    const venues = await this.db.venue.findMany({
-      where: businessId ? { businessId } : {},
-      include: withFacts,
-    });
-    return new Map(venues.filter((v) => v.onboarding).map((v) => [v.id, this.stage(v)] as const));
-  }
-
+  /** The venue, within the reader's reach; an operator reaches only a venue handed to them. */
   private async venue(staff: Principal, venueId: string): Promise<VenueRow> {
     const venue = await this.db.venue.findFirst({
       where: { id: venueId, ...venueScope(staff) },
       include: withFacts,
     });
     if (!venue) throw venueNotFound();
+    if (staff.scope === "platform" && !(await this.issues.handedAt(staff, venueId))) {
+      throw venueNotFound();
+    }
     return venue;
   }
 
-  private onboarding(venue: VenueRow) {
-    if (!venue.onboarding) throw venueNotFound();
-    return venue.onboarding;
-  }
-
-  private stage(venue: VenueRow) {
-    const o = this.onboarding(venue);
-    const conditions = venue.routers.map((r) =>
-      conditionOf(routerJourney(r, r.lastSetup as StoredSetup | null).stage, r.status),
-    );
-    return onboardingStage({
-      ...o,
-      totalTsh: o.confirmedAt ? totalOf(o.lines) : null,
-      routerReached: venue.routers.some((r) => r.lastSeenAt !== null || r.status === "online"),
-      serving: conditions.includes("serving"),
-    });
-  }
-
   private async record(staff: Principal, venue: VenueRow): Promise<VenueOnboarding> {
-    const o = this.onboarding(venue);
-    const [isProtected, issue] = await Promise.all([
+    const o = onboardingOf(venue);
+    const stage = venueStage(venue);
+    const platform = staff.scope === "platform";
+    const [isProtected, issues] = await Promise.all([
       ownerProtected(this.db, venue.businessId),
-      staff.scope === "platform"
-        ? this.db.issue.findFirst({
+      platform
+        ? this.db.issue.findMany({
             where: {
-              scope: "platform",
+              ...PLATFORM_WORKSPACE,
               status: "open",
               key: { in: [packageKey(venue.id), setupKey(venue.id)] },
-              ...(staff.role === "operator" ? { holderId: staff.membershipId } : {}),
             },
-            select: { id: true },
+            select: { id: true, key: true, holderId: true },
           })
-        : null,
+        : [],
     ]);
+    const issue = (key: string) => issues.find((i) => i.key === key) ?? null;
+    // Who may take a step: the holder, or anyone while nobody holds it.
+    const free = (key: string) => {
+      const i = issue(key);
+      return i !== null && (i.holderId === null || i.holderId === staff.membershipId);
+    };
+    const manages = allows(staff.role, "onboarding.manage");
+    // What it costs is for the admin and managers and the business itself; the technician who
+    // goes sees what to bring.
+    const priced = !platform || manages;
+    const total = totalOf(o.lines);
+    const open = issue(packageKey(venue.id)) ?? issue(setupKey(venue.id));
     return {
       venue: { id: venue.id, name: venue.name },
       business: venue.business,
-      stage: this.stage(venue),
+      stage,
       preference: o.preferredAt ? { plan: o.preference, at: o.preferredAt.toISOString() } : null,
       agreed:
         o.confirmedAt && o.plan
@@ -401,26 +353,34 @@ export class OnboardingService {
               lines: o.lines.map((l) => ({
                 kind: l.kind,
                 description: l.description,
-                amountTsh: l.amountTsh,
+                amountTsh: priced ? l.amountTsh : null,
               })),
-              totalTsh: totalOf(o.lines),
+              totalTsh: priced ? total : null,
               note: o.note,
               confirmedAt: o.confirmedAt.toISOString(),
               dueOn:
-                totalOf(o.lines) > 0
+                priced && total > 0
                   ? businessDayOf(new Date(o.confirmedAt.getTime() + ONBOARDING_DUE_DAYS * DAY_MS))
                   : null,
             }
           : null,
       paid:
-        o.paidAt && o.paidAmountTsh !== null && o.paidBy
+        priced && o.paidAt && o.paidAmountTsh !== null && o.paidBy
           ? { amountTsh: o.paidAmountTsh, by: o.paidBy, at: o.paidAt.toISOString() }
           : null,
       setupDate: o.setupDate?.toISOString().slice(0, 10) ?? null,
       completedAt: o.completedAt?.toISOString() ?? null,
       ownerProtected: isProtected,
-      changeable: !o.setupDate && !o.paidAt,
-      issueId: issue?.id ?? null,
+      may: {
+        prefer: allows(staff.role, "onboarding.prefer") && !o.confirmedAt,
+        confirm: manages && !o.setupDate && !o.paidAt && free(packageKey(venue.id)),
+        pay: manages && stage === "pay",
+        schedule:
+          manages &&
+          ((stage === "schedule" && free(packageKey(venue.id))) ||
+            (stage === "add-router" && free(setupKey(venue.id)))),
+      },
+      issueId: open?.id ?? null,
     };
   }
 
@@ -443,4 +403,9 @@ export class OnboardingService {
       tx,
     );
   }
+}
+
+function onboardingOf(venue: VenueFacts): Onboarding {
+  if (!venue.onboarding) throw new Error(`Venue ${venue.id} has no onboarding.`);
+  return venue.onboarding;
 }

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { AuditAction, BrandRecord, VenueBrandResponse } from "@hashinet/types";
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
@@ -10,13 +10,11 @@ import { apiError } from "../http/error-envelope.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { PortalService } from "../portal/portal.service.js";
 import type { BrandInput } from "../portal/portal-input.js";
+import { venueNotFound } from "../venues/venue-errors.js";
 import { type BrandImageKind, NotAnImageError, processBrandImage } from "./brand-images.js";
 import { BRAND_STORE, type BrandStore } from "./brand-store.js";
 
 const FILE = /^(logo|background)-[0-9a-f]{16}\.webp$/;
-
-const venueNotFound = () =>
-  new NotFoundException(apiError("NOT_FOUND", "That venue does not exist."));
 
 /** Where a guest's phone loads an image: the portal's own origin, the one host it can reach. */
 function urlOf(key: string | null): string | null {

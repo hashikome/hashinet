@@ -4,6 +4,7 @@
 import type { BusinessRole, Region } from "@hashinet/types";
 import { loadConfig } from "../src/config/config.js";
 import { createPrismaClient } from "../src/database/client.js";
+import { beginOnboarding } from "../src/onboarding/begin.js";
 import { bootstrapPlatform, DEFAULT_PACKAGES } from "../src/platform/bootstrap.js";
 
 if (process.env.NODE_ENV === "production") {
@@ -50,6 +51,8 @@ async function business(
     data: { name, region, area, venues: { create: venues } },
     include: { venues: true },
   });
+  // Every venue starts at its package, as one created in the app does.
+  for (const v of created.venues) await beginOnboarding(db, v.id);
   for (const p of DEFAULT_PACKAGES) {
     await db.package.create({
       data: {

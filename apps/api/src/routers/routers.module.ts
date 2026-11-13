@@ -1,16 +1,11 @@
-import {
-  Inject,
-  Injectable,
-  Module,
-  type OnApplicationBootstrap,
-  type OnApplicationShutdown,
-} from "@nestjs/common";
+import { Inject, Injectable, Module } from "@nestjs/common";
 import { AuditLog } from "../audit/audit-log.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { SecretBox } from "../crypto/secret-box.js";
 import { PrismaService } from "../database/prisma.service.js";
-import { IntervalJob } from "../jobs/interval-job.js";
+import { IssuesModule } from "../issues/issues.module.js";
+import { IntervalJob, ScheduledJobs } from "../jobs/interval-job.js";
 import { LiveHub } from "../live/live-hub.js";
 import {
   HEALTH_CHECK_INTERVAL_MS,
@@ -31,19 +26,20 @@ import { TunnelPeersController } from "./tunnel-peers.controller.js";
 
 const MINUTE = 60_000;
 
-/** Runs the background jobs while the application is up. */
+/** Runs the routers' and vouchers' background jobs while the application is up. */
 @Injectable()
-export class BackgroundJobs implements OnApplicationBootstrap, OnApplicationShutdown {
-  private readonly jobs: IntervalJob[];
+export class BackgroundJobs extends ScheduledJobs {
+  protected readonly jobs: IntervalJob[];
   private tick = 0;
 
   constructor(
-    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(APP_CONFIG) config: AppConfig,
     monitor: LiveMonitor,
     expiry: VoucherExpiry,
     reconciler: VoucherReconciler,
     live: LiveHub,
   ) {
+    super(config.jobsEnabled);
     this.jobs = [
       // Every tick while someone watches the live view; otherwise every Nth, to keep session
       // status honest without polling routers every five seconds.
@@ -62,19 +58,10 @@ export class BackgroundJobs implements OnApplicationBootstrap, OnApplicationShut
       }),
     ];
   }
-
-  onApplicationBootstrap(): void {
-    if (!this.config.jobsEnabled) return;
-    // Run at once: catch anything that expired or got stuck while the API was down.
-    for (const job of this.jobs) job.start(true);
-  }
-
-  async onApplicationShutdown(): Promise<void> {
-    await Promise.all(this.jobs.map((job) => job.stop()));
-  }
 }
 
 @Module({
+  imports: [IssuesModule],
   providers: [
     {
       provide: RouterAccess,

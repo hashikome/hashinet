@@ -195,6 +195,10 @@ export interface BusinessSummary {
     /** The worst of its routers; setting up while none has served. */
     condition: RouterCondition;
     stage: OnboardingStage;
+    /** Its guests, as counts only (ADR-0014, 1): devices on a session at a router that answers,
+     * and those whose time runs while their router is down. */
+    onlineNow: number;
+    midSession: number;
   }[];
   /** Across its routers: the worst of them, or setting up while none has served. */
   condition: RouterCondition;
@@ -269,13 +273,24 @@ export interface IssueRecord {
   canClaim: boolean;
   /** Take over: someone below the reader holds it. */
   canTakeOver: boolean;
+  /** Release or hand it on: the reader holds it. */
+  canRelease: boolean;
+  /** Add a note: the reader holds it, or nobody does (noting claims it). */
+  canNote: boolean;
   /** Held with no activity for a day: flagged, never released by itself. */
   stalled: boolean;
-  /** Bounded facts its kind needs. */
-  data: Record<string, string | number | boolean | null>;
   openedAt: Timestamp;
   resolvedAt: Timestamp | null;
-  lastActivityAt: Timestamp;
+}
+
+/** `GET /api/issues/count`: the open issues in the reader's reach, for the menu. */
+export interface IssueCount {
+  openCount: number;
+}
+
+/** After Release or Hand to: whether the reader still sees the issue (an operator doesn't). */
+export interface IssueMoved {
+  visible: boolean;
 }
 
 /** `GET /api/issues`. */
@@ -298,22 +313,12 @@ export interface IssueDetail {
     data: IssueEventData | null;
   }[];
   handTo: IssuePerson[];
+  /** Whom a venue's setup can go to when it is scheduled: HashiNet's team, operators included.
+   * Empty except on a package issue the reader can schedule. */
+  goesTo: IssuePerson[];
   /** Whom HashiNet's team calls about a venue's issue: its business's owner. Null for a business,
    * which is calling no one but itself. */
   contact: { name: string; email: string; phone: string | null } | null;
-}
-
-/** `GET /api/guest-counts`: a business's guests as HashiNet's team sees them, counts per venue only
- * (ADR-0014, 1). */
-export interface GuestCounts {
-  venues: {
-    venue: { id: string; name: string };
-    business: { id: string; name: string };
-    /** Devices on a session at a router that answers. */
-    onlineNow: number;
-    /** Devices whose time runs while their router is down. */
-    midSession: number;
-  }[];
 }
 
 /** How a venue's router comes (ADR-0013, 2): connect its own, install one, launch with a line. */
@@ -341,7 +346,8 @@ export interface OnboardingLine {
   kind: OnboardingLineKind;
   /** A router's model, what the fee covers, or what "other" is. */
   description: string | null;
-  amountTsh: number;
+  /** Null for a reader who doesn't see what it costs: HashiNet's operators. */
+  amountTsh: number | null;
 }
 /** A package's charge is due this many days after it is confirmed (ADR-0013, 2). */
 export const ONBOARDING_DUE_DAYS = 7;
@@ -373,8 +379,9 @@ export interface VenueOnboarding {
     plan: OnboardingPlan;
     /** In the order agreed; the onboarding fee first. */
     lines: OnboardingLine[];
-    /** The lines together; 0 when there is nothing to charge. */
-    totalTsh: number;
+    /** The lines together; 0 when there is nothing to charge; null for a reader who doesn't
+     * see what it costs. */
+    totalTsh: number | null;
     note: string | null;
     confirmedAt: Timestamp;
     /** The business day the charge is due; null when there is nothing to charge. */
@@ -386,8 +393,8 @@ export interface VenueOnboarding {
   completedAt: Timestamp | null;
   /** The business's owner has an authenticator or a passkey: the venue may serve. */
   ownerProtected: boolean;
-  /** The package may still change: no router is added yet. */
-  changeable: boolean;
+  /** What the reader may do now, decided where each step is guarded. */
+  may: { prefer: boolean; confirm: boolean; pay: boolean; schedule: boolean };
   /** The open package or setup issue, for HashiNet's team; null for a business. */
   issueId: string | null;
 }
@@ -1177,12 +1184,6 @@ export interface InvitationPreview {
   /** For a platform member: the role offered. */
   role: MembershipRole | null;
   expiresAt: Timestamp;
-}
-
-/** Accepting an invitation to HashiNet's team: the invitee's name, nothing else. */
-export interface AcceptMemberInvitation {
-  token: string;
-  person: { name: string };
 }
 
 /** One person on a team, as its Team page lists them. */

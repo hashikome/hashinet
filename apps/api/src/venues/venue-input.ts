@@ -1,13 +1,8 @@
 import { REGIONS } from "@hashinet/types";
 import { z } from "zod";
+import { oneLine } from "../http/validation.js";
 
-/** One line of text: trimmed, no control characters (names reach printed vouchers and the portal). */
-const line = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .regex(/^[^\p{Cc}]*$/u, "must be one line of text");
+const line = oneLine;
 
 /**
  * A venue as it is entered, for create and for update alike: the form always sends the whole

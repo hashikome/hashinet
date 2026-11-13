@@ -36,6 +36,23 @@ async function servedRouter(venueId: string, status: "online" | "offline" | "err
   });
 }
 
+/** Opens an issue as a journey does, and finds its id. */
+async function opened(input: {
+  scope: "platform" | "business";
+  businessId: string | null;
+  kind: "router_offline" | "venue_package" | "venue_setup";
+  key: string;
+  venueId?: string;
+}): Promise<string> {
+  await api.app
+    .get(IssuesService)
+    .open({ ...input, venueId: input.venueId ?? null, routerId: null, holderId: null });
+  const row = await t.db.issue.findFirstOrThrow({
+    where: { scope: input.scope, businessId: input.businessId, key: input.key, status: "open" },
+  });
+  return row.id;
+}
+
 const sync = () => api.app.get(IssuesService).syncRouterIssues();
 
 async function issues(c: Client, status = "open"): Promise<IssueList> {
@@ -146,8 +163,8 @@ describe("Issues", () => {
           to: manager.membershipId,
           note: "Yours",
         })
-      ).status,
-    ).toBe(204);
+      ).body,
+    ).toEqual({ visible: true });
     expect((await issues(m)).issues[0]?.holder?.membershipId).toBe(manager.membershipId);
     // A venue manager is below a business manager: no take-over.
     expect((await issues(v)).issues[0]).toMatchObject({ mine: false, canTakeOver: false });
@@ -164,7 +181,7 @@ describe("Issues", () => {
     ).body as IssueDetail;
     expect(taken.issue.holder?.membershipId).toBe(owner.membershipId);
     expect((await m.request("POST", `/api/issues/${id}/release`)).status).toBe(403);
-    expect((await o.request("POST", `/api/issues/${id}/release`)).status).toBe(204);
+    expect((await o.request("POST", `/api/issues/${id}/release`)).body).toEqual({ visible: true });
     const released = (await o.request("GET", `/api/issues/${id}`)).body as IssueDetail;
     expect(released.issue).toMatchObject({ holder: null, canClaim: true });
 
@@ -188,8 +205,7 @@ describe("Issues", () => {
     });
     await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const cafe = await venue();
-    const svc = api.app.get(IssuesService);
-    const id = await svc.open({
+    const id = await opened({
       scope: "business",
       businessId: cafe.businessId,
       kind: "venue_setup",
@@ -197,7 +213,7 @@ describe("Issues", () => {
       venueId: cafe.id,
     });
     expect(
-      await svc.open({
+      await opened({
         scope: "business",
         businessId: cafe.businessId,
         kind: "venue_setup",
@@ -225,15 +241,14 @@ describe("Issues", () => {
       role: "operator",
     });
     const cafe = await venue();
-    const svc = api.app.get(IssuesService);
-    const pkg = await svc.open({
+    const pkg = await opened({
       scope: "platform",
       businessId: null,
       kind: "venue_package",
       key: `venue-package:${cafe.id}`,
       venueId: cafe.id,
     });
-    const setup = await svc.open({
+    const setup = await opened({
       scope: "platform",
       businessId: null,
       kind: "venue_setup",
@@ -258,12 +273,64 @@ describe("Issues", () => {
       ),
     ).toEqual([op.membershipId]);
     expect(
-      (await admin.request("POST", `/api/issues/${setup}/hand`, { to: op.membershipId })).status,
-    ).toBe(204);
+      (await admin.request("POST", `/api/issues/${setup}/hand`, { to: op.membershipId })).body,
+    ).toEqual({ visible: true });
     expect((await issues(operator)).issues).toMatchObject([{ id: setup, mine: true }]);
 
     // Given back, it leaves their sight.
-    expect((await operator.request("POST", `/api/issues/${setup}/release`)).status).toBe(204);
+    // Given back, it leaves their sight, and the answer says so.
+    expect((await operator.request("POST", `/api/issues/${setup}/release`)).body).toEqual({
+      visible: false,
+    });
     expect((await issues(operator)).openCount).toBe(0);
+  });
+  test("claims are exclusive: two at once, one gets it", async () => {
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
+    const cafe = await venue();
+    const id = await opened({
+      scope: "platform",
+      businessId: null,
+      kind: "venue_package",
+      key: `venue-package:${cafe.id}`,
+      venueId: cafe.id,
+    });
+    const [a, b] = [await signedIn("admin@example.com"), await signedIn("asha@example.com")];
+    const statuses = (
+      await Promise.all([
+        a.request("POST", `/api/issues/${id}/claim`),
+        b.request("POST", `/api/issues/${id}/claim`),
+      ])
+    ).map((r) => r.status);
+    expect(statuses.sort()).toEqual([200, 403]);
+    expect(await t.db.issueEvent.count({ where: { issueId: id, action: "claimed" } })).toBe(1);
+    expect((await a.request("GET", "/api/issues/count")).body).toEqual({ openCount: 1 });
+  });
+
+  test("a removed router's issues close, and a removed person's issues go back to the team", async () => {
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    const asha = await platformMember(t.db, {
+      email: "asha@example.com",
+      name: "Asha",
+      role: "manager",
+    });
+    const cafe = await venue();
+    const router = await servedRouter(cafe.id, "offline");
+    await sync();
+    const admin = await signedIn("admin@example.com");
+    const id = (await issues(admin)).issues[0]?.id ?? "";
+    await t.db.issue.update({ where: { id }, data: { holderId: asha.membershipId } });
+    expect((await admin.request("DELETE", `/api/team/${asha.membershipId}`)).status).toBe(204);
+    expect((await issues(admin)).issues[0]?.holder).toBeNull();
+
+    await t.db.router.delete({ where: { id: router.id } });
+    await sync();
+    expect((await issues(admin)).openCount).toBe(0);
+    const events = ((await admin.request("GET", `/api/issues/${id}`)).body as IssueDetail).events;
+    expect(events.map((e) => [e.action, e.data])).toEqual([
+      ["opened", null],
+      ["released", { reason: "holder_removed" }],
+      ["resolved", { reason: "router_removed" }],
+    ]);
   });
 });

@@ -9,26 +9,52 @@ import {
   type OnboardingLineKind,
   type OnboardingPaidBy,
   type OnboardingPlan,
-  type TeamList,
+  type OnboardingStage,
   type VenueOnboarding,
 } from "@hashinet/types";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
-import { Breakdown, SetupRail as Rail, type Step } from "@/components/hearth/onboarding";
-import { Button, Field, Panel, useToast } from "@/components/hearth/ui";
-import { ApiRequestError, api, messageOf } from "@/lib/api";
-import { longDate } from "@/lib/dates";
+import { Breakdown, SetupRail, type Step } from "@/components/hearth/onboarding";
+import { Button, Field, Panel } from "@/components/hearth/ui";
+import { api } from "@/lib/api";
+import { calendarDay, longDate, todayIso } from "@/lib/dates";
 import { LINE_NAME, PAID_BY, PLAN, setupDay } from "@/lib/issues";
 import { tsh } from "@/lib/money";
 import { ROLE_NAME } from "@/lib/nav";
-import { useCan } from "@/lib/session";
+import { useSubmit } from "@/lib/submit";
 import { Contact } from "./contact";
+
+/** Where each stage stands on the package's rail, and on the setup's. */
+const PACKAGE_STEP: Record<OnboardingStage, number> = {
+  choose: 0,
+  confirm: 0,
+  pay: 1,
+  schedule: 2,
+  "add-router": 3,
+  "set-up": 3,
+  "first-guest": 3,
+  done: 3,
+};
+const SETUP_STEP: Record<OnboardingStage, number> = {
+  choose: 0,
+  confirm: 0,
+  pay: 0,
+  schedule: 0,
+  "add-router": 0,
+  "set-up": 1,
+  "first-guest": 2,
+  done: 3,
+};
 
 const agreedText = (o: VenueOnboarding) =>
   o.agreed
     ? [
         PLAN[o.agreed.plan].name,
-        o.agreed.totalTsh > 0 ? tsh(o.agreed.totalTsh) : "nothing to charge",
+        o.agreed.totalTsh === null
+          ? ""
+          : o.agreed.totalTsh > 0
+            ? tsh(o.agreed.totalTsh)
+            : "nothing to charge",
         o.setupDate ? setupDay(o.setupDate) : "",
       ]
         .filter(Boolean)
@@ -46,19 +72,15 @@ const preferenceText = (o: VenueOnboarding) =>
 export function PackageSteps({
   onboarding: o,
   detail,
-  team,
   lock,
   reload,
 }: {
   onboarding: VenueOnboarding;
   detail: IssueDetail;
-  team: TeamList | null;
-  lock: ReactNode;
+  /** Who else is responsible, when someone is: their steps are theirs until it is taken over. */
+  lock: ReactNode | null;
   reload: () => Promise<void>;
 }) {
-  const can = useCan();
-  const manage = can("onboarding.manage");
-  const now = o.stage === "pay" ? 1 : o.stage === "schedule" ? 2 : 0;
   const first = detail.contact?.name.split(" ")[0] ?? "the owner";
   const steps: Step[] = [
     {
@@ -74,30 +96,27 @@ export function PackageSteps({
             how we will help. Then record what you agreed, line by line; it all goes on the
             business&apos;s one bill.
           </p>
-          {manage ? <ConfirmForm o={o} reload={reload} /> : null}
+          {o.may.confirm ? <ConfirmForm o={o} reload={reload} /> : lock}
         </>
       ),
     },
     {
       title: "Get it paid",
-      anyone: true,
       todo: o.agreed?.totalTsh ? `${tsh(o.agreed.totalTsh)} due` : "If there is a charge",
       done: o.paid ? `${tsh(o.paid.amountTsh)} paid` : "Nothing to charge",
       body: (
         <>
           {o.agreed ? <Breakdown agreed={o.agreed} /> : null}
           <p>
-            {o.agreed?.dueOn
-              ? `Due by ${longDate(`${o.agreed.dueOn}T12:00:00+03:00`)}, in full. `
-              : ""}
+            {o.agreed?.dueOn ? `Due by ${longDate(calendarDay(o.agreed.dueOn))}, in full. ` : ""}
             The setup is scheduled once it is paid.
           </p>
-          {manage ? (
+          {o.may.pay ? (
             <PaymentForm o={o} reload={reload} />
           ) : (
             <p className="muted">The admin or a manager records it once it arrives.</p>
           )}
-          {o.changeable && !lock && manage ? <ChangeLink o={o} reload={reload} /> : null}
+          {o.may.confirm ? <ChangeLink o={o} reload={reload} /> : null}
         </>
       ),
     },
@@ -111,12 +130,12 @@ export function PackageSteps({
             {agreedText(o)}. Agree a day with {first}; the setup then goes to the team, to whoever
             goes.
           </p>
-          {manage ? <ScheduleForm o={o} team={team} reload={reload} /> : null}
+          {o.may.schedule ? <ScheduleForm o={o} goesTo={detail.goesTo} reload={reload} /> : lock}
         </>
       ),
     },
   ];
-  return <Rail steps={steps} now={now} lock={lock} />;
+  return <SetupRail title="What to do" steps={steps} now={PACKAGE_STEP[o.stage]} />;
 }
 
 /** A venue's setup, wherever it happens: add the router, set it up, check a phone. */
@@ -127,15 +146,13 @@ export function SetupSteps({
 }: {
   onboarding: VenueOnboarding;
   detail: IssueDetail;
-  lock: ReactNode;
+  lock: ReactNode | null;
 }) {
-  const now = o.stage === "add-router" ? 0 : o.stage === "set-up" ? 1 : 2;
-  const router = `/venues/${o.venue.id}/router`;
   const model = o.agreed?.lines.find((l) => l.kind === "mikrotik_router")?.description;
-  const open = (label: string) => (
+  const openRouter = lock ?? (
     <div className="actions">
-      <Link className="btn primary" href={router}>
-        <span>{label}</span>
+      <Link className="btn primary" href={`/venues/${o.venue.id}/router`}>
+        <span>Open router</span>
       </Link>
     </div>
   );
@@ -155,7 +172,7 @@ export function SetupSteps({
             {o.agreed?.note ? ` From the call: ${o.agreed.note}` : ""}
           </p>
           {detail.contact ? <Contact contact={detail.contact} /> : null}
-          {open("Open router")}
+          {openRouter}
         </>
       ),
     },
@@ -176,7 +193,7 @@ export function SetupSteps({
               serves no guest until they do.
             </p>
           )}
-          {open("Open router")}
+          {openRouter}
         </>
       ),
     },
@@ -192,18 +209,32 @@ export function SetupSteps({
       ),
     },
   ];
-  return <Rail steps={steps} now={now} lock={lock} />;
+  return <SetupRail title="What to do" steps={steps} now={SETUP_STEP[o.stage]} />;
 }
 
-/** Errors the API names per field, as sentences beside them. */
-function useErrors() {
-  const toast = useToast();
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const fail = (e: unknown) => {
-    if (e instanceof ApiRequestError && e.details) setErrors(e.details);
-    else toast(messageOf(e));
-  };
-  return { errors, setErrors, fail };
+/** What was agreed for the venue, read-only: the plan, its lines, the payment and the setup day. */
+export function Agreed({ onboarding: o }: { onboarding: VenueOnboarding }) {
+  if (!o.agreed) return null;
+  return (
+    <Panel title={`Package: ${PLAN[o.agreed.plan].name}`}>
+      <Breakdown agreed={o.agreed} />
+      <p className="muted">
+        {[
+          o.agreed.totalTsh === null
+            ? ""
+            : o.paid
+              ? `${tsh(o.paid.amountTsh)} paid by ${PAID_BY[o.paid.by].toLowerCase()}`
+              : o.agreed.totalTsh
+                ? "Not paid yet"
+                : "Nothing to charge",
+          o.setupDate ? `setup ${setupDay(o.setupDate)}` : "",
+          o.agreed.note ?? "",
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+    </Panel>
+  );
 }
 
 interface Draft {
@@ -211,13 +242,11 @@ interface Draft {
   description: string;
   amount: string;
 }
-const draftOf = (kinds: OnboardingLineKind[], keep: Draft[] = []): Draft[] =>
+const draftOf = (kinds: OnboardingLineKind[], keep: Draft[]): Draft[] =>
   kinds.map((kind) => keep.find((d) => d.kind === kind) ?? { kind, description: "", amount: "" });
 
 function ConfirmForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<void> }) {
-  const toast = useToast();
-  const { errors, setErrors, fail } = useErrors();
-  const [busy, setBusy] = useState(false);
+  const { busy, errors, setErrors, run } = useSubmit();
   const [plan, setPlan] = useState<OnboardingPlan>(
     o.agreed?.plan ?? o.preference?.plan ?? "install",
   );
@@ -226,9 +255,9 @@ function ConfirmForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<
       ? o.agreed.lines.map((l) => ({
           kind: l.kind,
           description: l.description ?? "",
-          amount: String(l.amountTsh),
+          amount: l.amountTsh === null ? "" : String(l.amountTsh),
         }))
-      : draftOf(ONBOARDING_STARTING_LINES[plan]),
+      : draftOf(ONBOARDING_STARTING_LINES[plan], []),
   );
   const [note, setNote] = useState(o.agreed?.note ?? "");
   const total = lines.reduce((n, l) => n + (Number(l.amount) || 0), 0);
@@ -246,25 +275,20 @@ function ConfirmForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<
           setErrors({ [`lines.${blank}.amountTsh`]: "is required: enter 0 if it is free" });
           return;
         }
-        setBusy(true);
-        setErrors({});
-        try {
-          await api.post(`/api/venues/${o.venue.id}/onboarding/confirm`, {
-            plan,
-            lines: lines.map((l) => ({
-              kind: l.kind,
-              description: l.description.trim() || null,
-              amountTsh: Number(l.amount),
-            })),
-            note: note.trim() || null,
-          });
-          await reload();
-          toast(`${PLAN[plan].name} confirmed: ${total ? tsh(total) : "nothing to charge"}.`);
-        } catch (err) {
-          fail(err);
-        } finally {
-          setBusy(false);
-        }
+        const sent = await run(
+          () =>
+            api.post(`/api/venues/${o.venue.id}/onboarding/confirm`, {
+              plan,
+              lines: lines.map((l) => ({
+                kind: l.kind,
+                description: l.description.trim() || null,
+                amountTsh: Number(l.amount),
+              })),
+              note: note.trim() || null,
+            }),
+          `${PLAN[plan].name} confirmed: ${total ? tsh(total) : "nothing to charge"}.`,
+        );
+        if (sent) await reload();
       }}
     >
       <div className="pkg-pick" role="radiogroup" aria-label="Package">
@@ -398,9 +422,7 @@ function ConfirmForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<
 }
 
 function PaymentForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<void> }) {
-  const toast = useToast();
-  const { errors, fail } = useErrors();
-  const [busy, setBusy] = useState(false);
+  const { busy, errors, run } = useSubmit();
   const [by, setBy] = useState<OnboardingPaidBy>("mobile_money");
   const [amount, setAmount] = useState(String(o.agreed?.totalTsh ?? ""));
   return (
@@ -409,19 +431,15 @@ function PaymentForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<
       noValidate
       onSubmit={async (e) => {
         e.preventDefault();
-        setBusy(true);
-        try {
-          await api.post(`/api/venues/${o.venue.id}/onboarding/payment`, {
-            amountTsh: Number(amount),
-            by,
-          });
-          await reload();
-          toast(`${tsh(Number(amount))} recorded. Schedule the setup next.`);
-        } catch (err) {
-          fail(err);
-        } finally {
-          setBusy(false);
-        }
+        const sent = await run(
+          () =>
+            api.post(`/api/venues/${o.venue.id}/onboarding/payment`, {
+              amountTsh: Number(amount),
+              by,
+            }),
+          `${tsh(Number(amount))} recorded. Schedule the setup next.`,
+        );
+        if (sent) await reload();
       }}
     >
       <div className="row-fields">
@@ -465,33 +483,26 @@ function PaymentForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<
 /** Reopens the package form while nothing is paid. */
 function ChangeLink({ o, reload }: { o: VenueOnboarding; reload: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
-  if (!open) {
-    return (
-      <div>
-        <button className="link" type="button" onClick={() => setOpen(true)}>
-          Change the package
-        </button>
-      </div>
-    );
-  }
-  return <ConfirmForm o={o} reload={reload} />;
+  if (open) return <ConfirmForm o={o} reload={reload} />;
+  return (
+    <div>
+      <button className="link" type="button" onClick={() => setOpen(true)}>
+        Change the package
+      </button>
+    </div>
+  );
 }
 
 function ScheduleForm({
   o,
-  team,
+  goesTo,
   reload,
 }: {
   o: VenueOnboarding;
-  team: TeamList | null;
+  goesTo: IssueDetail["goesTo"];
   reload: () => Promise<void>;
 }) {
-  const toast = useToast();
-  const { errors, fail } = useErrors();
-  const [busy, setBusy] = useState(false);
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Dar_es_Salaam" }).format(
-    new Date(),
-  );
+  const { busy, errors, run } = useSubmit();
   const [date, setDate] = useState(o.setupDate ?? "");
   const [goes, setGoes] = useState("");
   return (
@@ -500,19 +511,15 @@ function ScheduleForm({
       noValidate
       onSubmit={async (e) => {
         e.preventDefault();
-        setBusy(true);
-        try {
-          await api.post(`/api/venues/${o.venue.id}/onboarding/schedule`, {
-            date,
-            goesId: goes || null,
-          });
-          toast(`Setup scheduled for ${setupDay(date)}. It is in Issues for the team.`);
-          await reload();
-        } catch (err) {
-          fail(err);
-        } finally {
-          setBusy(false);
-        }
+        const sent = await run(
+          () =>
+            api.post(`/api/venues/${o.venue.id}/onboarding/schedule`, {
+              date,
+              goesId: goes || null,
+            }),
+          `Setup scheduled for ${setupDay(date)}. It is in Issues for the team.`,
+        );
+        if (sent) await reload();
       }}
     >
       <div className="row-fields">
@@ -525,7 +532,7 @@ function ScheduleForm({
             id="sd"
             className="input"
             type="date"
-            min={today}
+            min={todayIso()}
             required
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -534,7 +541,7 @@ function ScheduleForm({
         <Field label="Who goes" id="sw" hint="They see the setup in their Issues">
           <select id="sw" className="input" value={goes} onChange={(e) => setGoes(e.target.value)}>
             <option value="">Anyone on the team</option>
-            {(team?.members ?? []).map((m) => (
+            {goesTo.map((m) => (
               <option key={m.membershipId} value={m.membershipId}>
                 {m.name}, {ROLE_NAME[m.role].toLowerCase()}
               </option>
@@ -548,33 +555,5 @@ function ScheduleForm({
         </Button>
       </div>
     </form>
-  );
-}
-
-/** What was agreed for the venue, read-only: the plan, its lines, the payment and the setup day. */
-export function Agreed({ onboarding: o }: { onboarding: VenueOnboarding }) {
-  const can = useCan();
-  if (!o.agreed) return null;
-  // What it cost is for the admin and managers; the technician who goes sees what to bring.
-  const money = can("onboarding.manage");
-  return (
-    <Panel title={`Package: ${PLAN[o.agreed.plan].name}`}>
-      <Breakdown agreed={o.agreed} money={money} />
-      <p className="muted">
-        {[
-          !money
-            ? ""
-            : o.paid
-              ? `${tsh(o.paid.amountTsh)} paid by ${PAID_BY[o.paid.by].toLowerCase()}`
-              : o.agreed.totalTsh
-                ? "Not paid yet"
-                : "Nothing to charge",
-          o.setupDate ? `setup ${setupDay(o.setupDate)}` : "",
-          o.agreed.note ?? "",
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </p>
-    </Panel>
   );
 }

@@ -234,7 +234,9 @@ function RouterView({
 }) {
   const can = useCan();
   const toast = useToast();
-  const manage = can("router.manage");
+  // Installing is the admin's, a manager's, and an operator's at a venue handed to them; the API
+  // decides which venue.
+  const install = can("router.install");
   const check = can("router.check");
   const journey = useLoad(
     () => api.get<RouterJourney>(`/api/routers/${router.id}/journey`),
@@ -309,7 +311,7 @@ function RouterView({
         </ul>
       </Panel>
 
-      {stage !== "serving" || manage ? (
+      {stage !== "serving" || install ? (
         <Panel title={stage === "serving" ? "Set up" : "Getting it serving"}>
           <ol className="todo checklist">
             <li className={step(0)}>
@@ -318,7 +320,7 @@ function RouterView({
                 <div className="step-body">
                   {at > 0 ? (
                     <p>Run; the router reached HashiNet through its tunnel.</p>
-                  ) : manage ? (
+                  ) : install ? (
                     <p>
                       Reset the MikroTik router with no default configuration, connect to it in
                       WinBox, plug port 1 into the venue&apos;s network, and paste the script into
@@ -342,7 +344,7 @@ function RouterView({
                   ) : null}
                 </div>
               </div>
-              {manage && at === 0 ? (
+              {install && at === 0 ? (
                 <div className="actions">
                   {script ? (
                     <>
@@ -434,7 +436,7 @@ function RouterView({
                   ))}
                 </div>
               </div>
-              {manage && (at === 1 || stage === "serving") && !running ? (
+              {install && (at === 1 || stage === "serving") && !running ? (
                 <div className="actions">
                   <Button
                     kind={at === 1 ? "primary" : "secondary"}
@@ -519,7 +521,7 @@ function RouterView({
           )}
         </Panel>
       ) : null}
-      {stage === "serving" && router.tunnelAddress && manage ? (
+      {stage === "serving" && router.tunnelAddress && install ? (
         <p className="muted small">
           Tunnel address <CopyText text={router.tunnelAddress} />
         </p>

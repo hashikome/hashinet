@@ -74,3 +74,6 @@ WITH opened AS (
 )
 INSERT INTO "issue_events" ("issue_id", "action")
 SELECT "id", 'opened' FROM opened;
+
+-- The first guest at a venue closes its setup: found by venue.
+CREATE INDEX "wifi_sessions_venue_id_idx" ON "wifi_sessions"("venue_id");

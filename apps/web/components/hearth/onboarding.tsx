@@ -14,22 +14,10 @@ export interface Step {
   todo: string;
   done: string;
   body: ReactNode;
-  /** Done by the admin and managers whoever holds the issue. */
-  anyone?: boolean;
 }
 
 /** The steps down a rail, the current one open beside it (prototype `.setup`). */
-export function SetupRail({
-  steps,
-  now,
-  lock = null,
-  title = "What to do",
-}: {
-  steps: Step[];
-  now: number;
-  lock?: ReactNode;
-  title?: string;
-}) {
+export function SetupRail({ steps, now, title }: { steps: Step[]; now: number; title: string }) {
   const step = steps[now];
   return (
     <Panel title={title}>
@@ -51,7 +39,7 @@ export function SetupRail({
         {step ? (
           <div className="setup-now">
             <h3>{step.title}</h3>
-            {lock && !step.anyone ? lock : step.body}
+            {step.body}
           </div>
         ) : null}
       </div>
@@ -59,14 +47,12 @@ export function SetupRail({
   );
 }
 
-/** What the package costs, line by line, and its total. */
-export function Breakdown({
-  agreed,
-  money = true,
-}: {
-  agreed: NonNullable<VenueOnboarding["agreed"]>;
-  money?: boolean;
-}) {
+/**
+ * What the package is, line by line, with what each costs and the total when the reader sees
+ * money (HashiNet's operators see what to bring, not its price).
+ */
+export function Breakdown({ agreed }: { agreed: NonNullable<VenueOnboarding["agreed"]> }) {
+  const total = agreed.totalTsh;
   return (
     <table className="lines-table">
       <tbody>
@@ -77,18 +63,20 @@ export function Breakdown({
               {LINE_NAME[l.kind]}
               {l.description ? <span className="sub">{l.description}</span> : null}
             </td>
-            {money ? <td className="r num">{l.amountTsh ? tsh(l.amountTsh) : "Free"}</td> : null}
+            {l.amountTsh === null ? null : (
+              <td className="r num">{l.amountTsh ? tsh(l.amountTsh) : "Free"}</td>
+            )}
           </tr>
         ))}
       </tbody>
-      {money ? (
+      {total === null ? null : (
         <tfoot>
           <tr>
             <td>Total</td>
-            <td className="r num">{tsh(agreed.totalTsh)}</td>
+            <td className="r num">{tsh(total)}</td>
           </tr>
         </tfoot>
-      ) : null}
+      )}
     </table>
   );
 }

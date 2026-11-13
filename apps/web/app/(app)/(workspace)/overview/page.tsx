@@ -3,6 +3,7 @@
 import {
   ONBOARDING_PLANS,
   type OnboardingPlan,
+  type OnboardingStage,
   type RouterList,
   type RouterRecord,
   type TodaySummary,
@@ -21,14 +22,14 @@ import {
   Panel,
   SettingRow,
   Table,
-  useToast,
 } from "@/components/hearth/ui";
-import { api, messageOf } from "@/lib/api";
-import { clock, dayName, longDate, weekday } from "@/lib/dates";
+import { api } from "@/lib/api";
+import { calendarDay, clock, dayName, longDate, weekday } from "@/lib/dates";
 import { PLAN, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
+import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
 
 /**
@@ -194,36 +195,31 @@ function SettingUp({ sub }: { sub: string }) {
   );
 }
 
+/** Where each stage stands on the owner's four steps. */
+const OWNER_STEP: Record<OnboardingStage, number> = {
+  choose: 0,
+  confirm: 1,
+  pay: 1,
+  schedule: 1,
+  "add-router": 2,
+  "set-up": 2,
+  "first-guest": 3,
+  done: 3,
+};
+
 /** A venue's way online, as its owner sees it: one set of steps wherever it starts. */
 function GettingStarted({ o, reload }: { o: VenueOnboarding; reload: () => Promise<void> }) {
-  const can = useCan();
-  const toast = useToast();
+  const { busy, run } = useSubmit();
   const [plan, setPlan] = useState<OnboardingPlan | "">(o.preference?.plan ?? "");
-  const [busy, setBusy] = useState(false);
-  const mayChoose = can("onboarding.prefer") && !o.agreed;
-  const now =
-    o.stage === "choose"
-      ? 0
-      : o.stage === "confirm" || o.stage === "pay" || o.stage === "schedule"
-        ? 1
-        : o.stage === "add-router" || o.stage === "set-up"
-          ? 2
-          : 3;
+  const mayChoose = o.may.prefer;
   const send = async (choice: OnboardingPlan | null) => {
-    setBusy(true);
-    try {
-      await api.put(`/api/venues/${o.venue.id}/onboarding/preference`, { plan: choice });
-      await reload();
-      toast(
-        choice
-          ? `${PLAN[choice].name} sent. HashiNet's team calls you within a working day.`
-          : "Asked. HashiNet's team calls you within a working day to advise.",
-      );
-    } catch (e) {
-      toast(messageOf(e));
-    } finally {
-      setBusy(false);
-    }
+    const sent = await run(
+      () => api.put(`/api/venues/${o.venue.id}/onboarding/preference`, { plan: choice }),
+      choice
+        ? `${PLAN[choice].name} sent. HashiNet's team calls you within a working day.`
+        : "Asked. HashiNet's team calls you within a working day to advise.",
+    );
+    if (sent) await reload();
   };
   const chosen = o.preference?.plan ? PLAN[o.preference.plan] : null;
   const agreed = o.agreed;
@@ -303,8 +299,8 @@ function GettingStarted({ o, reload }: { o: VenueOnboarding; reload: () => Promi
               <p>
                 {o.paid
                   ? `Paid ${tsh(o.paid.amountTsh)}. We agree the setup day with you next.`
-                  : agreed.totalTsh
-                    ? `${tsh(agreed.totalTsh)} is due by ${longDate(`${agreed.dueOn}T12:00:00+03:00`)}, all on one bill from HashiNet. The setup is scheduled once it is paid.`
+                  : agreed.totalTsh && agreed.dueOn
+                    ? `${tsh(agreed.totalTsh)} is due by ${longDate(calendarDay(agreed.dueOn))}, all on one bill from HashiNet. The setup is scheduled once it is paid.`
                     : "Nothing to charge. We agree the setup day with you next."}
               </p>
             </>
@@ -355,5 +351,7 @@ function GettingStarted({ o, reload }: { o: VenueOnboarding; reload: () => Promi
       ),
     },
   ];
-  return <SetupRail title={`Getting ${o.venue.name} online`} steps={steps} now={now} />;
+  return (
+    <SetupRail title={`Getting ${o.venue.name} online`} steps={steps} now={OWNER_STEP[o.stage]} />
+  );
 }

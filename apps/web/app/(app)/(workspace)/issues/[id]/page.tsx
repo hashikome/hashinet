@@ -1,6 +1,6 @@
 "use client";
 
-import type { IssueDetail, TeamList, VenueOnboarding } from "@hashinet/types";
+import type { IssueDetail, IssueMoved, VenueOnboarding } from "@hashinet/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, use, useState } from "react";
@@ -31,19 +31,13 @@ import { Agreed, PackageSteps, SetupSteps } from "./onboarding-steps";
 export default function IssuePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { me } = useSession();
-  const can = useCan();
   const data = useLoad(async () => {
     const detail = await api.get<IssueDetail>(`/api/issues/${id}`);
     const venueId = detail.issue.kind !== "router_offline" ? detail.issue.venue?.id : null;
     const onboarding = venueId
       ? await api.get<VenueOnboarding>(`/api/venues/${venueId}/onboarding`)
       : null;
-    // Whom a setup can go to: HashiNet's team, operators included.
-    const team =
-      detail.issue.kind === "venue_package" && can("team.read")
-        ? await api.get<TeamList>("/api/team")
-        : null;
-    return { detail, onboarding, team };
+    return { detail, onboarding };
   }, [id, me.active.id]);
   const crumb = (
     <>
@@ -59,7 +53,7 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
     );
   }
   if (!data.data) return <Head title="Issue" sub="" crumb={crumb} />;
-  const { detail, onboarding, team } = data.data;
+  const { detail, onboarding } = data.data;
   const { issue } = detail;
   const open = issue.status === "open";
   const sub = (
@@ -93,17 +87,9 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
         crumb={crumb}
         actions={open ? <Holder detail={detail} reload={data.reload} /> : null}
       />
-      {issue.kind === "router_offline" && open ? (
-        <RouterSteps detail={detail} locked={Boolean(lockedBy)} lock={lock} />
-      ) : null}
+      {issue.kind === "router_offline" && open ? <RouterSteps detail={detail} lock={lock} /> : null}
       {issue.kind === "venue_package" && onboarding && open ? (
-        <PackageSteps
-          onboarding={onboarding}
-          detail={detail}
-          team={team}
-          lock={lock}
-          reload={data.reload}
-        />
+        <PackageSteps onboarding={onboarding} detail={detail} lock={lock} reload={data.reload} />
       ) : null}
       {issue.kind === "venue_setup" && onboarding && open ? (
         <SetupSteps onboarding={onboarding} detail={detail} lock={lock} />
@@ -138,14 +124,17 @@ function Holder({ detail, reload }: { detail: IssueDetail; reload: () => Promise
   const [dialog, setDialog] = useState<"hand" | "take" | null>(null);
   const [busy, setBusy] = useState(false);
   if (!can("issue.work")) return null;
-  const act = async (path: string, body: unknown, done: string, leaves = false) => {
+  const act = async (path: string, body: unknown, done: string) => {
     setBusy(true);
     try {
-      await api.post(`/api/issues/${issue.id}/${path}`, body);
+      const moved = await api.post<IssueMoved | IssueDetail>(
+        `/api/issues/${issue.id}/${path}`,
+        body,
+      );
       setDialog(null);
       toast(done);
       // Given away, an operator no longer sees it.
-      if (leaves) router.push("/issues");
+      if ("visible" in moved && !moved.visible) router.push("/issues");
       else await reload();
     } catch (e) {
       toast(messageOf(e));
@@ -153,16 +142,15 @@ function Holder({ detail, reload }: { detail: IssueDetail; reload: () => Promise
       setBusy(false);
     }
   };
-  const leaves = !can("router.manage");
   const stalled = issue.stalled ? <Pill kind="bad">Stalled: nothing done for a day</Pill> : null;
   let controls: ReactNode;
-  if (!issue.holder) {
+  if (issue.canClaim) {
     controls = (
       <Button busy={busy} onClick={() => act("claim", {}, "It's yours. Others see you're on it.")}>
         Claim
       </Button>
     );
-  } else if (issue.mine) {
+  } else if (issue.canRelease) {
     controls = (
       <>
         {stalled}
@@ -170,7 +158,7 @@ function Holder({ detail, reload }: { detail: IssueDetail; reload: () => Promise
         {detail.handTo.length ? <Button onClick={() => setDialog("hand")}>Hand to</Button> : null}
         <Button
           busy={busy}
-          onClick={() => act("release", {}, "Released. Anyone on the team can claim it.", leaves)}
+          onClick={() => act("release", {}, "Released. Anyone on the team can claim it.")}
         >
           Release
         </Button>
@@ -180,7 +168,7 @@ function Holder({ detail, reload }: { detail: IssueDetail; reload: () => Promise
     controls = (
       <>
         {stalled}
-        <span className="small muted">Responsible: {issue.holder.name}</span>
+        <span className="small muted">Responsible: {issue.holder?.name}</span>
         {issue.canTakeOver ? <Button onClick={() => setDialog("take")}>Take over</Button> : null}
       </>
     );
@@ -198,7 +186,6 @@ function Holder({ detail, reload }: { detail: IssueDetail; reload: () => Promise
               "hand",
               { to, note: note || null },
               `Handed to ${detail.handTo.find((p) => p.membershipId === to)?.name}.`,
-              leaves,
             )
           }
         />
@@ -322,15 +309,7 @@ function TakeDialog({
 }
 
 /** A router that stopped serving: check it, ask the venue, set it up again if it comes back wrong. */
-function RouterSteps({
-  detail,
-  locked,
-  lock,
-}: {
-  detail: IssueDetail;
-  locked: boolean;
-  lock: ReactNode;
-}) {
+function RouterSteps({ detail, lock }: { detail: IssueDetail; lock: ReactNode | null }) {
   const { issue, contact } = detail;
   const can = useCan();
   const toast = useToast();
@@ -390,7 +369,7 @@ function RouterSteps({
                 {n === 0 ? lock : null}
               </div>
             </div>
-            {action && !locked ? <div className="actions">{action}</div> : null}
+            {action && !lock ? <div className="actions">{action}</div> : null}
           </li>
         ))}
       </ol>
@@ -405,8 +384,7 @@ function History({ detail, reload }: { detail: IssueDetail; reload: () => Promis
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const { issue } = detail;
-  const mayNote =
-    issue.status === "open" && can("issue.work") && (issue.mine || issue.holder === null);
+  const mayNote = issue.canNote && can("issue.work");
   const add = async (e: FormEvent) => {
     e.preventDefault();
     if (!note.trim()) return;

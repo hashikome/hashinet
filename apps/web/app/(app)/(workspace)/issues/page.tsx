@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { when } from "@/lib/dates";
 import { issuePill, issueTitle, issueWhere, KIND_NAME } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
+import { matchesSearch } from "@/lib/search";
 import { useCan, useSession } from "@/lib/session";
 
 type Status = "open" | "stalled" | "resolved" | "all";
@@ -27,15 +28,16 @@ export default function IssuesPage() {
     () => api.get<IssueList>(`/api/issues?status=${asked}`),
     [me.active.id, asked],
   );
-  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const rows = (list.data?.issues ?? []).filter(
     (i) =>
       (status !== "stalled" || i.stalled) &&
       (!kind || i.kind === kind) &&
-      words.every((w) =>
-        `${issueTitle(i)} ${issueWhere(i)} ${KIND_NAME[i.kind]} ${i.holder?.name ?? ""}`
-          .toLowerCase()
-          .includes(w),
+      matchesSearch(
+        search,
+        issueTitle(i),
+        issueWhere(i),
+        KIND_NAME[i.kind],
+        i.holder?.name ?? null,
       ),
   );
   const filtered = status !== "open" || kind !== "" || search !== "";

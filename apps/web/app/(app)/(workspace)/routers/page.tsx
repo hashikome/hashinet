@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CONDITION, Head, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
+import { matchesSearch } from "@/lib/search";
 import { useSession } from "@/lib/session";
 
 /**
@@ -26,15 +27,10 @@ export default function RoutersPage() {
     (data.data?.businesses ?? []).flatMap((b) => b.venues.map((v) => [v.id, b.name] as const)),
   );
   const all = data.data?.routers ?? [];
-  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   const list = all.filter(
     (r) =>
       (!state || r.condition === state) &&
-      words.every((w) =>
-        `${r.name} ${r.model ?? ""} ${r.venueName} ${businessOf.get(r.venueId) ?? ""}`
-          .toLowerCase()
-          .includes(w),
-      ),
+      matchesSearch(search, r.name, r.model, r.venueName, businessOf.get(r.venueId) ?? null),
   );
   const serving = all.filter((r) => r.condition === "serving").length;
   const down = all.filter(
