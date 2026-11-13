@@ -211,4 +211,39 @@ describe("Issues", () => {
     expect((await issues(admin)).openCount).toBe(0);
     expect((await admin.request("GET", `/api/issues/${id}`)).status).toBe(404);
   });
+  test("a venue's package is for the platform's admin and managers; its operators don't see it", async () => {
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    const op = await platformMember(t.db, {
+      email: "op@example.com",
+      name: "Op",
+      role: "operator",
+    });
+    const cafe = await venue();
+    const svc = api.app.get(IssuesService);
+    const pkg = await svc.open({
+      scope: "platform",
+      businessId: null,
+      kind: "venue_package",
+      key: `venue-package:${cafe.id}`,
+      venueId: cafe.id,
+    });
+    const setup = await svc.open({
+      scope: "platform",
+      businessId: null,
+      kind: "venue_setup",
+      key: `venue-setup:${cafe.id}`,
+      venueId: cafe.id,
+    });
+    const admin = await signedIn("admin@example.com");
+    const operator = await signedIn(op.email);
+    expect((await issues(operator)).issues.map((i) => i.id)).toEqual([setup]);
+    expect((await operator.request("POST", `/api/issues/${pkg}/claim`)).status).toBe(404);
+    const detail = (await admin.request("GET", `/api/issues/${pkg}`)).body as IssueDetail;
+    expect(detail.handTo).toEqual([]);
+    expect(
+      (await admin.request("POST", `/api/issues/${pkg}/hand`, { to: op.membershipId })).status,
+    ).toBe(400);
+    const setupDetail = (await admin.request("GET", `/api/issues/${setup}`)).body as IssueDetail;
+    expect(setupDetail.handTo.map((p) => p.membershipId)).toEqual([op.membershipId]);
+  });
 });

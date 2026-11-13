@@ -18,10 +18,17 @@ import type { Principal } from "../access/principal.js";
 import { outranks } from "../access/rank.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import type { IssueKind } from "../generated/prisma/enums.js";
 import { apiError } from "../http/error-envelope.js";
 import { conditionOf, routerJourney, type StoredSetup } from "../routers/router-journey.js";
 
 const DAY_MS = 86_400_000;
+
+/** Who in the platform works on each kind: a venue's package is for its admin and managers only
+ * (ADR-0013, 2); everything else is for the whole team. */
+const PLATFORM_KINDS_FOR_OPERATORS: IssueKind[] = ["router_offline", "venue_setup"];
+
+type Db = Prisma.TransactionClient;
 
 const line = z
   .string()
@@ -86,7 +93,7 @@ export class IssuesService {
         },
         orderBy: { at: "asc" },
       }),
-      this.workspacePeople(staff, row.venueId),
+      this.workspacePeople(staff, row.kind, row.venueId),
     ]);
     return {
       issue: this.record(staff, row),
@@ -121,7 +128,7 @@ export class IssuesService {
   async hand(staff: Principal, id: string, input: z.infer<typeof handInput>): Promise<IssueDetail> {
     const row = await this.openRow(staff, id);
     if (row.holderId !== null && row.holderId !== staff.membershipId) throw heldByOther();
-    const people = await this.workspacePeople(staff, row.venueId);
+    const people = await this.workspacePeople(staff, row.kind, row.venueId);
     if (input.to === staff.membershipId || !people.some((p) => p.membershipId === input.to)) {
       throw new BadRequestException(
         apiError("VALIDATION_FAILED", "Check the highlighted fields.", {
@@ -207,21 +214,25 @@ export class IssuesService {
   }
 
   /** Opens an issue unless one is open for its key in the workspace; idempotent. */
-  async open(input: {
-    scope: "platform" | "business";
-    businessId: string | null;
-    kind: "router_offline" | "venue_package" | "venue_setup";
-    key: string;
-    venueId?: string | null;
-    routerId?: string | null;
-    data?: Record<string, string | number | boolean | null>;
-  }): Promise<string> {
-    const found = await this.db.issue.findFirst({
+  async open(
+    input: {
+      scope: "platform" | "business";
+      businessId: string | null;
+      kind: IssueKind;
+      key: string;
+      venueId?: string | null;
+      routerId?: string | null;
+      data?: Record<string, string | number | boolean | null>;
+      holderId?: string | null;
+    },
+    db: Db = this.db,
+  ): Promise<string> {
+    const found = await db.issue.findFirst({
       where: { scope: input.scope, businessId: input.businessId, key: input.key, status: "open" },
       select: { id: true },
     });
     if (found) return found.id;
-    const created = await this.db.issue.create({
+    const created = await db.issue.create({
       data: {
         scope: input.scope,
         businessId: input.businessId,
@@ -230,7 +241,8 @@ export class IssuesService {
         venueId: input.venueId ?? null,
         routerId: input.routerId ?? null,
         data: input.data ?? {},
-        events: { create: { action: "opened" } },
+        holderId: input.holderId ?? null,
+        events: { create: { action: "opened", toId: input.holderId ?? null } },
       },
     });
     return created.id;
@@ -241,13 +253,14 @@ export class IssuesService {
     workspace: { scope: "platform" | "business"; businessId: string | null },
     key: string,
     how: string,
+    db: Db = this.db,
   ): Promise<void> {
-    const found = await this.db.issue.findFirst({
+    const found = await db.issue.findFirst({
       where: { ...workspace, key, status: "open" },
       select: { id: true },
     });
     if (!found) return;
-    await this.db.issue.update({
+    await db.issue.update({
       where: { id: found.id },
       data: {
         status: "resolved",
@@ -259,7 +272,11 @@ export class IssuesService {
 
   /** The reader's workspace: the platform's issues, or their business's within their venues. */
   private inReach(staff: Principal): Prisma.IssueWhereInput {
-    if (staff.scope === "platform") return { scope: "platform" };
+    if (staff.scope === "platform") {
+      return staff.role === "operator"
+        ? { scope: "platform", kind: { in: PLATFORM_KINDS_FOR_OPERATORS } }
+        : { scope: "platform" };
+    }
     return {
       scope: "business",
       businessId: staff.businessId ?? "",
@@ -297,11 +314,17 @@ export class IssuesService {
     });
   }
 
-  /** Who in the reader's workspace can work on an issue at this venue. */
-  private async workspacePeople(staff: Principal, venueId: string | null): Promise<IssuePerson[]> {
+  /** Who in the reader's workspace can work on an issue of this kind at this venue. */
+  private async workspacePeople(
+    staff: Principal,
+    kind: IssueKind,
+    venueId: string | null,
+  ): Promise<IssuePerson[]> {
     const roles: MembershipRole[] =
       staff.scope === "platform"
-        ? ["admin", "manager", "operator"]
+        ? PLATFORM_KINDS_FOR_OPERATORS.includes(kind)
+          ? ["admin", "manager", "operator"]
+          : ["admin", "manager"]
         : ["owner", "business_manager", "venue_manager"];
     const rows = await this.db.membership.findMany({
       where: {
