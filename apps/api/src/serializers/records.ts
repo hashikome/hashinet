@@ -60,7 +60,6 @@ export function packageRecord(row: Package): PackageRecord {
 export function voucherRecord(row: Voucher): VoucherRecord {
   return {
     id: row.id,
-    batchId: row.batchId,
     packageId: row.packageId,
     venueId: row.venueId,
     redeemedByDeviceId: row.redeemedByDeviceId,
@@ -72,7 +71,7 @@ export function voucherRecord(row: Voucher): VoucherRecord {
     priceTsh: row.priceTsh.toFixed(2),
     activatedAt: isoOrNull(row.activatedAt),
     expiresAt: isoOrNull(row.expiresAt),
-    revokedAt: isoOrNull(row.revokedAt),
+    refundedAt: isoOrNull(row.refundedAt),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };

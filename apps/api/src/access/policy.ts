@@ -31,8 +31,6 @@ export const POLICY = {
   // A business's guests: codes, sessions and devices are the business's; the platform sees
   // counts only (ADR-0014).
   "voucher.read": BUSINESS_ALL,
-  "voucher.print": BUSINESS_ALL,
-  "voucher.revoke": BUSINESS_MANAGERS,
   "session.read": BUSINESS_ALL,
   "session.terminate": BUSINESS_ALL,
   "device.read": BUSINESS_ALL,
@@ -79,7 +77,7 @@ export type Action = keyof typeof POLICY;
  * Actions that make something sellable or serving. Until an owner or manager protects their
  * sign-in they may set up for 7 days, but not these (ADR-0011, 9).
  */
-const NEEDS_PROTECTION: ReadonlySet<Action> = new Set(["voucher.print", "sale.record"]);
+const NEEDS_PROTECTION: ReadonlySet<Action> = new Set(["sale.record"]);
 
 export function allows(role: MembershipRole, action: Action): boolean {
   return (POLICY[action] as readonly MembershipRole[]).includes(role);

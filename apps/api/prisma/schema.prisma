@@ -103,7 +103,7 @@ enum VoucherStatus {
   active
   expired
   used
-  revoked
+  refunded
 
   @@map("voucher_status")
 }
@@ -358,10 +358,9 @@ model Membership {
   venues           MembershipVenue[]
   sessions         Session[]
   invitationsSent  Invitation[]
-  issuesHeld       Issue[]          @relation("IssueHolder")
-  issueEvents      IssueEvent[]     @relation("IssueActor")
-  issueEventsTo    IssueEvent[]     @relation("IssueTo")
-  voucherBatches   VoucherBatch[]
+  issuesHeld       Issue[]           @relation("IssueHolder")
+  issueEvents      IssueEvent[]      @relation("IssueActor")
+  issueEventsTo    IssueEvent[]      @relation("IssueTo")
   recordedPayments Payment[]
   auditLogs        AuditLog[]
 
@@ -452,18 +451,17 @@ model Venue {
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  business       Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  members        MembershipVenue[]
-  routers        Router[]
-  issues         Issue[]
-  packages       VenuePackage[]
-  onboarding     VenueOnboarding?
-  brand          VenueBrand?
-  voucherBatches VoucherBatch[]
-  vouchers       Voucher[]
-  payments       Payment[]
-  sessions       WifiSession[]
-  dailyStats     DailyUsageStat[]
+  business   Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  members    MembershipVenue[]
+  routers    Router[]
+  issues     Issue[]
+  packages   VenuePackage[]
+  onboarding VenueOnboarding?
+  brand      VenueBrand?
+  vouchers   Voucher[]
+  payments   Payment[]
+  sessions   WifiSession[]
+  dailyStats DailyUsageStat[]
 
   @@index([businessId])
   @@index([status])
@@ -549,13 +547,12 @@ model Package {
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  business       Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  venues         VenuePackage[]
-  voucherBatches VoucherBatch[]
-  vouchers       Voucher[]
-  payments       Payment[]
-  sessions       WifiSession[]
-  dailyStats     DailyUsageStat[]
+  business   Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  venues     VenuePackage[]
+  vouchers   Voucher[]
+  payments   Payment[]
+  sessions   WifiSession[]
+  dailyStats DailyUsageStat[]
 
   @@index([businessId])
   @@index([isActive])
@@ -601,30 +598,8 @@ model Device {
   @@map("devices")
 }
 
-model VoucherBatch {
-  id          String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  packageId   String?   @map("package_id") @db.Uuid
-  venueId     String?   @map("venue_id") @db.Uuid
-  createdById String?   @map("created_by_id") @db.Uuid
-  quantity    Int
-  expiresAt   DateTime? @map("expires_at") @db.Timestamptz(3)
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  package   Package?    @relation(fields: [packageId], references: [id], onDelete: SetNull)
-  venue     Venue?      @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  createdBy Membership? @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  vouchers  Voucher[]
-
-  @@index([packageId])
-  @@index([venueId])
-  @@index([createdById])
-  @@map("voucher_batches")
-}
-
 model Voucher {
   id                 String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  batchId            String?       @map("batch_id") @db.Uuid
   packageId          String?       @map("package_id") @db.Uuid
   venueId            String?       @map("venue_id") @db.Uuid
   /// The device that redeemed it.
@@ -642,11 +617,11 @@ model Voucher {
   priceTsh           Decimal       @map("price_tsh") @db.Decimal(12, 2)
   activatedAt        DateTime?     @map("activated_at") @db.Timestamptz(3)
   expiresAt          DateTime?     @map("expires_at") @db.Timestamptz(3)
-  revokedAt          DateTime?     @map("revoked_at") @db.Timestamptz(3)
+  /// When it was refunded, while not used yet (ADR-0017, 7).
+  refundedAt         DateTime?     @map("refunded_at") @db.Timestamptz(3)
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  batch            VoucherBatch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
   package          Package?        @relation(fields: [packageId], references: [id], onDelete: SetNull)
   venue            Venue?          @relation(fields: [venueId], references: [id], onDelete: SetNull)
   redeemedByDevice Device?         @relation(fields: [redeemedByDeviceId], references: [id], onDelete: SetNull)
@@ -974,20 +949,20 @@ enum IssueAction {
 /// own, each claimed by one of its own people (ADR-0011, 11). At most one open issue per key in a
 /// workspace (a partial unique index).
 model Issue {
-  id         String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id         String          @id @default(dbgenerated("uuidv7()")) @db.Uuid
   scope      MembershipScope
-  businessId String?     @map("business_id") @db.Uuid
+  businessId String?         @map("business_id") @db.Uuid
   kind       IssueKind
   /// What makes it one issue, such as `router:<id>`.
-  key        String      @db.VarChar(120)
-  status     IssueStatus @default(open)
-  venueId    String?     @map("venue_id") @db.Uuid
-  routerId   String?     @map("router_id") @db.Uuid
-  holderId   String?     @map("holder_id") @db.Uuid
+  key        String          @db.VarChar(120)
+  status     IssueStatus     @default(open)
+  venueId    String?         @map("venue_id") @db.Uuid
+  routerId   String?         @map("router_id") @db.Uuid
+  holderId   String?         @map("holder_id") @db.Uuid
   /// Bounded facts the kind needs (a preference, a price, a date); never names or addresses.
-  openedAt   DateTime    @default(now()) @map("opened_at") @db.Timestamptz(3)
-  resolvedAt DateTime?   @map("resolved_at") @db.Timestamptz(3)
-  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  openedAt   DateTime        @default(now()) @map("opened_at") @db.Timestamptz(3)
+  resolvedAt DateTime?       @map("resolved_at") @db.Timestamptz(3)
+  updatedAt  DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   business Business?    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   venue    Venue?       @relation(fields: [venueId], references: [id], onDelete: Cascade)
@@ -1001,17 +976,17 @@ model Issue {
 
 /// What happened on an issue, in order, and who did it (null: HashiNet itself).
 model IssueEvent {
-  id       String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  issueId  String      @map("issue_id") @db.Uuid
-  at       DateTime    @default(now()) @db.Timestamptz(3)
-  actorId  String?     @map("actor_id") @db.Uuid
-  action   IssueAction
+  id      String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  issueId String      @map("issue_id") @db.Uuid
+  at      DateTime    @default(now()) @db.Timestamptz(3)
+  actorId String?     @map("actor_id") @db.Uuid
+  action  IssueAction
   /// Who it was handed to.
-  toId     String?     @map("to_id") @db.Uuid
+  toId    String?     @map("to_id") @db.Uuid
   /// A reason or a note a person wrote, one line.
-  note     String?     @db.VarChar(500)
+  note    String?     @db.VarChar(500)
   /// What a step or a resolution was, as bounded facts the web words (`IssueEventData`).
-  data     Json?
+  data    Json?
 
   issue Issue       @relation(fields: [issueId], references: [id], onDelete: Cascade)
   actor Membership? @relation("IssueActor", fields: [actorId], references: [id], onDelete: SetNull)

@@ -188,7 +188,7 @@ export class AnalyticsService {
         {
           id: string;
           source: RevenueSource;
-          kind: "sale" | "printed";
+          kind: "sale";
           amount: string;
           package_name: string | null;
           venue_name: string | null;

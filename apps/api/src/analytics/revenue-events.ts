@@ -3,16 +3,9 @@ import { BUSINESS_TIME_ZONE } from "./business-day.js";
 
 /**
  * HashiNet's one definition of revenue, as a SQL CTE named `revenue_events`
- * (id, source, amount, occurred_at, venue_id, package_id, reference, kind):
- *
- * - every paid payment, when it was paid, by provider (a staff-recorded `manual` payment is
- *   cash);
- * - every printed voucher with no paid payment, at its price, once the router confirmed it
- *   (`active`, or `used` after it ran out). Until then nothing says the card was sold and
- *   used; a voucher that lapsed while pending gave nobody access, so it is not revenue.
- *
- * The earlier system repeated this rule in four places, and counted the lapsed pending
- * vouchers as sales.
+ * (id, source, amount, occurred_at, venue_id, package_id, reference, kind): every paid payment,
+ * when it was paid, by provider (a staff-recorded `manual` payment is cash). A voucher exists only
+ * by its sale (ADR-0017), so every voucher sold is one of these.
  */
 export const REVENUE_EVENTS = Prisma.sql`
   revenue_events AS (
@@ -22,14 +15,6 @@ export const REVENUE_EVENTS = Prisma.sql`
            p.provider_reference AS reference, 'sale' AS kind
     FROM payments p
     WHERE p.status = 'paid' AND p.paid_at IS NOT NULL
-    UNION ALL
-    SELECT v.id, 'cash', v.price_tsh, v.activated_at, v.venue_id, v.package_id, NULL::text,
-           'printed'
-    FROM vouchers v
-    JOIN voucher_batches b ON b.id = v.batch_id
-    WHERE v.activated_at IS NOT NULL
-      AND v.status IN ('active', 'used')
-      AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.voucher_id = v.id AND p.status = 'paid')
   )`;
 
 /** `column` as a local timestamp in the business time zone. */

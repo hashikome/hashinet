@@ -183,7 +183,7 @@ describe("the guest portal", () => {
   test("finished vouchers say why", async () => {
     const { router, voucher } = await setting();
     for (const [status, code] of [
-      ["revoked", "VOUCHER_REVOKED"],
+      ["refunded", "VOUCHER_REFUNDED"],
       ["used", "VOUCHER_USED"],
       ["expired", "VOUCHER_EXPIRED"],
     ] as const) {

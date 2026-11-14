@@ -7,15 +7,17 @@ export type Timestamp = string;
 /** Decimal amount in whole or fractional TSH, serialised as a string. */
 export type DecimalString = string;
 
+// A voucher exists only by its sale (ADR-0017): `unused` is sold and not used yet.
 // `pending_activation`: redeemed, but the router has not yet confirmed the hotspot user.
-// Nothing treats it as usable until the router read-back succeeds.
+// Nothing treats it as usable until the router read-back succeeds. `refunded`: its price went back
+// while it was unused, and it no longer works.
 export type VoucherStatus =
   | "unused"
   | "pending_activation"
   | "active"
   | "expired"
   | "used"
-  | "revoked";
+  | "refunded";
 
 export interface PackageRecord {
   id: string;
@@ -41,7 +43,6 @@ export interface PackageRecord {
 
 export interface VoucherRecord {
   id: string;
-  batchId: string | null;
   packageId: string | null;
   venueId: string | null;
   /** The device that redeemed it. */
@@ -55,7 +56,7 @@ export interface VoucherRecord {
   priceTsh: DecimalString;
   activatedAt: Timestamp | null;
   expiresAt: Timestamp | null;
-  revokedAt: Timestamp | null;
+  refundedAt: Timestamp | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -71,47 +72,6 @@ export interface VoucherList {
   vouchers: VoucherListItem[];
   /** Pass as `before` for the next page; null on the last page. */
   nextBefore: string | null;
-}
-
-/** A batch of vouchers made together, usually for printing. */
-export interface VoucherBatchRecord {
-  id: string;
-  venueId: string | null;
-  venueName: string | null;
-  packageId: string | null;
-  packageName: string | null;
-  createdById: string | null;
-  quantity: number;
-  /** The date by which its cards must be used, or null. */
-  expiresAt: Timestamp | null;
-  createdAt: Timestamp;
-  /** How many of its vouchers are in each status. */
-  counts: Record<VoucherStatus, number>;
-}
-
-/** `GET /api/vouchers/batches`. */
-export interface VoucherBatchList {
-  batches: VoucherBatchRecord[];
-}
-
-/** A voucher with what its printed card shows. */
-export interface PrintableVoucher extends VoucherListItem {
-  downloadSpeedMbps: number | null;
-  uploadSpeedMbps: number | null;
-  /** How many devices it serves at once, from its package. */
-  deviceLimit: number;
-}
-
-/** `GET /api/vouchers/batches/:id` and `POST /api/vouchers/batches`: a batch and its cards. */
-export interface VoucherBatchDetail {
-  batch: VoucherBatchRecord;
-  vouchers: PrintableVoucher[];
-}
-
-/** `POST /api/vouchers/revoke`. */
-export interface RevokeResult {
-  /** Vouchers revoked now; ones already finished are left as they were. */
-  revoked: number;
 }
 
 /**
@@ -149,11 +109,6 @@ export interface VenueBrandResponse {
   brand: BrandRecord;
   /** False while the venue shows the HashiNet default. */
   isCustom: boolean;
-}
-
-/** `POST /api/vouchers/print`: chosen vouchers with what their cards show. */
-export interface PrintableVouchersResponse {
-  vouchers: PrintableVoucher[];
 }
 
 export interface PortalSettingsResponse {
@@ -838,8 +793,8 @@ export interface PaymentsReceived {
   payments: {
     id: string;
     source: RevenueSource;
-    /** A sale recorded or paid online, or a printed voucher a guest used. */
-    kind: "sale" | "printed";
+    /** A sale at the counter or paid online; a refund is its own kind (ADR-0017, 8). */
+    kind: "sale";
     amountTsh: DecimalString;
     packageName: string | null;
     venueName: string | null;
@@ -889,6 +844,7 @@ export const AUDIT_ACTIONS = [
   "package.venue.assign",
   "package.venue.unassign",
   "voucher.read",
+  // Kept for rows recorded before vouchers existed only by their sale (ADR-0017); nothing records them now.
   "voucher.print",
   "voucher.revoke",
   "voucher.provision_failed",

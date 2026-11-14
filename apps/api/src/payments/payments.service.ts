@@ -100,7 +100,7 @@ export class PaymentsService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
-  /** Held until the provider's credentials are set; printed vouchers need none of this. */
+  /** Held until the provider's credentials are set; a sale at the counter needs none of this. */
   private refuseWhileOff(): void {
     if (this.config.features.mobileMoney) return;
     throw new ServiceUnavailableException(
@@ -478,7 +478,6 @@ export class PaymentsService {
    * is shown to them, and sent if there is a number.
    */
   async recordSale(staff: Principal, input: SaleInput): Promise<SaleResult> {
-    this.refuseWhileOff();
     const sold = await this.packages.soldAt(staff, input.venueId);
     const pkg = sold.packages.find((p) => p.id === input.packageId) ?? null;
     if (pkg === null) {
@@ -612,7 +611,7 @@ function guestStatus(row: PaymentRow): GuestPaymentStatus {
   const voucher = row.voucher;
   const ended =
     voucher !== null &&
-    (["expired", "used", "revoked"].includes(voucher.status) ||
+    (["expired", "used", "refunded"].includes(voucher.status) ||
       (voucher.expiresAt !== null && voucher.expiresAt < new Date()));
   return {
     state: row.status === "paid" ? "paid" : row.status === "pending" ? "pending" : "failed",

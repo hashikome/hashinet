@@ -38,7 +38,6 @@ import { useVenues } from "@/lib/venues";
  */
 export default function OverviewPage() {
   const { me } = useSession();
-  const can = useCan();
   const { shown, filter } = useVenues();
   const venueId = filter === "all" ? "" : filter;
   const today = useLoad(
@@ -49,7 +48,6 @@ export default function OverviewPage() {
   const one = shown.length === 1 ? shown[0] : null;
   const inView = (routers.data?.routers ?? []).filter((r) => shown.some((v) => v.id === r.venueId));
   const serving = inView.filter((r) => r.condition !== "setting-up");
-  const mayPrint = can("voucher.print");
   const sub = `${one ? `${one.name} · ` : ""}${dayName(new Date())}${today.at ? ` · updated ${clock(today.at)}` : ""}`;
 
   if (today.error || routers.error) {
@@ -88,17 +86,7 @@ export default function OverviewPage() {
         ];
   return (
     <>
-      <Head
-        title="Overview"
-        sub={sub}
-        actions={
-          mayPrint ? (
-            <ButtonLink href="/vouchers/print" kind="primary">
-              Print vouchers
-            </ButtonLink>
-          ) : null
-        }
-      />
+      <Head title="Overview" sub={sub} />
       <ProtectNotice />
       {offline.map((r) => (
         <Attention

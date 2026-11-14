@@ -33,12 +33,21 @@ export const paymentStatusInput = z.object({
 });
 
 /** A sale recorded by staff. No prompt reaches a phone: the money has already changed hands. */
-export const saleInput = z.object({
-  venueId: z.uuid(),
-  packageId: z.uuid(),
-  method: z.enum(["cash", "mobile_money"]),
-  phone: mobileNumber.nullable().default(null),
-});
+/**
+ * A sale at the counter, the money in hand (ADR-0017): by mobile money the guest's mobile money
+ * number is required, as it finds the payment again; for cash it is optional.
+ */
+export const saleInput = z
+  .object({
+    venueId: z.uuid(),
+    packageId: z.uuid(),
+    method: z.enum(["cash", "mobile_money"]),
+    phone: mobileNumber.nullable().default(null),
+  })
+  .refine((v) => v.method === "cash" || v.phone !== null, {
+    path: ["phone"],
+    message: "is required for mobile money",
+  });
 
 export const paymentListInput = z.object({
   status: z.enum(["pending", "paid", "failed", "owed"]).nullable().default(null),

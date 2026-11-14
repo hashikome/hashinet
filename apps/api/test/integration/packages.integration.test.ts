@@ -253,19 +253,21 @@ describe("packages", () => {
     expect(theirs).toContain("Every venue");
   });
 
-  test("a printed voucher keeps the price it was made at when the package's price changes", async () => {
+  test("a sold voucher keeps the price it was sold at when the package's price changes", async () => {
     const c = await owner();
     const businessId = await testBusinessId(t.db);
     const venue = await t.db.venue.create({
       data: { businessId, name: "Home", region: "Dar es Salaam", area: "Mbweni" },
     });
     const pkg = await t.db.package.create({ data: { businessId, ...DAY } });
-    const batch = await c.request("POST", "/api/vouchers/batches", {
-      venueId: venue.id,
-      packageId: pkg.id,
-      quantity: 2,
-    });
-    expect(batch.status).toBe(201);
+    for (let i = 0; i < 2; i++) {
+      const sold = await c.request("POST", "/api/sales", {
+        venueId: venue.id,
+        packageId: pkg.id,
+        method: "cash",
+      });
+      expect(sold.status).toBe(201);
+    }
     const raised = await c.request("PUT", `/api/packages/${pkg.id}`, { ...DAY, priceTsh: 5000 });
     expect(raised.status).toBe(200);
     const prices = await t.db.voucher.findMany({ where: { packageId: pkg.id } });

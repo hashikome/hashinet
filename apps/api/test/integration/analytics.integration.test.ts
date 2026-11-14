@@ -29,10 +29,9 @@ let codes = 0;
 /**
  * October 2026 at two venues. 21:00 UTC is midnight in Dar es Salaam, so an instant at 21:30
  * UTC on 30 September belongs to 1 October. Revenue that must count: a mobile-money payment
- * (5,000), a staff-recorded cash payment (2,000), a printed card the router confirmed (1,000)
- * and one that ran out (1,000). That must not: a card that lapsed while pending, an unused
- * card, a failed payment, and a card already paid for by a payment (counted once, as that
- * payment).
+ * (5,000), a staff-recorded cash payment (2,000) and two cash sales at the counter (1,000 each),
+ * one in use and one used up. A voucher exists only by its sale (ADR-0017), so its payment is the
+ * revenue: a voucher is never counted on its own, and a failed payment is not revenue.
  */
 async function october(operatorId: string | null) {
   const home = await t.db.venue.create({
@@ -62,14 +61,10 @@ async function october(operatorId: string | null) {
       priceTsh: 1000,
     },
   });
-  const batch = await t.db.voucherBatch.create({
-    data: { venueId: home.id, packageId: day.id, quantity: 6 },
-  });
   const card = (status: "active" | "used" | "expired" | "unused", activatedAt: Date | null) => {
     codes += 1;
     return t.db.voucher.create({
       data: {
-        batchId: batch.id,
         venueId: home.id,
         packageId: day.id,
         code: `WIFI-T${codes}`,
@@ -81,10 +76,23 @@ async function october(operatorId: string | null) {
     });
   };
   const at = (iso: string) => new Date(iso);
-  await card("active", at("2026-09-30T21:30:00Z")); // 1 Oct locally
-  await card("used", at("2026-10-15T09:00:00Z"));
-  await card("expired", at("2026-10-15T09:00:00Z")); // lapsed while pending
-  await card("unused", null);
+  // A sale at the counter: its voucher, and the cash paid for it when it was sold.
+  const sale = async (status: "active" | "used", soldAt: Date) => {
+    const voucher = await card(status, soldAt);
+    await t.db.payment.create({
+      data: {
+        provider: "cash",
+        status: "paid",
+        paidAt: soldAt,
+        amountTsh: 1000,
+        packageId: day.id,
+        venueId: home.id,
+        voucherId: voucher.id,
+      },
+    });
+  };
+  await sale("active", at("2026-09-30T21:30:00Z")); // 1 Oct locally
+  await sale("used", at("2026-10-15T09:00:00Z"));
   const paidCard = await card("used", at("2026-10-20T09:00:00Z"));
   const pay = (data: {
     provider: "mobile_money" | "manual";
@@ -324,12 +332,9 @@ describe("a business's day", () => {
       [home.id, "T-2"],
       [cafe.id, "T-3"],
     ] as const) {
-      const batch = await t.db.voucherBatch.create({
-        data: { venueId, packageId: hour.id, quantity: 1 },
-      });
-      await t.db.voucher.create({
+      // Each voucher sold at the counter, for cash.
+      const voucher = await t.db.voucher.create({
         data: {
-          batchId: batch.id,
           venueId,
           packageId: hour.id,
           code,
@@ -337,6 +342,17 @@ describe("a business's day", () => {
           activatedAt: now,
           durationMinutes: 60,
           priceTsh: 500,
+        },
+      });
+      await t.db.payment.create({
+        data: {
+          packageId: hour.id,
+          venueId,
+          voucherId: voucher.id,
+          provider: "cash",
+          amountTsh: 500,
+          status: "paid",
+          paidAt: now,
         },
       });
     }
@@ -397,7 +413,7 @@ describe("a business's day", () => {
 });
 
 describe("payments received", () => {
-  test("a business's month: sales and used printed cards, by month and venue, never another's", async () => {
+  test("a business's month: its sales, by month and venue, never another's", async () => {
     await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
     const owner = browser(api);
     await enrollAuthenticatorFor(api, owner, "owner@example.com");
@@ -416,12 +432,7 @@ describe("payments received", () => {
       .toLocaleDateString("en-CA", { timeZone: "Africa/Dar_es_Salaam" })
       .slice(0, 7);
     expect(october2026.months).toEqual([thisMonth, "2026-10", "2026-09"]);
-    expect(october2026.payments.map((p) => p.kind).sort()).toEqual([
-      "printed",
-      "printed",
-      "sale",
-      "sale",
-    ]);
+    expect(october2026.payments.map((p) => p.kind)).toEqual(["sale", "sale", "sale", "sale"]);
     // This month by default.
     expect((await owner.request("GET", "/api/payments/received")).body).toMatchObject({
       month: thisMonth,

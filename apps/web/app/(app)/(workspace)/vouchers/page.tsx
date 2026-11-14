@@ -2,7 +2,6 @@
 
 import {
   groupedCode,
-  type VoucherBatchList,
   type VoucherList,
   type VoucherListItem,
   type VoucherStatus,
@@ -10,7 +9,6 @@ import {
 import { useEffect, useState } from "react";
 import {
   Button,
-  ButtonLink,
   CopyText,
   Head,
   Panel,
@@ -22,25 +20,25 @@ import {
 import { api } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
-import { useCan, useSession } from "@/lib/session";
+import { useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
 
-const TABS = ["All", "Unused", "Active", "Used", "Expired", "Revoked"] as const;
+const TABS = ["All", "Not used yet", "Active", "Used", "Expired", "Refunded"] as const;
 type Tab = (typeof TABS)[number];
 const STATUS_OF: Record<Exclude<Tab, "All">, VoucherStatus> = {
-  Unused: "unused",
+  "Not used yet": "unused",
   Active: "active",
   Used: "used",
   Expired: "expired",
-  Revoked: "revoked",
+  Refunded: "refunded",
 };
 const LABEL: Record<VoucherStatus, [string, PillKind]> = {
-  unused: ["Unused", "neutral"],
+  unused: ["Not used yet", "neutral"],
   pending_activation: ["Starting", "wait"],
   active: ["Active", "ok"],
   used: ["Used", "neutral"],
   expired: ["Expired", "neutral"],
-  revoked: ["Revoked", "bad"],
+  refunded: ["Refunded", "neutral"],
 };
 const PAGE = 100;
 
@@ -50,7 +48,6 @@ const PAGE = 100;
  */
 export default function VouchersPage() {
   const { me } = useSession();
-  const can = useCan();
   const { all, shown, filter } = useVenues();
   const [tab, setTab] = useState<Tab>("All");
   const [search, setSearch] = useState("");
@@ -77,32 +74,13 @@ export default function VouchersPage() {
     setNext(page.nextBefore);
     return page.vouchers;
   }, [me.active.id, venueId, tab, digits]);
-  const batches = useLoad(() => api.get<VoucherBatchList>("/api/vouchers/batches"), [me.active.id]);
-
-  const counts = (batches.data?.batches ?? [])
-    .filter((b) => venueId === null || b.venueId === venueId)
-    .reduce(
-      (sum, b) => ({ unused: sum.unused + b.counts.unused, active: sum.active + b.counts.active }),
-      { unused: 0, active: 0 },
-    );
   const scope = shown.length === 1 ? shown[0]?.name : "All venues";
   const showsVenue = all.length > 1;
   const rows = [...(list.data ?? []), ...more];
-  const mayPrint = can("voucher.print");
 
   return (
     <>
-      <Head
-        title="Vouchers"
-        sub={`${counts.unused} unused, ${counts.active} active · ${scope}`}
-        actions={
-          mayPrint ? (
-            <ButtonLink href="/vouchers/print" kind="primary">
-              Print vouchers
-            </ButtonLink>
-          ) : null
-        }
-      />
+      <Head title="Vouchers" sub={`Every voucher sold · ${scope}`} />
       {list.error ? <LoadFailed error={list.error} retry={list.reload} /> : null}
       <Panel title="All vouchers">
         <div className="tools">
@@ -145,9 +123,7 @@ export default function VouchersPage() {
           <p className="muted empty">
             {digits || tab !== "All"
               ? "Nothing matches this search."
-              : mayPrint
-                ? "No vouchers yet. Print your first sheet."
-                : "No vouchers yet."}
+              : "No vouchers yet. Each one is made when it is sold."}
           </p>
         )}
         {next ? (

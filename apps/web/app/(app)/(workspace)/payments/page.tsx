@@ -115,13 +115,7 @@ export default function PaymentsPage() {
                     <span key="m">
                       {METHOD[p.source]}
                       <div className="sub">
-                        {p.kind === "printed" ? (
-                          "Printed voucher"
-                        ) : p.reference ? (
-                          <CopyText text={p.reference} />
-                        ) : (
-                          "Recorded here"
-                        )}
+                        {p.reference ? <CopyText text={p.reference} /> : "Recorded here"}
                       </div>
                     </span>,
                     tsh(p.amountTsh),

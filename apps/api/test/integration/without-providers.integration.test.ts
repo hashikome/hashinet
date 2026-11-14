@@ -3,7 +3,10 @@ import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, protectedOwner, testBusinessId } from "./people.js";
 
-/** No provider credentials: what launches. Printed vouchers need neither provider. */
+/**
+ * No provider credentials: what launches. A sale at the counter needs neither provider: the money
+ * is in hand, by cash or mobile money to the venue's own number (ADR-0017).
+ */
 const t = useTestDatabase();
 const api = useApi();
 
@@ -55,7 +58,7 @@ describe("without mobile money or SMS", () => {
     expect(await t.db.payment.count()).toBe(0);
   });
 
-  test("staff see what is on, and a sale waits with the rest", async () => {
+  test("staff sell at the counter: cash, or mobile money with the guest's number", async () => {
     await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
     const c = browser(api);
     await enrollAuthenticatorFor(api, c, "owner@example.com");
@@ -64,18 +67,29 @@ describe("without mobile money or SMS", () => {
       sms: false,
     });
     const { venue, pkg } = await setting();
-    const sale = await c.request("POST", "/api/sales", {
-      venueId: venue.id,
-      packageId: pkg.id,
-      method: "cash",
-    });
-    expect(sale.status).toBe(503);
+    const sell = (body: object) =>
+      c.request("POST", "/api/sales", { venueId: venue.id, packageId: pkg.id, ...body });
 
-    const batch = await c.request("POST", "/api/vouchers/batches", {
-      venueId: venue.id,
-      packageId: pkg.id,
-      quantity: 2,
-    });
-    expect(batch.status).toBe(201);
+    const cash = await sell({ method: "cash" });
+    expect(cash.status).toBe(201);
+    expect(cash.body).toMatchObject({ code: expect.stringMatching(/^\d{12}$/) });
+
+    const noNumber = await sell({ method: "mobile_money" });
+    expect(noNumber.status).toBe(400);
+    expect(noNumber.body).toMatchObject({ details: { phone: "is required for mobile money" } });
+    const mobile = await sell({ method: "mobile_money", phone: "0754218640" });
+    expect(mobile.status).toBe(201);
+
+    // Each sale made its one voucher, paid at the package's price, and names who sold it.
+    const payments = await t.db.payment.findMany({ include: { voucher: true } });
+    expect(payments).toHaveLength(2);
+    for (const p of payments) {
+      expect(p.status).toBe("paid");
+      expect(Number(p.amountTsh)).toBe(2000);
+      expect(p.voucher?.priceTsh.toString()).toBe("2000");
+      expect(p.recordedById).not.toBeNull();
+    }
+    expect(payments.map((p) => p.provider).sort()).toEqual(["cash", "mobile_money"]);
+    expect(await t.db.voucher.count()).toBe(2);
   });
 });

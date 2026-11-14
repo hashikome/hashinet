@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, testBusinessId } from "./people.js";
 
@@ -44,112 +44,40 @@ async function setting(operatorId: string | null) {
   return { venue, pkg };
 }
 
-interface Detail {
-  batch: { id: string; prefix: string; quantity: number; counts: Record<string, number> };
-  vouchers: {
-    id: string;
-    code: string;
-    status: string;
-    durationMinutes: number;
-    priceTsh: string;
-    dataLimitGb: number;
-    downloadSpeedMbps: number;
-    uploadSpeedMbps: number;
-    packageName: string;
-    venueName: string;
-  }[];
+/** Sells `n` vouchers of a package at a venue, as `c`; returns the codes. */
+async function sell(c: Client, venueId: string, packageId: string, n: number) {
+  const codes: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const sold = await c.request("POST", "/api/sales", { venueId, packageId, method: "cash" });
+    expect(sold.status).toBe(201);
+    codes.push((sold.body as { code: string }).code);
+  }
+  return codes;
 }
 
 describe("vouchers", () => {
-  test("a manager makes a batch for their venue: secure codes, the package's terms", async () => {
-    const own = await manager("own@example.com");
-    const { venue, pkg } = await setting(own.id);
-    const created = await own.client.request("POST", "/api/vouchers/batches", {
+  test("a voucher is made by its sale, with the package's terms and price", async () => {
+    const c = await owner();
+    const { venue, pkg } = await setting(null);
+    const [code] = await sell(c, venue.id, pkg.id, 1);
+    expect(code).toMatch(/^\d{12}$/);
+    const voucher = await t.db.voucher.findUniqueOrThrow({ where: { code } });
+    expect(voucher).toMatchObject({
+      status: "unused",
       venueId: venue.id,
       packageId: pkg.id,
-      quantity: 25,
-      expiryDays: 30,
+      durationMinutes: 1440,
+      dataLimitGb: 5,
     });
-    expect(created.status).toBe(201);
-    const detail = created.body as Detail;
-    expect(detail.batch).toMatchObject({ quantity: 25, counts: { unused: 25 } });
-    expect(detail.vouchers).toHaveLength(25);
-    expect(new Set(detail.vouchers.map((v) => v.code)).size).toBe(25);
-    for (const voucher of detail.vouchers) {
-      expect(voucher.code).toMatch(/^\d{12}$/); // ADR-0008: no prefix
-      expect(voucher).toMatchObject({
-        status: "unused",
-        durationMinutes: 1440,
-        priceTsh: "2000.00",
-        dataLimitGb: 5,
-        downloadSpeedMbps: 10,
-        uploadSpeedMbps: 10,
-        packageName: "Day",
-        venueName: "Home",
-      });
-    }
-    const stored = await t.db.voucher.findFirstOrThrow();
-    const days = ((stored.expiresAt?.getTime() ?? 0) - Date.now()) / 86_400_000;
-    expect(days).toBeGreaterThan(29.9);
-    expect((await t.db.auditLog.findFirstOrThrow({ where: { category: "change" } })).action).toBe(
-      "voucher.print",
+    expect(voucher.priceTsh.toString()).toBe("2000");
+    // Raising the price later never re-prices a sale.
+    await t.db.package.update({ where: { id: pkg.id }, data: { priceTsh: 3000 } });
+    expect((await t.db.voucher.findUniqueOrThrow({ where: { code } })).priceTsh.toString()).toBe(
+      "2000",
     );
-
-    const again = await own.client.request("GET", `/api/vouchers/batches/${detail.batch.id}`);
-    expect((again.body as Detail).vouchers.map((v) => v.code).sort()).toEqual(
-      detail.vouchers.map((v) => v.code).sort(),
-    );
-    // A code is found from any of its digits, typed in groups or not.
-    const one = detail.vouchers[3]?.code ?? "";
-    const found = await own.client.request(
-      "GET",
-      `/api/vouchers?code=${encodeURIComponent(`${one.slice(4, 8)} ${one.slice(8)}`)}`,
-    );
-    expect((found.body as { vouchers: { code: string }[] }).vouchers.map((v) => v.code)).toContain(
-      one,
-    );
-
-    // Showing the codes is a read that reveals something (ADR-0012), recorded with the count.
-    const reads = await t.db.auditLog.findMany({ where: { action: "voucher.read" } });
-    expect(reads.length).toBeGreaterThan(0);
-    expect(reads.every((r) => r.category === "read")).toBe(true);
-    expect(reads.map((r) => r.change)).toContainEqual({ before: {}, after: { count: 25 } });
   });
 
-  test("only a package on sale at the venue, and only in the manager's venues", async () => {
-    const own = await manager("own@example.com");
-    const { venue, pkg } = await setting(own.id);
-    const other = await t.db.venue.create({
-      data: {
-        businessId: await testBusinessId(t.db),
-        name: "Other",
-        region: "Dar es Salaam",
-        area: "Arusha",
-      },
-    });
-    const week = await t.db.package.create({
-      data: { businessId: await testBusinessId(t.db), ...DAY, name: "Week" },
-    });
-    const retired = await t.db.package.create({
-      data: { businessId: await testBusinessId(t.db), ...DAY, name: "Old", isActive: false },
-    });
-    await t.db.venuePackage.create({ data: { venueId: venue.id, packageId: week.id } });
-
-    const batch = (packageId: string, venueId = venue.id) =>
-      own.client.request("POST", "/api/vouchers/batches", { venueId, packageId, quantity: 1 });
-    for (const packageId of [pkg.id, retired.id]) {
-      const refused = await batch(packageId);
-      expect(refused.status).toBe(400);
-      expect(refused.body).toMatchObject({
-        details: { packageId: "is not on sale at this venue" },
-      });
-    }
-    expect((await batch(week.id)).status).toBe(201);
-    expect((await batch(week.id, other.id)).status).toBe(404);
-    expect(await t.db.voucher.count()).toBe(1);
-  });
-
-  test("a manager lists and opens only their venues' vouchers, a page at a time", async () => {
+  test("a manager sells only at their venues, and lists only theirs, a page at a time", async () => {
     const own = await manager("own@example.com");
     const { venue, pkg } = await setting(own.id);
     const c = await owner();
@@ -161,20 +89,14 @@ describe("vouchers", () => {
         area: "Arusha",
       },
     });
-    const mine = (
-      await own.client.request("POST", "/api/vouchers/batches", {
-        venueId: venue.id,
-        packageId: pkg.id,
-        quantity: 5,
-      })
-    ).body as Detail;
-    const theirs = (
-      await c.request("POST", "/api/vouchers/batches", {
-        venueId: other.id,
-        packageId: pkg.id,
-        quantity: 3,
-      })
-    ).body as Detail;
+    await sell(own.client, venue.id, pkg.id, 5);
+    await sell(c, other.id, pkg.id, 3);
+    const elsewhere = await own.client.request("POST", "/api/sales", {
+      venueId: other.id,
+      packageId: pkg.id,
+      method: "cash",
+    });
+    expect(elsewhere.status).toBe(404);
 
     const first = (await own.client.request("GET", "/api/vouchers?limit=3")).body as {
       vouchers: { venueName: string }[];
@@ -188,92 +110,16 @@ describe("vouchers", () => {
     expect(rest.vouchers).toHaveLength(2);
     expect(rest.nextBefore).toBeNull();
     expect(first.vouchers.every((v) => v.venueName === "Home")).toBe(true);
-
-    const batches = (await own.client.request("GET", "/api/vouchers/batches")).body as {
-      batches: { id: string }[];
-    };
-    expect(batches.batches.map((b) => b.id)).toEqual([mine.batch.id]);
-    const hidden = await own.client.request("GET", `/api/vouchers/batches/${theirs.batch.id}`);
-    expect(hidden.status).toBe(404);
     const all = (await c.request("GET", "/api/vouchers?status=unused")).body as {
       vouchers: unknown[];
     };
     expect(all.vouchers).toHaveLength(8);
   });
 
-  test("revoking stops unused vouchers, keeps their records, and never cuts off a guest", async () => {
+  test("printing and revoking are gone: a voucher exists only by its sale", async () => {
     const c = await owner();
-    const own = await manager("own@example.com");
-    const { venue, pkg } = await setting(own.id);
-    const detail = (
-      await c.request("POST", "/api/vouchers/batches", {
-        venueId: venue.id,
-        packageId: pkg.id,
-        quantity: 3,
-      })
-    ).body as Detail;
-    const [unused, active, finished] = detail.vouchers;
-    if (!unused || !active || !finished) throw new Error("batch too small");
-    await t.db.voucher.update({
-      where: { id: active.id },
-      data: { status: "active", activatedAt: new Date() },
-    });
-    await t.db.voucher.update({ where: { id: finished.id }, data: { status: "used" } });
-
-    // Venue operators sell; revoking is for managers and the owner.
-    await businessMember(t.db, { email: "op@example.com", name: "Op", role: "venue_operator" });
-    const op = browser(api);
-    await signInWithCode(api, op, "op@example.com");
-    const refused = await op.request("POST", "/api/vouchers/revoke", { ids: [unused.id] });
-    expect(refused.status).toBe(403);
-
-    const reply = await c.request("POST", "/api/vouchers/revoke", {
-      ids: [unused.id, active.id, finished.id],
-    });
-    expect(reply).toEqual({ status: 200, body: { revoked: 1 } });
-    const after = new Map((await t.db.voucher.findMany()).map((v) => [v.id, v]));
-    expect(after.size).toBe(3);
-    expect(after.get(unused.id)?.status).toBe("revoked");
-    expect(after.get(unused.id)?.revokedAt).not.toBeNull();
-    expect(after.get(active.id)?.status).toBe("active");
-    expect(after.get(finished.id)?.status).toBe("used");
-    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain("voucher.revoke");
-    const again = await c.request("POST", "/api/vouchers/revoke", { ids: [unused.id] });
-    expect(again.body).toEqual({ revoked: 0 });
-  });
-
-  test("reprinting by id returns only vouchers in the manager's venues", async () => {
-    const own = await manager("own@example.com");
-    const { venue, pkg } = await setting(own.id);
-    const c = await owner();
-    const other = await t.db.venue.create({
-      data: {
-        businessId: await testBusinessId(t.db),
-        name: "Other",
-        region: "Dar es Salaam",
-        area: "Arusha",
-      },
-    });
-    const mine = (
-      await own.client.request("POST", "/api/vouchers/batches", {
-        venueId: venue.id,
-        packageId: pkg.id,
-        quantity: 2,
-      })
-    ).body as Detail;
-    const theirs = (
-      await c.request("POST", "/api/vouchers/batches", {
-        venueId: other.id,
-        packageId: pkg.id,
-        quantity: 1,
-      })
-    ).body as Detail;
-    const ids = [...mine.vouchers, ...theirs.vouchers].map((v) => v.id);
-    const printed = await own.client.request("POST", "/api/vouchers/print", { ids });
-    expect(printed.status).toBe(200);
-    const vouchers = (printed.body as { vouchers: { id: string; downloadSpeedMbps: number }[] })
-      .vouchers;
-    expect(vouchers.map((v) => v.id).sort()).toEqual(mine.vouchers.map((v) => v.id).sort());
-    expect(vouchers[0]?.downloadSpeedMbps).toBe(10);
+    expect((await c.request("GET", "/api/vouchers/batches")).status).toBe(404);
+    expect((await c.request("POST", "/api/vouchers/revoke", { ids: [] })).status).toBe(404);
+    expect((await c.request("POST", "/api/vouchers/print", { ids: [] })).status).toBe(404);
   });
 });

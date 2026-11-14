@@ -44,9 +44,8 @@ describe("sign-in protection (ADR-0011, 9)", () => {
     expect(accessLevel(facts({ personProtected: true }))).toBe("account");
   });
 
-  test("selling and printing need a protected session", () => {
+  test("selling needs a protected session", () => {
     expect(needsProtectedSession("sale.record")).toBe(true);
-    expect(needsProtectedSession("voucher.print")).toBe(true);
     expect(needsProtectedSession("package.read")).toBe(false);
   });
 });
@@ -80,9 +79,8 @@ describe("the policy (ADR-0011)", () => {
     expect(allows("owner", "router.manage")).toBe(false);
   });
 
-  test("operators sell and read, but neither revoke nor block nor read the audit log", () => {
+  test("operators sell and read, but neither block nor read the audit log", () => {
     expect(allows("venue_operator", "sale.record")).toBe(true);
-    expect(allows("venue_operator", "voucher.revoke")).toBe(false);
     expect(allows("venue_operator", "device.block")).toBe(false);
     expect(allows("venue_operator", "audit.read")).toBe(false);
   });

@@ -175,31 +175,6 @@ export const GUIDES: Guide[] = [
     ],
   },
   {
-    id: "print",
-    area: "Selling",
-    for: ["owner"],
-    title: "Print vouchers",
-    gist: "Cards for guests who pay cash, ready before they arrive.",
-    steps: [
-      <>
-        Open <b>Vouchers</b> and tap <b>Print vouchers</b>.
-      </>,
-      "Choose the package and how many. A sheet holds twelve.",
-      "Print in colour or in black and white, at 100% scale.",
-      "Cut along the lines. Each card's stub has its running number, so you can count what's left.",
-    ],
-    wrong: [
-      [
-        "The QR code won't scan",
-        "The sheet was printed scaled down. Print again at 100%, not “Fit to page”.",
-      ],
-      [
-        "Print vouchers asks you to protect your sign-in",
-        "Vouchers are made only once your sign-in is protected. Follow “Protect your sign-in”.",
-      ],
-    ],
-  },
-  {
     id: "guest",
     area: "Guests and devices",
     for: ["owner"],

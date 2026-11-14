@@ -217,12 +217,17 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     Accepting (`accept/member`) joins the business with the invitation's venues; the preview names
     the business. Venue-only packages moved to slice 5 (Decision Log). Tests:
     `team.integration.test.ts`. Verify passes; integration 159/159.
-  - [ ] (c) A voucher only by its sale: remove batches, Print vouchers and revoke (`vouchers/batches`,
-    `vouchers/print`, `vouchers/revoke`, `VoucherBatch`, their tests and screens). `POST /api/sales`
-    sells one voucher with the money in hand: it needs no payment provider (ADR-0010, 6 narrowed), the
-    package sets the price, mobile money needs the guest's mobile money number, cash takes one
-    optionally, and the code is texted only by a business with SMS credits. The voucher and its sale
-    are one transaction. Migration: no batch column; `revoked` becomes `refunded`.
+  - [x] (2026-11-14) (c) A voucher only by its sale: batches, Print vouchers and revoking are gone
+    (their routes, `VoucherBatch`, the batch column, their types, tests and the web's print page).
+    `POST /api/sales` sells one voucher with the money in hand and needs no payment provider; the
+    package sets the price; mobile money needs the guest's mobile money number, cash takes one
+    optionally; the voucher and its paid sale are one transaction, naming who sold it. Revenue is
+    paid payments alone (`revenue_events`), as every voucher now has its sale. Migration
+    `20261114100000_voucher_only_by_sale`: `revoked` became `refunded`, `revoked_at` `refunded_at`,
+    and the batch table and column were dropped (test data only: its vouchers stay). The web shows
+    the sale-model states and no Print vouchers; Sell comes with (g). Tests:
+    `vouchers.integration.test.ts`, `without-providers.integration.test.ts` (was printed-launch),
+    the analytics and packages tests rewritten on sales. Verify passes; integration 157/157.
   - [ ] (d) Payment details (ADR-0017, 4): up to three ways per venue (paid through, number, name),
     kept by its owner or a manager, read by whoever sells there, audited.
   - [ ] (e) Refunds (ADR-0017, 7 and 8): only an owner or a manager refunds a voucher not used yet,

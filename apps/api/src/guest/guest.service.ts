@@ -308,7 +308,7 @@ export function isPayable(priceTsh: string): boolean {
 }
 
 function refuseIfFinished(voucher: Pick<Voucher, "status" | "expiresAt">): void {
-  if (voucher.status === "revoked") throw refuse("VOUCHER_REVOKED", "This voucher was cancelled.");
+  if (voucher.status === "refunded") throw refuse("VOUCHER_REFUNDED", "This voucher was refunded.");
   if (voucher.status === "used") throw refuse("VOUCHER_USED", "This voucher has been used up.");
   if (
     voucher.status === "expired" ||
