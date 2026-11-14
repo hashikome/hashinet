@@ -2,7 +2,9 @@
 
 Status: accepted, 4 November 2026, by the owner. Figures are starting points, set in the platform's
 Settings; the model is the decision. Widened 13 November 2026: the agreed package is itemized, all
-on HashiNet's bill, and platform operators work the setups handed to them.
+on HashiNet's bill, and platform operators work the setups handed to them. Narrowed 14 November
+2026: ADR-0017 replaces point 4's basis (a voucher exists only by its sale; fees are on each month's
+sales less refunds).
 
 ## Context
 
@@ -88,10 +90,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    the part above the threshold pays 2.5%, so selling one more voucher never raises the bill. A venue
    selling TSh 4,000,000 pays TSh 150,000. Rates, threshold and minimum are figures in the platform's Settings. There is
    no cap and no plan to choose: above the minimum, hashifi earns as the business earns, at every size.
-4. **The fee is on the voucher's price, counted when the router confirms it** (a voucher that went
-   `active`): the price printed on the voucher, which the business sets. Every printed voucher shows
-   its price, so a guest can see when they are asked for more. What a business charges a guest above
-   it is its own.
+4. **The fee is on the voucher's price, counted when it is sold, less refunds** (ADR-0017, 9): the
+   price the business set for its package. What a business charges a guest above it is its own.
 5. **VAT** does not apply while hashifi's turnover is under the TSh 200 million registration
    threshold. Revisit when it nears it.
 6. **Invoices are paid in full by their due date.** The business has already collected the money its
@@ -128,7 +128,7 @@ and the guests. Owners are not network technicians, so the team installs it.
   port 1, keeping the fixed address as an option, so a router configured at the office works at
   any venue (`apps/api/src/services/router-provision/bootstrap.ts`).
 - Readiness warns about a downstream router that hands out its own addresses.
-- A **Billing** page: per venue, the month's activated vouchers and their value, the fee by band,
+- A **Billing** page: per venue, the month's sales, refunds and net sales, the fee by band,
   the onboarding and router charges, what is due and how to pay; the platform sees every
   business's. An unpaid account follows ADR-0014's service access.
 - The getting-started checklist follows the package: invitation accepted, package confirmed, router

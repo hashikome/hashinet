@@ -215,9 +215,11 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     are one transaction. Migration: no batch column; `revoked` becomes `refunded`.
   - [ ] (d) Payment details (ADR-0017, 4): up to three ways per venue (paid through, number, name),
     kept by its owner or a manager, read by whoever sells there, audited.
-  - [ ] (e) Refunds (ADR-0017, 7): an owner or a manager refunds a voucher not used yet, the full
-    price, by cash or mobile money (number and reference) with an optional reason; once only; the
-    voucher stops working at the router; Payments and the day's takings show it (Open, below).
+  - [ ] (e) Refunds (ADR-0017, 7 and 8): only an owner or a manager refunds a voucher not used yet,
+    the full price, by cash or mobile money (number and reference) with an optional reason; once only;
+    the voucher stops working at the router. A refund is its own row in Payments, counted on its day;
+    takings show gross, refunds and net from one definition of sales; the operator's cash to hand
+    over takes off the cash they gave back.
   - [ ] (f) Releasing a voucher to a new device and its switch PIN (ADR-0015); ending a session;
     blocking and unblocking a device, per business.
   - [ ] (g) The screens, each built with design-build and audited at 390, 768 and 1440, light and
@@ -231,9 +233,6 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (i) Release and live acceptance: Paul's home invites an operator, who sells a voucher by
     mobile money reading out the venue's Lipa namba; the guest gets online with it; the owner
     refunds an unused one and sees both in Payments.
-  Open before (e): whether a seller may refund their own sale the same day; how a refund shows in
-  Payments and the takings; whether a mobile money sale takes the payment's confirmation code;
-  whether fees count each sold voucher's price (ADR-0017, Open).
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).
@@ -494,8 +493,8 @@ Accepted live: Asha invites a test business; its owner accepts, protects their s
 the router comes; Asha confirms the package and sets up its router; the venue serves.
 
 **Slice 4, getting paid.** For the platform admin and manager, and every owner.
-Backend: monthly invoices (5% of each venue's sales, at least TSh 5,000 a venue, 2.5% above
-TSh 2,000,000 a month), onboarding and router fees (ADR-0013), recording a payment (oldest invoice
+Backend: monthly invoices (5% of each venue's net sales, its vouchers sold less that month's refunds
+(ADR-0017, 9), at least TSh 5,000 a venue, 2.5% above TSh 2,000,000 a month), onboarding and router fees (ADR-0013), recording a payment (oldest invoice
 first), reminders, the fees the admin sets for new businesses.
 Screens: the platform's Payments, a business's invoices, the owner's Billing with How to pay and its
 invoices, Fees (the admin only).
