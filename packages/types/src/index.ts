@@ -716,8 +716,14 @@ export interface TodaySummary {
   day: BusinessDay;
   /** Devices connected now. */
   onlineNow: number;
+  /** Vouchers sold today. */
   sold: number;
+  /** Net takings: sales less refunds made today (ADR-0017, 8). */
   takingsTsh: DecimalString;
+  /** The money given back today. */
+  refundsTsh: DecimalString;
+  /** The reader's own cash to hand over: their cash sales today, less the cash they gave back. */
+  yourCashTsh: DecimalString;
   /** The same weekday a week ago, up to this time of day, to compare with. */
   lastWeekTakingsTsh: DecimalString;
   /** Every package sold today, the most sold first. */
@@ -811,8 +817,9 @@ export interface PaymentsReceived {
   payments: {
     id: string;
     source: RevenueSource;
-    /** A sale at the counter or paid online; a refund is its own kind (ADR-0017, 8). */
-    kind: "sale";
+    /** A sale at the counter or paid online, or a refund, its own row with a negative amount
+     * (ADR-0017, 8). */
+    kind: "sale" | "refund";
     amountTsh: DecimalString;
     packageName: string | null;
     venueName: string | null;
@@ -863,6 +870,7 @@ export const AUDIT_ACTIONS = [
   "package.venue.assign",
   "package.venue.unassign",
   "voucher.read",
+  "voucher.refund",
   // Kept for rows recorded before vouchers existed only by their sale (ADR-0017); nothing records them now.
   "voucher.print",
   "voucher.revoke",

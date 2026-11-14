@@ -34,6 +34,8 @@ export const POLICY = {
   // A business's guests: codes, sessions and devices are the business's; the platform sees
   // counts only (ADR-0014).
   "voucher.read": BUSINESS_ALL,
+  // Refunds give money back, so they are an owner's or a manager's (ADR-0017, 7).
+  "voucher.refund": BUSINESS_MANAGERS,
   "session.read": BUSINESS_ALL,
   "session.terminate": BUSINESS_ALL,
   "device.read": BUSINESS_ALL,

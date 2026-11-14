@@ -363,6 +363,7 @@ model Membership {
   issueEventsTo    IssueEvent[]      @relation("IssueTo")
   recordedPayments Payment[]
   auditLogs        AuditLog[]
+  refunds          Refund[]
 
   @@unique([userId, scope, businessId])
   @@index([businessId])
@@ -463,6 +464,7 @@ model Venue {
   payments    Payment[]
   sessions    WifiSession[]
   dailyStats  DailyUsageStat[]
+  refunds     Refund[]
 
   @@index([businessId])
   @@index([status])
@@ -554,6 +556,7 @@ model Package {
   payments   Payment[]
   sessions   WifiSession[]
   dailyStats DailyUsageStat[]
+  refunds    Refund[]
 
   @@index([businessId])
   @@index([isActive])
@@ -629,6 +632,7 @@ model Voucher {
   devices          VoucherDevice[]
   payments         Payment[]
   sessions         WifiSession[]
+  refund           Refund?
 
   @@index([status])
   @@index([packageId])
@@ -697,6 +701,7 @@ model Payment {
   router     Router?     @relation(fields: [routerId], references: [id], onDelete: SetNull)
   recordedBy Membership? @relation(fields: [recordedById], references: [id], onDelete: SetNull)
   sms        SmsMessage?
+  refunds    Refund[]
 
   @@index([deviceId])
   @@index([voucherId])
@@ -1089,4 +1094,41 @@ model VenuePaymentWay {
 
   @@unique([venueId, position])
   @@map("venue_payment_ways")
+}
+
+/// How a refund went back to the guest.
+enum RefundMethod {
+  cash
+  mobile_money
+
+  @@map("refund_method")
+}
+
+/// A voucher's price given back while it was not used yet, by an owner or a manager (ADR-0017, 7).
+/// Its own line in Payments, counted on the day it was made (ADR-0017, 8); the voucher stops working.
+model Refund {
+  id           String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  voucherId    String       @unique @map("voucher_id") @db.Uuid
+  /// The sale it gives back.
+  paymentId    String       @map("payment_id") @db.Uuid
+  venueId      String?      @map("venue_id") @db.Uuid
+  packageId    String?      @map("package_id") @db.Uuid
+  amountTsh    Decimal      @map("amount_tsh") @db.Decimal(12, 2)
+  method       RefundMethod
+  /// For mobile money: the number it went to, and the reference from its message.
+  phone        String?      @db.VarChar(32)
+  reference    String?      @db.VarChar(80)
+  reason       String?      @db.VarChar(200)
+  refundedById String?      @map("refunded_by_id") @db.Uuid
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  voucher    Voucher     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  payment    Payment     @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  venue      Venue?      @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  package    Package?    @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  refundedBy Membership? @relation(fields: [refundedById], references: [id], onDelete: SetNull)
+
+  @@index([venueId, createdAt])
+  @@index([refundedById])
+  @@map("refunds")
 }

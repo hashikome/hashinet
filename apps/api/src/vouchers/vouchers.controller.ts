@@ -1,9 +1,10 @@
-import type { VoucherList } from "@hashinet/types";
-import { Controller, Get, Query } from "@nestjs/common";
+import type { VoucherList, VoucherListItem } from "@hashinet/types";
+import { Body, Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
+import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
-import { listQuery } from "./voucher-input.js";
+import { listQuery, refundInput } from "./voucher-input.js";
 import { VouchersService } from "./vouchers.service.js";
 
 /** Vouchers are read here; each is made by its sale (`POST /api/sales`, ADR-0017). */
@@ -15,5 +16,17 @@ export class VouchersController {
   @Can("voucher.read")
   list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<VoucherList> {
     return this.vouchers.list(staff, parseInput(listQuery, query));
+  }
+
+  /** An owner or manager gives a voucher's price back while it is not used yet (ADR-0017, 7). */
+  @Post(":id/refund")
+  @HttpCode(200)
+  @Can("voucher.refund")
+  async refund(
+    @CurrentPrincipal() staff: Principal,
+    @Param("id", idParam()) id: string,
+    @Body() body: unknown,
+  ): Promise<{ voucher: VoucherListItem }> {
+    return { voucher: await this.vouchers.refund(staff, id, parseInput(refundInput, body)) };
   }
 }

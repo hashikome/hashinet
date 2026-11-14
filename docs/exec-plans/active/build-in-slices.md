@@ -235,11 +235,15 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     owner and managers replace the list in one transaction (`payment_details.update`), a venue
     manager only at their venues; audited with the venue and its business. Tests:
     `payment-details.integration.test.ts`. Verify passes; integration 160/160.
-  - [ ] (e) Refunds (ADR-0017, 7 and 8): only an owner or a manager refunds a voucher not used yet,
-    the full price, by cash or mobile money (number and reference) with an optional reason; once only;
-    the voucher stops working at the router. A refund is its own row in Payments, counted on its day;
-    takings show gross, refunds and net from one definition of sales; the operator's cash to hand
-    over takes off the cash they gave back.
+  - [x] (2026-11-14) (e) Refunds (ADR-0017, 7 and 8): `POST /api/vouchers/:id/refund`
+    (`voucher.refund`, owners and managers) gives a voucher's full sale back while it is unused, by
+    cash or by mobile money with the guest's number and the reference; once (a conditional update),
+    with an optional reason. The voucher becomes `refunded` and leaves its routers. A `refunds` row
+    (migration `..._refunds`, CHECKs on the amount and on mobile money's number and reference) is
+    the refund's own line: `revenue_events` counts it as minus its amount on its day, so every sum
+    is net and counts of vouchers sold count sales only. Today adds the day's refunds and the
+    reader's own cash to hand over (their cash sales less the cash they gave back); Payments lists
+    a refund as its own row. Tests: `refunds.integration.test.ts`. Verify passes; integration 162/162.
   - [ ] (f) Releasing a voucher to a new device and its switch PIN (ADR-0015); ending a session;
     blocking and unblocking a device, per business.
   - [ ] (g) The screens, each built with design-build and audited at 390, 768 and 1440, light and

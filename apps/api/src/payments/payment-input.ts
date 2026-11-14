@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { normalizeTzPhone } from "../utils/phone.js";
 
-const mobileNumber = z.string().transform((value, ctx) => {
+export const mobileNumber = z.string().transform((value, ctx) => {
   const phone = normalizeTzPhone(value);
   if (phone === null) {
     ctx.addIssue({ code: "custom", message: "must be a Tanzanian mobile number" });

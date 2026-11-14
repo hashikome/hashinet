@@ -123,7 +123,7 @@ export class AnalyticsService {
     const weekAgo = new Date(now.getTime() - 7 * DAY_MS);
     const lastWeekDay = businessDayOf(weekAgo);
     const inScope = venueFilter(Prisma.sql`venue_id`, venues);
-    const [[online], rows, [before]] = await Promise.all([
+    const [[online], rows, [before], [refunds], [cash]] = await Promise.all([
       this.db.$queryRaw<{ n: number }[]>`
       SELECT count(DISTINCT device_id)::int AS n FROM wifi_sessions
       WHERE status = 'connected' AND ${inScope}`,
@@ -131,7 +131,8 @@ export class AnalyticsService {
         { package_id: string | null; name: string | null; sold: number; takings: string }[]
       >`
       WITH ${REVENUE_EVENTS}
-      SELECT e.package_id, p.name, count(*)::int AS sold, ${moneySum(Prisma.sql`e.amount`)} AS takings
+      SELECT e.package_id, p.name, (count(*) FILTER (WHERE e.kind = 'sale'))::int AS sold,
+             ${moneySum(Prisma.sql`e.amount`)} AS takings
       FROM revenue_events e LEFT JOIN packages p ON p.id = e.package_id
       WHERE ${businessDaySql(Prisma.sql`e.occurred_at`)} = ${day}::date
         AND ${venueFilter(Prisma.sql`e.venue_id`, venues)}
@@ -142,12 +143,34 @@ export class AnalyticsService {
       SELECT ${moneySum(Prisma.sql`amount`)} AS takings FROM revenue_events
       WHERE ${businessDaySql(Prisma.sql`occurred_at`)} = ${lastWeekDay}::date
         AND occurred_at <= ${weekAgo} AND ${inScope}`,
+      this.db.$queryRaw<{ amount: string }[]>`
+      WITH ${REVENUE_EVENTS}
+      SELECT ${moneySum(Prisma.sql`-amount`)} AS amount FROM revenue_events
+      WHERE kind = 'refund' AND ${businessDaySql(Prisma.sql`occurred_at`)} = ${day}::date
+        AND ${inScope}`,
+      // The reader's own cash to hand over: what they sold for cash today, less the cash they gave
+      // back today (ADR-0017, 8).
+      this.db.$queryRaw<{ amount: string }[]>`
+      SELECT ${moneySum(Prisma.sql`amount`)} AS amount FROM (
+        SELECT p.amount_tsh AS amount FROM payments p
+        WHERE p.recorded_by_id = ${staff.membershipId}::uuid AND p.status = 'paid'
+          AND p.provider IN ('cash', 'manual')
+          AND ${businessDaySql(Prisma.sql`p.paid_at`)} = ${day}::date
+          AND ${venueFilter(Prisma.sql`p.venue_id`, venues)}
+        UNION ALL
+        SELECT -r.amount_tsh FROM refunds r
+        WHERE r.refunded_by_id = ${staff.membershipId}::uuid AND r.method = 'cash'
+          AND ${businessDaySql(Prisma.sql`r.created_at`)} = ${day}::date
+          AND ${venueFilter(Prisma.sql`r.venue_id`, venues)}
+      ) mine`,
     ]);
     return {
       day,
       onlineNow: online?.n ?? 0,
       sold: rows.reduce((n, r) => n + r.sold, 0),
       takingsTsh: sumMoney(rows.map((r) => r.takings)),
+      refundsTsh: refunds?.amount ?? "0.00",
+      yourCashTsh: cash?.amount ?? "0.00",
       lastWeekTakingsTsh: before?.takings ?? "0.00",
       byPackage: rows.map((r) => ({
         packageId: r.package_id,
@@ -188,7 +211,7 @@ export class AnalyticsService {
         {
           id: string;
           source: RevenueSource;
-          kind: "sale";
+          kind: "sale" | "refund";
           amount: string;
           package_name: string | null;
           venue_name: string | null;
@@ -430,7 +453,7 @@ export class AnalyticsService {
     >`
       WITH ${REVENUE_EVENTS}
       SELECT e.package_id, p.name, ${moneySum(Prisma.sql`e.amount`)} AS revenue,
-             count(*)::int AS sales
+             (count(*) FILTER (WHERE e.kind = 'sale'))::int AS sales
       FROM revenue_events e LEFT JOIN packages p ON p.id = e.package_id
       WHERE ${businessMonthSql(Prisma.sql`e.occurred_at`)} = ${`${month}-01`}::date
       GROUP BY e.package_id, p.name ORDER BY SUM(e.amount) DESC`;
