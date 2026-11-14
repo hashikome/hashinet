@@ -16,15 +16,26 @@ export function businessInvitationEmail(to: string, link: string): EmailMessage 
   };
 }
 
-const ROLE_WORDS: Record<string, string> = { manager: "a manager", operator: "an operator" };
+const ROLE_WORDS: Record<string, string> = {
+  manager: "a manager",
+  operator: "an operator",
+  business_manager: "a business manager",
+  venue_manager: "a venue manager",
+  venue_operator: "an operator",
+};
 
-/** The invitation to join HashiNet's team in `role`. The link's fragment carries the token. */
-export function memberInvitationEmail(to: string, role: string, link: string): EmailMessage {
+/** The invitation to join a team (HashiNet's, or a business's) in `role`. The link's fragment carries the token. */
+export function memberInvitationEmail(
+  to: string,
+  role: string,
+  team: string,
+  link: string,
+): EmailMessage {
   return {
     to,
-    subject: "Join HashiNet's team",
+    subject: `Join ${team}`,
     text: [
-      `You have been invited to join HashiNet's team as ${ROLE_WORDS[role] ?? role}.`,
+      `You have been invited to join ${team} as ${ROLE_WORDS[role] ?? role}.`,
       "",
       `Open this link to give your name, then sign in with a code: ${link}`,
       "",

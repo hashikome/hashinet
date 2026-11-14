@@ -173,27 +173,48 @@ export class InvitationsService {
   async preview(token: string): Promise<InvitationPreview> {
     const row = await this.db.invitation.findFirst({
       where: { tokenDigest: digestOf(token), ...pending() },
+      include: { business: { select: { name: true } } },
     });
     if (!row) throw invitationGone();
     const expiresAt = row.expiresAt.toISOString();
     if (row.scope === "platform") {
-      return { email: row.email, kind: "platform_member", role: row.role, expiresAt };
+      return {
+        email: row.email,
+        kind: "platform_member",
+        role: row.role,
+        businessName: null,
+        expiresAt,
+      };
     }
-    if (row.role !== "owner" || row.businessId !== null) throw invitationGone();
-    return { email: row.email, kind: "business_owner", role: null, expiresAt };
+    if (row.business !== null) {
+      return {
+        email: row.email,
+        kind: "business_member",
+        role: row.role,
+        businessName: row.business.name,
+        expiresAt,
+      };
+    }
+    if (row.role !== "owner") throw invitationGone();
+    return { email: row.email, kind: "business_owner", role: null, businessName: null, expiresAt };
   }
 
   /**
-   * Accepts an invitation to HashiNet's team, in one transaction: the token is claimed first; the
-   * person is found or created, and their platform membership made or given back. It never signs
-   * anyone in.
+   * Accepts an invitation to a team, HashiNet's or a business's, in one transaction: the token is
+   * claimed first; the person is found or created, and their membership in that workspace made or
+   * given back, with the invitation's venues for a venue role (those the business still has). It
+   * never signs anyone in.
    */
   async acceptMember(input: z.infer<typeof acceptMemberInput>): Promise<AcceptedInvitation> {
     return this.db.$transaction(async (tx) => {
       const now = new Date();
       const digest = digestOf(input.token);
       const claimed = await tx.invitation.updateMany({
-        where: { tokenDigest: digest, ...pending(now), scope: "platform" },
+        where: {
+          tokenDigest: digest,
+          ...pending(now),
+          OR: [{ scope: "platform" }, { scope: "business", businessId: { not: null } }],
+        },
         data: { acceptedAt: now },
       });
       if (claimed.count === 0) throw invitationGone();
@@ -208,30 +229,42 @@ export class InvitationsService {
             emailVerified: true,
           },
         }));
-      // One platform membership per person: someone removed earlier is given it back.
-      const existing = await tx.membership.findFirst({
-        where: { userId: user.id, scope: "platform" },
-      });
+      const where = {
+        userId: user.id,
+        scope: invitation.scope,
+        businessId: invitation.businessId,
+      };
+      // One membership per person in a workspace: someone removed earlier is given it back.
+      const existing = await tx.membership.findFirst({ where });
       const membership = existing
         ? await tx.membership.update({
             where: { id: existing.id },
             data: { role: invitation.role, status: "active" },
           })
-        : await tx.membership.create({
-            data: { userId: user.id, scope: "platform", role: invitation.role },
-          });
+        : await tx.membership.create({ data: { ...where, role: invitation.role } });
+      const venues =
+        invitation.businessId === null
+          ? []
+          : await tx.venue.findMany({
+              where: { id: { in: invitation.venueIds }, businessId: invitation.businessId },
+              select: { id: true },
+            });
+      await tx.membershipVenue.deleteMany({ where: { membershipId: membership.id } });
+      await tx.membershipVenue.createMany({
+        data: venues.map((v) => ({ membershipId: membership.id, venueId: v.id })),
+      });
       await this.audit.record(
         { membershipId: membership.id, userId: user.id },
         {
           action: "invitation.accept",
-          businessId: null,
+          businessId: invitation.businessId,
           venueId: null,
           target: { type: "invitation", id: invitation.id },
-          change: { before: {}, after: { role: invitation.role } },
+          change: { before: {}, after: { role: invitation.role, venues: venues.length } },
         },
         tx,
       );
-      return { email: invitation.email, businessId: null };
+      return { email: invitation.email, businessId: invitation.businessId };
     });
   }
 
@@ -348,6 +381,7 @@ export function invitationRecordOf(row: {
   scope: InvitationRecord["scope"];
   role: InvitationRecord["role"];
   businessId: string | null;
+  venueIds: string[];
   invitedBy: { user: { name: string } } | null;
   createdAt: Date;
   expiresAt: Date;
@@ -358,6 +392,7 @@ export function invitationRecordOf(row: {
     scope: row.scope,
     role: row.role,
     businessId: row.businessId,
+    venueIds: row.venueIds,
     invitedBy: row.invitedBy?.user.name ?? null,
     createdAt: row.createdAt.toISOString(),
     expiresAt: row.expiresAt.toISOString(),

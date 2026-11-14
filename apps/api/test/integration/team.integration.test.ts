@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { platformMember } from "./people.js";
+import { businessMember, platformMember, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
@@ -188,5 +188,147 @@ describe("HashiNet's team", () => {
     expect((await manager.request("POST", `/api/invitations/${invited.id}/resend`)).status).toBe(
       404,
     );
+  });
+});
+
+async function venueOf(name: string, businessId?: string) {
+  const id = businessId ?? (await testBusinessId(t.db));
+  return t.db.venue.create({
+    data: { businessId: id, name, region: "Mwanza", area: "Kirumba" },
+  });
+}
+
+async function member(
+  role: "owner" | "business_manager" | "venue_manager" | "venue_operator",
+  email: string,
+  venueIds: string[] = [],
+) {
+  const m = await businessMember(t.db, { email, name: email, role, venueIds });
+  const c = browser(api);
+  await enrollAuthenticatorFor(api, c, email);
+  return { c, membershipId: m.membershipId };
+}
+
+describe("a business's team", () => {
+  test("the owner invites an operator to a venue, who accepts and works only there", async () => {
+    const kijiwe = await venueOf("Kijiwe Cafe");
+    await venueOf("Mama Neema Lodge");
+    const { c } = await member("owner", "neema@example.com");
+    expect((await team(c)).assignable).toEqual([
+      "business_manager",
+      "venue_manager",
+      "venue_operator",
+    ]);
+    const before = api.email.sent.length;
+    const issued = await c.request("POST", "/api/team/invitations", {
+      email: "musa@example.com",
+      role: "venue_operator",
+      venueIds: [kijiwe.id],
+    });
+    expect(issued.status).toBe(201);
+    expect(issued.body).toMatchObject({ invitation: { venueIds: [kijiwe.id] } });
+
+    const token = await tokenFor("musa@example.com", before);
+    const guest = browser(api);
+    expect(
+      (await guest.request("POST", "/api/invitations/accept/preview", { token })).body,
+    ).toMatchObject({ kind: "business_member", role: "venue_operator" });
+    const accepted = await guest.request("POST", "/api/invitations/accept/member", {
+      token,
+      person: { name: "Musa Lyimo" },
+    });
+    expect(accepted.status).toBe(201);
+
+    const musa = browser(api);
+    await signInWithCode(api, musa, "musa@example.com");
+    expect((await musa.request("GET", "/api/me")).body).toMatchObject({
+      active: { scope: "business", role: "venue_operator", venueIds: [kijiwe.id] },
+    });
+    // The business's team is its own: HashiNet's people are not on it.
+    await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
+    const listed = await team(c);
+    expect(listed.members.map((m) => m.email).sort()).toEqual([
+      "musa@example.com",
+      "neema@example.com",
+    ]);
+  });
+
+  test("a venue role needs venues, of this business, and only a venue role has them", async () => {
+    const own = await venueOf("Kijiwe Cafe");
+    const other = await t.db.business.create({
+      data: { name: "Kona", region: "Mwanza", area: "Kirumba" },
+    });
+    const elsewhere = await venueOf("Kona Masaki", other.id);
+    const { c } = await member("owner", "neema@example.com");
+    const invite = (role: string, venueIds: string[]) =>
+      c.request("POST", "/api/team/invitations", { email: "x@example.com", role, venueIds });
+    expect((await invite("venue_operator", [])).status).toBe(400);
+    expect((await invite("venue_operator", [elsewhere.id])).status).toBe(400);
+    expect((await invite("business_manager", [own.id])).status).toBe(400);
+    expect((await invite("manager", [])).status).toBe(403);
+    expect((await invite("business_manager", [])).status).toBe(201);
+  });
+
+  test("a venue manager gives only operators, only their own venues, and reaches only those people", async () => {
+    const kijiwe = await venueOf("Kijiwe Cafe");
+    const lodge = await venueOf("Mama Neema Lodge");
+    const { c } = await member("venue_manager", "daudi@example.com", [kijiwe.id]);
+    expect((await team(c)).assignable).toEqual(["venue_operator"]);
+    const invite = (role: string, venueIds: string[]) =>
+      c.request("POST", "/api/team/invitations", { email: "x@example.com", role, venueIds });
+    expect((await invite("venue_manager", [kijiwe.id])).status).toBe(403);
+    expect((await invite("venue_operator", [lodge.id])).status).toBe(403);
+    expect((await invite("venue_operator", [kijiwe.id])).status).toBe(201);
+
+    const atLodge = await businessMember(t.db, {
+      email: "halima@example.com",
+      name: "Halima",
+      role: "venue_operator",
+      venueIds: [lodge.id],
+    });
+    const atKijiwe = await businessMember(t.db, {
+      email: "musa@example.com",
+      name: "Musa",
+      role: "venue_operator",
+      venueIds: [kijiwe.id],
+    });
+    const listed = await team(c);
+    const manageable = (id: string) =>
+      listed.members.find((m) => m.membershipId === id)?.manageable;
+    expect(manageable(atLodge.membershipId)).toBe(false);
+    expect(manageable(atKijiwe.membershipId)).toBe(true);
+    expect((await c.request("DELETE", `/api/team/${atLodge.membershipId}`)).status).toBe(403);
+    // Moving an operator to a venue the manager doesn't run is refused.
+    expect(
+      (
+        await c.request("PUT", `/api/team/${atKijiwe.membershipId}`, {
+          role: "venue_operator",
+          venueIds: [lodge.id],
+        })
+      ).status,
+    ).toBe(403);
+  });
+
+  test("the owner moves an operator to other venues, then makes them a business manager", async () => {
+    const kijiwe = await venueOf("Kijiwe Cafe");
+    const lodge = await venueOf("Mama Neema Lodge");
+    const { c } = await member("owner", "neema@example.com");
+    const musa = await businessMember(t.db, {
+      email: "musa@example.com",
+      name: "Musa",
+      role: "venue_operator",
+      venueIds: [kijiwe.id],
+    });
+    const put = (body: object) => c.request("PUT", `/api/team/${musa.membershipId}`, body);
+    expect((await put({ role: "venue_operator", venueIds: [kijiwe.id, lodge.id] })).status).toBe(
+      204,
+    );
+    const venues = async () =>
+      (await t.db.membershipVenue.findMany({ where: { membershipId: musa.membershipId } }))
+        .map((v) => v.venueId)
+        .sort();
+    expect(await venues()).toEqual([kijiwe.id, lodge.id].sort());
+    expect((await put({ role: "business_manager", venueIds: [] })).status).toBe(204);
+    expect(await venues()).toEqual([]);
   });
 });

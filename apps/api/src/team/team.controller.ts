@@ -6,7 +6,7 @@ import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import { changeRoleInput, inviteMemberInput, TeamService } from "./team.service.js";
 
-/** HashiNet's team: its people and pending invitations, managed by rank. */
+/** A workspace's team, HashiNet's or a business's: its people and pending invitations, by rank. */
 @Controller("api/team")
 export class TeamController {
   constructor(private readonly team: TeamService) {}
@@ -51,7 +51,7 @@ export class TeamController {
     @Param("membershipId", idParam()) membershipId: string,
     @Body() body: unknown,
   ) {
-    await this.team.changeRole(staff, membershipId, parseInput(changeRoleInput, body).role);
+    await this.team.changeRole(staff, membershipId, parseInput(changeRoleInput, body));
   }
 
   @Delete(":membershipId")

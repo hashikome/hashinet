@@ -1168,6 +1168,19 @@ export type MembershipScope = "platform" | "business";
 export type PlatformRole = "admin" | "manager" | "operator";
 export type BusinessRole = "owner" | "business_manager" | "venue_manager" | "venue_operator";
 export type MembershipRole = PlatformRole | BusinessRole;
+/** Every role someone can be invited to; a business's owner comes only with the business. */
+export const INVITED_ROLES = [
+  "manager",
+  "operator",
+  "business_manager",
+  "venue_manager",
+  "venue_operator",
+] as const satisfies readonly MembershipRole[];
+/** Roles that work at chosen venues of their business, not all of them. */
+export const VENUE_ROLES = [
+  "venue_manager",
+  "venue_operator",
+] as const satisfies readonly BusinessRole[];
 
 /** A pending invitation, as the platform's Businesses page lists it (business-scopes M3). */
 export interface InvitationRecord {
@@ -1177,6 +1190,8 @@ export interface InvitationRecord {
   role: MembershipRole;
   /** Null for a new business's owner and for a platform role. */
   businessId: string | null;
+  /** The venues a venue manager or venue operator is invited to; empty for every other role. */
+  venueIds: string[];
   invitedBy: string | null;
   createdAt: Timestamp;
   expiresAt: Timestamp;
@@ -1189,10 +1204,12 @@ export interface InvitationList {
 /** What the invitation page shows before anything is entered: never a business or a person. */
 export interface InvitationPreview {
   email: string;
-  /** Starting a new business, or joining HashiNet's team in `role`. */
-  kind: "business_owner" | "platform_member";
-  /** For a platform member: the role offered. */
+  /** Starting a new business, joining HashiNet's team, or joining a business's team, in `role`. */
+  kind: "business_owner" | "platform_member" | "business_member";
+  /** For a member: the role offered. */
   role: MembershipRole | null;
+  /** For a business member: the business they join. */
+  businessName: string | null;
   expiresAt: Timestamp;
 }
 
@@ -1202,6 +1219,8 @@ export interface TeamMember {
   name: string;
   email: string;
   role: MembershipRole;
+  /** The venues of a venue manager or venue operator; empty for a role over every venue. */
+  venueIds: string[];
   joinedAt: Timestamp;
   /** When they last worked in this workspace; null if never yet. */
   lastUsedAt: Timestamp | null;

@@ -58,12 +58,12 @@ export const POLICY = {
   "business.invite": PLATFORM_STAFF,
   // HashiNet's team: its admin and managers see and invite it; who may give which role is by rank
   // (access/rank.ts). A business's team comes with its own slice.
-  "team.read": PLATFORM_STAFF,
+  "team.read": [...PLATFORM_STAFF, ...BUSINESS_MANAGERS],
   // Issues: everything that needs someone, worked in each workspace by its own people; operators
   // of a business see what is theirs on Today instead (redesign-admin, Issues).
   "issue.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
   "issue.work": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
-  "team.manage": PLATFORM_STAFF,
+  "team.manage": [...PLATFORM_STAFF, ...BUSINESS_MANAGERS],
   // A venue's way to serving guests (ADR-0013, 2): its owner says how the router should come;
   // HashiNet's admin and managers agree the package, record its payment and schedule the setup.
   "onboarding.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],

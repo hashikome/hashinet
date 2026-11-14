@@ -1,4 +1,10 @@
-import type { InvitationRecord, MembershipRole, TeamList } from "@hashinet/types";
+import {
+  INVITED_ROLES,
+  type InvitationRecord,
+  type MembershipRole,
+  type TeamList,
+  VENUE_ROLES,
+} from "@hashinet/types";
 import {
   BadRequestException,
   ConflictException,
@@ -22,12 +28,15 @@ import { invitationRecordOf, pending } from "../invitations/invitations.service.
 import { IssuesService } from "../issues/issues.service.js";
 import { captureFailure } from "../observability/telemetry.js";
 
+const venueIds = z.array(z.uuid()).max(50).default([]);
+
 export const inviteMemberInput = z.object({
   email: z.string().trim().toLowerCase().max(255).pipe(z.email("must be an email address")),
-  role: z.enum(["manager", "operator"]),
+  role: z.enum(INVITED_ROLES),
+  venueIds,
 });
 
-export const changeRoleInput = z.object({ role: z.enum(["manager", "operator"]) });
+export const changeRoleInput = z.object({ role: z.enum(INVITED_ROLES), venueIds });
 
 const notFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "No such person or invitation."));
@@ -35,11 +44,20 @@ const outranked = () =>
   new ForbiddenException(
     apiError("FORBIDDEN", "You can only invite, change or remove roles below your own."),
   );
+const outOfReach = () =>
+  new ForbiddenException(apiError("FORBIDDEN", "You can only give the venues you manage."));
+const badVenues = (message: string) =>
+  new BadRequestException(
+    apiError("VALIDATION_FAILED", "Check the highlighted fields.", { venueIds: message }),
+  );
+
+const isVenueRole = (role: MembershipRole) => (VENUE_ROLES as readonly string[]).includes(role);
 
 /**
- * HashiNet's team: its people and the invitations not yet accepted. Who may give, change or take
- * away a role is by rank: nobody gives more than they have, and nobody acts on someone at or above
- * their own rank (ADR-0011, 3 and 6). A business's team comes with its own slice.
+ * A workspace's team: its people and the invitations not yet accepted, for HashiNet's team or one
+ * business's. Who may give, change or take away a role is by rank: nobody gives more than they
+ * have, and nobody acts on someone at or above their own rank (ADR-0011, 3 and 6). A venue manager
+ * reaches only the people and venues of their own venues.
  */
 @Injectable()
 export class TeamService {
@@ -54,22 +72,30 @@ export class TeamService {
   async list(staff: Principal): Promise<TeamList> {
     const [members, invitations] = await Promise.all([
       this.db.membership.findMany({
-        where: { scope: "platform", status: "active" },
-        include: { user: { select: { name: true, email: true } } },
+        where: { ...workspace(staff), status: "active" },
+        include: {
+          user: { select: { name: true, email: true } },
+          venues: { select: { venueId: true } },
+        },
         orderBy: { createdAt: "asc" },
       }),
-      this.pendingInvitations(),
+      this.pendingInvitations(staff),
     ]);
     return {
-      members: members.map((m) => ({
-        membershipId: m.id,
-        name: m.user.name,
-        email: m.user.email,
-        role: m.role,
-        joinedAt: m.createdAt.toISOString(),
-        lastUsedAt: m.lastUsedAt?.toISOString() ?? null,
-        manageable: m.id !== staff.membershipId && outranks(staff.role, m.role),
-      })),
+      members: members.map((m) => {
+        const venues = m.venues.map((v) => v.venueId);
+        return {
+          membershipId: m.id,
+          name: m.user.name,
+          email: m.user.email,
+          role: m.role,
+          venueIds: venues,
+          joinedAt: m.createdAt.toISOString(),
+          lastUsedAt: m.lastUsedAt?.toISOString() ?? null,
+          manageable:
+            m.id !== staff.membershipId && outranks(staff.role, m.role) && reaches(staff, venues),
+        };
+      }),
       invitations,
       assignable: assignableRoles(staff.role),
     };
@@ -81,25 +107,25 @@ export class TeamService {
     input: z.infer<typeof inviteMemberInput>,
   ): Promise<InvitationRecord> {
     if (!assignableRoles(staff.role).includes(input.role)) throw outranked();
+    const venues = await this.venuesFor(staff, input.role, input.venueIds);
     const already = await this.db.membership.findFirst({
-      where: { scope: "platform", status: "active", user: { email: input.email } },
+      where: { ...workspace(staff), status: "active", user: { email: input.email } },
     });
     if (already) {
-      throw new ConflictException(
-        apiError("CONFLICT", "This person is already on HashiNet's team."),
-      );
+      throw new ConflictException(apiError("CONFLICT", "This person is already on this team."));
     }
     const { token, digest } = newInvitationToken();
     const id = await this.db.$transaction(async (tx) => {
       await tx.invitation.updateMany({
-        where: { ...pending(), email: input.email, scope: "platform" },
+        where: { ...pending(), email: input.email, ...workspace(staff) },
         data: { revokedAt: new Date() },
       });
       const created = await tx.invitation.create({
         data: {
           email: input.email,
-          scope: "platform",
+          ...workspace(staff),
           role: input.role,
+          venueIds: venues,
           tokenDigest: digest,
           invitedById: staff.membershipId,
           expiresAt: new Date(Date.now() + INVITATION_HOURS * 3600_000),
@@ -110,16 +136,16 @@ export class TeamService {
         {
           action: "invitation.issue",
           businessId: staff.businessId,
-          venueId: null,
+          venueId: venues.length === 1 ? (venues[0] ?? null) : null,
           target: { type: "invitation", id: created.id },
-          change: { before: {}, after: { role: input.role } },
+          change: { before: {}, after: { role: input.role, venues: venues.length } },
         },
         tx,
       );
       return created.id;
     });
-    this.send(input.email, input.role, token);
-    return this.pendingInvitation(id);
+    await this.send(staff, input.email, input.role, token);
+    return this.pendingInvitation(staff, id);
   }
 
   /** Sends a pending invitation again, with a new link; the old link stops working. */
@@ -145,8 +171,8 @@ export class TeamService {
         tx,
       );
     });
-    this.send(current.email, current.role, token);
-    return this.pendingInvitation(id);
+    await this.send(staff, current.email, current.role, token);
+    return this.pendingInvitation(staff, id);
   }
 
   async revoke(staff: Principal, id: string): Promise<void> {
@@ -166,13 +192,20 @@ export class TeamService {
     });
   }
 
-  /** Gives someone below the reader another role below the reader's. */
-  async changeRole(staff: Principal, membershipId: string, role: MembershipRole) {
+  /** Gives someone below the reader another role below the reader's, with its venues. */
+  async changeRole(staff: Principal, membershipId: string, input: z.infer<typeof changeRoleInput>) {
     const member = await this.manageable(staff, membershipId);
-    if (!assignableRoles(staff.role).includes(role)) throw outranked();
-    if (member.role === role) return;
+    if (!assignableRoles(staff.role).includes(input.role)) throw outranked();
+    const venues = await this.venuesFor(staff, input.role, input.venueIds);
+    const sameVenues =
+      venues.length === member.venueIds.length && venues.every((v) => member.venueIds.includes(v));
+    if (member.role === input.role && sameVenues) return;
     await this.db.$transaction(async (tx) => {
-      await tx.membership.update({ where: { id: member.id }, data: { role } });
+      await tx.membership.update({ where: { id: member.id }, data: { role: input.role } });
+      await tx.membershipVenue.deleteMany({ where: { membershipId: member.id } });
+      await tx.membershipVenue.createMany({
+        data: venues.map((venueId) => ({ membershipId: member.id, venueId })),
+      });
       await this.audit.record(
         staff,
         {
@@ -180,7 +213,10 @@ export class TeamService {
           businessId: staff.businessId,
           venueId: null,
           target: { type: "membership", id: member.id },
-          change: { before: { role: member.role }, after: { role } },
+          change: {
+            before: { role: member.role, venues: member.venueIds.length },
+            after: { role: input.role, venues: venues.length },
+          },
         },
         tx,
       );
@@ -209,9 +245,35 @@ export class TeamService {
     });
   }
 
+  /**
+   * The venues a role is given: none for a role over the whole workspace; for a venue role at
+   * least one, all of this business's, and within the reader's own venues.
+   */
+  private async venuesFor(
+    staff: Principal,
+    role: MembershipRole,
+    venueIds: string[],
+  ): Promise<string[]> {
+    const chosen = [...new Set(venueIds)];
+    if (!isVenueRole(role)) {
+      if (chosen.length > 0) throw badVenues("are given only to a venue manager or operator");
+      return [];
+    }
+    if (chosen.length === 0) throw badVenues("choose at least one venue");
+    // A venue role is a business's, so only someone in that business gives one.
+    if (staff.businessId === null) throw outranked();
+    const found = await this.db.venue.count({
+      where: { id: { in: chosen }, businessId: staff.businessId },
+    });
+    if (found !== chosen.length) throw badVenues("must be this business's venues");
+    if (!reaches(staff, chosen)) throw outOfReach();
+    return chosen;
+  }
+
   private async manageable(staff: Principal, membershipId: string) {
     const member = await this.db.membership.findFirst({
-      where: { id: membershipId, scope: "platform", status: "active" },
+      where: { id: membershipId, ...workspace(staff), status: "active" },
+      include: { venues: { select: { venueId: true } } },
     });
     if (!member) throw notFound();
     if (member.id === staff.membershipId) {
@@ -220,37 +282,63 @@ export class TeamService {
       );
     }
     if (!outranks(staff.role, member.role)) throw outranked();
-    return member;
+    const venues = member.venues.map((v) => v.venueId);
+    if (!reaches(staff, venues)) throw outOfReach();
+    return { id: member.id, role: member.role, venueIds: venues };
   }
 
-  /** A pending platform invitation for a role below the reader's. */
+  /** A pending invitation in the reader's workspace, for a role below theirs, within their venues. */
   private async ownInvitation(staff: Principal, id: string) {
     const row = await this.db.invitation.findFirst({
-      where: { id, scope: "platform", ...pending() },
+      where: { id, ...workspace(staff), ...pending() },
     });
     if (!row) throw notFound();
     if (!outranks(staff.role, row.role)) throw outranked();
+    if (!reaches(staff, row.venueIds)) throw outOfReach();
     return row;
   }
 
-  private async pendingInvitations(): Promise<InvitationRecord[]> {
+  private async pendingInvitations(staff: Principal): Promise<InvitationRecord[]> {
     const rows = await this.db.invitation.findMany({
-      where: { ...pending(), scope: "platform" },
+      where: { ...pending(), ...workspace(staff) },
       include: { invitedBy: { include: { user: { select: { name: true } } } } },
       orderBy: { createdAt: "desc" },
     });
-    return rows.map(invitationRecordOf);
+    return rows.filter((r) => reaches(staff, r.venueIds)).map(invitationRecordOf);
   }
 
-  private async pendingInvitation(id: string): Promise<InvitationRecord> {
-    const found = (await this.pendingInvitations()).find((r) => r.id === id);
+  private async pendingInvitation(staff: Principal, id: string): Promise<InvitationRecord> {
+    const found = (await this.pendingInvitations(staff)).find((r) => r.id === id);
     if (!found) throw notFound();
     return found;
   }
 
   /** Sends the email without waiting on it; a failure is recorded, and Resend sends a new link. */
-  private send(email: string, role: string, token: string): void {
+  private async send(staff: Principal, email: string, role: string, token: string) {
     const link = `${this.config.frontendOrigin}/invite#token=${token}`;
-    void this.email.send(memberInvitationEmail(email, role, link)).catch(captureFailure);
+    const business =
+      staff.businessId === null
+        ? null
+        : await this.db.business.findUnique({
+            where: { id: staff.businessId },
+            select: { name: true },
+          });
+    const team = business === null ? "HashiNet's team" : `${business.name}'s team`;
+    void this.email.send(memberInvitationEmail(email, role, team, link)).catch(captureFailure);
   }
+}
+
+/** The reader's workspace: HashiNet's own, or their business. */
+function workspace(staff: Principal) {
+  return staff.scope === "platform"
+    ? { scope: "platform" as const, businessId: null }
+    : { scope: "business" as const, businessId: staff.businessId };
+}
+
+/** Whether the reader reaches these venues: every one, or a venue manager's own. A role over the
+ * whole workspace (no venues) is reached only by a reader over the whole workspace too. */
+function reaches(staff: Principal, venueIds: string[]): boolean {
+  if (staff.venueIds === null) return true;
+  const own = staff.venueIds;
+  return venueIds.length > 0 && venueIds.every((v) => own.includes(v));
 }

@@ -209,8 +209,14 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     router lands in that business's and venue's Audit log. Devices belong to the business that acted
     until (f) makes them per business. Test: `routers.integration.test.ts`. Verify passes;
     integration 155/155.
-  - [ ] (b) Business roles by invitation (business-scopes M3): the owner invites a business manager, a
-    venue manager or an operator with their venues; venue-limited packages for venue managers.
+  - [x] (2026-11-14) (b) Business roles by invitation (business-scopes M3): `api/team` serves the
+    reader's workspace, HashiNet's or their business's. The owner invites a business manager, a
+    venue manager or an operator; a business manager the two venue roles; a venue manager only
+    operators, only to their own venues, and reaches only the people there. A venue role needs at
+    least one of the business's venues and nothing else has any; changing a role moves its venues.
+    Accepting (`accept/member`) joins the business with the invitation's venues; the preview names
+    the business. Venue-only packages moved to slice 5 (Decision Log). Tests:
+    `team.integration.test.ts`. Verify passes; integration 159/159.
   - [ ] (c) A voucher only by its sale: remove batches, Print vouchers and revoke (`vouchers/batches`,
     `vouchers/print`, `vouchers/revoke`, `VoucherBatch`, their tests and screens). `POST /api/sales`
     sells one voucher with the money in hand: it needs no payment provider (ADR-0010, 6 narrowed), the
@@ -430,6 +436,12 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   the venue's own number, so a sale by mobile money needs no provider. Designed and walked in the
   prototype first, then approved, so the slice is built without guesses.
   Date/Author: 2026-11-14 / owner.
+- Decision: a venue manager's venue-only packages move from slice 2 to slice 5.
+  Rationale: they need a package's own venue and a change to the on-sale rule (a venue with no
+  assignments sells every active package, so a venue-only package would leak there), with their own
+  permission and routes, and they sit on the same screen as prices per venue, which slice 5 builds.
+  Slice 2's counter needs neither.
+  Date/Author: 2026-11-14 / agent, to confirm with the owner.
 
 ## Outcomes & Retrospective
 
@@ -507,7 +519,8 @@ it paid.
 
 **Slice 5, many venues.** For an owner of several venues and their team (Neema, Grace, Daudi).
 Backend: the business manager role; venue managers over several venues; Add a venue and its
-onboarding package; prices per venue; captive portal branding (ADR-0009); business-scopes M5 (the
+onboarding package; prices per venue; packages a venue manager adds, sold only at their venues
+(ADR-0011, 4), which need a package's venue and the on-sale rule to keep them there; captive portal branding (ADR-0009); business-scopes M5 (the
 business profile with its logo); analytics computed by the API; the packages CSV export.
 Screens: the venue switcher, Venues and a venue's page, Captive portal, General, Analytics (usage
 and sales), the business manager's and venue manager's views (H4: every list and form on a phone).
