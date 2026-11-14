@@ -464,11 +464,6 @@ ul {
 .btn.secondary:hover {
   background: var(--secondary);
 }
-.btn.ghost {
-  color: var(--foreground);
-  padding: 0 6px;
-  height: auto;
-}
 .btn.bad {
   color: var(--destructive);
   border-color: var(--border);
@@ -739,6 +734,47 @@ td:last-child {
   background: var(--card);
   color: var(--selected-fg);
   font-weight: 600;
+}
+fieldset.segs {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+/* A list's tabs on a phone scroll sideways instead of wrapping (Material's scrollable tabs, as Soko has
+   them): no tab is hidden, the chosen one is brought into view, and a fade at an edge shows there are
+   more beyond it. */
+@media (max-width: 900px) {
+  .segs.tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+  }
+  .segs.tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .segs.tabs .seg {
+    flex: none;
+  }
+  .segs.tabs[data-right="true"] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+  }
+  .segs.tabs[data-left="true"] {
+    mask-image: linear-gradient(to right, transparent, #000 40px);
+  }
+  .segs.tabs[data-left="true"][data-right="true"] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 40px,
+      #000 calc(100% - 40px),
+      transparent
+    );
+  }
 }
 
 /* Charts */
@@ -1217,6 +1253,24 @@ pre.csv {
 }
 .auth-legal .link:hover {
   color: #fff;
+}
+/* On a touch screen the legal links' tap area reaches 44px without moving the text around them. */
+@media (pointer: coarse) {
+  .auth-links-row a,
+  .auth-links-row button,
+  button.link {
+    position: relative;
+  }
+  .auth-links-row a::after,
+  .auth-links-row button::after,
+  button.link::after {
+    content: "";
+    position: absolute;
+    inset: -14px -4px;
+  }
+  label.sw-row {
+    min-height: 44px;
+  }
 }
 /* On a phone: the links first, as they are what gets tapped, then the copyright as the closing line. */
 @media (max-width: 640px) {
@@ -2011,7 +2065,7 @@ pre.csv {
   .heat {
     grid-template-columns: 30px repeat(16, minmax(0, 1fr));
     gap: 2px;
-    font-size: 10.5px;
+    font-size: 11.5px;
   }
   .bar-in {
     display: none;
@@ -3275,7 +3329,7 @@ td.act {
   .copy-text::after {
     content: "";
     position: absolute;
-    inset: -13px -4px;
+    inset: -14px -4px;
   }
 }
 .copy-text:focus-visible {
@@ -3568,25 +3622,21 @@ html {
 .side:hover::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--muted-fg) 45%, transparent);
 }
-/* Row actions are quiet: text that gets a background on hover. Red is kept for the confirmation's button. */
+/* A quiet button rests in a soft fill with no outline, at every width: a button at a glance, a step
+   below the outlined ones. Row actions and ghost buttons share it; red is kept for the confirmation. */
 td .btn.secondary,
-td .btn.danger {
-  background: transparent;
+td .btn.danger,
+.btn.ghost {
+  background: var(--secondary);
   border-color: transparent;
   color: var(--foreground);
 }
 td .btn.secondary:hover,
-td .btn.danger:hover {
-  background: var(--secondary);
+td .btn.danger:hover,
+.btn.ghost:hover {
+  background: color-mix(in oklab, var(--foreground) 9%, var(--secondary));
 }
-/* A touch screen has no hover to show a quiet button is one, so it keeps a light outline there. */
-@media (pointer: coarse) {
-  td .btn.secondary,
-  td .btn.danger {
-    border-color: var(--border);
-    background: var(--card);
-  }
-}
+
 /* Selecting rows for an action on many. */
 .pick-cell {
   display: flex;

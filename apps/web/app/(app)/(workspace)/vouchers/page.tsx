@@ -17,6 +17,7 @@ import {
   Pill,
   type PillKind,
   Table,
+  Tabs,
 } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
@@ -114,19 +115,7 @@ export default function VouchersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="segs">
-            {TABS.map((t) => (
-              <button
-                key={t}
-                className={`seg${t === tab ? " on" : ""}`}
-                type="button"
-                aria-pressed={t === tab}
-                onClick={() => setTab(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          <Tabs label="Vouchers by status" options={TABS} value={tab} onChange={setTab} />
         </div>
         {list.data === null ? null : rows.length ? (
           <Table

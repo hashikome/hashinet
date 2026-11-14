@@ -10,6 +10,7 @@ import {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -419,6 +420,64 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 export const useToast = () => useContext(ToastContext);
 
 /** How each page says a router's or a business's condition (the API decides which it is). */
+/**
+ * A list's tabs. On a phone the row scrolls sideways instead of wrapping (Material's scrollable tabs,
+ * as Soko has them): the chosen tab is brought into view, and `data-left` / `data-right` say which
+ * edge has more tabs, for its fade.
+ */
+export function Tabs<K extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: readonly K[];
+  value: K;
+  onChange: (k: K) => void;
+}) {
+  const ref = useRef<HTMLFieldSetElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new choice is brought into view again
+  useLayoutEffect(() => {
+    const row = ref.current;
+    if (!row) return;
+    const edges = () => {
+      row.dataset.left = String(row.scrollLeft > 1);
+      row.dataset.right = String(row.scrollLeft + row.clientWidth < row.scrollWidth - 1);
+    };
+    const on = row.querySelector('[aria-pressed="true"]');
+    if (on && row.scrollWidth > row.clientWidth) {
+      const r = on.getBoundingClientRect();
+      const c = row.getBoundingClientRect();
+      if (r.left < c.left || r.right > c.right) row.scrollLeft += r.left - c.left - 24;
+    }
+    edges();
+    row.addEventListener("scroll", edges, { passive: true });
+    const ro = new ResizeObserver(edges);
+    ro.observe(row);
+    return () => {
+      row.removeEventListener("scroll", edges);
+      ro.disconnect();
+    };
+  }, [value]);
+  return (
+    <fieldset ref={ref} className="segs tabs">
+      <legend className="sr-only">{label}</legend>
+      {options.map((t) => (
+        <button
+          key={t}
+          className={`seg${t === value ? " on" : ""}`}
+          type="button"
+          aria-pressed={t === value}
+          onClick={() => onChange(t)}
+        >
+          {t}
+        </button>
+      ))}
+    </fieldset>
+  );
+}
+
 export const CONDITION: Record<RouterCondition, [string, PillKind]> = {
   "setting-up": ["Setting up", "wait"],
   serving: ["Serving", "ok"],
