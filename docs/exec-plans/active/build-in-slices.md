@@ -20,8 +20,8 @@ money, SMS and the physical router. The prototype is the reference for every scr
 where the build and the prototype differ, the prototype wins unless this plan records why.
 
 Observable result when the plan completes: a platform admin invites a business; its owner accepts,
-protects their sign-in, has a router set up, and sells printed vouchers at three venues with a business
-manager, a venue manager and an operator; HashiNet invoices the business monthly and records its
+protects their sign-in, has a router set up, and sells vouchers at the counter of three venues, each
+made at its sale (ADR-0017), with a business manager, a venue manager and an operator; HashiNet invoices the business monthly and records its
 payments; guests buy online once Snippe's and BRIQ's credentials exist.
 
 ## Progress
@@ -111,9 +111,11 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [x] (2026-11-13) (h) Leftovers of the first build removed: its portal components, Tailwind, shadcn
     and their packages and config, `globals.css` (`hearth.css` is the one stylesheet), unused web
     helpers and the old logo; DESIGN.md and the web README point at the new code.
-  - [ ] (i) finish-work on the branch: review, security, simplify, the journey-level design audit
-    across the slice's screens, docs, CHANGELOG and the handbook.
-  - [ ] (j) Production reset (owner-run, Concrete Steps), deploy, and live acceptance.
+  - [x] (2026-11-13) (i) finish-work on the branch: review, security, simplify, the journey-level
+    design audit (18/20), docs and CHANGELOG. Integration 137/137.
+  - [x] (2026-11-14) (j) Production reset (Concrete Steps), released (`84422b4`, run 43392223246),
+    and accepted live: Paul's home's package agreed and its setup scheduled, its router (the CHR sim,
+    tunnel up) set up from its page, and a guest online through it, which closed the setup.
 - [ ] Slice 3: onboarding a business (before slice 2: owner, 13 November 2026). Built on the local branch
   `slice-3`. Steps, each ending with `bun run verify` and the integration tests passing, and a commit:
   - [x] (2026-11-13) (a) Platform roles by invitation (business-scopes M3), `apps/api/src/team/`:
@@ -191,10 +193,47 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     - **Docs:** a setup stalls by its date (ADR-0011, 11); docs, CHANGELOG, technical debt and
       the handbook updated.
     - Verify passes; integration 153/153.
-  - [ ] (h) Release and live acceptance: Asha invites a test business; its owner accepts, protects
-    their sign-in and chooses how the router comes; Asha confirms the package and sets up its router
-    (`chr-test`); the venue serves.
-- [ ] Slice 2: the counter.
+  - [x] (2026-11-14) (h) Released (`888b6da`, run 43463945212), then `3354c54` (a router's hotspot
+    port; the ISP router's address in its setup script) and `6698aaf` (Set up replaces portal pages
+    left by an earlier install). Accepted live with Paul's home as the business: its package
+    confirmed, its setup scheduled, its router set up, its first guest online, the setup issue
+    closed. Asha inviting a fresh test business is left for slice 5's second venue, which walks the
+    same journey.
+- [ ] Slice 2: the counter, where a voucher exists only by its sale (ADR-0017). Built on the local
+  branch `slice-2` against the prototype (`#musa-overview` then Sell; `#neema-vouchers`;
+  `#neema-venue-v1`). Steps, each ending with `bun run verify` and the integration tests passing, and
+  a commit:
+  - [ ] (a) The audit rows' venue and business (Surprises): every event records the venue it is about
+    and, when HashiNet's team acts on a business, that business, so scoped Audit logs miss nothing.
+  - [ ] (b) Business roles by invitation (business-scopes M3): the owner invites a business manager, a
+    venue manager or an operator with their venues; venue-limited packages for venue managers.
+  - [ ] (c) A voucher only by its sale: remove batches, Print vouchers and revoke (`vouchers/batches`,
+    `vouchers/print`, `vouchers/revoke`, `VoucherBatch`, their tests and screens). `POST /api/sales`
+    sells one voucher with the money in hand: it needs no payment provider (ADR-0010, 6 narrowed), the
+    package sets the price, mobile money needs the guest's mobile money number, cash takes one
+    optionally, and the code is texted only by a business with SMS credits. The voucher and its sale
+    are one transaction. Migration: no batch column; `revoked` becomes `refunded`.
+  - [ ] (d) Payment details (ADR-0017, 4): up to three ways per venue (paid through, number, name),
+    kept by its owner or a manager, read by whoever sells there, audited.
+  - [ ] (e) Refunds (ADR-0017, 7): an owner or a manager refunds a voucher not used yet, the full
+    price, by cash or mobile money (number and reference) with an optional reason; once only; the
+    voucher stops working at the router; Payments and the day's takings show it (Open, below).
+  - [ ] (f) Releasing a voucher to a new device and its switch PIN (ADR-0015); ending a session;
+    blocking and unblocking a device, per business.
+  - [ ] (g) The screens, each built with design-build and audited at 390, 768 and 1440, light and
+    dark: Sell a voucher (package rows, the centred check with Paid by and Pay to, Confirm sale and
+    Change package, Voucher sold with Sell another, Send, Print); the operator's Today with their
+    sales and cash to hand over; Vouchers with Refund and Release; the venue's Payment details;
+    Payments with Sold by; Live sessions; Devices; Team and Invitations for business roles; the Audit
+    log; Help for the venue manager and operator. Print vouchers and its route go.
+  - [ ] (h) finish-work on the branch, then PRODUCT.md, the design docs and the handbook say the
+    sale model (they still describe printed vouchers).
+  - [ ] (i) Release and live acceptance: Paul's home invites an operator, who sells a voucher by
+    mobile money reading out the venue's Lipa namba; the guest gets online with it; the owner
+    refunds an unused one and sees both in Payments.
+  Open before (e): whether a seller may refund their own sale the same day; how a refund shows in
+  Payments and the takings; whether a mobile money sale takes the payment's confirmation code;
+  whether fees count each sold voucher's price (ADR-0017, Open).
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).
@@ -382,6 +421,12 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   for Issues and the getting-started steps, and found slice 1's stand-in. Slice 3 needs nothing of
   slice 2: its team is the platform's, invited in slice 3 itself.
   Date/Author: 2026-11-13 / owner.
+- Decision: slice 2 sells a voucher only at its sale (ADR-0017): no printed stock, refunds instead of
+  undoing a sale, and the venue's payment details on the sale for mobile money at the counter.
+  Rationale: printed stock can be taken, left unsold or sold unrecorded; at a counter the guest pays
+  the venue's own number, so a sale by mobile money needs no provider. Designed and walked in the
+  prototype first, then approved, so the slice is built without guesses.
+  Date/Author: 2026-11-14 / owner.
 
 ## Outcomes & Retrospective
 
@@ -425,15 +470,18 @@ Accepted live: Paul is invited as the owner of Paul's home, accepts, protects hi
 passkey, prints vouchers, and a guest redeems one through `chr-test`. No physical router is installed
 yet (owner, 12 November 2026), so that stays with build-hashinet M8 and does not block the slice.
 
-**Slice 2, the counter.** For a venue manager and an operator (Daudi, Musa).
-Backend: business-scopes M3's business-role invitations with venues; recording a sale (cash or mobile
-money, its code issued at once and its price stored); confirming an operator's sale; releasing a
-voucher and its switch PIN (ADR-0015); blocking and unblocking a device; live sessions.
-Screens: the operator's Today (Sold today and Cash today counting every recorded sale); Sell a voucher
-and the issued code; Payments with To confirm; Live sessions; Devices; Team and Invitations; the Audit
-log; Help for the venue manager and operator.
-Accepted live: Paul's home invites an operator, who sells a voucher at the counter; the owner confirms
-it; the guest gets online with it.
+**Slice 2, the counter.** For a venue manager and an operator (Daudi, Musa), and the owner.
+A voucher exists only by its sale (ADR-0017): no printed stock, no sale recorded by hand, no price
+typed. Backend: business-scopes M3's business-role invitations with venues; the audit rows' venue and
+business; selling one voucher with the money in hand, by cash or mobile money to the venue's own
+number, with no payment provider; the venue's payment details; refunds of unused vouchers; releasing
+a voucher and its switch PIN (ADR-0015); ending a session; blocking and unblocking a device; live
+sessions. Removed: voucher batches, Print vouchers, revoking, and Payments' To confirm.
+Screens: Sell a voucher and Voucher sold; the operator's Today (their sales today and the cash to hand
+over); Vouchers with Refund and Release; the venue's Payment details; Payments with Sold by; Live
+sessions; Devices; Team and Invitations; the Audit log; Help for the venue manager and operator.
+Accepted live: Paul's home invites an operator, who sells a voucher by mobile money at the counter;
+the guest gets online with it; the owner refunds an unused voucher and sees both in Payments.
 
 **Slice 3, onboarding a business.** For the platform admin, manager and operator (Paul, Asha, Hamisi).
 Backend: invitations for platform roles; the business's 7 days to get set up; the router preference

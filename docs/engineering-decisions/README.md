@@ -32,3 +32,4 @@ links stay valid.
 | [0014](0014-service-access-and-venue-lifecycle.md) | Service access, archiving, and the venue lifecycle | accepted |
 | [0015](0015-voucher-online-limit-through-radius.md) | A voucher is limited by the devices online at once, through RADIUS | accepted |
 | [0016](0016-the-product-is-hashinet.md) | The product is HashiNet | accepted |
+| [0017](0017-a-voucher-exists-only-by-its-sale.md) | A voucher exists only by its sale | accepted |

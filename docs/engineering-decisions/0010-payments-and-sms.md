@@ -3,7 +3,8 @@
 Status: accepted, 31 October 2026, as proved against test doubles and the router sim. Held: HashiFi
 launches on printed vouchers, and this turns on with the providers' credentials. Real mobile money
 and SMS have not run yet. ADR-0013 makes SMS something a business buys, so point 7 applies only to a
-business with credits.
+business with credits. Narrowed 14 November 2026: ADR-0017 replaces point 6 (a voucher exists only by
+its sale; there is no printed stock).
 
 ## Context
 
@@ -36,9 +37,9 @@ holding a payment id.
 5. **Webhooks are proved over the exact bytes.** Payment reports are signed over the timestamp and
    body, and refused 300 seconds out. SMS reports have no timestamp, so the event id alone stops a
    replay. Bodies never reach a log, because they hold a customer's number.
-6. **Assisted sales prompt nobody.** Staff record money already taken, for cash or mobile money. The
-   code comes back to them, and goes by SMS if there is a number. Printed cards stay as they are:
-   stock until redeemed, then cash sales.
+6. **Assisted sales prompt nobody.** A counter sale is made by a seller with the money in hand, for
+   cash or mobile money to the venue's own number, and makes its voucher (ADR-0017). Nothing prompts
+   the guest's phone.
 7. **SMS cannot strand a guest.** A message is sent once per payment, and its text is not kept.
    One nobody reports on becomes `unconfirmed` at 10 minutes. The screen always has the code.
 8. **Providers sit behind interfaces** (`MobileMoneyGateway`, `SmsSender`). No background queue:
