@@ -97,6 +97,24 @@ export interface PortalSettingsRecord {
   updatedAt: Timestamp | null;
 }
 
+/**
+ * One way a guest pays a venue by mobile money at its counter (ADR-0017, 4), as its owner or a
+ * manager keeps it, and as whoever sells reads it out.
+ */
+export interface PaymentWay {
+  /** What it is paid through: a Lipa namba, a bank, a mobile money network. */
+  through: string;
+  /** The Lipa namba, mobile number or account number. */
+  number: string;
+  /** The name the payment shows to the guest. */
+  name: string;
+}
+
+/** `GET` and `PUT /api/venues/:id/payment-details`: a venue's ways to pay, in order, at most 3. */
+export interface VenuePaymentDetails {
+  ways: PaymentWay[];
+}
+
 /** What a venue shows: its own branding, or the HashiNet default. */
 export interface BrandRecord extends PortalSettingsRecord {
   /** Served from the portal's own origin; null shows HashiNet's logo. */
@@ -831,6 +849,7 @@ export const AUDIT_ACTIONS = [
   "venue.create",
   "venue.update",
   "venue.delete",
+  "venue.payment_details.update",
   "router.create",
   "router.update",
   "router.delete",

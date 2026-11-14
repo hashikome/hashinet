@@ -18,6 +18,9 @@ export const POLICY = {
   "venue.create": [...PLATFORM_STAFF, "owner"],
   "venue.update": [...PLATFORM_STAFF, ...WHOLE_BUSINESS],
   "venue.delete": PLATFORM_STAFF,
+  // Whoever sells at a venue reads where guests pay; its owner and managers keep it (ADR-0017, 4).
+  "payment_details.read": BUSINESS_ALL,
+  "payment_details.update": BUSINESS_MANAGERS,
   "router.read": [...PLATFORM_ALL, ...BUSINESS_ALL],
   "router.check": PLATFORM_ALL,
   "router.manage": PLATFORM_STAFF,

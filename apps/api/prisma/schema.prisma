@@ -451,17 +451,18 @@ model Venue {
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  business   Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  members    MembershipVenue[]
-  routers    Router[]
-  issues     Issue[]
-  packages   VenuePackage[]
-  onboarding VenueOnboarding?
-  brand      VenueBrand?
-  vouchers   Voucher[]
-  payments   Payment[]
-  sessions   WifiSession[]
-  dailyStats DailyUsageStat[]
+  business    Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  members     MembershipVenue[]
+  routers     Router[]
+  issues      Issue[]
+  packages    VenuePackage[]
+  paymentWays VenuePaymentWay[]
+  onboarding  VenueOnboarding?
+  brand       VenueBrand?
+  vouchers    Voucher[]
+  payments    Payment[]
+  sessions    WifiSession[]
+  dailyStats  DailyUsageStat[]
 
   @@index([businessId])
   @@index([status])
@@ -1066,4 +1067,26 @@ model VenueOnboardingLine {
 
   @@unique([venueId, position])
   @@map("venue_onboarding_lines")
+}
+
+/// Where guests pay a venue by mobile money at its counter, as its owner or a manager keeps them
+/// (ADR-0017, 4): up to three ways, in order. Whoever sells there reads them out.
+model VenuePaymentWay {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  venueId   String   @map("venue_id") @db.Uuid
+  /// Its place in the venue's list, from 0.
+  position  Int
+  /// What it is paid through: a Lipa namba, a bank, a mobile money network, as the owner names it.
+  through   String   @db.VarChar(60)
+  /// The Lipa namba, mobile number or account number.
+  number    String   @db.VarChar(40)
+  /// The name the payment shows to the guest.
+  name      String   @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  @@unique([venueId, position])
+  @@map("venue_payment_ways")
 }

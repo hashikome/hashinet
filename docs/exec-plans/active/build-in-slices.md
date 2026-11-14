@@ -228,8 +228,13 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     the sale-model states and no Print vouchers; Sell comes with (g). Tests:
     `vouchers.integration.test.ts`, `without-providers.integration.test.ts` (was printed-launch),
     the analytics and packages tests rewritten on sales. Verify passes; integration 157/157.
-  - [ ] (d) Payment details (ADR-0017, 4): up to three ways per venue (paid through, number, name),
-    kept by its owner or a manager, read by whoever sells there, audited.
+  - [x] (2026-11-14) (d) Payment details (ADR-0017, 4), `apps/api/src/payment-details/`: up to three
+    ways per venue, in order (paid through, number in digits, name), in `venue_payment_ways`
+    (migration `20261114144947_venue_payment_ways`, a CHECK on the three). `GET` and `PUT
+    /api/venues/:id/payment-details`: whoever sells there reads them (`payment_details.read`); its
+    owner and managers replace the list in one transaction (`payment_details.update`), a venue
+    manager only at their venues; audited with the venue and its business. Tests:
+    `payment-details.integration.test.ts`. Verify passes; integration 160/160.
   - [ ] (e) Refunds (ADR-0017, 7 and 8): only an owner or a manager refunds a voucher not used yet,
     the full price, by cash or mobile money (number and reference) with an optional reason; once only;
     the voucher stops working at the router. A refund is its own row in Payments, counted on its day;
