@@ -203,8 +203,12 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   branch `slice-2` against the prototype (`#musa-overview` then Sell; `#neema-vouchers`;
   `#neema-venue-v1`). Steps, each ending with `bun run verify` and the integration tests passing, and
   a commit:
-  - [ ] (a) The audit rows' venue and business (Surprises): every event records the venue it is about
-    and, when HashiNet's team acts on a business, that business, so scoped Audit logs miss nothing.
+  - [x] (2026-11-14) (a) The audit rows' venue and business (Surprises): `AuditEvent` requires both,
+    so every call says whose event it is; `AuditLog.atVenue` gives a venue's business for events
+    about a venue's routers, sessions, sales and vouchers; HashiNet's team acting on a business's
+    router lands in that business's and venue's Audit log. Devices belong to the business that acted
+    until (f) makes them per business. Test: `routers.integration.test.ts`. Verify passes;
+    integration 155/155.
   - [ ] (b) Business roles by invitation (business-scopes M3): the owner invites a business manager, a
     venue manager or an operator with their venues; venue-limited packages for venue managers.
   - [ ] (c) A voucher only by its sale: remove batches, Print vouchers and revoke (`vouchers/batches`,

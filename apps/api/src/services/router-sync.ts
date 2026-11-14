@@ -254,7 +254,7 @@ export class RouterSync {
         await this.audit.system({
           action: "router.push_failed",
           target: { type: "router", id: router.id },
-          venueId: router.venueId,
+          ...(await this.audit.atVenue(router.venueId)),
           outcome: "failed",
           change: { before: {}, after: { codes: codes.length } },
         });
@@ -326,7 +326,7 @@ export class RouterSync {
       await this.audit.system({
         action: "router.sync_failed",
         target: { type: "router", id: routerId },
-        venueId: router.venueId,
+        ...(await this.audit.atVenue(router.venueId)),
         outcome: "failed",
       });
     } finally {
@@ -413,7 +413,7 @@ export class RouterSync {
         await this.audit.system({
           action: "router.sync_failed",
           target: { type: "router", id: router.id },
-          venueId: router.venueId,
+          ...(await this.audit.atVenue(router.venueId)),
           outcome: "failed",
         });
       }

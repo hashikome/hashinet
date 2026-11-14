@@ -31,6 +31,9 @@ export class PortalService {
     });
     await this.audit.record(staff, {
       action: "portal.defaults.update",
+      // The platform's defaults for new businesses: no business or venue's own.
+      businessId: null,
+      venueId: null,
       target: { type: "portal", id: row.id },
       change: { before: {}, after: {} },
     });

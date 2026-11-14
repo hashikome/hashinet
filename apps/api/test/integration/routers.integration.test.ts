@@ -317,6 +317,22 @@ describe("routers", () => {
     );
     expect((await operator.request("DELETE", `/api/routers/${router.id}`)).status).toBe(403);
   });
+  test("HashiNet's work on a business's router is in that business's and venue's Audit log", async () => {
+    const client = await admin();
+    const { client: venueManager, id: managerId } = await manager("daudi@example.com");
+    const { id: venueId } = await venue(managerId);
+    const created = await client.request("POST", "/api/routers", { ...ROUTER, venueId });
+    const { id } = routerOf(created) as { id: string };
+
+    const row = await t.db.auditLog.findFirstOrThrow({ where: { action: "router.create" } });
+    expect(row.businessId).toBe(await testBusinessId(t.db));
+    expect(row.venueId).toBe(venueId);
+    const read = await venueManager.request("GET", "/api/audit");
+    const entries = (read.body as { entries: { action: string; target: { id: string } }[] })
+      .entries;
+    expect(entries.some((e) => e.action === "router.create" && e.target.id === id)).toBe(true);
+  });
+
   test("a router comes only from a venue's scheduled setup", async () => {
     const c = await admin();
     const v = await t.db.venue.create({

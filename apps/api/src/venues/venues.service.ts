@@ -57,7 +57,12 @@ export class VenuesService {
       await this.onboarding.begin(created.id, tx);
       await this.audit.record(
         staff,
-        { action: "venue.create", target: { type: "venue", id: created.id } },
+        {
+          action: "venue.create",
+          businessId: created.businessId,
+          venueId: created.id,
+          target: { type: "venue", id: created.id },
+        },
         tx,
       );
       return created;
@@ -74,7 +79,7 @@ export class VenuesService {
       data: fields,
       include: { _count: { select: { routers: true } } },
     });
-    await this.record(staff, "venue.update", row.id);
+    await this.record(staff, "venue.update", row);
     return venueRecord(row, row._count.routers);
   }
 
@@ -91,10 +96,19 @@ export class VenuesService {
     }
     await this.brand.forget(id);
     await this.db.venue.delete({ where: { id } });
-    await this.record(staff, "venue.delete", id);
+    await this.record(staff, "venue.delete", venue);
   }
 
-  private async record(staff: Principal, action: AuditAction, entityId: string): Promise<void> {
-    await this.audit.record(staff, { action, target: { type: "venue", id: entityId } });
+  private async record(
+    staff: Principal,
+    action: AuditAction,
+    venue: { id: string; businessId: string },
+  ): Promise<void> {
+    await this.audit.record(staff, {
+      action,
+      businessId: venue.businessId,
+      venueId: venue.id,
+      target: { type: "venue", id: venue.id },
+    });
   }
 }

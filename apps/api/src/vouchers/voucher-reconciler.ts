@@ -41,7 +41,13 @@ export class VoucherReconciler {
       const target = { type: "voucher", id: voucher.id };
       const venueId = voucher.venueId;
       if (!voucher.venueId) {
-        await this.audit.system({ action: "voucher.provision_failed", target, outcome: "failed" });
+        await this.audit.system({
+          action: "voucher.provision_failed",
+          businessId: null,
+          venueId: null,
+          target,
+          outcome: "failed",
+        });
         continue;
       }
       try {
@@ -52,14 +58,14 @@ export class VoucherReconciler {
           await this.audit.system({
             action: "voucher.provision_recovered",
             target,
-            venueId,
+            ...(await this.audit.atVenue(venueId)),
             change: { before: {}, after: { routers: outcome.succeeded } },
           });
         } else {
           await this.audit.system({
             action: "voucher.provision_failed",
             target,
-            venueId,
+            ...(await this.audit.atVenue(venueId)),
             outcome: "failed",
             change: { before: {}, after: { routers: outcome.attempted } },
           });
@@ -68,7 +74,7 @@ export class VoucherReconciler {
         await this.audit.system({
           action: "voucher.provision_failed",
           target,
-          venueId,
+          ...(await this.audit.atVenue(venueId)),
           outcome: "failed",
         });
       }

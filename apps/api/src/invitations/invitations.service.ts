@@ -101,7 +101,12 @@ export class InvitationsService {
       });
       await this.audit.record(
         staff,
-        { action: "invitation.issue", target: { type: "invitation", id: created.id } },
+        {
+          action: "invitation.issue",
+          businessId: null,
+          venueId: null,
+          target: { type: "invitation", id: created.id },
+        },
         tx,
       );
       return created;
@@ -129,7 +134,12 @@ export class InvitationsService {
       });
       await this.audit.record(
         staff,
-        { action: "invitation.resend", target: { type: "invitation", id } },
+        {
+          action: "invitation.resend",
+          businessId: null,
+          venueId: null,
+          target: { type: "invitation", id },
+        },
         tx,
       );
     });
@@ -148,7 +158,12 @@ export class InvitationsService {
       if (revoked.count === 0) throw invitationGone();
       await this.audit.record(
         staff,
-        { action: "invitation.revoke", target: { type: "invitation", id } },
+        {
+          action: "invitation.revoke",
+          businessId: null,
+          venueId: null,
+          target: { type: "invitation", id },
+        },
         tx,
       );
     });
@@ -206,9 +221,11 @@ export class InvitationsService {
             data: { userId: user.id, scope: "platform", role: invitation.role },
           });
       await this.audit.record(
-        { membershipId: membership.id, userId: user.id, businessId: null },
+        { membershipId: membership.id, userId: user.id },
         {
           action: "invitation.accept",
+          businessId: null,
+          venueId: null,
           target: { type: "invitation", id: invitation.id },
           change: { before: {}, after: { role: invitation.role } },
         },
@@ -288,16 +305,23 @@ export class InvitationsService {
       const membership = await tx.membership.create({
         data: { userId: user.id, scope: "business", businessId: business.id, role: "owner" },
       });
-      const actor = { membershipId: membership.id, userId: user.id, businessId: business.id };
+      const actor = { membershipId: membership.id, userId: user.id };
       await this.audit.record(
         actor,
-        { action: "invitation.accept", target: { type: "invitation", id: invitation.id } },
+        {
+          action: "invitation.accept",
+          businessId: business.id,
+          venueId: null,
+          target: { type: "invitation", id: invitation.id },
+        },
         tx,
       );
       await this.audit.record(
         actor,
         {
           action: "business.create",
+          businessId: business.id,
+          venueId: null,
           target: { type: "business", id: business.id },
           change: { before: {}, after: { venues: 1, packages: defaults.length } },
         },

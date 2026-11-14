@@ -109,6 +109,8 @@ export class TeamService {
         staff,
         {
           action: "invitation.issue",
+          businessId: staff.businessId,
+          venueId: null,
           target: { type: "invitation", id: created.id },
           change: { before: {}, after: { role: input.role } },
         },
@@ -134,7 +136,12 @@ export class TeamService {
       });
       await this.audit.record(
         staff,
-        { action: "invitation.resend", target: { type: "invitation", id } },
+        {
+          action: "invitation.resend",
+          businessId: staff.businessId,
+          venueId: null,
+          target: { type: "invitation", id },
+        },
         tx,
       );
     });
@@ -148,7 +155,12 @@ export class TeamService {
       await tx.invitation.update({ where: { id }, data: { revokedAt: new Date() } });
       await this.audit.record(
         staff,
-        { action: "invitation.revoke", target: { type: "invitation", id } },
+        {
+          action: "invitation.revoke",
+          businessId: staff.businessId,
+          venueId: null,
+          target: { type: "invitation", id },
+        },
         tx,
       );
     });
@@ -165,6 +177,8 @@ export class TeamService {
         staff,
         {
           action: "membership.role",
+          businessId: staff.businessId,
+          venueId: null,
           target: { type: "membership", id: member.id },
           change: { before: { role: member.role }, after: { role } },
         },
@@ -185,6 +199,8 @@ export class TeamService {
         staff,
         {
           action: "membership.remove",
+          businessId: staff.businessId,
+          venueId: null,
           target: { type: "membership", id: member.id },
           change: { before: { role: member.role }, after: { role: null } },
         },

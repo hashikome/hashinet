@@ -521,6 +521,7 @@ export class PaymentsService {
       });
     });
     await this.audit.record(staff, {
+      ...(await this.audit.atVenue(input.venueId)),
       action: "sale.record",
       target: { type: "payment", id: payment.id },
       change: { before: {}, after: { method: input.method } },

@@ -98,8 +98,8 @@ export class SessionsService {
       );
     }
     await this.audit.record(staff, {
+      ...(await this.audit.atVenue(session.venueId)),
       action: "session.terminate",
-      venueId: session.venueId,
       target: { type: "session", id: id },
       change: { before: {}, after: {} },
     });

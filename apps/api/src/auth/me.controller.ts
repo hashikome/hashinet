@@ -94,6 +94,7 @@ export class MeController {
           action: "membership.switch",
           target: { type: "membership", id: target.id },
           businessId: target.businessId,
+          venueId: null,
           change: {
             before: { membership: principal.membershipId },
             after: { membership: target.id },
@@ -131,6 +132,8 @@ export class MeController {
         principal,
         {
           action: "authenticator.replace",
+          businessId: principal.businessId,
+          venueId: null,
           category: "auth",
           target: { type: "user", id: principal.userId },
         },

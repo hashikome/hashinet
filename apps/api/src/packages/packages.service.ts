@@ -102,7 +102,7 @@ export class PackagesService {
     const row = await this.db.package.create({
       data: { ...input, businessId: staff.businessId ?? "" },
     });
-    await this.record(staff, "package.create", row.id);
+    await this.record(staff, "package.create", row, null);
     return packageRecord(row);
   }
 
@@ -113,7 +113,7 @@ export class PackagesService {
   async update(staff: Principal, id: string, input: PackageInput) {
     await this.get(staff, id);
     const row = await this.db.package.update({ where: { id }, data: input });
-    await this.record(staff, "package.update", row.id);
+    await this.record(staff, "package.update", row, null);
     return packageRecord(row);
   }
 
@@ -123,9 +123,9 @@ export class PackagesService {
    * those vouchers and figures still name it.
    */
   async remove(staff: Principal, id: string): Promise<void> {
-    await this.get(staff, id);
+    const pkg = await this.get(staff, id);
     await this.db.package.update({ where: { id }, data: { isActive: false } });
-    await this.record(staff, "package.delete", id);
+    await this.record(staff, "package.delete", pkg, null);
   }
 
   /** What a venue sells: its assigned packages that are active, or every active package. */
@@ -162,29 +162,34 @@ export class PackagesService {
       create: { venueId, packageId },
       update: {},
     });
-    await this.record(staff, "package.venue.assign", packageId, { venueId });
+    await this.record(staff, "package.venue.assign", pkg, venueId, { venueId });
     return this.soldAt(staff, venueId);
   }
 
   /** Takes a package off sale at a venue. Idempotent. */
   async unassign(staff: Principal, venueId: string, packageId: string) {
-    await this.venues.get(staff, venueId);
+    const venue = await this.venues.get(staff, venueId);
     const removed = await this.db.venuePackage.deleteMany({ where: { venueId, packageId } });
     if (removed.count > 0) {
-      await this.record(staff, "package.venue.unassign", packageId, { venueId });
+      const pkg = { id: packageId, businessId: venue.businessId };
+      await this.record(staff, "package.venue.unassign", pkg, venueId, { venueId });
     }
     return this.soldAt(staff, venueId);
   }
 
+  /** A package is its business's; putting it on or off sale also names the venue. */
   private async record(
     staff: Principal,
     action: AuditAction,
-    entityId: string,
+    pkg: { id: string; businessId: string },
+    venueId: string | null,
     details: Record<string, string> = {},
   ): Promise<void> {
     await this.audit.record(staff, {
       action,
-      target: { type: "package", id: entityId },
+      businessId: pkg.businessId,
+      venueId,
+      target: { type: "package", id: pkg.id },
       change: { before: {}, after: details },
     });
   }

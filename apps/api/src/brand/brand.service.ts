@@ -166,7 +166,12 @@ export class BrandService {
   }
 
   private async record(staff: Principal, action: AuditAction, venue: Venue): Promise<void> {
-    await this.audit.record(staff, { action, target: { type: "venue", id: venue.id } });
+    await this.audit.record(staff, {
+      action,
+      businessId: venue.businessId,
+      venueId: venue.id,
+      target: { type: "venue", id: venue.id },
+    });
   }
 }
 

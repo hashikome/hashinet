@@ -140,7 +140,7 @@ export class RoutersService {
       },
       include: withVenue,
     });
-    await this.record(staff, "router.create", row.id);
+    await this.record(staff, "router.create", row);
     // Nobody waits on this: a router that is not reachable yet is the normal case before its
     // bootstrap script is pasted. `syncRouter` records its own failures.
     void this.sync.syncRouter(row.id).catch(captureFailure);
@@ -171,7 +171,7 @@ export class RoutersService {
       },
       include: withVenue,
     });
-    await this.record(staff, "router.update", row.id, {
+    await this.record(staff, "router.update", row, {
       passwordChanged: apiPassword !== null,
     });
     return routerRecord(row, allows(staff.role, "router.manage"));
@@ -185,7 +185,7 @@ export class RoutersService {
   async remove(staff: Principal, id: string): Promise<void> {
     const row = await this.row(staff, id);
     await this.db.router.delete({ where: { id } });
-    await this.record(staff, "router.delete", id, {
+    await this.record(staff, "router.delete", row, {
       tunnelAddress: row.tunnelAddress,
     });
   }
@@ -201,7 +201,7 @@ export class RoutersService {
       where: { id },
       data: { hotspotInterface: input.hotspotInterface },
     });
-    await this.record(staff, "router.update", id, {
+    await this.record(staff, "router.update", before, {
       hotspotInterface: input.hotspotInterface,
       before: before.hotspotInterface,
     });
@@ -259,7 +259,7 @@ export class RoutersService {
           : { apiPasswordEncrypted: this.access.sealPassword(built.resolved.apiPassword) }),
       },
     });
-    await this.record(staff, "router.bootstrap", id, {
+    await this.record(staff, "router.bootstrap", router, {
       tunnel: tunnel !== null,
       passwordChanged: built.resolved.apiPassword !== stored,
     });
@@ -531,15 +531,17 @@ export class RoutersService {
     }
   }
 
+  /** A router's events belong to its venue and that venue's business, whoever acts. */
   private async record(
     staff: Principal,
     action: AuditAction,
-    entityId: string,
+    router: { id: string; venueId: string },
     details: Record<string, string | number | boolean | null> = {},
   ): Promise<void> {
     await this.audit.record(staff, {
+      ...(await this.audit.atVenue(router.venueId)),
       action,
-      target: { type: "router", id: entityId },
+      target: { type: "router", id: router.id },
       change: { before: {}, after: details },
     });
   }

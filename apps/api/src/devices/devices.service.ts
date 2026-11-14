@@ -154,7 +154,13 @@ export class DevicesService {
     }));
   }
 
+  /** A device is seen across venues, so its event belongs to the business that acted on it. */
   private async record(staff: Principal, action: AuditAction, id: string): Promise<void> {
-    await this.audit.record(staff, { action, target: { type: "device", id: id } });
+    await this.audit.record(staff, {
+      action,
+      businessId: staff.businessId,
+      venueId: null,
+      target: { type: "device", id },
+    });
   }
 }

@@ -128,6 +128,8 @@ export class VouchersService {
     await this.audit.record(staff, {
       action: "voucher.read",
       category: "read",
+      businessId: staff.businessId,
+      venueId: null,
       target: { type: batchId ? "voucher_batch" : "voucher", id: batchId },
       change: { before: {}, after: { count } },
     });
@@ -153,6 +155,7 @@ export class VouchersService {
 
     const { batchId, codes } = await this.insertBatch(staff, input, expiresAt);
     await this.audit.record(staff, {
+      ...(await this.audit.atVenue(input.venueId)),
       action: "voucher.print",
       target: { type: "voucher_batch", id: batchId },
       change: { before: {}, after: { quantity: input.quantity, venueId: input.venueId } },
@@ -182,6 +185,8 @@ export class VouchersService {
     });
     await this.audit.record(staff, {
       action: "voucher.revoke",
+      businessId: staff.businessId,
+      venueId: targets.length === 1 ? (targets[0]?.venueId ?? null) : null,
       target: { type: "voucher", id: targets.length === 1 ? (targets[0]?.id ?? null) : null },
       change: { before: {}, after: { count: targets.length } },
     });

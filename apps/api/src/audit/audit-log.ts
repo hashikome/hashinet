@@ -7,9 +7,13 @@ export interface AuditEvent {
   action: AuditAction;
   category?: AuditCategory;
   target: { type: string; id: string | null };
-  /** The business and venue the event belongs to; the business defaults to the actor's. */
-  businessId?: string | null;
-  venueId?: string | null;
+  /**
+   * The business and venue the event is about, said at every call, so a business's or a venue's
+   * Audit log misses nothing: HashiNet's team acting on a business names that business, and an
+   * event about one venue names it. Null when the event belongs to none (the platform's own).
+   */
+  businessId: string | null;
+  venueId: string | null;
   outcome?: AuditOutcome;
   /** Bounded values only: statuses, prices, roles, counts (ADR-0012). */
   change?: { before: AuditChange; after: AuditChange } | null;
@@ -18,7 +22,7 @@ export interface AuditEvent {
 type Writer = Pick<PrismaClient, "auditLog"> | Prisma.TransactionClient;
 
 /** Who acted: a principal, or someone whose membership an acceptance has just created. */
-export type AuditActor = Pick<Principal, "membershipId" | "userId" | "businessId">;
+export type AuditActor = Pick<Principal, "membershipId" | "userId">;
 
 /**
  * The audit log (ADR-0012): append-only. Pass the change's own transaction as `tx` so a failed
@@ -35,9 +39,19 @@ export class AuditLog {
       data: {
         actorMembershipId: actor.membershipId,
         actorUserId: actor.userId,
-        ...rowOf(event, actor.businessId),
+        ...rowOf(event),
       },
     });
+  }
+
+  /** Where an event about something at this venue belongs: the venue and its business. */
+  async atVenue(venueId: string | null): Promise<Pick<AuditEvent, "businessId" | "venueId">> {
+    if (venueId === null) return { businessId: null, venueId: null };
+    const venue = await this.db.venue.findUnique({
+      where: { id: venueId },
+      select: { businessId: true },
+    });
+    return { businessId: venue?.businessId ?? null, venueId };
   }
 
   /**
@@ -46,7 +60,7 @@ export class AuditLog {
    */
   async system(event: AuditEvent): Promise<void> {
     try {
-      await this.db.auditLog.create({ data: rowOf(event, null) });
+      await this.db.auditLog.create({ data: rowOf(event) });
     } catch (error) {
       this.logger.error("Failed to write a system audit event {action}", {
         action: event.action,
@@ -56,14 +70,14 @@ export class AuditLog {
   }
 }
 
-function rowOf(event: AuditEvent, actorBusinessId: string | null) {
+function rowOf(event: AuditEvent) {
   return {
     action: event.action,
     category: event.category ?? "change",
     targetType: event.target.type,
     targetId: event.target.id,
-    businessId: event.businessId === undefined ? actorBusinessId : event.businessId,
-    venueId: event.venueId ?? null,
+    businessId: event.businessId,
+    venueId: event.venueId,
     outcome: event.outcome ?? "success",
     change: event.change ?? undefined,
   };
