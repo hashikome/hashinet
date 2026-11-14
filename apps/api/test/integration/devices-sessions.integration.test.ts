@@ -165,6 +165,60 @@ describe("devices", () => {
   });
 });
 
+describe("blocking is a business's own", () => {
+  test("a device one business blocks stays online at another's", async () => {
+    const w = await world();
+    const elsewhere = await t.db.business.create({
+      data: { name: "Elsewhere", region: "Arusha", area: "Njiro" },
+    });
+    const far = await t.db.venue.create({
+      data: { businessId: elsewhere.id, name: "Far", region: "Arusha", area: "Njiro" },
+    });
+    const there = await t.db.wifiSession.create({
+      data: { venueId: far.id, deviceId: w.phone.id, macAddress: "AA:BB", status: "connected" },
+    });
+
+    const c = await owner();
+    const blocked = await c.request("PUT", `/api/devices/${w.phone.id}/status`, {
+      status: "blocked",
+    });
+    expect(blocked.body).toMatchObject({ device: { status: "blocked" } });
+    // Its session at this business ended; the one at the other business goes on.
+    expect(
+      (await t.db.wifiSession.findUniqueOrThrow({ where: { id: w.atTheirs.id } })).status,
+    ).toBe("terminated");
+    expect((await t.db.wifiSession.findUniqueOrThrow({ where: { id: there.id } })).status).toBe(
+      "connected",
+    );
+    expect(await t.db.deviceBlock.findMany({ select: { businessId: true } })).toEqual([
+      { businessId: w.theirs.businessId },
+    ]);
+  });
+});
+
+describe("releasing a voucher", () => {
+  test("whoever is at the counter frees a voucher in use: its devices and sessions go, its time runs on", async () => {
+    const w = await world();
+    const voucher = await t.db.voucher.findFirstOrThrow({ where: { venueId: w.theirs.id } });
+    await t.db.voucherDevice.create({ data: { voucherId: voucher.id, deviceId: w.phone.id } });
+    const c = await owner();
+
+    const released = await c.request("POST", `/api/vouchers/${voucher.id}/release`);
+    expect(released.status).toBe(200);
+    expect(released.body).toMatchObject({ voucher: { status: "active" } });
+    expect(await t.db.voucherDevice.count({ where: { voucherId: voucher.id } })).toBe(0);
+    expect(
+      await t.db.wifiSession.findUniqueOrThrow({ where: { id: w.atTheirs.id } }),
+    ).toMatchObject({ status: "terminated", terminationReason: "voucher_released" });
+    const audit = await t.db.auditLog.findFirstOrThrow({ where: { action: "voucher.release" } });
+    expect(audit.venueId).toBe(w.theirs.id);
+
+    // A voucher not in use has nothing to free.
+    await t.db.voucher.update({ where: { id: voucher.id }, data: { status: "unused" } });
+    expect((await c.request("POST", `/api/vouchers/${voucher.id}/release`)).status).toBe(409);
+  });
+});
+
 describe("sessions", () => {
   test("a manager lists and reads only their venues' sessions, with totals over them", async () => {
     const w = await world();

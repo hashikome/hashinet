@@ -10,6 +10,7 @@ import { apiError } from "../http/error-envelope.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { voucherRecord } from "../serializers/records.js";
 import { RouterSync } from "../services/router-sync.js";
+import { SessionsService } from "../sessions/sessions.service.js";
 import type { listQuery, refundInput } from "./voucher-input.js";
 
 const voucherNotFound = () =>
@@ -30,6 +31,7 @@ export class VouchersService {
     private readonly db: PrismaService,
     private readonly audit: AuditLog,
     private readonly sync: RouterSync,
+    private readonly sessions: SessionsService,
   ) {}
 
   async list(staff: Principal, query: z.infer<typeof listQuery>): Promise<VoucherList> {
@@ -118,6 +120,43 @@ export class VouchersService {
     if (voucher.venueId !== null) {
       void this.sync.removeVouchers(voucher.venueId, [voucher.code]).catch(captureFailure);
     }
+    const row = await this.db.voucher.findUniqueOrThrow({
+      where: { id },
+      include: { package: { select: { name: true } }, venue: { select: { name: true } } },
+    });
+    return {
+      ...voucherRecord(row),
+      packageName: row.package?.name ?? null,
+      venueName: row.venue?.name ?? null,
+    };
+  }
+
+  /**
+   * Frees a voucher in use for the guest who shows it at the counter, when their phone changed
+   * (ADR-0015, 6): its devices and their sessions are cleared, so the next device signs in with the
+   * code alone; its time keeps running. The switch PIN comes with RADIUS (slice 7).
+   */
+  async release(staff: Principal, id: string): Promise<VoucherListItem> {
+    const voucher = await this.db.voucher.findFirst({ where: { id, ...inScope(staff) } });
+    if (voucher === null) throw voucherNotFound();
+    if (voucher.status !== "active" && voucher.status !== "pending_activation") {
+      throw new ConflictException(apiError("CONFLICT", "Only a voucher in use can be released."));
+    }
+    const connected = await this.db.wifiSession.findMany({
+      where: { voucherId: id, status: "connected" },
+      select: { id: true },
+    });
+    const ended = await this.sessions.end(
+      connected.map((s) => s.id),
+      "voucher_released",
+    );
+    const freed = await this.db.voucherDevice.deleteMany({ where: { voucherId: id } });
+    await this.audit.record(staff, {
+      ...(await this.audit.atVenue(voucher.venueId)),
+      action: "voucher.release",
+      target: { type: "voucher", id },
+      change: { before: { devices: freed.count }, after: { devices: 0, sessionsEnded: ended } },
+    });
     const row = await this.db.voucher.findUniqueOrThrow({
       where: { id },
       include: { package: { select: { name: true } }, venue: { select: { name: true } } },

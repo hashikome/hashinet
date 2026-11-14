@@ -10,5 +10,6 @@ import { SessionsService } from "./sessions.service.js";
   imports: [RoutersModule],
   controllers: [SessionsController, DevicesController],
   providers: [SessionsService, DevicesService],
+  exports: [SessionsService],
 })
 export class SessionsModule {}

@@ -1,4 +1,4 @@
-# Ship HashiNet in six lovable slices
+# Ship HashiNet in seven lovable slices
 
 This ExecPlan is a living document. Maintain it according to `PLANS.md`. Keep `Progress`,
 `Surprises & Discoveries`, `Decision Log` and `Outcomes & Retrospective` current as work
@@ -244,8 +244,15 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     is net and counts of vouchers sold count sales only. Today adds the day's refunds and the
     reader's own cash to hand over (their cash sales less the cash they gave back); Payments lists
     a refund as its own row. Tests: `refunds.integration.test.ts`. Verify passes; integration 162/162.
-  - [ ] (f) Releasing a voucher to a new device and its switch PIN (ADR-0015); ending a session;
-    blocking and unblocking a device, per business.
+  - [x] (2026-11-14) (f) `POST /api/vouchers/:id/release` (`voucher.release`, whoever is at the
+    counter): a voucher in use loses its devices and their sessions, so the guest's new phone signs
+    in with the code; its time runs on; audited. Blocking is per business: `device_blocks` (migration
+    `..._device_blocks_per_business`, which moved each earlier block to the businesses where the
+    device was seen, then dropped `devices.status`); the portal, the routers' sync and the device
+    list read the venue's or reader's business, and a block ends sessions at that business's venues
+    only. Ending a session was already there. The switch PIN is slice 7. Tests:
+    `devices-sessions.integration.test.ts`, the guest and payments block tests. Verify passes;
+    integration 164/164.
   - [ ] (g) The screens, each built with design-build and audited at 390, 768 and 1440, light and
     dark: Sell a voucher (package rows, the centred check with Paid by and Pay to, Confirm sale and
     Change package, Voucher sold with Sell another, Send, Print); the operator's Today with their
@@ -260,6 +267,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).
+- [ ] Slice 7: one voucher, devices online at once, through RADIUS (ADR-0015), with its switch PIN.
 
 Each slice records, separately: implemented and `bun run verify` passing locally; published (pushed,
 CI green); deployed (Dokploy running the new image); accepted live (the slice's acceptance, done on
@@ -450,6 +458,12 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   the venue's own number, so a sale by mobile money needs no provider. Designed and walked in the
   prototype first, then approved, so the slice is built without guesses.
   Date/Author: 2026-11-14 / owner.
+- Decision: the switch PIN and RADIUS (ADR-0015) become slice 7; slice 2 keeps to the counter.
+  Rationale: the PIN rests on HashiNet answering every router login through RADIUS, which nothing
+  has built: a RADIUS server reached through the tunnel, router setup changes, the PIN and its
+  limits, and a real-phone test. Slice 2 releases a voucher by clearing its devices and sessions,
+  which works with today's sign-in.
+  Date/Author: 2026-11-14 / owner.
 - Decision: a venue manager's venue-only packages move from slice 2 to slice 5.
   Rationale: they need a package's own venue and a change to the on-sale rule (a venue with no
   assignments sells every active package, so a venue-only package would leak there), with their own
@@ -504,7 +518,7 @@ A voucher exists only by its sale (ADR-0017): no printed stock, no sale recorded
 typed. Backend: business-scopes M3's business-role invitations with venues; the audit rows' venue and
 business; selling one voucher with the money in hand, by cash or mobile money to the venue's own
 number, with no payment provider; the venue's payment details; refunds of unused vouchers; releasing
-a voucher and its switch PIN (ADR-0015); ending a session; blocking and unblocking a device; live
+a voucher to a new device; ending a session; blocking and unblocking a device, per business; live
 sessions. Removed: voucher batches, Print vouchers, revoking, and Payments' To confirm.
 Screens: Sell a voucher and Voucher sold; the operator's Today (their sales today and the cash to hand
 over); Vouchers with Refund and Release; the venue's Payment details; Payments with Sold by; Live
@@ -545,6 +559,14 @@ manager and venue manager each see what their role allows and nothing else.
 Self-service purchase on the portal, payouts, SMS credits, and the owner's request for online
 payments with the platform's review. Accepted as build-hashinet M6 says, then live with a real payment
 and a real message (M8).
+
+**Slice 7, a voucher across a venue's routers.** For every guest and the staff who help them.
+Backend: HashiNet answers every hotspot login through RADIUS over the management tunnel, counting a
+voucher's devices online at once across the venue's routers; the switch PIN, made at the first
+sign-in, shown once and limited; release clears it too; the time left from HashiNet; router setup
+asks RADIUS (ADR-0015). Proved on the router sim first, then on real phones.
+Accepted live: one code online on one device at a time across two routers; a second phone moves it
+only with the PIN; a release at the counter frees it.
 
 Within each slice the order is: schema, then the API with its tests, then the screens against the
 prototype, each built with design-build and audited with design-audit at 1280 and 375 pixels in light

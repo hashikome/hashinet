@@ -871,6 +871,7 @@ export const AUDIT_ACTIONS = [
   "package.venue.unassign",
   "voucher.read",
   "voucher.refund",
+  "voucher.release",
   // Kept for rows recorded before vouchers existed only by their sale (ADR-0017); nothing records them now.
   "voucher.print",
   "voucher.revoke",

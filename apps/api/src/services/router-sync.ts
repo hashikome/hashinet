@@ -275,8 +275,9 @@ export class RouterSync {
       where: { venueId: router.venueId, status: { in: [...LIVE_STATUSES] } },
       include: { package: true },
     });
+    // The devices this venue's business has blocked; other businesses' blocks stay theirs.
     const blocked = await this.db.device.findMany({
-      where: { status: "blocked" },
+      where: { blocks: { some: { business: { venues: { some: { id: router.venueId } } } } } },
       select: { macAddress: true },
     });
     if (venueVouchers.length === 0 && blocked.length === 0) return;
@@ -512,8 +513,9 @@ export class RouterSync {
    * Blocks or unblocks a device on every router, since it can turn up at any venue. A router
    * that misses this gets it from `syncRouter`.
    */
-  async setDeviceBlocked(mac: string, blocked: boolean): Promise<void> {
-    for (const router of await this.db.router.findMany()) {
+  /** Blocks or unblocks a device at every router of one business, the one that blocked it. */
+  async setDeviceBlocked(businessId: string, mac: string, blocked: boolean): Promise<void> {
+    for (const router of await this.db.router.findMany({ where: { venue: { businessId } } })) {
       const creds = this.access.credentials(router);
       if (!creds) continue;
       let conn: MikroTikConn | null = null;

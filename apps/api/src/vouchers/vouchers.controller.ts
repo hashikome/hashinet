@@ -18,6 +18,17 @@ export class VouchersController {
     return this.vouchers.list(staff, parseInput(listQuery, query));
   }
 
+  /** Frees a voucher in use for a guest whose phone changed (ADR-0015, 6). */
+  @Post(":id/release")
+  @HttpCode(200)
+  @Can("voucher.release")
+  async release(
+    @CurrentPrincipal() staff: Principal,
+    @Param("id", idParam()) id: string,
+  ): Promise<{ voucher: VoucherListItem }> {
+    return { voucher: await this.vouchers.release(staff, id) };
+  }
+
   /** An owner or manager gives a voucher's price back while it is not used yet (ADR-0017, 7). */
   @Post(":id/refund")
   @HttpCode(200)

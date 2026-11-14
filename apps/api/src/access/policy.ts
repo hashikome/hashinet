@@ -36,6 +36,8 @@ export const POLICY = {
   "voucher.read": BUSINESS_ALL,
   // Refunds give money back, so they are an owner's or a manager's (ADR-0017, 7).
   "voucher.refund": BUSINESS_MANAGERS,
+  // Whoever is at the counter frees a voucher for a guest whose phone changed (ADR-0015, 6).
+  "voucher.release": BUSINESS_ALL,
   "session.read": BUSINESS_ALL,
   "session.terminate": BUSINESS_ALL,
   "device.read": BUSINESS_ALL,

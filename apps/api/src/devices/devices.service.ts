@@ -1,5 +1,5 @@
 import type { AuditAction, DeviceList, DeviceRecord } from "@hashinet/types";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { z } from "zod";
 import type { Principal } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
@@ -37,14 +37,15 @@ export class DevicesService {
   async list(staff: Principal, query: z.infer<typeof deviceQuery>): Promise<DeviceList> {
     const search = query.search === null || query.search === "" ? null : query.search;
     const scope = this.scope(staff);
+    const blockedHere = blockedBy(staff);
     const online: DeviceWhereInput = {
-      status: "active",
+      NOT: blockedHere,
       sessions: { some: { ...sessionScope(staff), status: "connected" } },
     };
     const byStatus: Record<"online" | "offline" | "blocked", DeviceWhereInput> = {
       online,
-      offline: { status: "active", NOT: online },
-      blocked: { status: "blocked" },
+      offline: { AND: [{ NOT: blockedHere }, { NOT: online }] },
+      blocked: blockedHere,
     };
     const filters: DeviceWhereInput[] = [scope];
     if (search !== null) {
@@ -85,8 +86,9 @@ export class DevicesService {
   }
 
   /**
-   * Blocks or unblocks a device: at the routers, which refuse it whatever it tries, and at the
-   * portal. Blocking also ends its sessions everywhere at once.
+   * Blocks or unblocks a device for the reader's business: at its routers, which refuse it whatever
+   * it tries, and at its portal. Blocking also ends its sessions at the business's venues at once.
+   * Another business's WiFi is not this one's to close.
    */
   async setStatus(
     staff: Principal,
@@ -94,11 +96,26 @@ export class DevicesService {
     status: "active" | "blocked",
   ): Promise<DeviceRecord> {
     const device = await this.get(staff, id);
-    await this.db.device.update({ where: { id }, data: { status } });
-    void this.sync.setDeviceBlocked(device.macAddress, status === "blocked").catch(captureFailure);
+    const { businessId } = staff;
+    // `device.block` is a business role's, so the reader always has a business.
+    if (businessId === null) {
+      throw new ForbiddenException(apiError("FORBIDDEN", "Only a business blocks a device."));
+    }
+    if (status === "blocked") {
+      await this.db.deviceBlock.upsert({
+        where: { businessId_deviceId: { businessId, deviceId: id } },
+        create: { businessId, deviceId: id, blockedById: staff.membershipId },
+        update: {},
+      });
+    } else {
+      await this.db.deviceBlock.deleteMany({ where: { businessId, deviceId: id } });
+    }
+    void this.sync
+      .setDeviceBlocked(businessId, device.macAddress, status === "blocked")
+      .catch(captureFailure);
     if (status === "blocked") {
       const connected = await this.db.wifiSession.findMany({
-        where: { deviceId: id, status: "connected" },
+        where: { deviceId: id, status: "connected", venue: { businessId } },
         select: { id: true },
       });
       await this.sessions.end(
@@ -125,7 +142,7 @@ export class DevicesService {
   private async records(staff: Principal, rows: Device[]): Promise<DeviceRecord[]> {
     if (rows.length === 0) return [];
     const ids = rows.map((row) => row.id);
-    const [usage, connected] = await Promise.all([
+    const [usage, connected, blocks] = await Promise.all([
       this.db.wifiSession.groupBy({
         by: ["deviceId"],
         where: { deviceId: { in: ids }, ...sessionScope(staff) },
@@ -136,7 +153,12 @@ export class DevicesService {
         select: { deviceId: true },
         distinct: ["deviceId"],
       }),
+      this.db.device.findMany({
+        where: { id: { in: ids }, ...blockedBy(staff) },
+        select: { id: true },
+      }),
     ]);
+    const blockedIds = new Set(blocks.map((b) => b.id));
     const usageOf = new Map(usage.map((u) => [u.deviceId, u._sum]));
     const onlineIds = new Set(connected.map((c) => c.deviceId));
     return rows.map((row) => ({
@@ -145,8 +167,8 @@ export class DevicesService {
       lastIpAddress: row.lastIpAddress,
       deviceName: row.deviceName,
       deviceType: row.deviceType,
-      status: row.status,
-      isOnline: row.status === "active" && onlineIds.has(row.id),
+      status: blockedIds.has(row.id) ? "blocked" : "active",
+      isOnline: !blockedIds.has(row.id) && onlineIds.has(row.id),
       downloadBytes: bytes(usageOf.get(row.id)?.downloadBytes ?? 0n),
       uploadBytes: bytes(usageOf.get(row.id)?.uploadBytes ?? 0n),
       firstSeenAt: row.firstSeenAt.toISOString(),
@@ -163,4 +185,11 @@ export class DevicesService {
       target: { type: "device", id },
     });
   }
+}
+
+/** Devices the reader's business has blocked; for HashiNet's team, blocked by any business. */
+function blockedBy(staff: Principal): DeviceWhereInput {
+  return {
+    blocks: { some: staff.businessId === null ? {} : { businessId: staff.businessId } },
+  };
 }

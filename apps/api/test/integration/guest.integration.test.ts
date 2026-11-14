@@ -207,9 +207,20 @@ describe("the guest portal", () => {
     expect((await redeem(router.id, { mac: winner.macAddress })).status).toBe(200);
   });
 
-  test("a blocked device is refused, and a MAC address is compared whatever its case", async () => {
+  test("a device its business blocked is refused, whatever the case of its MAC address", async () => {
     const { router } = await setting();
-    await t.db.device.create({ data: { macAddress: MAC, status: "blocked" } });
+    const device = await t.db.device.create({ data: { macAddress: MAC } });
+    // Another business's block is that business's own: it changes nothing here.
+    const other = await t.db.business.create({
+      data: { name: "Elsewhere", region: "Arusha", area: "Njiro" },
+    });
+    await t.db.deviceBlock.create({ data: { businessId: other.id, deviceId: device.id } });
+    expect((await redeem(router.id, { mac: MAC.toLowerCase() })).body.code).not.toBe(
+      "DEVICE_BLOCKED",
+    );
+    await t.db.deviceBlock.create({
+      data: { businessId: await testBusinessId(t.db), deviceId: device.id },
+    });
     const reply = await redeem(router.id, { mac: MAC.toLowerCase() });
     expect(reply.status).toBe(403);
     expect(reply.body.code).toBe("DEVICE_BLOCKED");

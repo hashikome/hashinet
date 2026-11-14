@@ -124,7 +124,7 @@ export class GuestService {
     const router = await this.routerOf(input.router);
     enrichWideEvent({ "router.id": router.id, "venue.id": router.venueId });
 
-    await this.refuseBlocked(input.mac);
+    await this.refuseBlocked(input.mac, router.venueId);
 
     const code = input.code.toUpperCase();
     const voucher = await this.db.voucher.findUnique({
@@ -143,9 +143,12 @@ export class GuestService {
     return { dst: safeDestination(input.linkOrig), expiresAt: expiresAt?.toISOString() ?? null };
   }
 
-  async refuseBlocked(mac: string): Promise<void> {
-    const device = await this.db.device.findUnique({ where: { macAddress: mac } });
-    if (device?.status === "blocked") {
+  /** Refuses a device the venue's business has blocked; another business's block is not this one's. */
+  async refuseBlocked(mac: string, venueId: string): Promise<void> {
+    const block = await this.db.deviceBlock.findFirst({
+      where: { device: { macAddress: mac }, business: { venues: { some: { id: venueId } } } },
+    });
+    if (block !== null) {
       throw new ForbiddenException(apiError("DEVICE_BLOCKED", "This device cannot use this WiFi."));
     }
   }

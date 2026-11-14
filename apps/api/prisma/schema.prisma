@@ -108,13 +108,6 @@ enum VoucherStatus {
   @@map("voucher_status")
 }
 
-enum DeviceStatus {
-  active
-  blocked
-
-  @@map("device_status")
-}
-
 enum SessionStatus {
   connected
   disconnected
@@ -327,12 +320,13 @@ model Business {
   createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  venues      Venue[]
-  memberships Membership[]
-  invitations Invitation[]
-  packages    Package[]
-  auditLogs   AuditLog[]
-  issues      Issue[]
+  venues       Venue[]
+  memberships  Membership[]
+  invitations  Invitation[]
+  packages     Package[]
+  auditLogs    AuditLog[]
+  issues       Issue[]
+  deviceBlocks DeviceBlock[]
 
   @@map("businesses")
 }
@@ -364,6 +358,7 @@ model Membership {
   recordedPayments Payment[]
   auditLogs        AuditLog[]
   refunds          Refund[]
+  deviceBlocks     DeviceBlock[]
 
   @@unique([userId, scope, businessId])
   @@index([businessId])
@@ -582,23 +577,23 @@ model VenuePackage {
 /// Not a person: one guest can be several devices, and a phone that randomises its MAC can be
 /// a new device at each venue. The paying person is a customer (build plan M6).
 model Device {
-  id            String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  macAddress    String       @unique @map("mac_address") @db.VarChar(32)
-  lastIpAddress String?      @map("last_ip_address") @db.VarChar(45)
-  deviceName    String?      @map("device_name") @db.VarChar(160)
-  deviceType    String?      @map("device_type") @db.VarChar(40)
-  status        DeviceStatus @default(active)
-  firstSeenAt   DateTime     @default(now()) @map("first_seen_at") @db.Timestamptz(3)
-  lastActiveAt  DateTime?    @map("last_active_at") @db.Timestamptz(3)
-  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  macAddress    String    @unique @map("mac_address") @db.VarChar(32)
+  lastIpAddress String?   @map("last_ip_address") @db.VarChar(45)
+  deviceName    String?   @map("device_name") @db.VarChar(160)
+  deviceType    String?   @map("device_type") @db.VarChar(40)
+  firstSeenAt   DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(3)
+  lastActiveAt  DateTime? @map("last_active_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   redeemedVouchers Voucher[]
   vouchers         VoucherDevice[]
   payments         Payment[]
   sessions         WifiSession[]
 
-  @@index([status])
+  blocks DeviceBlock[]
+
   @@map("devices")
 }
 
@@ -1131,4 +1126,21 @@ model Refund {
   @@index([venueId, createdAt])
   @@index([refundedById])
   @@map("refunds")
+}
+
+/// A device a business keeps off its WiFi, at every one of its venues and only there: blocking is
+/// the business's own, as a device is seen across businesses.
+model DeviceBlock {
+  businessId  String   @map("business_id") @db.Uuid
+  deviceId    String   @map("device_id") @db.Uuid
+  blockedById String?  @map("blocked_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  business  Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  device    Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  blockedBy Membership? @relation(fields: [blockedById], references: [id], onDelete: SetNull)
+
+  @@id([businessId, deviceId])
+  @@index([deviceId])
+  @@map("device_blocks")
 }

@@ -181,7 +181,10 @@ describe("buying on the portal", () => {
     onNetwork = false;
     expect((await buy(router.id, other.id)).body).toMatchObject({ code: "DEVICE_NOT_ON_NETWORK" });
     onNetwork = true;
-    await t.db.device.create({ data: { macAddress: MAC, status: "blocked" } });
+    const device = await t.db.device.create({ data: { macAddress: MAC } });
+    await t.db.deviceBlock.create({
+      data: { businessId: await testBusinessId(t.db), deviceId: device.id },
+    });
     expect((await buy(router.id, other.id)).body).toMatchObject({ code: "DEVICE_BLOCKED" });
     expect(charges).toEqual([]);
     expect(await t.db.payment.count()).toBe(0);
