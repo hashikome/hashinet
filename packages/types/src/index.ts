@@ -336,6 +336,11 @@ export const ONBOARDING_LINE_KINDS = [
   "other",
 ] as const;
 export type OnboardingLineKind = (typeof ONBOARDING_LINE_KINDS)[number];
+/** Lines that must say what they are: the MikroTik router names its model, and Other says what it is. */
+export const ONBOARDING_LINE_DESCRIBED: readonly OnboardingLineKind[] = [
+  "mikrotik_router",
+  "other",
+];
 /** The lines each plan starts with, for the team to price and change on the call. */
 export const ONBOARDING_STARTING_LINES: Record<OnboardingPlan, OnboardingLineKind[]> = {
   connect: ["onboarding_fee"],

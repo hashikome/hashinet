@@ -1,5 +1,6 @@
 import {
   ONBOARDING_DUE_DAYS,
+  ONBOARDING_LINE_DESCRIBED,
   ONBOARDING_LINE_KINDS,
   ONBOARDING_PAID_BY,
   ONBOARDING_PLANS,
@@ -61,7 +62,7 @@ export const confirmInput = z
       ctx.addIssue({ code: "custom", path: ["lines"], message: "needs the MikroTik router" });
     }
     v.lines.forEach((l, n) => {
-      if ((l.kind === "mikrotik_router" || l.kind === "other") && !l.description) {
+      if (ONBOARDING_LINE_DESCRIBED.includes(l.kind) && !l.description) {
         ctx.addIssue({
           code: "custom",
           path: ["lines", n, "description"],

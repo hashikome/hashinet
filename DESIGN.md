@@ -156,7 +156,8 @@ addresses and file names.
   venue still setting up, there are none. The top menu stays for the rest, and the page's own Sell
   button hides while the tabs show.
 - A form's main button stays greyed until its required fields are filled; it never answers with an
-  error. Optional fields say so in their hint.
+  error. A required field carries no mark. An optional field says so in its label, as "Guest's mobile
+  number (optional)"; its hint, if any, says only what goes there.
 - Buttons that finish a form sit on its left edge, in a dialog or on a page, with the main action first and
   Cancel next. Buttons that start something, like Invite or Add a router, stay at the right. Voucher issued is
   the one exception: it is shown to a guest across a counter, so all of it is centred, with Sell another first.
@@ -176,11 +177,12 @@ addresses and file names.
   shared dialog: a question naming the thing ("Revoke the invitation to halima@…?"), one sentence on
   what happens and what stays, then a red button that names the action ("Revoke invitation", never
   "Yes" or "OK") beside Cancel, which has the focus. Actions that are easily undone don't ask.
-- A row with one or two actions shows them as quiet buttons: text that takes a background on hover, never
-  outlined or red in the row, so a long list doesn't shout (Download PDF, End session, Release). Three or
-  more fold into one Actions button, with a danger action last and on its own. Red is kept for the
-  button that confirms. On a touch screen, which has no hover, row actions keep a light outline so they
-  still read as buttons.
+- A row with one or two actions shows them as quiet buttons: a soft `secondary` fill with no outline,
+  a step darker on hover, at every width, never outlined or red in the row, so a long list doesn't
+  shout yet each reads as a button at a glance (Download PDF, End session, Release). Ghost buttons
+  (Clear filters, Remove on a line) take the same look; nothing tappable rests as bare text, except a
+  link, which is underlined. Three or more fold into one Actions button, with a danger action last and
+  on its own. Red is kept for the button that confirms.
 - Where a list needs the same action on many rows (Devices: Block, Remove), the rows take checkboxes
   instead of per-row buttons, with a select-all on the list's title; ticking any turns the title into
   "3 selected" with the actions and Clear beside it, and each action confirms with the count

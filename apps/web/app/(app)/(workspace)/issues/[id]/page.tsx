@@ -237,9 +237,9 @@ function HandDialog({
           </select>
         </Field>
         <Field
-          label="Note for them"
+          label="Note for them (optional)"
           id="hn"
-          hint="Optional, such as when the owner can take a call"
+          hint="Such as when the owner can take a call"
         >
           <input
             id="hn"

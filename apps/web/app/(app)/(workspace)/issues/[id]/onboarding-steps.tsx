@@ -2,6 +2,7 @@
 
 import {
   type IssueDetail,
+  ONBOARDING_LINE_DESCRIBED,
   ONBOARDING_LINE_KINDS,
   ONBOARDING_PAID_BY,
   ONBOARDING_PLANS,
@@ -266,6 +267,16 @@ interface Draft {
   description: string;
   amount: string;
 }
+
+/** What each line's Details asks for; whether it is required is the shared rule. */
+const DETAILS_HINT: Record<OnboardingLineKind, string> = {
+  onboarding_fee: "What it covers, such as travel and a day's work",
+  mikrotik_router: "The model that fits the venue",
+  isp_router: "Its model",
+  internet_line: "Its speed",
+  other: "Say what it is",
+};
+
 const draftOf = (kinds: OnboardingLineKind[], keep: Draft[]): Draft[] =>
   kinds.map((kind) => keep.find((d) => d.kind === kind) ?? { kind, description: "", amount: "" });
 
@@ -364,16 +375,12 @@ function ConfirmForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<
                 </Field>
               )}
               <Field
-                label="Details"
+                label={
+                  ONBOARDING_LINE_DESCRIBED.includes(l.kind) ? "Details" : "Details (optional)"
+                }
                 id={`ld${n}`}
                 error={err("description") ? `The details ${err("description")}.` : undefined}
-                hint={
-                  l.kind === "mikrotik_router"
-                    ? "The model that fits the venue"
-                    : l.kind === "onboarding_fee"
-                      ? "What it covers, such as travel and a day's work"
-                      : "Optional"
-                }
+                hint={DETAILS_HINT[l.kind]}
               >
                 <input
                   id={`ld${n}`}
@@ -423,9 +430,9 @@ function ConfirmForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<
         </div>
       </div>
       <Field
-        label="Notes from the call"
+        label="Notes from the call (optional)"
         id="pn"
-        hint="Optional: the venue, the guests at peak, where the line comes in"
+        hint="The venue, the guests at peak, where the line comes in"
       >
         <textarea
           id="pn"
