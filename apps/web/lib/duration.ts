@@ -128,3 +128,13 @@ export const DURATION_BUCKETS: {
 export function bucketFor(minutes: number): DurationBucketKey {
   return DURATION_BUCKETS.find((b) => minutes >= b.min && minutes < b.max)?.key ?? "monthly";
 }
+
+/** "19m left", "22h 41m left", "3d left": a voucher's time from now, where it ends. */
+export function timeLeft(endsAt: string | null, now = Date.now()): string {
+  if (endsAt === null) return "No end";
+  const minutes = Math.floor((new Date(endsAt).getTime() - now) / 60_000);
+  if (minutes <= 0) return "Ending now";
+  if (minutes < HOUR) return `${minutes}m left`;
+  if (minutes < DAY) return `${Math.floor(minutes / HOUR)}h ${minutes % HOUR}m left`;
+  return `${Math.floor(minutes / DAY)}d left`;
+}

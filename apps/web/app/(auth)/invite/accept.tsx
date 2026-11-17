@@ -12,6 +12,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { AuthFrame } from "@/components/hearth/auth-frame";
 import { OtpBoxes, otpComplete } from "@/components/hearth/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
+import { ROLE_NAME } from "@/lib/nav";
 
 const STEPS = ["You", "Business", "Venue"] as const;
 const TITLES = ["About you", "Your business", "Your first venue"];
@@ -205,7 +206,9 @@ export function AcceptInvitation() {
         <p className="lead">
           {invite.kind === "platform_member"
             ? "You're on HashiNet's team."
-            : `${v.business} is created.`}{" "}
+            : invite.kind === "business_member"
+              ? `You're on ${invite.businessName ?? "the business"}'s team.`
+              : `${v.business} is created.`}{" "}
           To sign in, enter the code we sent to <b>{created.email}</b>.
         </p>
         <form className="form" noValidate onSubmit={signIn}>
@@ -231,14 +234,17 @@ export function AcceptInvitation() {
     );
   }
 
-  // Joining HashiNet's team asks only for a name.
-  if (invite.kind === "platform_member") {
+  // Joining a team, HashiNet's or a business's, asks only for a name.
+  if (invite.kind === "platform_member" || invite.kind === "business_member") {
+    const team =
+      invite.kind === "platform_member" ? "HashiNet" : (invite.businessName ?? "the business");
+    const role = invite.role === null ? "" : ROLE_NAME[invite.role].toLowerCase();
     return (
       <AuthFrame>
-        <h1>Join HashiNet&apos;s team</h1>
+        <h1>Join {team}&apos;s team</h1>
         <p className="lead">
-          You were invited as {invite.role === "manager" ? "a manager" : "an operator"}, with{" "}
-          <b>{invite.email}</b>.
+          You were invited as {/^[aeio]/.test(role) ? "an" : "a"} {role}, with <b>{invite.email}</b>
+          .
         </p>
         <form
           className="form"

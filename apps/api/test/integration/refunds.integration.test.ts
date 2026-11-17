@@ -88,6 +88,17 @@ describe("refunds", () => {
       ["sale", "1500.00", "musa@example.com"],
       ["sale", "1500.00", "musa@example.com"],
     ]);
+    // An operator's own day: only the rows they made, on that business day.
+    const { day } = (await musa.request("GET", "/api/analytics/today")).body as { day: string };
+    const own = async (c: Client, on: string) =>
+      (await c.request("GET", `/api/payments/received?by=me&day=${on}`)).body as {
+        totalTsh: string;
+        payments: { kind: string }[];
+      };
+    expect(await own(musa, day)).toMatchObject({ totalTsh: "3000.00" });
+    expect((await own(musa, day)).payments.map((p) => p.kind)).toEqual(["sale", "sale"]);
+    expect(await own(owner, day)).toMatchObject({ totalTsh: "-1500.00" });
+    expect((await own(musa, "2020-01-01")).payments).toEqual([]);
 
     const audit = await t.db.auditLog.findFirstOrThrow({ where: { action: "voucher.refund" } });
     expect(audit.venueId).toBe(venue.id);

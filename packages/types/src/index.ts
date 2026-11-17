@@ -654,6 +654,8 @@ export interface SessionRecord {
   deviceType: string | null;
   voucherId: string | null;
   voucherCode: string | null;
+  /** When its voucher's time runs out; null for one with no end. */
+  voucherExpiresAt: Timestamp | null;
   packageId: string | null;
   packageName: string | null;
   venueId: string | null;

@@ -154,7 +154,7 @@ export function routerRecord(
 
 export function sessionRecord(
   row: WifiSession & {
-    voucher: { code: string } | null;
+    voucher: { code: string; expiresAt: Date | null } | null;
     package: { name: string } | null;
     venue: { name: string } | null;
     router: { name: string } | null;
@@ -170,6 +170,7 @@ export function sessionRecord(
     deviceType: row.deviceType,
     voucherId: row.voucherId,
     voucherCode: row.voucher?.code ?? null,
+    voucherExpiresAt: isoOrNull(row.voucher?.expiresAt ?? null),
     packageId: row.packageId,
     packageName: row.package?.name ?? null,
     venueId: row.venueId,

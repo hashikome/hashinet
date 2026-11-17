@@ -18,10 +18,12 @@ export const sessionQuery = z.object({
   search: z.string().trim().max(80).nullable().default(null),
   limit: z.coerce.number().int().min(1).max(500).default(100),
   before: z.uuid().nullable().default(null),
+  /** Newest first, a page at a time; or those whose voucher ends soonest first, one page. */
+  order: z.enum(["newest", "ending"]).default("newest"),
 });
 
 export const sessionInclude = {
-  voucher: { select: { code: true } },
+  voucher: { select: { code: true, expiresAt: true } },
   package: { select: { name: true } },
   venue: { select: { name: true } },
   router: { select: { name: true } },
@@ -56,7 +58,10 @@ export class SessionsService {
       this.db.wifiSession.findMany({
         where: query.before === null ? where : { AND: [where, { id: { lt: query.before } }] },
         include: sessionInclude,
-        orderBy: { id: "desc" },
+        orderBy:
+          query.order === "ending"
+            ? [{ voucher: { expiresAt: { sort: "asc", nulls: "last" } } }, { id: "desc" }]
+            : { id: "desc" },
         take: query.limit + 1,
       }),
       this.db.wifiSession.count({ where }),
@@ -66,7 +71,8 @@ export class SessionsService {
     const page = rows.slice(0, query.limit);
     return {
       sessions: page.map(sessionRecord),
-      nextBefore: rows.length > query.limit ? (page.at(-1)?.id ?? null) : null,
+      nextBefore:
+        query.order === "newest" && rows.length > query.limit ? (page.at(-1)?.id ?? null) : null,
       stats: {
         total,
         connected,

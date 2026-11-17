@@ -82,6 +82,9 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
       ]),
     });
   }
+  if (can("team.read")) {
+    entries.push({ label: "Business", icon: "team", links: [{ href: "/team", label: "Team" }] });
+  }
   if (can("package.read")) {
     entries.push({
       label: "Settings",

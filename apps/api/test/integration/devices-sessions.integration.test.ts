@@ -249,6 +249,44 @@ describe("sessions", () => {
     expect(byDevice.stats).toMatchObject({ total: 2, downloadBytes: 5 * 1_073_741_824 });
   });
 
+  test("ending soonest first: by when the voucher ends, those without an end last, one page", async () => {
+    const w = await world();
+    const c = await owner();
+    const live = async (code: string, endsInMinutes: number | null) => {
+      const voucher = await t.db.voucher.create({
+        data: {
+          venueId: w.mine.id,
+          code,
+          status: "active",
+          durationMinutes: 60,
+          priceTsh: "1000",
+          expiresAt: endsInMinutes === null ? null : new Date(Date.now() + endsInMinutes * 60_000),
+        },
+      });
+      return t.db.wifiSession.create({
+        data: {
+          venueId: w.mine.id,
+          deviceId: w.only.id,
+          macAddress: `AA:BB:CC:11:00:${code.slice(-2)}`,
+          status: "connected",
+          voucherId: voucher.id,
+        },
+      });
+    };
+    const later = await live("END-40", 40);
+    const soon = await live("END-05", 5);
+    const page = (await c.request("GET", "/api/sessions?status=connected&order=ending&limit=2"))
+      .body as { sessions: { id: string; voucherExpiresAt: string | null }[]; nextBefore: unknown };
+    expect(page.sessions.map((s) => s.id)).toEqual([soon.id, later.id]);
+    expect(page.sessions[0]?.voucherExpiresAt).toEqual(expect.any(String));
+    expect(page.nextBefore).toBeNull();
+    const all = (await c.request("GET", "/api/sessions?status=connected&order=ending")).body as {
+      sessions: { id: string }[];
+    };
+    // The world's live session holds a voucher not yet started: no end, so last.
+    expect(all.sessions.map((s) => s.id)).toEqual([soon.id, later.id, w.atTheirs.id]);
+  });
+
   test("terminating ends a connected session once, within the manager's venues", async () => {
     const w = await world();
     const theirs = await w.own.client.request("POST", `/api/sessions/${w.atTheirs.id}/terminate`);

@@ -4,11 +4,15 @@ import {
   ONBOARDING_PLANS,
   type OnboardingPlan,
   type OnboardingStage,
+  type PaymentsReceived,
   type RouterList,
   type RouterRecord,
+  type SessionList,
   type TodaySummary,
   type VenueOnboarding,
+  type VenueRecord,
 } from "@hashinet/types";
+import Link from "next/link";
 import { useState } from "react";
 import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/hearth/onboarding";
 import { ProtectNotice } from "@/components/hearth/protect";
@@ -26,6 +30,7 @@ import {
 } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { calendarDay, clock, dayName, longDate, weekday } from "@/lib/dates";
+import { timeLeft } from "@/lib/duration";
 import { PLAN, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
@@ -69,6 +74,9 @@ export default function OverviewPage() {
   if (!today.data || !routers.data) return <Head title="Overview" sub={sub} />;
 
   if (serving.length === 0) return <SettingUp sub={sub} />;
+  if (me.active.role === "venue_operator") {
+    return <OperatorToday today={today.data} routers={inView} sub={sub} venue={one} />;
+  }
 
   const t = today.data;
   const offline = inView.filter(
@@ -112,7 +120,7 @@ export default function OverviewPage() {
             tsh(t.takingsTsh),
             `${tsh(t.lastWeekTakingsTsh)} by now last ${weekday(new Date(Date.now() - 7 * 86_400_000))}`,
           ],
-          ["Vouchers sold today", String(t.sold), "printed and sold here"],
+          ["Vouchers sold today", String(t.sold), "at the counter and online"],
           routerFact,
         ]}
       />
@@ -127,11 +135,109 @@ export default function OverviewPage() {
             total={["Today", t.sold, tsh(t.takingsTsh)]}
           />
         ) : (
-          <p className="muted empty">
-            Nothing sold yet today. A voucher counts once a guest uses it, or when it is sold here.
-          </p>
+          <p className="muted empty">Nothing sold yet today. Each sale counts as it is made.</p>
         )}
       </Panel>
+    </>
+  );
+}
+
+/**
+ * An operator's day at their venue (prototype `operatorToday`): who is online and whose time ends
+ * soon, what they sold, and the cash they hand over: their cash sales less the cash they gave back.
+ */
+function OperatorToday({
+  today,
+  routers,
+  sub,
+  venue,
+}: {
+  today: TodaySummary;
+  routers: RouterRecord[];
+  sub: string;
+  venue: VenueRecord | null;
+}) {
+  const { me } = useSession();
+  const { sales } = useSell();
+  const venueQuery = venue ? `&venueId=${venue.id}` : "";
+  const ending = useLoad(
+    () => api.get<SessionList>(`/api/sessions?status=connected&order=ending&limit=4${venueQuery}`),
+    [me.active.id, venueQuery],
+  );
+  const mine = useLoad(
+    () => api.get<PaymentsReceived>(`/api/payments/received?by=me&day=${today.day}${venueQuery}`),
+    [me.active.id, venueQuery, today.day, sales],
+  );
+  const router = routers[0];
+  return (
+    <>
+      <Head title={`${venue?.name ?? "Your venues"} today`} sub={sub} actions={<SellButton />} />
+      <Figs
+        items={[
+          ["Online now", String(today.onlineNow), "devices"],
+          ["Sold today", String(today.sold), "vouchers"],
+          ["Cash today", tsh(today.yourCashTsh), "to hand over"],
+          router
+            ? ["Router", CONDITION[router.condition][0], routerDetail(router)]
+            : ["Router", "Not set up", ""],
+        ]}
+      />
+      <div className="two">
+        <Panel
+          title="Ending soon"
+          right={
+            ending.data && ending.data.stats.connected > 0 ? (
+              <Link className="link" href="/sessions">
+                All {ending.data.stats.connected}
+              </Link>
+            ) : null
+          }
+        >
+          {ending.data?.sessions.length ? (
+            <ul className="rows">
+              {ending.data.sessions.map((s) => (
+                <li key={s.id}>
+                  <div>
+                    <b>{s.deviceName ?? s.macAddress}</b>
+                    <span className="sub">
+                      {s.packageName ?? "A package since removed"} · since {clock(s.startedAt)}
+                    </span>
+                  </div>
+                  <span className="num">{timeLeft(s.voucherExpiresAt)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted empty">Nobody is online right now.</p>
+          )}
+        </Panel>
+        <Panel
+          title="Your sales today"
+          right={
+            <Link className="link" href="/vouchers">
+              Vouchers
+            </Link>
+          }
+        >
+          {mine.data?.payments.length ? (
+            <Table
+              cols={[["Package"], ["Paid by"], ["When"], ["Price", true]]}
+              rows={mine.data.payments.map((p) => ({
+                key: p.id,
+                cells: [
+                  p.kind === "refund" ? `Refund · ${p.packageName ?? ""}` : (p.packageName ?? ""),
+                  p.source === "mobile_money" ? "Mobile money" : "Cash",
+                  clock(p.occurredAt),
+                  tsh(p.amountTsh),
+                ],
+              }))}
+              total={["Cash to hand over", "", "", tsh(today.yourCashTsh)]}
+            />
+          ) : (
+            <p className="muted empty">Nothing sold yet today. Tap Sell for the first guest.</p>
+          )}
+        </Panel>
+      </div>
     </>
   );
 }

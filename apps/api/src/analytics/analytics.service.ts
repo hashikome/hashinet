@@ -39,6 +39,10 @@ export const monthQuery = z.object({
 
 export const receivedQuery = monthQuery.extend({
   venueId: z.uuid().nullable().default(null),
+  /** Only what the reader sold or refunded: an operator's own sales. */
+  by: z.enum(["me"]).nullable().default(null),
+  /** One business day in place of the month. */
+  day: z.iso.date().nullable().default(null),
   /** The last row shown, as `<ISO time>_<id>`, from `nextBefore`. */
   before: z
     .string()
@@ -187,11 +191,16 @@ export class AnalyticsService {
     query: z.infer<typeof receivedQuery>,
   ): Promise<PaymentsReceived> {
     const venues = await this.businessVenues(staff, query.venueId);
-    const inScope = venueFilter(Prisma.sql`e.venue_id`, venues);
+    const mine =
+      query.by === "me" ? Prisma.sql`e.actor_id = ${staff.membershipId}::uuid` : Prisma.sql`TRUE`;
+    const inScope = Prisma.sql`${venueFilter(Prisma.sql`e.venue_id`, venues)} AND ${mine}`;
     // This month unless another is asked for; the list offers it whether or not it has payments.
     const current = this.currentMonth();
     const month = query.month ?? current;
-    const inMonth = Prisma.sql`${businessMonthSql(Prisma.sql`e.occurred_at`)} = ${`${month}-01`}::date`;
+    const inMonth =
+      query.day === null
+        ? Prisma.sql`${businessMonthSql(Prisma.sql`e.occurred_at`)} = ${`${month}-01`}::date`
+        : Prisma.sql`${businessDaySql(Prisma.sql`e.occurred_at`)} = ${query.day}::date`;
     // Keyset paging on (time, id), so rows sharing a timestamp are never skipped.
     const [beforeAt, beforeId] = query.before?.split("_") ?? [];
     const before =
