@@ -3214,6 +3214,216 @@ fieldset.plain {
     white-space: normal;
   }
 }
+/* Selling (ADR-0017): the packages as rows, one tap each; the check centred with the price large; the
+   voucher handed over with the WiFi's name first. */
+.dialog.sell {
+  max-width: 440px;
+}
+.pkg-rows {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+.pkg-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 56px;
+  padding: 8px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.pkg-row:hover {
+  border-color: var(--foreground);
+}
+.pkg-row:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.pkg-row b {
+  font-size: 15px;
+  font-weight: 600;
+  display: block;
+}
+.pkg-row small {
+  font-size: 12.5px;
+  color: var(--muted-fg);
+}
+.pkg-row .price {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* The check: centred like the voucher, so the guest across the counter sees one centre line. */
+.sell-c {
+  text-align: center;
+}
+.sell-c .muted {
+  margin-top: -6px;
+}
+.sell-c .form {
+  display: grid;
+  gap: 14px;
+  margin-top: 4px;
+}
+.sell-c .field {
+  display: grid;
+  justify-items: center;
+}
+.sell-c .field .input {
+  max-width: 280px;
+  text-align: center;
+}
+.sell-c .segs {
+  justify-content: center;
+}
+/* Paid by sits on one line with its choices. */
+.sell-c .field.inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.sell-c .field.inline .lbl {
+  margin: 0;
+}
+.sell-c .form + .small {
+  margin-top: 12px;
+  text-wrap: balance;
+}
+/* The actions take the guest's number's width, so the column reads as one. */
+.sell-c .dialog-actions {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.sell-c .dialog-actions .btn {
+  width: 100%;
+  max-width: 280px;
+  justify-content: center;
+}
+.sell-big {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  margin: 8px 0 4px;
+}
+/* Where the guest pays, read out at the counter: the venue's Lipa namba, or its number. */
+.pay-to {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  padding: 12px 14px;
+  background: var(--secondary);
+  border-radius: var(--r);
+  text-align: center;
+}
+.pay-to .lbl {
+  margin: 0;
+}
+.pay-to b {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.pay-to small {
+  font-size: 12.5px;
+  color: var(--muted-fg);
+}
+.pay-to + .pay-to {
+  margin-top: -6px;
+}
+.sold-wifi {
+  font-size: 16px;
+  margin: 12px 0 10px;
+}
+.sold-wifi b {
+  font-size: 18px;
+}
+/* A venue's payment details: each way as whoever sells sees it; a form only to add or change one. */
+.pay-set {
+  display: grid;
+  gap: 14px;
+}
+.pay-set .ways {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.pay-set .way {
+  display: grid;
+  gap: 6px;
+}
+.way-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.way-acts .btn {
+  background: var(--secondary);
+  border-color: transparent;
+}
+.way-form {
+  grid-column: 1 / -1;
+  max-width: 480px;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  background: var(--secondary);
+  border-radius: var(--r);
+}
+.way-form h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+fieldset.field {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+/* A sold voucher's receipt: kept out of the dialog on screen, and the only thing on paper. */
+.print-only {
+  display: none;
+}
+@media print {
+  .dialog-wrap {
+    position: static !important;
+    background: none !important;
+  }
+  .dialog > :not(.print-only) {
+    display: none !important;
+  }
+  .dialog .print-only {
+    display: grid;
+  }
+  .dialog {
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
+/* Plain facts in a dialog, one per line: what an action does. */
+.facts-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  list-style: disc;
+  display: grid;
+  gap: 4px;
+}
+.facts-list li::marker {
+  color: var(--muted-fg);
+}
 /* Shown to the guest across a counter: one thing to look at, so all of it sits on one centre line. */
 .sale-card {
   text-align: center;

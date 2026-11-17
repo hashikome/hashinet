@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/hearth/onboarding";
 import { ProtectNotice } from "@/components/hearth/protect";
+import { SellButton, useSell } from "@/components/hearth/sell";
 import {
   Attention,
   Button,
@@ -39,10 +40,11 @@ import { useVenues } from "@/lib/venues";
 export default function OverviewPage() {
   const { me } = useSession();
   const { shown, filter } = useVenues();
+  const { sales } = useSell();
   const venueId = filter === "all" ? "" : filter;
   const today = useLoad(
     () => api.get<TodaySummary>(`/api/analytics/today${venueId ? `?venueId=${venueId}` : ""}`),
-    [venueId, me.active.id],
+    [venueId, me.active.id, sales],
   );
   const routers = useLoad(() => api.get<RouterList>("/api/routers"), [me.active.id]);
   const one = shown.length === 1 ? shown[0] : null;
@@ -86,7 +88,7 @@ export default function OverviewPage() {
         ];
   return (
     <>
-      <Head title="Overview" sub={sub} />
+      <Head title="Overview" sub={sub} actions={<SellButton />} />
       <ProtectNotice />
       {offline.map((r) => (
         <Attention

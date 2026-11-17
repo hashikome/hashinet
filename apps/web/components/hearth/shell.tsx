@@ -8,7 +8,8 @@ import { api, messageOf } from "@/lib/api";
 import { homeOf, type NavEntry, navOf, ROLE_NAME } from "@/lib/nav";
 import { useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
-import { BusinessMark, Icon, Mark } from "./icons";
+import { BusinessMark, Icon, type IconName, Mark } from "./icons";
+import { SellProvider, useSell } from "./sell";
 import { useToast } from "./ui";
 
 /** HashiNet's own spaces, the person's in every workspace: Help, and Account and security. */
@@ -279,62 +280,97 @@ export function Shell({
   useEffect(() => setSide(false), [path]);
   const entries = nav ?? navOf(me, venues);
   const openIssues = useOpenIssues(me);
-  const { filter, setFilter } = useVenues();
+  const { filter, setFilter, shown } = useVenues();
+  // On a phone, anyone in a business working at one serving venue has its pages and Sell under the
+  // thumb (DESIGN.md): an operator always, an owner or manager once their view is one venue.
+  const tabbed =
+    !space &&
+    me.active.scope === "business" &&
+    (me.active.role === "venue_operator" ||
+      (shown.length === 1 && (shown[0]?.routerCount ?? 0) > 0));
   return (
-    <div
-      className={`app${space ? " help-app" : ""}${space === "Account" ? " acct-page" : ""}${side ? " open" : ""}`}
-    >
-      <aside className="side">
-        <Brand me={me} space={space} />
-        {!space && me.active.scope === "business" && venues.length > 0 ? (
-          <div className="switcher">
-            <select
-              aria-label="Filter by venue"
-              value={venues.length > 1 ? filter : venues[0]?.id}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              {venues.length > 1 ? <option value="all">All venues</option> : null}
-              {venues.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                </option>
-              ))}
-            </select>
-            <Icon name="chev" size={14} />
-          </div>
-        ) : null}
-        <NavList
-          entries={entries}
-          openIssues={space ? 0 : openIssues}
-          label={space === "Account" ? "Account and security" : (space ?? "Main")}
-        />
-        <AccountMenu me={me} />
-      </aside>
-      {/* A tap outside the open menu closes it. */}
-      {side ? (
-        <button
-          type="button"
-          className="side-scrim"
-          aria-label="Close menu"
-          onClick={() => setSide(false)}
-        />
-      ) : null}
-      <div>
-        <div className="topbar">
+    <SellProvider>
+      <div
+        className={`app${space ? " help-app" : ""}${space === "Account" ? " acct-page" : ""}${side ? " open" : ""}${tabbed ? " tabbed" : ""}`}
+      >
+        <aside className="side">
+          <Brand me={me} space={space} />
+          {!space && me.active.scope === "business" && venues.length > 0 ? (
+            <div className="switcher">
+              <select
+                aria-label="Filter by venue"
+                value={venues.length > 1 ? filter : venues[0]?.id}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                {venues.length > 1 ? <option value="all">All venues</option> : null}
+                {venues.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+              <Icon name="chev" size={14} />
+            </div>
+          ) : null}
+          <NavList
+            entries={entries}
+            openIssues={space ? 0 : openIssues}
+            label={space === "Account" ? "Account and security" : (space ?? "Main")}
+          />
+          <AccountMenu me={me} />
+        </aside>
+        {/* A tap outside the open menu closes it. */}
+        {side ? (
           <button
             type="button"
-            aria-label="Open menu"
-            aria-expanded={side}
-            onClick={() => setSide(true)}
-          >
-            <Icon name="menu" size={20} />
-          </button>
-          <Brand me={me} space={space} size={24} />
+            className="side-scrim"
+            aria-label="Close menu"
+            onClick={() => setSide(false)}
+          />
+        ) : null}
+        <div>
+          <div className="topbar">
+            <button
+              type="button"
+              aria-label="Open menu"
+              aria-expanded={side}
+              onClick={() => setSide(true)}
+            >
+              <Icon name="menu" size={20} />
+            </button>
+            <Brand me={me} space={space} size={24} />
+          </div>
+          <main className="canvas" id="main">
+            {children}
+          </main>
         </div>
-        <main className="canvas" id="main">
-          {children}
-        </main>
+        {tabbed ? <TabBar me={me} path={path} /> : null}
       </div>
-    </div>
+    </SellProvider>
+  );
+}
+
+/** The phone's tabs: the venue's day, its sessions, Sell, its vouchers and its devices. */
+function TabBar({ me, path }: { me: Me; path: string }) {
+  const sell = useSell();
+  const tab = (href: string, icon: IconName, label: string) => (
+    <Link href={href} {...(path === href ? { "aria-current": "page" as const } : {})}>
+      <Icon name={icon} size={20} />
+      <span>{label}</span>
+    </Link>
+  );
+  return (
+    <nav className="tabbar" aria-label="Main">
+      {tab("/overview", "overview", me.active.role === "venue_operator" ? "Today" : "Overview")}
+      {tab("/sessions", "sessions", "Sessions")}
+      {sell.can ? (
+        <button className="tab-sell" type="button" onClick={sell.open}>
+          <Icon name="plus" size={20} />
+          <span>Sell</span>
+        </button>
+      ) : null}
+      {tab("/vouchers", "vouchers", "Vouchers")}
+      {tab("/devices", "devices", "Devices")}
+    </nav>
   );
 }

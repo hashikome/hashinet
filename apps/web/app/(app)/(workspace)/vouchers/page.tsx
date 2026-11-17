@@ -7,6 +7,7 @@ import {
   type VoucherStatus,
 } from "@hashinet/types";
 import { useEffect, useState } from "react";
+import { SellButton, useSell } from "@/components/hearth/sell";
 import {
   Button,
   CopyText,
@@ -47,6 +48,7 @@ const PAGE = 100;
  * Showing codes is recorded in the audit log (ADR-0012).
  */
 export default function VouchersPage() {
+  const { sales } = useSell();
   const { me } = useSession();
   const { all, shown, filter } = useVenues();
   const [tab, setTab] = useState<Tab>("All");
@@ -73,14 +75,14 @@ export default function VouchersPage() {
     setMore([]);
     setNext(page.nextBefore);
     return page.vouchers;
-  }, [me.active.id, venueId, tab, digits]);
+  }, [me.active.id, venueId, tab, digits, sales]);
   const scope = shown.length === 1 ? shown[0]?.name : "All venues";
   const showsVenue = all.length > 1;
   const rows = [...(list.data ?? []), ...more];
 
   return (
     <>
-      <Head title="Vouchers" sub={`Every voucher sold · ${scope}`} />
+      <Head title="Vouchers" sub={`Every voucher sold · ${scope}`} actions={<SellButton />} />
       {list.error ? <LoadFailed error={list.error} retry={list.reload} /> : null}
       <Panel title="All vouchers">
         <div className="tools">

@@ -11,12 +11,15 @@ export function Dialog({
   label,
   onClose,
   alert = false,
+  className = "",
   children,
 }: {
   label: string;
   onClose: () => void;
   /** A confirmation of something that can't be taken back: focus starts on Cancel. */
   alert?: boolean;
+  /** A dialog's own look, such as Sell's (`sell`, `sell-c`, `sale-card`). */
+  className?: string;
   children: ReactNode;
 }) {
   const box = useRef<HTMLDivElement>(null);
@@ -63,11 +66,23 @@ export function Dialog({
       }}
     >
       {alert ? (
-        <div ref={box} className="dialog" role="alertdialog" aria-modal="true" aria-label={label}>
+        <div
+          ref={box}
+          className={`dialog ${className}`.trim()}
+          role="alertdialog"
+          aria-modal="true"
+          aria-label={label}
+        >
           {children}
         </div>
       ) : (
-        <div ref={box} className="dialog" role="dialog" aria-modal="true" aria-label={label}>
+        <div
+          ref={box}
+          className={`dialog ${className}`.trim()}
+          role="dialog"
+          aria-modal="true"
+          aria-label={label}
+        >
           {children}
         </div>
       )}

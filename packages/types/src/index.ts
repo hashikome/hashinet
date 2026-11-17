@@ -1073,8 +1073,8 @@ export interface CustomerList {
 export interface SaleResult {
   paymentId: string;
   code: string;
-  routerConfirmed: boolean;
-  sms: SmsDelivery | null;
+  /** Whether the code is texted to the guest's number: a number was given and SMS is on. */
+  texted: boolean;
 }
 
 /** `POST /api/guest/session`: a device's time and data, for the router's status pages. */

@@ -480,11 +480,16 @@ describe("sales and records", () => {
       phone: "0712345678",
     });
     expect(sale.status).toBe(201);
-    expect(sale.body).toMatchObject({
-      code: expect.stringMatching(/^\d{12}$/),
-      routerConfirmed: true,
-      sms: "sent",
-    });
+    expect(sale.body).toMatchObject({ code: expect.stringMatching(/^\d{12}$/), texted: true });
+    // The seller doesn't wait: the router and the text follow the answer.
+    for (let i = 0; i < 100; i++) {
+      const settled = await t.db.payment.findFirstOrThrow({ include: { sms: true } });
+      if (settled.routerProvisionedAt !== null && settled.sms?.status === "sent") break;
+      await Bun.sleep(20);
+    }
+    const settled = await t.db.payment.findFirstOrThrow({ include: { sms: true } });
+    expect(settled.routerProvisionedAt).not.toBeNull();
+    expect(settled.sms?.status).toBe("sent");
     expect(charges).toEqual([]);
     expect(await t.db.payment.findFirstOrThrow()).toMatchObject({
       provider: "cash",
@@ -496,7 +501,7 @@ describe("sales and records", () => {
       packageId: pkg.id,
       method: "cash",
     });
-    expect(unsent.body).toMatchObject({ sms: null });
+    expect(unsent.body).toMatchObject({ texted: false });
     expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain("sale.record");
   });
 

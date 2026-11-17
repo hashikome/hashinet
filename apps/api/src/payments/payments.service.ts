@@ -525,14 +525,10 @@ export class PaymentsService {
       target: { type: "payment", id: payment.id },
       change: { before: {}, after: { method: input.method } },
     });
-    await this.settle(payment.id);
-    const row = await this.db.payment.findUniqueOrThrow({ where: { id: payment.id }, include });
-    return {
-      paymentId: row.id,
-      code,
-      routerConfirmed: row.routerProvisionedAt !== null,
-      sms: row.sms?.status ?? null,
-    };
+    // The money is in hand, so the seller never waits on a router or a text: they settle after the
+    // answer (ADR-0010, 2), and the guest's sign-in confirms the voucher with the router regardless.
+    void this.settle(payment.id).catch(captureFailure);
+    return { paymentId: payment.id, code, texted: phone !== null && this.config.features.sms };
   }
 
   capabilities(): Capabilities {
