@@ -96,7 +96,7 @@ export class AuditController {
         target: {
           type: row.targetType,
           id: row.targetId,
-          label: labels.get(`${row.targetType}:${row.targetId}`) ?? null,
+          label: labelOf(labels.get(`${row.targetType}:${row.targetId}`) ?? null, row.businessId),
         },
         business: row.business,
         venue: row.venueId === null ? null : (venueOf.get(row.venueId) ?? null),
@@ -113,26 +113,24 @@ export class AuditController {
    */
   private async labels(
     rows: { targetType: string; targetId: string | null }[],
-  ): Promise<Map<string, string>> {
+  ): Promise<Map<string, { name: string; businessId: string | null }>> {
     // A target id is free text: only a UUID can name a row.
     const ids = (type: string) =>
       rows.flatMap((r) =>
         r.targetType === type && r.targetId !== null && UUID.test(r.targetId) ? [r.targetId] : [],
       );
-    const named = (rows: { id: string; name: string }[]) =>
-      rows.map((r) => [r.id, r.name] as const);
     const [venues, routers, packages, businesses, members] = await Promise.all([
       this.db.venue.findMany({
         where: { id: { in: ids("venue") } },
-        select: { id: true, name: true },
+        select: { id: true, name: true, businessId: true },
       }),
       this.db.router.findMany({
         where: { id: { in: ids("router") } },
-        select: { id: true, name: true },
+        select: { id: true, name: true, venue: { select: { businessId: true } } },
       }),
       this.db.package.findMany({
         where: { id: { in: ids("package") } },
-        select: { id: true, name: true },
+        select: { id: true, name: true, businessId: true },
       }),
       this.db.business.findMany({
         where: { id: { in: ids("business") } },
@@ -140,17 +138,31 @@ export class AuditController {
       }),
       this.db.membership.findMany({
         where: { id: { in: ids("membership") } },
-        select: { id: true, user: { select: { name: true } } },
+        select: { id: true, businessId: true, user: { select: { name: true } } },
       }),
     ]);
     return new Map([
-      ...named(venues).map(([id, name]) => [`venue:${id}`, name] as const),
-      ...named(routers).map(([id, name]) => [`router:${id}`, name] as const),
-      ...named(packages).map(([id, name]) => [`package:${id}`, name] as const),
-      ...named(businesses).map(([id, name]) => [`business:${id}`, name] as const),
-      ...members.map((m) => [`membership:${m.id}`, m.user.name] as const),
+      ...venues.map((v) => [`venue:${v.id}`, { name: v.name, businessId: v.businessId }] as const),
+      ...routers.map(
+        (r) => [`router:${r.id}`, { name: r.name, businessId: r.venue.businessId }] as const,
+      ),
+      ...packages.map(
+        (p) => [`package:${p.id}`, { name: p.name, businessId: p.businessId }] as const,
+      ),
+      ...businesses.map((b) => [`business:${b.id}`, { name: b.name, businessId: b.id }] as const),
+      ...members.map(
+        (m) => [`membership:${m.id}`, { name: m.user.name, businessId: m.businessId }] as const,
+      ),
     ]);
   }
+}
+
+/** A name shows only when what it names belongs to the row's business, so no row reads across. */
+function labelOf(
+  target: { name: string; businessId: string | null } | null,
+  businessId: string | null,
+): string | null {
+  return target !== null && target.businessId === businessId ? target.name : null;
 }
 
 function scopeOf(principal: Principal): AuditLogWhereInput {

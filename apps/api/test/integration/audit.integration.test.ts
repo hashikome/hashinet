@@ -1,5 +1,5 @@
-import type { AuditList } from "@hashinet/types";
 import { describe, expect, test } from "bun:test";
+import type { AuditList } from "@hashinet/types";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, testBusinessId } from "./people.js";
@@ -66,6 +66,26 @@ describe("the audit log", () => {
     ]);
     expect(await list("to=2026-11-17")).toHaveLength(1);
     expect((await list("search=daudi")).map((e) => e.actor?.name)).toEqual(["Daudi Kweka"]);
+
+    // A row never names what belongs to another business.
+    const elsewhere = await t.db.business.create({
+      data: { name: "Elsewhere", region: "Arusha", area: "Njiro" },
+    });
+    const far = await t.db.venue.create({
+      data: { businessId: elsewhere.id, name: "Far Away Bar", region: "Arusha", area: "Njiro" },
+    });
+    await t.db.auditLog.create({
+      data: {
+        businessId,
+        venueId: kijiwe.id,
+        action: "venue.delete",
+        category: "change",
+        targetType: "venue",
+        targetId: far.id,
+        outcome: "success",
+      },
+    });
+    expect((await list("action=venue.delete"))[0]?.target.label).toBeNull();
 
     // A venue manager's log stays their venues', whatever venue they ask for.
     const manager = browser(api);
