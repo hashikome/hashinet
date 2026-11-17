@@ -71,20 +71,20 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   if (can("voucher.read")) top.push({ href: "/vouchers", label: "Vouchers", icon: "vouchers" });
   if (can("payment.read")) top.push({ href: "/payments", label: "Payments", icon: "payments" });
   const entries: NavEntry[] = [...top];
-  if (can("router.read") && venues.length > 0) {
-    // Each venue's page (its payment details) and its router.
-    const one = venues.length === 1;
-    entries.push({
-      label: "Manage",
-      icon: "manage",
-      links: venues.flatMap((v) => [
-        ...(can("payment_details.read")
-          ? [{ href: `/venues/${v.id}`, label: one ? "Venue" : v.name }]
-          : []),
-        { href: `/venues/${v.id}/router`, label: one ? "Routers" : `${v.name}'s router` },
-      ]),
-    });
-  }
+  // Each venue's page (its payment details) and its router, then the devices the venues have seen.
+  const one = venues.length === 1;
+  const manage = [
+    ...(can("router.read")
+      ? venues.flatMap((v) => [
+          ...(can("payment_details.read")
+            ? [{ href: `/venues/${v.id}`, label: one ? "Venue" : v.name }]
+            : []),
+          { href: `/venues/${v.id}/router`, label: one ? "Routers" : `${v.name}'s router` },
+        ])
+      : []),
+    ...(can("device.read") ? [{ href: "/devices", label: "Devices" }] : []),
+  ];
+  if (manage.length) entries.push({ label: "Manage", icon: "manage", links: manage });
   if (can("team.read")) {
     entries.push({ label: "Business", icon: "team", links: [{ href: "/team", label: "Team" }] });
   }

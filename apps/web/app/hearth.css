@@ -3881,10 +3881,26 @@ td .btn.danger:hover,
 .pick-all .pick-box {
   margin: 0;
 }
+.pick-hit {
+  display: inline-flex;
+  align-items: flex-start;
+  cursor: pointer;
+}
 @media (pointer: coarse) {
   .pick-box {
     width: 20px;
     height: 20px;
+  }
+  /* A row's checkbox keeps its look and gains a 44px target; the select-all label grows to it. */
+  .pick-hit {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -12px;
+    align-items: center;
+    justify-content: center;
+  }
+  .pick-all {
+    min-height: 44px;
   }
 }
 .site-cost {
