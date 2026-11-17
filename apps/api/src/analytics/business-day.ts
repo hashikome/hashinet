@@ -22,3 +22,15 @@ export function businessDayOf(instant: Date): string {
     day: "2-digit",
   }).format(instant);
 }
+
+/** The instant a business day (YYYY-MM-DD) begins, for range filters a query builder can take. */
+export function businessDayStart(day: string): Date {
+  const offset = new Intl.DateTimeFormat("en-US", {
+    timeZone: BUSINESS_TIME_ZONE,
+    timeZoneName: "longOffset",
+  })
+    .formatToParts(new Date(`${day}T12:00:00Z`))
+    .find((p) => p.type === "timeZoneName")
+    ?.value.replace("GMT", "");
+  return new Date(`${day}T00:00:00${offset || "Z"}`);
+}

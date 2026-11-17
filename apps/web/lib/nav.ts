@@ -61,7 +61,14 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
     return [
       ...issues,
       ...(manage.length ? [{ label: "Manage", icon: "manage" as const, links: manage }] : []),
-      { label: "Platform", icon: "platform", links: [{ href: "/team", label: "Team" }] },
+      {
+        label: "Platform",
+        icon: "platform",
+        links: [
+          { href: "/team", label: "Team" },
+          ...(can("audit.read") ? [{ href: "/audit", label: "Audit log" }] : []),
+        ],
+      },
     ];
   }
   const top: NavLink[] = [{ href: "/overview", label: "Overview", icon: "overview" }];
@@ -85,9 +92,11 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
     ...(can("device.read") ? [{ href: "/devices", label: "Devices" }] : []),
   ];
   if (manage.length) entries.push({ label: "Manage", icon: "manage", links: manage });
-  if (can("team.read")) {
-    entries.push({ label: "Business", icon: "team", links: [{ href: "/team", label: "Team" }] });
-  }
+  const business = [
+    ...(can("team.read") ? [{ href: "/team", label: "Team" }] : []),
+    ...(can("audit.read") ? [{ href: "/audit", label: "Audit log" }] : []),
+  ];
+  if (business.length) entries.push({ label: "Business", icon: "team", links: business });
   if (can("package.read")) {
     entries.push({
       label: "Settings",

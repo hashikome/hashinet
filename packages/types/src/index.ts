@@ -908,14 +908,18 @@ export type AuditOutcome = "success" | "no_change" | "failed" | "denied";
  * tokens or addresses. */
 export type AuditChange = Record<string, string | number | boolean | null>;
 
-/** One audit row as the Audit log page shows it; labels are read when answering. */
+/** One audit row as the Audit log page shows it. Names are read when answering. */
 export interface AuditEntry {
   id: string;
   createdAt: Timestamp;
   actor: { name: string; role: MembershipRole } | null;
   action: AuditAction;
   category: AuditCategory;
+  /** `label` names a venue, router, package, business or person; null for everything else. */
   target: { type: string; id: string | null; label: string | null };
+  /** Null for HashiNet's own events. */
+  business: { id: string; name: string } | null;
+  venue: { id: string; name: string } | null;
   outcome: AuditOutcome;
   change: { before: AuditChange; after: AuditChange } | null;
 }
