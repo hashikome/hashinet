@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Head } from "@/components/hearth/ui";
 import { helpFor } from "@/lib/help";
+import { ROLE_NAME } from "@/lib/nav";
 import { useSession } from "@/lib/session";
 import { BackHome, GuideRow, ListCard, QuestionRow, StillStuck } from "./parts";
 
@@ -28,7 +29,7 @@ export default function HelpHome() {
   const who =
     me.active.scope === "platform"
       ? "HashiNet's team"
-      : `owners at ${me.active.business?.name ?? "your business"}`;
+      : `${ROLE_NAME[me.active.role].toLowerCase()}s at ${me.active.business?.name ?? "your business"}`;
   return (
     <>
       <Head

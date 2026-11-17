@@ -5,7 +5,13 @@ import type { ReactNode } from "react";
  * Help (prototype help.js): guides and questions for the reader's role, each naming who it is
  * for. Each slice adds its own with its screens, so Help never explains a page that isn't there.
  */
-export type HelpRole = "owner" | "platform-staff" | "platform-operator";
+export type HelpRole =
+  | "owner"
+  | "business-manager"
+  | "venue-manager"
+  | "operator"
+  | "platform-staff"
+  | "platform-operator";
 
 export interface Guide {
   id: string;
@@ -28,16 +34,196 @@ export function helpRole(me: Me): HelpRole | null {
   if (me.active.scope === "platform") {
     return me.active.role === "operator" ? "platform-operator" : "platform-staff";
   }
-  return me.active.role === "owner" ? "owner" : null;
+  return BUSINESS_ROLE[me.active.role];
 }
 
+const BUSINESS_ROLE: Record<Me["active"]["role"], HelpRole | null> = {
+  owner: "owner",
+  business_manager: "business-manager",
+  venue_manager: "venue-manager",
+  venue_operator: "operator",
+  admin: null,
+  manager: null,
+  operator: null,
+};
+
 export const AREAS: Record<"business" | "platform", string[]> = {
-  business: ["Getting started", "Selling", "Guests and devices", "Your venues", "Your account"],
+  business: [
+    "Getting started",
+    "Selling",
+    "Guests and devices",
+    "Your venues",
+    "Your team",
+    "Your account",
+  ],
   platform: ["Issues", "Businesses", "Routers", "Your team", "Your account"],
 };
 
-const ALL: HelpRole[] = ["owner", "platform-staff", "platform-operator"];
 const PLATFORM: HelpRole[] = ["platform-staff", "platform-operator"];
+/** Everyone at a business. */
+const BUSINESS: HelpRole[] = ["owner", "business-manager", "venue-manager", "operator"];
+/** Those who run a team: owners and managers. */
+const MANAGERS: HelpRole[] = ["owner", "business-manager", "venue-manager"];
+/** Those who act for the whole business, such as blocking a device. */
+const WHOLE: HelpRole[] = ["owner", "business-manager"];
+
+const PROTECT_OPERATOR: Guide = {
+  id: "protect",
+  area: "Your account",
+  for: ["operator"],
+  title: "Protect your sign-in",
+  gist: "An authenticator app or a passkey, if you like.",
+  steps: [
+    <>
+      Your email code is enough, but you can add more. Open <b>Account and security</b>.
+    </>,
+    "Set up an authenticator: scan the code with its app and enter the 6 digits it shows.",
+    "Save your recovery codes somewhere safe. Each one signs you in once without the app.",
+    "Or add a passkey: your phone or laptop's fingerprint, face or PIN signs you in.",
+  ],
+  wrong: [],
+};
+
+const COUNTER: Guide[] = [
+  {
+    id: "sell",
+    area: "Selling",
+    for: BUSINESS,
+    title: "Sell a voucher",
+    gist: "Choose the package, confirm, hand over the code.",
+    steps: [
+      <>
+        Tap <b>Sell</b> at the bottom of the screen. On a computer, use <b>Sell a voucher</b> on
+        Overview or Vouchers.
+      </>,
+      "Tap the package the guest asked for. Its price is on it; there is nothing to type.",
+      "Check the sale and choose cash or mobile money. For mobile money, read out where to pay, shown on screen, and enter the guest's mobile money number.",
+      <>
+        Tap <b>Confirm sale</b> once the money is in your hand, or has reached the venue.
+      </>,
+      <>
+        Hand it over: the guest joins the WiFi named on screen and scans the QR code, or you tap{" "}
+        <b>Send</b> or <b>Print</b>.
+      </>,
+      <>
+        Tap <b>Sell another</b> for the next guest.
+      </>,
+    ],
+    wrong: [
+      [
+        "You sold the wrong package",
+        "Sell the right one. An owner or manager refunds the wrong voucher from Vouchers while it is unused, and records how the money went back.",
+      ],
+      [
+        "You chose the wrong package before confirming",
+        <>
+          Tap <b>Change package</b> and choose again.
+        </>,
+      ],
+      [
+        "The guest can't get online",
+        "Check they joined the WiFi named on screen, then scan again. The voucher's time starts only when they get online.",
+      ],
+    ],
+  },
+  {
+    id: "cash",
+    area: "Selling",
+    for: ["operator"],
+    title: "Hand over the day's cash",
+    gist: "Match the cash in the drawer to what HashiNet recorded.",
+    steps: [
+      <>
+        Open <b>Today</b>. <b>Cash today</b> is the cash you took for the vouchers you sold, less
+        any cash you gave back.
+      </>,
+      "Count the cash. It should match.",
+      "Hand it over with that figure. Mobile money sales are not in it; they're paid to the business directly.",
+    ],
+    wrong: [
+      [
+        "The cash doesn't match",
+        "Check Your sales today for a sale made by mistake, and tell your manager before the day ends.",
+      ],
+    ],
+  },
+  {
+    id: "session",
+    area: "Guests and devices",
+    for: BUSINESS,
+    title: "End a session or release a voucher",
+    gist: "Take a device off, or free a voucher's place for another.",
+    steps: [
+      <>
+        Open <b>Live sessions</b> and find the device, or search by its voucher's code.
+      </>,
+      <>
+        Tap <b>End session</b>. The device goes offline; the voucher keeps the time it has left.
+      </>,
+      <>
+        To let the guest use another phone instead, open <b>Vouchers</b>, find the code and tap{" "}
+        <b>Release</b>.
+      </>,
+    ],
+    wrong: [],
+  },
+  {
+    id: "block",
+    area: "Guests and devices",
+    for: WHOLE,
+    title: "Block a device",
+    gist: "Keep a device off your WiFi.",
+    steps: [
+      <>
+        Open <b>Devices</b> and find it by its name or MAC address.
+      </>,
+      <>
+        Tick it and tap <b>Block</b>. Its session ends and it can't sign in again at your venues. To
+        block several, tick them all.
+      </>,
+      <>
+        To let it back, choose <b>Blocked</b>, then tap <b>Unblock</b> on its row.
+      </>,
+    ],
+    wrong: [
+      [
+        "A blocked guest is back",
+        "Many phones change their MAC address now and then. Block the new one too.",
+      ],
+    ],
+  },
+  ...(
+    [
+      ["owner", "Choose business manager, venue manager or venue operator."],
+      ["business-manager", "Choose venue manager or venue operator."],
+      ["venue-manager", "They join as a venue operator, working the counter."],
+    ] as const
+  ).map(
+    ([role, choice]): Guide => ({
+      id: "invite",
+      area: "Your team",
+      for: [role],
+      title: "Invite someone to your team",
+      gist: "Give a colleague their own sign-in.",
+      steps: [
+        <>
+          Open <b>Team</b> under Business and tap <b>Invite someone</b>.
+        </>,
+        "Enter their email address.",
+        choice,
+        "For a venue role, tick the venues they work at.",
+        "Send it. They sign in with a code sent to their email; until then it waits on Team.",
+      ],
+      wrong: [
+        [
+          "They didn't get the email",
+          "Check the address on Team and send the invitation again from there.",
+        ],
+        ["Someone has left", "Open Team and remove them. They're signed out at once."],
+      ],
+    }),
+  ),
+];
 
 export const GUIDES: Guide[] = [
   {
@@ -177,7 +363,7 @@ export const GUIDES: Guide[] = [
   {
     id: "guest",
     area: "Guests and devices",
-    for: ["owner"],
+    for: BUSINESS,
     title: "Help a guest get online",
     gist: "From joining the WiFi to browsing.",
     steps: [
@@ -188,6 +374,10 @@ export const GUIDES: Guide[] = [
       </>,
     ],
     wrong: [
+      [
+        "The guest has a new phone",
+        "Release the voucher from Vouchers; they sign in on the new phone with the same code.",
+      ],
       ["“This voucher has ended”", "Its time is used up and can't be extended. Sell a new one."],
       [
         "Connected, but no internet",
@@ -198,7 +388,7 @@ export const GUIDES: Guide[] = [
   {
     id: "offline",
     area: "Guests and devices",
-    for: ["owner"],
+    for: BUSINESS,
     title: "When a router is offline",
     gist: "What to check, and what guests keep.",
     steps: [
@@ -230,7 +420,7 @@ export const GUIDES: Guide[] = [
       <>
         Tap <b>Change price</b>, or add or remove a package.
       </>,
-      "Guests see a new price straight away. Printed vouchers keep the price on them, and a removed package's vouchers keep working.",
+      "Guests see a new price straight away. Vouchers already sold keep their price, and a removed package's vouchers keep working.",
     ],
     wrong: [],
   },
@@ -316,13 +506,13 @@ export const GUIDES: Guide[] = [
   {
     id: "protect",
     area: "Your account",
-    for: ALL,
+    for: [...MANAGERS, ...PLATFORM],
     title: "Protect your sign-in",
     gist: "An authenticator app or a passkey.",
     steps: [
       <>
-        Owners must, within 7 days of joining; HashiNet's team must before they start. Open{" "}
-        <b>Account and security</b>.
+        Owners and managers must, within 7 days of joining; HashiNet's team must before they start.
+        Open <b>Account and security</b>.
       </>,
       "Set up an authenticator: scan the code with its app and enter the 6 digits it shows.",
       "Save your recovery codes somewhere safe. Each one signs you in once without the app.",
@@ -330,29 +520,49 @@ export const GUIDES: Guide[] = [
     ],
     wrong: [],
   },
+  ...COUNTER,
+  PROTECT_OPERATOR,
 ];
 
 export const QUESTIONS: Question[] = [
   {
-    for: ["owner"],
+    for: BUSINESS,
     area: "Guests and devices",
     q: "Does a guest lose time when the router goes offline?",
     a: "No. Devices online keep their time once it reconnects.",
   },
   {
-    for: ["owner"],
+    for: BUSINESS,
+    area: "Guests and devices",
+    q: "Can one voucher work on two phones?",
+    a: "If its package allows two devices, yes. To move it to another phone, release it from Vouchers.",
+  },
+  {
+    for: BUSINESS,
     area: "Selling",
-    q: "Do unused vouchers expire?",
-    a: "No. They keep until a guest uses them, at the price printed on them.",
+    q: "Do we print vouchers before we sell them?",
+    a: "No. A voucher is made when it is sold, so none can be taken or go unsold. Print one if the guest wants paper.",
   },
   {
-    for: ["owner"],
-    area: "Your venues",
+    for: ["venue-manager", "operator"],
+    area: "Guests and devices",
+    q: "A device is misusing the WiFi. Can I block it?",
+    a: "Blocking is for the owner and business managers. Tell them which device it is; they block it from Devices.",
+  },
+  {
+    for: MANAGERS,
+    area: "Your team",
     q: "Who can see what I change?",
-    a: "HashiNet keeps a record of every change, with who made it and when.",
+    a: "Every change is in the Audit log, with who made it and when.",
   },
   {
-    for: ALL,
+    for: ["operator"],
+    area: "Your account",
+    q: "Do I need an authenticator app?",
+    a: "No. Your email code is enough. You can add one in Account and security if you like.",
+  },
+  {
+    for: [...MANAGERS, ...PLATFORM],
     area: "Your account",
     q: "I lost the phone with my authenticator",
     a: "Sign in with one of your recovery codes, then set it up again in Account and security. No codes left? Contact HashiNet's support: they confirm it's you, then reset it.",
