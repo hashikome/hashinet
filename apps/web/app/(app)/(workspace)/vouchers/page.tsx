@@ -18,10 +18,11 @@ import {
   Table,
   Tabs,
 } from "@/components/hearth/ui";
+import { RefundDialog, ReleaseDialog } from "@/components/hearth/voucher-actions";
 import { api } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
-import { useSession } from "@/lib/session";
+import { useCan, useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
 
 const TABS = ["All", "Not used yet", "Active", "Used", "Expired", "Refunded"] as const;
@@ -49,6 +50,11 @@ const PAGE = 100;
  */
 export default function VouchersPage() {
   const { sales } = useSell();
+  const can = useCan();
+  const [acting, setActing] = useState<{
+    kind: "refund" | "release";
+    voucher: VoucherListItem;
+  } | null>(null);
   const { me } = useSession();
   const { all, shown, filter } = useVenues();
   const [tab, setTab] = useState<Tab>("All");
@@ -105,6 +111,7 @@ export default function VouchersPage() {
               ["Created"],
               ["Status"],
               ...(showsVenue ? ([["Venue"]] as [string][]) : []),
+              [""],
             ]}
             rows={rows.map((v) => ({
               key: v.id,
@@ -118,6 +125,18 @@ export default function VouchersPage() {
                   {LABEL[v.status][0]}
                 </Pill>,
                 ...(showsVenue ? [v.venueName ?? ""] : []),
+                // In use, it is released to a new device; not used yet, an owner or manager refunds it.
+                v.status === "active" && can("voucher.release") ? (
+                  <Button key="a" onClick={() => setActing({ kind: "release", voucher: v })}>
+                    Release
+                  </Button>
+                ) : v.status === "unused" && can("voucher.refund") ? (
+                  <Button key="a" onClick={() => setActing({ kind: "refund", voucher: v })}>
+                    Refund
+                  </Button>
+                ) : (
+                  ""
+                ),
               ],
             }))}
           />
@@ -142,6 +161,25 @@ export default function VouchersPage() {
           </div>
         ) : null}
       </Panel>
+      {acting === null ? null : acting.kind === "refund" ? (
+        <RefundDialog
+          voucher={acting.voucher}
+          onClose={() => setActing(null)}
+          onDone={() => {
+            setActing(null);
+            void list.reload();
+          }}
+        />
+      ) : (
+        <ReleaseDialog
+          voucher={acting.voucher}
+          onClose={() => setActing(null)}
+          onDone={() => {
+            setActing(null);
+            void list.reload();
+          }}
+        />
+      )}
     </>
   );
 }
