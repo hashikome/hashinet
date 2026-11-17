@@ -69,8 +69,13 @@ export default function PaymentsPage() {
               [
                 "Today",
                 tsh(today.data?.takingsTsh ?? 0),
-                `${today.data?.sold ?? 0} ${today.data?.sold === 1 ? "voucher" : "vouchers"} so far`,
+                `${today.data?.sold ?? 0} ${today.data?.sold === 1 ? "voucher" : "vouchers"} so far${
+                  Number(today.data?.refundsTsh ?? 0) > 0
+                    ? `, ${tsh(today.data?.refundsTsh ?? 0)} refunded`
+                    : ""
+                }`,
               ],
+              ["Your cash", tsh(today.data?.yourCashTsh ?? 0), "to hand over today"],
             ]}
           />
           {data.months.length > 1 ? (
@@ -101,6 +106,7 @@ export default function PaymentsPage() {
                   ["Time"],
                   ["Package"],
                   ["Paid by"],
+                  ["Sold by"],
                   ["Amount", true],
                   ["Status"],
                   ...(showsVenue ? ([["Venue"]] as [string][]) : []),
@@ -111,25 +117,37 @@ export default function PaymentsPage() {
                     <span className="nowrap" key="t">
                       {when(p.occurredAt)}
                     </span>,
-                    p.packageName ?? "A package since removed",
+                    p.kind === "refund" ? (
+                      <span key="p">
+                        Refund
+                        <div className="sub">{p.packageName ?? "A package since removed"}</div>
+                      </span>
+                    ) : (
+                      (p.packageName ?? "A package since removed")
+                    ),
                     <span key="m">
                       {METHOD[p.source]}
                       <div className="sub">
-                        {p.reference ? <CopyText text={p.reference} /> : "Recorded here"}
+                        {p.reference ? <CopyText text={p.reference} /> : "At the counter"}
                       </div>
                     </span>,
+                    p.by ?? "Bought online",
                     tsh(p.amountTsh),
-                    <Pill key="s" kind="ok">
-                      Paid
-                    </Pill>,
+                    p.kind === "refund" ? (
+                      <Pill key="s" kind="neutral">
+                        Refunded
+                      </Pill>
+                    ) : (
+                      <Pill key="s" kind="ok">
+                        Paid
+                      </Pill>
+                    ),
                     ...(showsVenue ? [p.venueName ?? ""] : []),
                   ],
                 }))}
               />
             ) : (
-              <p className="muted empty">
-                No payments yet. A printed voucher counts once a guest uses it.
-              </p>
+              <p className="muted empty">No payments yet. Each sale shows here as it is made.</p>
             )}
             {next ? (
               <div className="actions" style={{ marginTop: 12 }}>

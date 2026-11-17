@@ -79,13 +79,14 @@ describe("refunds", () => {
     // Payments: the sale stays as it was, and the refund is its own row with a negative amount.
     const received = (await owner.request("GET", "/api/payments/received")).body as {
       totalTsh: string;
-      payments: { kind: string; amountTsh: string }[];
+      payments: { kind: string; amountTsh: string; by: string | null }[];
     };
     expect(received.totalTsh).toBe("1500.00");
-    expect(received.payments.map((p) => [p.kind, p.amountTsh]).sort()).toEqual([
-      ["refund", "-1500.00"],
-      ["sale", "1500.00"],
-      ["sale", "1500.00"],
+    // Each row names who sold it, or who gave it back.
+    expect(received.payments.map((p) => [p.kind, p.amountTsh, p.by]).sort()).toEqual([
+      ["refund", "-1500.00", "neema@example.com"],
+      ["sale", "1500.00", "musa@example.com"],
+      ["sale", "1500.00", "musa@example.com"],
     ]);
 
     const audit = await t.db.auditLog.findFirstOrThrow({ where: { action: "voucher.refund" } });

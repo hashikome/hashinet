@@ -825,6 +825,8 @@ export interface PaymentsReceived {
     venueName: string | null;
     /** The provider's reference for a mobile-money payment. Never a phone. */
     reference: string | null;
+    /** Who sold it or refunded it; null for a guest's own purchase on the portal. */
+    by: string | null;
     occurredAt: Timestamp;
   }[];
   /** Pass as `before` for the next page; null on the last. */

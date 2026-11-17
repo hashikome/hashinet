@@ -3,13 +3,14 @@ import { BUSINESS_TIME_ZONE } from "./business-day.js";
 
 /**
  * HashiNet's one definition of revenue, as a SQL CTE named `revenue_events`
- * (id, source, amount, occurred_at, venue_id, package_id, reference, kind):
+ * (id, source, amount, occurred_at, venue_id, package_id, reference, kind, actor_id):
  *
  * - `sale`: every paid payment, when it was paid, by provider (a staff-recorded `manual` payment
  *   is cash). A voucher exists only by its sale (ADR-0017), so every voucher sold is one of these;
  * - `refund`: every refund, as minus its amount, on the day it was made, by how it went back
  *   (ADR-0017, 8).
  *
+ * `actor_id` is the membership that sold it or refunded it; null for a guest's own purchase.
  * Sums over it are net sales; a count of vouchers sold counts `kind = 'sale'` only.
  */
 export const REVENUE_EVENTS = Prisma.sql`
@@ -17,12 +18,13 @@ export const REVENUE_EVENTS = Prisma.sql`
     SELECT p.id, (CASE WHEN p.provider = 'mobile_money' THEN 'mobile_money'
                        WHEN p.provider = 'card' THEN 'card' ELSE 'cash' END) AS source,
            p.amount_tsh AS amount, p.paid_at AS occurred_at, p.venue_id, p.package_id,
-           p.provider_reference AS reference, 'sale' AS kind
+           p.provider_reference AS reference, 'sale' AS kind, p.recorded_by_id AS actor_id
     FROM payments p
     WHERE p.status = 'paid' AND p.paid_at IS NOT NULL
     UNION ALL
     SELECT r.id, (CASE WHEN r.method = 'mobile_money' THEN 'mobile_money' ELSE 'cash' END),
-           -r.amount_tsh, r.created_at, r.venue_id, r.package_id, r.reference, 'refund'
+           -r.amount_tsh, r.created_at, r.venue_id, r.package_id, r.reference, 'refund',
+           r.refunded_by_id
     FROM refunds r
   )`;
 

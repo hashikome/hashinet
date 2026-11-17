@@ -217,14 +217,18 @@ export class AnalyticsService {
           venue_name: string | null;
           reference: string | null;
           occurred_at: Date;
+          by_name: string | null;
         }[]
       >`
       WITH ${REVENUE_EVENTS}
       SELECT e.id, e.source, e.kind, e.amount::numeric(14,2)::text AS amount,
-             p.name AS package_name, v.name AS venue_name, e.reference, e.occurred_at
+             p.name AS package_name, v.name AS venue_name, e.reference, e.occurred_at,
+             u.name AS by_name
       FROM revenue_events e
       LEFT JOIN packages p ON p.id = e.package_id
       LEFT JOIN venues v ON v.id = e.venue_id
+      LEFT JOIN memberships m ON m.id = e.actor_id
+      LEFT JOIN users u ON u.id = m.user_id
       WHERE ${inMonth} AND ${inScope} AND ${before}
       ORDER BY e.occurred_at DESC, e.id DESC LIMIT ${RECEIVED_PAGE + 1}`,
     ]);
@@ -243,6 +247,7 @@ export class AnalyticsService {
         packageName: r.package_name,
         venueName: r.venue_name,
         reference: r.reference,
+        by: r.by_name,
         occurredAt: r.occurred_at.toISOString(),
       })),
       nextBefore: (() => {
