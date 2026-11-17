@@ -45,7 +45,6 @@ export interface VoucherRecord {
   id: string;
   packageId: string | null;
   venueId: string | null;
-  /** The device that redeemed it. */
   redeemedByDeviceId: string | null;
   code: string;
   status: VoucherStatus;
@@ -149,8 +148,6 @@ export interface MembershipSummary {
  */
 export type AccessLevel = "full" | "setup" | "account";
 
-/** The signed-in person (`GET /api/me`): who they are, their workspaces, and what the active one
- * allows. The web draws navigation and buttons from `capabilities`, never from the role. */
 /** A business as HashiNet's team lists it (`GET /api/businesses`). */
 export interface BusinessSummary {
   id: string;
@@ -373,7 +370,6 @@ export interface VenueOnboarding {
   ownerProtected: boolean;
   /** What the owner gets ready for the first guest, who buys the first voucher (ADR-0013, 2). */
   ready: {
-    /** Packages the venue sells. */
     packagesOnSale: number;
   };
   /** What the reader may do now, decided where each step is guarded. */
@@ -386,6 +382,10 @@ export interface VenueOnboarding {
 export const THEME_PREFERENCES = ["light", "dark", "system"] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 
+/**
+ * The signed-in person (`GET /api/me`). The web draws navigation and buttons from `capabilities`,
+ * never from the role.
+ */
 export interface Me {
   id: string;
   email: string;
@@ -774,7 +774,7 @@ export interface TopVenues {
   venues: { venueId: string; venueName: string; devices: number; revenueTsh: DecimalString }[];
 }
 
-/** `GET /api/revenue/summary` (admins). Revenue is paid payments plus confirmed cash vouchers. */
+/** `GET /api/revenue/summary` (admins): sales less refunds (ADR-0017, 8). */
 export interface RevenueSummary {
   month: BusinessMonth;
   today: DecimalString;
@@ -1093,7 +1093,6 @@ export interface GuestSession {
   } | null;
 }
 
-/** Tanzania's 31 regions: a business's and a venue's region is chosen from these, never typed. */
 /**
  * Voucher codes are 12 digits (ADR-0008), printed and read aloud in three groups of four, stored
  * without spaces.
@@ -1116,6 +1115,7 @@ export const MINIMUM_PRICE_TSH = 500;
 /** How long proving it's you lets someone change their sign-in without asking again. */
 export const PROOF_HOURS = 2;
 
+/** A business's and a venue's region is chosen from these, never typed. */
 export const REGIONS = [
   "Arusha",
   "Dar es Salaam",
@@ -1170,7 +1170,7 @@ export const VENUE_ROLES = [
   "venue_operator",
 ] as const satisfies readonly BusinessRole[];
 
-/** A pending invitation, as the platform's Businesses page lists it (business-scopes M3). */
+/** A pending invitation, as the platform's Businesses page lists it. */
 export interface InvitationRecord {
   id: string;
   email: string;

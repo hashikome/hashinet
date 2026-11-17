@@ -41,8 +41,6 @@ export const POLICY = {
   "session.read": BUSINESS_ALL,
   "session.terminate": BUSINESS_ALL,
   "device.read": BUSINESS_ALL,
-  // A device's blocked status is shared by every business today; until blocking is per business
-  // (slice 2), only those who reach the whole business block.
   "device.block": WHOLE_BUSINESS,
   "device.delete": WHOLE_BUSINESS,
   "payment.read": BUSINESS_ALL,
@@ -61,11 +59,11 @@ export const POLICY = {
   // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.
   "business.read": PLATFORM_ALL,
   "business.invite": PLATFORM_STAFF,
-  // HashiNet's team: its admin and managers see and invite it; who may give which role is by rank
-  // (access/rank.ts). A business's team comes with its own slice.
+  // A team's admin or owner and managers see and invite it; who may give which role is by rank
+  // (access/rank.ts).
   "team.read": [...PLATFORM_STAFF, ...BUSINESS_MANAGERS],
   // Issues: everything that needs someone, worked in each workspace by its own people; operators
-  // of a business see what is theirs on Today instead (redesign-admin, Issues).
+  // of a business see what is theirs on Today instead.
   "issue.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
   "issue.work": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
   "team.manage": [...PLATFORM_STAFF, ...BUSINESS_MANAGERS],

@@ -10,7 +10,6 @@ import type { Response } from "express";
 import { captureFailure } from "../observability/telemetry.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 
-/** Builds the body of an `HttpException` in the API's error shape. */
 export function apiError(
   code: string,
   message: string,

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
-/** How long an invitation can be accepted (business-scopes M3). */
+/** How long an invitation can be accepted */
 export const INVITATION_HOURS = 72;
 
 /**

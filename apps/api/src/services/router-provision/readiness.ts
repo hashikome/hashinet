@@ -4,7 +4,7 @@
  *
  * The probe answers a narrower question: *can* this board run a hotspot. That leaves the
  * failures that have nothing to do with the board and everything to do with the site, each of
- * which used to surface as a cryptic mid-run error or, worse, as a green run and a phone that
+ * which otherwise surfaces as a cryptic mid-run error or, worse, as a green run and a phone that
  * cannot get online:
  *
  *   - the router has no internet (usually its bridge MAC is not on the ISP router's whitelist)
@@ -101,8 +101,6 @@ async function ping(
   ]);
   return rows === null ? null : pingTotals(rows);
 }
-
-// ── Individual checks ───────────────────────────────────────────────────────
 
 function hotspotPackageCheck(profile: RouterProfile): ReadinessCheck {
   if (profile.capabilities.hotspot) {
@@ -335,8 +333,6 @@ async function untaggedConfigCheck(ros: RosClient): Promise<ReadinessCheck> {
       "(docs/runbooks/router-onboarding.md Step 1) so provisioning owns the whole configuration.",
   };
 }
-
-// ── Runner ──────────────────────────────────────────────────────────────────
 
 export async function checkReadiness(
   ros: RosClient,

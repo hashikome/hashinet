@@ -30,7 +30,6 @@ import { JOURNEY_SELECT, routerCondition } from "../routers/router-journey.js";
 
 const DAY_MS = 86_400_000;
 
-/** HashiNet's own workspace. */
 export const PLATFORM_WORKSPACE = { scope: "platform", businessId: null } as const;
 type Workspace = { scope: "platform" | "business"; businessId: string | null };
 
@@ -527,7 +526,6 @@ export class IssuesService {
   }
 }
 
-/** What an issue opens with. */
 export type IssueOpening = Workspace & {
   kind: IssueKind;
   key: string;

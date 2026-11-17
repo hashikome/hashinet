@@ -1,17 +1,11 @@
 /**
- * Package and voucher durations, stored as **whole minutes**.
+ * Package and voucher durations, stored as **whole minutes**, so a 30-minute bundle (the cheapest
+ * and commonest thing a Tanzanian hotspot sells) can be expressed.
  *
- * They were whole *hours* until 2026-08-12, which made 30-minute bundles impossible to express —
- * the cheapest and most common thing a Tanzanian hotspot sells. `0014_duration_minutes.sql`
- * multiplied every stored value by 60 and renamed the columns, so `durationHours` no longer exists
- * anywhere; if you find one, it is a missed call site.
+ * Everything that turns a duration into text or into a RouterOS value goes through this file, so
+ * the portal and the dashboard never describe one package differently.
  *
- * Everything that turns a duration into text or into a RouterOS value goes through this file.
- * Before it existed the same thresholds were reimplemented in `captive-portal.ts` (twice, with
- * different rounding) and in three frontend components, so the portal and the admin list could
- * describe one package differently.
- *
- * A "month" is 30 days, matching the 720-hour convention the presets already used.
+ * A "month" is 30 days.
  */
 
 export const MINUTE = 1;
@@ -90,7 +84,6 @@ export function minutesToRosUptime(minutes: number): string {
   return days > 0 ? `${days}d${hh}:${mm}:00` : `${hh}:${mm}:00`;
 }
 
-/** Milliseconds, for expiry arithmetic. */
 export function minutesToMs(minutes: number): number {
   return minutes * 60_000;
 }

@@ -107,7 +107,6 @@ ul {
   font-size: 12.5px;
 }
 
-/* Shell */
 /* As Pigfarm's workspace shell: one centred container, a 16rem menu column, the content takes the rest. */
 .app {
   display: grid;
@@ -386,7 +385,6 @@ ul {
   width: 100%;
 }
 
-/* Page furniture */
 .head {
   display: flex;
   justify-content: space-between;
@@ -586,7 +584,6 @@ ul {
   align-items: stretch;
 }
 
-/* Tables that become stacked rows on a phone */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -777,7 +774,6 @@ fieldset.segs {
   }
 }
 
-/* Charts */
 .chart {
   width: 100%;
   height: auto;
@@ -866,7 +862,6 @@ fieldset.segs {
   border-radius: 4px;
 }
 
-/* Forms */
 .form {
   display: flex;
   flex-direction: column;
@@ -1030,7 +1025,6 @@ pre.csv {
   z-index: 50;
 }
 
-/* Router journey */
 .journey {
   display: flex;
   flex-direction: column;
@@ -1446,7 +1440,6 @@ pre.csv {
   margin-top: 2px;
 }
 
-/* Guest portal and printed voucher */
 .stagebar {
   display: flex;
   flex-wrap: wrap;
@@ -1960,7 +1953,6 @@ pre.csv {
   display: block;
 }
 
-/* Index of screens */
 .map {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));

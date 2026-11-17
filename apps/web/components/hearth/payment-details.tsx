@@ -37,7 +37,6 @@ export function PaymentDetails({ venueId, edit }: { venueId: string; edit: boole
   const [draft, setDraft] = useState<PaymentWay>(BLANK);
   const { busy, errors, run } = useSubmit();
   const ways = details.data?.ways ?? [];
-  // Opening the form takes the person to its first field.
   useEffect(() => {
     if (open !== null) document.getElementById("w-through")?.focus();
   }, [open]);

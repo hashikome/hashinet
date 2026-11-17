@@ -55,7 +55,6 @@ export interface ProvisionStep {
 
 const yes = (v: string | null) => v === "true" || v === "yes";
 
-/** Ensure a comment-tagged rule exists in a list menu, creating it if missing. */
 async function ensureTaggedRule(
   ros: RosClient,
   menu: string,
@@ -194,13 +193,10 @@ export async function moveRuleAheadOfHotspotRules(
   await ros.exec(`${menu}/move`, [`=numbers=${rowId(mine)}`, `=destination=${rowId(target)}`]);
 }
 
-/** Compare a row's fields against what we want; missing/differing → needs apply. */
 function matches(row: RosRow | null, expected: Record<string, string>): boolean {
   if (!row) return false;
   return Object.entries(expected).every(([key, value]) => row.get(key) === value);
 }
-
-// ── Steps ───────────────────────────────────────────────────────────────────
 
 const identity: ProvisionStep = {
   id: "identity",

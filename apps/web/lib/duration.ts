@@ -124,7 +124,6 @@ export const DURATION_BUCKETS: {
   { key: "monthly", label: "Monthly", min: MONTH, max: Infinity },
 ];
 
-/** The bucket a duration belongs to. */
 export function bucketFor(minutes: number): DurationBucketKey {
   return DURATION_BUCKETS.find((b) => minutes >= b.min && minutes < b.max)?.key ?? "monthly";
 }

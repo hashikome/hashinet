@@ -73,7 +73,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     async (membershipId: string) => {
       await api.post("/api/me/membership", { membershipId });
       const next = await load();
-      // The new workspace's own home: a business's Overview, or HashiNet's Businesses.
       if (next) router.push(homeOf(next));
     },
     [load, router],

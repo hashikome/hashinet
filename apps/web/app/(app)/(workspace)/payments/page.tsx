@@ -20,11 +20,7 @@ const METHOD: Record<RevenueSource, string> = {
 const monthName = (month: string) =>
   new Date(`${month}-15T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
-/**
- * Payments (prototype `payments`): what guests paid this business in a month. In slice 1 every
- * payment is a printed voucher a guest used, or a sale already paid; confirming a counter sale
- * comes with selling at the counter (slice 2).
- */
+/** Payments (prototype `payments`): what guests paid this business in a month, and refunds. */
 export default function PaymentsPage() {
   const { me } = useSession();
   const { all, shown, filter } = useVenues();

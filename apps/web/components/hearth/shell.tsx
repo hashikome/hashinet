@@ -275,7 +275,6 @@ export function Shell({
 }) {
   const path = usePathname();
   const [side, setSide] = useState(false);
-  // A page change closes the phone's menu.
   // biome-ignore lint/correctness/useExhaustiveDependencies: closes on every path change
   useEffect(() => setSide(false), [path]);
   const entries = nav ?? navOf(me, venues);

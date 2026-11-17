@@ -141,8 +141,6 @@ function randomPassword(length: number): string {
   return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
 }
 
-// ── QEMU ──────────────────────────────────────────────────────────────────────
-
 function qemuPid(): number | null {
   if (!existsSync(PID_FILE)) return null;
   const pid = Number(readFileSync(PID_FILE, "utf8").trim());
@@ -250,8 +248,6 @@ function run(cmd: string[]): void {
   }
 }
 
-// ── Serial console ────────────────────────────────────────────────────────────
-
 // biome-ignore lint/suspicious/noControlCharactersInRegex: strips the terminal's ANSI escape sequences
 const ANSI = /\x1b\[[0-9;?]*[A-Za-z]|\x1b[=>]|\r/g;
 
@@ -355,7 +351,7 @@ class SerialConsole {
   }
 }
 
-// ── Onboarding (docs/runbooks/router-onboarding.md) ─────────────────
+// Onboarding (docs/runbooks/router-onboarding.md).
 
 /** Step 1: reset to no defaults, as the onboarding procedure requires, then log back in. */
 async function resetToNoDefaults(serial: SerialConsole, adminPassword: string): Promise<void> {
@@ -441,7 +437,7 @@ async function bootstrap(): Promise<void> {
   if (tunnel) console.log("Start or refresh the platform side with `bun run router-sim hub up`.");
 }
 
-// ── Setup and verification through the real provisioning code ────────────────
+// Setup and verification through the real provisioning code.
 
 /** The management URL the router uses to reach "the API" in this sim. */
 function managementUrl(state: SimState): string {
@@ -663,7 +659,7 @@ async function verify(): Promise<void> {
   }
 }
 
-// ── Guest: a client on the hotspot segment, standing in for a phone ───────────
+// Guest: a client on the hotspot segment, standing in for a phone.
 
 const GUEST = {
   iso: join(SIM, "alpine-virt-3.24.3-x86_64.iso"),
@@ -1295,7 +1291,7 @@ async function guestTest(): Promise<void> {
   }
 }
 
-// ── Hub: the platform side of the management tunnel ───────────────────────────
+// Hub: the platform side of the management tunnel.
 
 function docker(cmd: string[], input: string | null = null): string {
   const result = Bun.spawnSync(["docker", ...cmd], {

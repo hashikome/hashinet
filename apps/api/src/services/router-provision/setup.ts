@@ -1,13 +1,8 @@
 /**
- * "Set up router" — the whole procedure as one call.
- *
- * Onboarding used to ask a human to press four buttons in order and to know what each result
- * meant: Probe, read the compatibility verdict, Dry run, Provision, then Provision *again* to
- * prove the run was idempotent. That is a state machine being executed by a person, and the
- * failure mode is skipping a step — most damagingly pressing Provision on a router that cannot
- * reach the backend, because `portal-files` is critical and runs last, so fourteen writes land
- * before anything complains. This is that sequence as code; docs/runbooks/router-onboarding.md Step 4 is now
- * just "press Set up router".
+ * "Set up router": the whole procedure as one call, because a person running Probe, Dry run and
+ * Provision in order skips steps. The worst skip is provisioning a router that cannot reach the
+ * backend: `portal-files` is critical and runs last, so fourteen writes land before anything
+ * complains.
  *
  * This runs the same sequence and stops at the first thing that would make the result wrong,
  * reporting it with the fix attached. Every phase shares one `RouterLogger`, so the admin UI
@@ -194,7 +189,7 @@ export async function setupRouter(
 
   logger.summary(`Setting up "${router.name}" (${router.ipAddress})${force ? " — FORCED" : ""}`);
 
-  // ── 1. Probe ──────────────────────────────────────────────────────────────
+  // Phase 1: Probe.
   {
     const t = Date.now();
     await opts.onPhase?.("probe");
@@ -235,7 +230,7 @@ export async function setupRouter(
     );
   }
 
-  // ── 2. Readiness ──────────────────────────────────────────────────────────
+  // Phase 2: Readiness.
   {
     const t = Date.now();
     await opts.onPhase?.("readiness");
@@ -307,7 +302,7 @@ export async function setupRouter(
     }
   }
 
-  // ── 3. Dry run ────────────────────────────────────────────────────────────
+  // Phase 3: Dry run.
   {
     const t = Date.now();
     await opts.onPhase?.("dry-run");
@@ -339,7 +334,7 @@ export async function setupRouter(
     );
   }
 
-  // ── 4. Provision ──────────────────────────────────────────────────────────
+  // Phase 4: Provision.
   {
     const t = Date.now();
     await opts.onPhase?.("provision");
@@ -374,7 +369,7 @@ export async function setupRouter(
     );
   }
 
-  // ── 5. Verify idempotency ─────────────────────────────────────────────────
+  // Phase 5: Verify idempotency.
   {
     const t = Date.now();
     await opts.onPhase?.("verify");
@@ -406,7 +401,7 @@ export async function setupRouter(
     record("verify", "pass", "Re-checked every step: all already correct.", t);
   }
 
-  // ── 6. Self-test ──────────────────────────────────────────────────────────
+  // Phase 6: Self-test.
   // Phases 1-5 prove the configuration is what we asked for. This asks the different and more
   // useful question: would a paying customer actually get online?
   {

@@ -8,7 +8,6 @@ export function ipv4ToInt(ip: string): number | null {
   return ((a << 24) | (b << 16) | (c << 8) | d) >>> 0;
 }
 
-/** The dotted quad for an unsigned 32-bit integer. */
 export function intToIpv4(value: number): string {
   return [(value >>> 24) & 255, (value >>> 16) & 255, (value >>> 8) & 255, value & 255].join(".");
 }

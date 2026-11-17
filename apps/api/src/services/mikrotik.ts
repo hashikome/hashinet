@@ -264,7 +264,6 @@ export async function createHotspotUser(
   if ((caps?.userRateLimit ?? true) && rateLimit) {
     params.push(`=rate-limit=${rateLimit}`);
   }
-  // Previously captured and silently dropped — device limits never reached the router.
   if ((caps?.userSharedUsers ?? true) && opts.deviceLimit > 0) {
     params.push(`=shared-users=${opts.deviceLimit}`);
   }
@@ -327,15 +326,10 @@ export async function ensureHotspotUserProfileAssigned(
 }
 
 /*
- * `setHotspotUserRateLimit` used to live here and drove throttling. It is gone deliberately.
- *
- * It wrote `=rate-limit=` onto `/ip hotspot user`, which the hAP lite (smips, 7.23.2) rejects with
- * `unknown parameter` (§13.7) — the same reason `createHotspotUser` puts limits on a profile. So it
- * could not work on the hardware this system runs on, and because the caller only recorded success
- * after the write returned, it re-sent the rejected command on every 5s poll forever.
- *
- * Throttling now swaps the voucher between `wbs-pkg-<id>` and `wbs-pkg-<id>-thr` via
- * `ensureHotspotUserProfileAssigned`. Do not reintroduce a per-user rate-limit write for it.
+ * Throttling swaps the voucher between `wbs-pkg-<id>` and `wbs-pkg-<id>-thr` via
+ * `ensureHotspotUserProfileAssigned`, never a per-user `=rate-limit=` write: the hAP lite (smips,
+ * 7.23.2) rejects that with `unknown parameter` (§13.7), and a poller that records success only
+ * after the write returns re-sends it every 5s forever.
  */
 
 export async function kickHotspotSession(conn: MikroTikConn, code: string): Promise<void> {

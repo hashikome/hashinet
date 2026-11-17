@@ -61,8 +61,6 @@ export const DEFAULT_HOTSPOT_NETWORK = "10.5.50.0/24";
 const DEFAULT_NETWORK = DEFAULT_HOTSPOT_NETWORK;
 export const DEFAULT_DNS = "8.8.8.8,8.8.4.4";
 
-// ── IPv4 helpers ────────────────────────────────────────────────────────────
-
 function ipToInt(ip: string): number {
   const value = ipv4ToInt(ip);
   if (value === null) throw new Error(`Invalid IPv4 address: ${ip}`);

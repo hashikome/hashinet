@@ -1,13 +1,9 @@
 /**
- * Capability probe — ask a MikroTik what it actually is and what it can actually do,
- * before we try to configure it or push users to it.
- *
- * This exists because the system previously assumed every board behaved like the one it
- * was developed against. Two failures came from that assumption:
- *   - RouterOS 7 on smips (hAP lite) ships no hotspot at all, discovered only via a flood
- *     of "no such command or directory (hotspot)" errors from the sync daemons.
- *   - `=shared-users=` / `=rate-limit=` are rejected on RouterOS 6 hAP Lite class boards,
- *     previously handled by catching "unknown parameter" and retrying.
+ * Capability probe: ask a MikroTik what it is and what it can do before configuring it, because
+ * boards differ:
+ *   - RouterOS 7 on smips (hAP lite) ships no hotspot at all, which otherwise shows only as a
+ *     flood of "no such command or directory (hotspot)" errors from the sync daemons.
+ *   - `=shared-users=` / `=rate-limit=` are rejected on RouterOS 6 hAP Lite class boards.
  *
  * Probing is strictly read-only. It never writes to the router.
  */

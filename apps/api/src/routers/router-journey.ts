@@ -35,7 +35,6 @@ function runningPhases(current: string | null): RouterSetupPhase[] {
   }));
 }
 
-/** A router's condition, from its stage and what it last reported. */
 export function conditionOf(stage: RouterStage, status: string): RouterCondition {
   if (stage !== "serving") return "setting-up";
   return status === "online" ? "serving" : status === "error" ? "needs-attention" : "offline";

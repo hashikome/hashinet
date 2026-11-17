@@ -334,7 +334,6 @@ export function signInMethodOf(path: string | undefined): SignInMethod {
 
 const TRUST_DEVICE_COOKIE = "trust_device";
 
-/** The request headers with any "trust this device" cookie removed. */
 function withoutTrustCookie(headers: HeadersInit | null): Headers {
   const copy = new Headers(headers ?? {});
   const cookie = copy.get("cookie");

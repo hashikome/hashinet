@@ -295,7 +295,6 @@ export class LiveMonitor {
     for (const client of clients) {
       const session = sessionByCode.get(client.user);
       const pkg = session?.package ?? null;
-      // No throttle configured for this package.
       if (!session || !pkg || pkg.throttledDownloadMbps === null) continue;
 
       const bytesUsed = client.bytesIn + client.bytesOut;

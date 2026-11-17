@@ -7,7 +7,6 @@ import {
 } from "@simplewebauthn/browser";
 import { api } from "./api";
 
-/** Whether this browser can use passkeys at all. */
 export const passkeysSupported = () =>
   typeof window !== "undefined" && typeof window.PublicKeyCredential === "function";
 

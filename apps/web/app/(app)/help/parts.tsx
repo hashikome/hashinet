@@ -8,7 +8,6 @@ import type { Guide, Question } from "@/lib/help";
 import { homeOf } from "@/lib/nav";
 import { useSession } from "@/lib/session";
 
-/** Back to where the reader works. */
 export function BackHome() {
   const { me } = useSession();
   return (

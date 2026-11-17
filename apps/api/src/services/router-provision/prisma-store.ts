@@ -5,7 +5,6 @@ import type { RouterSync } from "../router-sync.js";
 import type { BackendSettings } from "./context.js";
 import type { RouterStore } from "./store.js";
 
-/** The router store on PostgreSQL. */
 export class PrismaRouterStore implements RouterStore {
   constructor(
     private readonly db: PrismaClient,

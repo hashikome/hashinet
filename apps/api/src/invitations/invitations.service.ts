@@ -58,8 +58,7 @@ const invitationGone = () =>
 /**
  * Invitations are the only way in (ADR-0011): issuing one creates nothing but the invitation,
  * its token's digest, the email and the audit row; accepting creates the person, the business,
- * its first venue, its packages and the owner's membership, in one transaction. Slice 1 invites
- * a new business's owner; business and platform roles follow in their slices.
+ * its first venue, its packages and the owner's membership, in one transaction.
  */
 @Injectable()
 export class InvitationsService {
@@ -374,7 +373,6 @@ export class InvitationsService {
 /** An invitation to start a business: the only kind these routes resend or revoke. */
 const NEW_BUSINESS = { scope: "business", role: "owner", businessId: null } as const;
 
-/** An invitation as the pages list it. */
 export function invitationRecordOf(row: {
   id: string;
   email: string;

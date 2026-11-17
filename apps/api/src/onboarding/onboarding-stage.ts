@@ -2,7 +2,6 @@ import type { OnboardingStage } from "@hashinet/types";
 import type { Prisma } from "../generated/prisma/client.js";
 import { JOURNEY_SELECT, routerCondition } from "../routers/router-journey.js";
 
-/** The facts a venue's stage follows from. */
 export interface OnboardingFacts {
   preferredAt: Date | null;
   confirmedAt: Date | null;
@@ -36,7 +35,6 @@ export const VENUE_FACTS = {
 
 export type VenueFacts = Prisma.VenueGetPayload<{ include: typeof VENUE_FACTS }>;
 
-/** The agreed lines together. */
 export const totalOf = (lines: { amountTsh: number }[]) =>
   lines.reduce((sum, l) => sum + l.amountTsh, 0);
 

@@ -40,7 +40,7 @@ export class PackagesService {
 
   /**
    * Every package the reader's business has, its price and where it is sold, as a CSV file
-   * (ADR-0011, 10; business-scopes M4). A package assigned to no venue is sold at every venue.
+   * (ADR-0011, 10). A package assigned to no venue is sold at every venue.
    * Platform staff reach every business, so their file names each package's business.
    */
   async exportCsv(staff: Principal): Promise<string> {

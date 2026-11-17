@@ -166,7 +166,7 @@ export async function provisionRouter(
       `${dryRun ? " — no changes will be written" : ""}`,
   );
 
-  // ── Gate: probe before touching anything ──────────────────────────────────
+  // Probe before touching anything.
   // A capability the self-test measured as unsupported must survive re-probing, or the dialect
   // reverts to the version guess and this run would apply per-user limits the board rejects.
   const profile: RouterProfile = await probeRouterMerged(creds, logger, router.capabilities);

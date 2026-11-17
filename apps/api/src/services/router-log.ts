@@ -40,7 +40,6 @@ export interface RouterLogEvent {
 
 type Subscriber = (event: RouterLogEvent) => void;
 
-/** Process-wide subscribers. The WS bridge attaches here in Phase 2. */
 const globalSubscribers = new Set<Subscriber>();
 
 export function onRouterLog(cb: Subscriber): () => void {

@@ -14,7 +14,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-/** src/services/router-provision → backend/mikrotik-files */
 const FILES_DIR = join(HERE, "..", "..", "..", "mikrotik-files");
 
 /**

@@ -1,12 +1,10 @@
 /**
- * Post-provision proof — "is this hotspot actually serving customers?"
+ * Post-provision proof: "is this hotspot actually serving customers?"
  *
- * Onboarding used to hand you a five-item checklist to work through with a phone, under the
- * heading "do not trust the green ticks alone". That suspicion was right: every provisioning step
- * verifies its own write, so a green run only proves the configuration reads back as asked — not
- * that a device can associate, get an address, and be let online.
+ * Every provisioning step verifies its own write, so a green run only proves the configuration
+ * reads back as asked, not that a device can associate, get an address, and be let online.
  *
- * Most of that checklist is machine-checkable, and this checks it. What is left needs a real
+ * Most of that is machine-checkable, and this checks it. What is left needs a real
  * radio and a real browser, so it is returned as `manual` rather than quietly omitted.
  *
  * The important one is the **voucher round-trip**: creating a hotspot user, reading it back and
@@ -65,8 +63,6 @@ const MANUAL_CHECKS = [
   "Redeem a real voucher on a phone and confirm the portal says you are online and the phone can browse.",
   "Confirm the countdown and data-remaining display tick down.",
 ];
-
-// ── Checks ──────────────────────────────────────────────────────────────────
 
 async function hotspotServerCheck(ros: RosClient, plan: HotspotPlan): Promise<ReadinessCheck> {
   const base = { id: "hotspot-server-running", title: "Hotspot server is running" };
@@ -619,8 +615,6 @@ async function voucherRoundTripCheck(
     }
   }
 }
-
-// ── Runner ──────────────────────────────────────────────────────────────────
 
 export async function verifyRouter(ros: RosClient, input: VerifyInput): Promise<VerifyReport> {
   const { routerId, dialect, plan, endpoints, includeWriteTest = true } = input;

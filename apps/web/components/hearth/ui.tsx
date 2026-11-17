@@ -364,7 +364,6 @@ export function OtpBoxes({
   );
 }
 
-/** Whether all six digits are in. */
 export const otpComplete = (value: string) => /^\d{6}$/.test(value);
 
 /** A row of settings: what it is and its state on the left, its action on the right. */
