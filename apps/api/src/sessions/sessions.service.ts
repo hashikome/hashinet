@@ -39,6 +39,8 @@ export class SessionsService {
 
   async list(staff: Principal, query: z.infer<typeof sessionQuery>): Promise<SessionList> {
     const search = query.search === null || query.search === "" ? null : query.search;
+    // A code is read off a card in groups ("4827 1693"): its digits find it.
+    const digits = search?.replace(/\s/g, "") ?? "";
     const where: WifiSessionWhereInput = {
       ...sessionScope(staff),
       ...(query.status === null ? {} : { status: query.status }),
@@ -51,6 +53,7 @@ export class SessionsService {
               { macAddress: { contains: search, mode: "insensitive" } },
               { ipAddress: { contains: search } },
               { deviceName: { contains: search, mode: "insensitive" } },
+              ...(/^\d+$/.test(digits) ? [{ voucher: { code: { contains: digits } } }] : []),
             ],
           }),
     };

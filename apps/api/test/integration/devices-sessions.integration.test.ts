@@ -273,8 +273,8 @@ describe("sessions", () => {
         },
       });
     };
-    const later = await live("END-40", 40);
-    const soon = await live("END-05", 5);
+    const later = await live("100000000040", 40);
+    const soon = await live("100000000005", 5);
     const page = (await c.request("GET", "/api/sessions?status=connected&order=ending&limit=2"))
       .body as { sessions: { id: string; voucherExpiresAt: string | null }[]; nextBefore: unknown };
     expect(page.sessions.map((s) => s.id)).toEqual([soon.id, later.id]);
@@ -285,6 +285,11 @@ describe("sessions", () => {
     };
     // The world's live session holds a voucher not yet started: no end, so last.
     expect(all.sessions.map((s) => s.id)).toEqual([soon.id, later.id, w.atTheirs.id]);
+    // A code read off its card in groups finds its session.
+    const byCode = (
+      await c.request("GET", `/api/sessions?search=${encodeURIComponent("0000 0005")}`)
+    ).body as { sessions: { id: string }[] };
+    expect(byCode.sessions.map((s) => s.id)).toEqual([soon.id]);
   });
 
   test("terminating ends a connected session once, within the manager's venues", async () => {

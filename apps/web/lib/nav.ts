@@ -64,7 +64,10 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
       { label: "Platform", icon: "platform", links: [{ href: "/team", label: "Team" }] },
     ];
   }
-  const top: NavLink[] = [{ href: "/overview", label: "Overview", icon: "overview" }, ...issues];
+  const top: NavLink[] = [{ href: "/overview", label: "Overview", icon: "overview" }];
+  if (can("session.read"))
+    top.push({ href: "/sessions", label: "Live sessions", icon: "sessions" });
+  top.push(...issues);
   if (can("voucher.read")) top.push({ href: "/vouchers", label: "Vouchers", icon: "vouchers" });
   if (can("payment.read")) top.push({ href: "/payments", label: "Payments", icon: "payments" });
   const entries: NavEntry[] = [...top];
