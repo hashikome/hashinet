@@ -194,6 +194,61 @@ describe("blocking is a business's own", () => {
       { businessId: w.theirs.businessId },
     ]);
   });
+
+  test("removing a device forgets it for this business alone: another's block and history stay", async () => {
+    const w = await world();
+    const elsewhere = await t.db.business.create({
+      data: { name: "Elsewhere", region: "Arusha", area: "Njiro" },
+    });
+    const far = await t.db.venue.create({
+      data: { businessId: elsewhere.id, name: "Far", region: "Arusha", area: "Njiro" },
+    });
+    const there = await t.db.wifiSession.create({
+      data: { venueId: far.id, deviceId: w.phone.id, macAddress: "AA:BB", status: "disconnected" },
+    });
+    const card = await t.db.voucher.create({
+      data: {
+        venueId: far.id,
+        code: "200000000001",
+        status: "active",
+        durationMinutes: 60,
+        priceTsh: "1000",
+      },
+    });
+    await t.db.voucherDevice.create({ data: { voucherId: card.id, deviceId: w.phone.id } });
+    await t.db.deviceBlock.create({ data: { businessId: elsewhere.id, deviceId: w.phone.id } });
+
+    const c = await owner();
+    expect((await c.request("DELETE", `/api/devices/${w.phone.id}`)).status).toBe(204);
+    // Gone from this business: its sessions here are unlinked, and its list no longer has it.
+    expect(
+      (await t.db.wifiSession.findUniqueOrThrow({ where: { id: w.atTheirs.id } })).deviceId,
+    ).toBeNull();
+    const ids = ((await c.request("GET", "/api/devices")).body as { devices: { id: string }[] })
+      .devices;
+    expect(ids.map((d) => d.id)).not.toContain(w.phone.id);
+    // The other business still has it, blocked, with its session and its voucher's place.
+    expect(await t.db.deviceBlock.count({ where: { businessId: elsewhere.id } })).toBe(1);
+    expect((await t.db.wifiSession.findUniqueOrThrow({ where: { id: there.id } })).deviceId).toBe(
+      w.phone.id,
+    );
+    expect(await t.db.voucherDevice.count({ where: { voucherId: card.id } })).toBe(1);
+
+    // Once no business has it, the device itself goes.
+    await t.db.wifiSession.delete({ where: { id: there.id } });
+    await t.db.voucherDevice.deleteMany({});
+    await t.db.deviceBlock.deleteMany({});
+    await t.db.wifiSession.create({
+      data: {
+        venueId: w.mine.id,
+        deviceId: w.phone.id,
+        macAddress: "AA:BB",
+        status: "disconnected",
+      },
+    });
+    expect((await c.request("DELETE", `/api/devices/${w.phone.id}`)).status).toBe(204);
+    expect(await t.db.device.count({ where: { id: w.phone.id } })).toBe(0);
+  });
 });
 
 describe("releasing a voucher", () => {

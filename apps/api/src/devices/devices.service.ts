@@ -127,10 +127,44 @@ export class DevicesService {
     return this.get(staff, id);
   }
 
-  /** Forgets a device (a MAC address is personal data); its sessions stay, unlinked. */
+  /**
+   * Forgets a device for the reader's business (a MAC address is personal data): its sessions,
+   * payments and vouchers there stay, unlinked, and its block there goes. Another business that
+   * saw it keeps it, blocked or not; the device itself goes once no business refers to it.
+   */
   async remove(staff: Principal, id: string): Promise<void> {
     await this.get(staff, id);
-    await this.db.device.delete({ where: { id } });
+    const { businessId } = staff;
+    if (businessId === null) {
+      throw new ForbiddenException(apiError("FORBIDDEN", "Only a business removes a device."));
+    }
+    const here = { venue: { businessId } };
+    await this.db.$transaction(async (tx) => {
+      await tx.wifiSession.updateMany({
+        where: { deviceId: id, ...here },
+        data: { deviceId: null },
+      });
+      await tx.payment.updateMany({ where: { deviceId: id, ...here }, data: { deviceId: null } });
+      await tx.voucher.updateMany({
+        where: { redeemedByDeviceId: id, ...here },
+        data: { redeemedByDeviceId: null },
+      });
+      await tx.voucherDevice.deleteMany({ where: { deviceId: id, voucher: here } });
+      await tx.deviceBlock.deleteMany({ where: { deviceId: id, businessId } });
+      const elsewhere = await tx.device.count({
+        where: {
+          id,
+          OR: [
+            { sessions: { some: {} } },
+            { payments: { some: {} } },
+            { redeemedVouchers: { some: {} } },
+            { vouchers: { some: {} } },
+            { blocks: { some: {} } },
+          ],
+        },
+      });
+      if (elsewhere === 0) await tx.device.delete({ where: { id } });
+    });
     await this.record(staff, "device.delete", id);
   }
 
