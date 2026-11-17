@@ -253,12 +253,23 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     only. Ending a session was already there. The switch PIN is slice 7. Tests:
     `devices-sessions.integration.test.ts`, the guest and payments block tests. Verify passes;
     integration 164/164.
-  - [ ] (g) The screens, each built with design-build and audited at 390, 768 and 1440, light and
-    dark: Sell a voucher (package rows, the centred check with Paid by and Pay to, Confirm sale and
-    Change package, Voucher sold with Sell another, Send, Print); the operator's Today with their
-    sales and cash to hand over; Vouchers with Refund and Release; the venue's Payment details;
-    Payments with Sold by; Live sessions; Devices; Team and Invitations for business roles; the Audit
-    log; Help for the venue manager and operator. Print vouchers and its route go.
+  - [x] (2026-11-18) (g) The screens, each built with design-build and audited at 390, 768 and
+    1440, light and dark: Sell a voucher (package rows, the centred check with Paid by and Pay to,
+    Confirm sale and Change package, Voucher sold with Sell another, Send, Print), answering at once
+    while the router is told in the background, from a Sell tab on the phone's tab bar; the
+    operator's Today with their sales and cash to hand over; Vouchers with Refund and Release; the
+    venue's Payment details; Payments with Sold by and refunds as their own rows; Live sessions,
+    soonest to end first, found by device, MAC address or a voucher's digits, with End session;
+    Devices with Block, Unblock and Remove; Team and invitations for business roles; the Audit log
+    filtered by who, venue, action and business day, naming targets only within the row's
+    business; Help for every business role. The API gained what the screens needed: sessions
+    `order=ending`, `voucherExpiresAt` and code search; payments received `by=me` and `day`; the
+    audit log's filters and names. Removing a device forgets it for the remover's business alone
+    (Decision Log). Walked in the browser as the owner and an operator invited through Team: sold
+    by cash and mobile money, refunded, released, ended a session, blocked, unblocked and removed
+    devices, filtered the Audit log. A sweep of 16 routes at the three widths in both themes found
+    no overflow, unnamed control, small target or contrast failure. Verify passes; integration
+    167/167.
   - [ ] (h) finish-work on the branch, then PRODUCT.md, the design docs and the handbook say the
     sale model (they still describe printed vouchers).
   - [ ] (i) Release and live acceptance: Paul's home invites an operator, who sells a voucher by
@@ -464,6 +475,13 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   limits, and a real-phone test. Slice 2 releases a voucher by clearing its devices and sessions,
   which works with today's sign-in.
   Date/Author: 2026-11-14 / owner.
+- Decision: removing a device forgets it for the remover's business alone; the device row goes
+  only once no business refers to it.
+  Rationale: a device is shared by every business that saw it, and its blocks and voucher places
+  cascade with it, so deleting the row let one business unblock a device at another's venues and
+  unlink their history. Found building the Devices screen in (g); test in
+  `devices-sessions.integration.test.ts`.
+  Date/Author: 2026-11-18 / Claude.
 - Decision: a venue manager's venue-only packages move from slice 2 to slice 5.
   Rationale: they need a package's own venue and a change to the on-sale rule (a venue with no
   assignments sells every active package, so a venue-only package would leak there), with their own
