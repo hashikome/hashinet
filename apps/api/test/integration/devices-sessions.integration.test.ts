@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
+import { RouterSync } from "../../src/services/router-sync.js";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, testBusinessId } from "./people.js";
@@ -241,6 +242,7 @@ describe("blocking is a business's own", () => {
     await t.db.deviceBlock.create({ data: { businessId: elsewhere.id, deviceId: w.phone.id } });
 
     const c = await owner();
+    const lifted = spyOn(api.app.get(RouterSync), "setDeviceBlocked").mockResolvedValue();
     expect((await c.request("DELETE", `/api/devices/${w.phone.id}`)).status).toBe(204);
     // Gone from this business: its sessions here are unlinked, and its list no longer has it.
     expect(
@@ -256,6 +258,9 @@ describe("blocking is a business's own", () => {
     );
     expect(await t.db.voucherDevice.count({ where: { voucherId: card.id } })).toBe(1);
 
+    // Its block here is lifted on this business's routers; it had none here, so nothing was sent.
+    expect(lifted).not.toHaveBeenCalled();
+
     // Once no business has it, the device itself goes.
     await t.db.wifiSession.delete({ where: { id: there.id } });
     await t.db.voucherDevice.deleteMany({});
@@ -268,8 +273,14 @@ describe("blocking is a business's own", () => {
         status: "disconnected",
       },
     });
+    await t.db.deviceBlock.create({
+      data: { businessId: w.mine.businessId, deviceId: w.phone.id },
+    });
     expect((await c.request("DELETE", `/api/devices/${w.phone.id}`)).status).toBe(204);
     expect(await t.db.device.count({ where: { id: w.phone.id } })).toBe(0);
+    // Removing a blocked device lifts its block on the business's routers.
+    expect(lifted).toHaveBeenCalledWith(w.mine.businessId, w.phone.macAddress, false);
+    lifted.mockRestore();
   });
 });
 

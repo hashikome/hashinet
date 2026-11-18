@@ -72,7 +72,19 @@ export class TeamService {
   async list(staff: Principal): Promise<TeamList> {
     const [members, invitations] = await Promise.all([
       this.db.membership.findMany({
-        where: { ...workspace(staff), status: "active" },
+        where: {
+          ...workspace(staff),
+          status: "active",
+          // A venue manager sees themselves and the people at their venues.
+          ...(staff.venueIds === null
+            ? {}
+            : {
+                OR: [
+                  { id: staff.membershipId },
+                  { venues: { some: { venueId: { in: staff.venueIds } } } },
+                ],
+              }),
+        },
         include: {
           user: { select: { name: true, email: true } },
           venues: { select: { venueId: true } },
@@ -101,7 +113,10 @@ export class TeamService {
     };
   }
 
-  /** Invites someone to a role below the inviter's. A pending invitation to the same email is replaced. */
+  /**
+   * Invites someone to a role below the inviter's. A pending invitation to the same email is
+   * replaced, when it is one the inviter could revoke.
+   */
   async invite(
     staff: Principal,
     input: z.infer<typeof inviteMemberInput>,
@@ -113,6 +128,16 @@ export class TeamService {
     });
     if (already) {
       throw new ConflictException(apiError("CONFLICT", "This person is already on this team."));
+    }
+    // A new invitation replaces a pending one only where the inviter could revoke that one.
+    const earlier = await this.db.invitation.findMany({
+      where: { ...pending(), email: input.email, ...workspace(staff) },
+      select: { role: true, venueIds: true },
+    });
+    if (earlier.some((i) => !outranks(staff.role, i.role) || !reaches(staff, i.venueIds))) {
+      throw new ConflictException(
+        apiError("CONFLICT", "Someone above you has already invited this person."),
+      );
     }
     const { token, digest } = newInvitationToken();
     const id = await this.db.$transaction(async (tx) => {

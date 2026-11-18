@@ -148,3 +148,26 @@ describe("a router that stays unreachable", () => {
     expect((await t.db.router.findUniqueOrThrow({ where: { id: router.id } })).failedSyncs).toBe(3);
   }, 15_000);
 });
+
+describe("pushing one voucher", () => {
+  test("a refunded voucher is never put back on a router", async () => {
+    const access = new RouterAccess(new SecretBox(randomBytes(32)), 1, 1);
+    const sync = new RouterSync(t.db, access, new AuditLog(t.db));
+    const { venue } = await venueWithVouchers([
+      { code: "300000000002", status: "unused", expiresIn: HOUR },
+    ]);
+    await t.db.router.create({
+      data: {
+        venueId: venue.id,
+        name: "Lobby",
+        ipAddress: "127.0.0.1",
+        apiUsername: "hashinet",
+        apiPasswordEncrypted: access.sealPassword("secret"),
+      },
+    });
+    await t.db.voucher.update({ where: { code: "300000000002" }, data: { status: "refunded" } });
+
+    const outcome = await sync.ensureVoucher(venue.id, "300000000002", null);
+    expect(outcome).toMatchObject({ attempted: 0, succeeded: 0 });
+  });
+});

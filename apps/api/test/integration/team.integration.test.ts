@@ -292,12 +292,37 @@ describe("a business's team", () => {
       role: "venue_operator",
       venueIds: [kijiwe.id],
     });
+    const owner = await member("owner", "neema@example.com");
     const listed = await team(c);
-    const manageable = (id: string) =>
-      listed.members.find((m) => m.membershipId === id)?.manageable;
-    expect(manageable(atLodge.membershipId)).toBe(false);
-    expect(manageable(atKijiwe.membershipId)).toBe(true);
+    // They see themselves and the people at their venues: not the Lodge's, nor the owner.
+    expect(listed.members.map((m) => m.email).sort()).toEqual([
+      "daudi@example.com",
+      "musa@example.com",
+    ]);
+    expect(listed.members.find((m) => m.membershipId === atKijiwe.membershipId)?.manageable).toBe(
+      true,
+    );
     expect((await c.request("DELETE", `/api/team/${atLodge.membershipId}`)).status).toBe(403);
+    // An owner's pending invitation is not theirs to replace by inviting the same person.
+    const pick = (email: string) =>
+      t.db.invitation.findFirstOrThrow({ where: { email, revokedAt: null, acceptedAt: null } });
+    expect(
+      (
+        await owner.c.request("POST", "/api/team/invitations", {
+          email: "rehema@example.com",
+          role: "business_manager",
+          venueIds: [],
+        })
+      ).status,
+    ).toBe(201);
+    const replaced = await c.request("POST", "/api/team/invitations", {
+      email: "rehema@example.com",
+      role: "venue_operator",
+      venueIds: [kijiwe.id],
+    });
+    expect(replaced.status).toBe(409);
+    expect((await pick("rehema@example.com")).role).toBe("business_manager");
+
     // Moving an operator to a venue the manager doesn't run is refused.
     expect(
       (

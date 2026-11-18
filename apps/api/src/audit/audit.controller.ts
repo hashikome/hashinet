@@ -168,7 +168,16 @@ function labelOf(
 function scopeOf(principal: Principal): AuditLogWhereInput {
   if (principal.scope === "platform") return {};
   if (principal.venueIds === null) return { businessId: principal.businessId };
-  return { businessId: principal.businessId, venueId: { in: principal.venueIds } };
+  // A venue manager's venues, and what people who work there did for the whole business, such as
+  // blocking a device or inviting someone.
+  const theirs = { in: principal.venueIds };
+  return {
+    businessId: principal.businessId,
+    OR: [
+      { venueId: theirs },
+      { venueId: null, actorMembership: { venues: { some: { venueId: theirs } } } },
+    ],
+  };
 }
 
 function changeOf(value: unknown): AuditEntry["change"] {

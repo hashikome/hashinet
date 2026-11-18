@@ -133,13 +133,13 @@ export class DevicesService {
    * saw it keeps it, blocked or not; the device itself goes once no business refers to it.
    */
   async remove(staff: Principal, id: string): Promise<void> {
-    await this.get(staff, id);
+    const device = await this.get(staff, id);
     const { businessId } = staff;
     if (businessId === null) {
       throw new ForbiddenException(apiError("FORBIDDEN", "Only a business removes a device."));
     }
     const here = { venue: { businessId } };
-    await this.db.$transaction(async (tx) => {
+    const unblocked = await this.db.$transaction(async (tx) => {
       await tx.wifiSession.updateMany({
         where: { deviceId: id, ...here },
         data: { deviceId: null },
@@ -150,7 +150,7 @@ export class DevicesService {
         data: { redeemedByDeviceId: null },
       });
       await tx.voucherDevice.deleteMany({ where: { deviceId: id, voucher: here } });
-      await tx.deviceBlock.deleteMany({ where: { deviceId: id, businessId } });
+      const block = await tx.deviceBlock.deleteMany({ where: { deviceId: id, businessId } });
       const elsewhere = await tx.device.count({
         where: {
           id,
@@ -164,7 +164,12 @@ export class DevicesService {
         },
       });
       if (elsewhere === 0) await tx.device.delete({ where: { id } });
+      return block.count > 0;
     });
+    // Its block goes from the business's routers too, or a forgotten device stays refused there.
+    if (unblocked) {
+      void this.sync.setDeviceBlocked(businessId, device.macAddress, false).catch(captureFailure);
+    }
     await this.record(staff, "device.delete", id);
   }
 

@@ -35,6 +35,7 @@ const logger = getLogger(["hashinet", "router-sync"]);
 /** Statuses whose vouchers must exist on the venue's routers. pending_activation: redeemed, still
  * waiting on a router to confirm, so a new router must receive them too. */
 const LIVE_STATUSES = ["unused", "pending_activation", "active"] as const;
+const isLive = (status: string) => (LIVE_STATUSES as readonly string[]).includes(status);
 
 /** Outcome of pushing to every router in a venue — callers must be able to see failures. */
 export interface SyncOutcome {
@@ -249,7 +250,7 @@ export class RouterSync {
           },
         );
         outcome.succeeded++;
-        await this.worked(router.id);
+        await this.worked(router);
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
         outcome.failures.push({ router: router.name, error });
@@ -359,6 +360,13 @@ export class RouterSync {
         failures: [{ router: "(none)", error: "The voucher has no package" }],
       };
     }
+    if (!isLive(voucher.status)) {
+      return {
+        attempted: 0,
+        succeeded: 0,
+        failures: [{ router: "(none)", error: "The voucher no longer works" }],
+      };
+    }
 
     const outcome = emptyOutcome();
     for (const router of venueRouters) {
@@ -399,13 +407,16 @@ export class RouterSync {
           },
         );
         outcome.succeeded++;
-        await this.worked(router.id);
+        await this.worked(router);
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
         outcome.failures.push({ router: router.name, error });
         await this.failed(router, "router.sync_failed", null);
       }
     }
+    // A refund can land while this pushes, after it took the code off: take it off again.
+    const now = await this.db.voucher.findUnique({ where: { code }, select: { status: true } });
+    if (now !== null && !isLive(now.status)) await this.removeVouchers(venueId, [code]);
     return outcome;
   }
 
@@ -434,11 +445,9 @@ export class RouterSync {
   }
 
   /** A sync or push that worked ends the run of failures. */
-  private async worked(routerId: string): Promise<void> {
-    await this.db.router.updateMany({
-      where: { id: routerId, failedSyncs: { gt: 0 } },
-      data: { failedSyncs: 0 },
-    });
+  private async worked(router: { id: string; failedSyncs: number }): Promise<void> {
+    if (router.failedSyncs === 0) return;
+    await this.db.router.update({ where: { id: router.id }, data: { failedSyncs: 0 } });
   }
 
   /** Ends a voucher's active hotspot session without removing it. Best effort. */
@@ -529,10 +538,9 @@ export class RouterSync {
   }
 
   /**
-   * Blocks or unblocks a device on every router, since it can turn up at any venue. A router
-   * that misses this gets it from `syncRouter`.
+   * Blocks or unblocks a device at every router of one business, the one that blocked it. A router
+   * that misses a block gets it from `syncRouter`.
    */
-  /** Blocks or unblocks a device at every router of one business, the one that blocked it. */
   async setDeviceBlocked(businessId: string, mac: string, blocked: boolean): Promise<void> {
     for (const router of await this.db.router.findMany({ where: { venue: { businessId } } })) {
       const creds = this.access.credentials(router);

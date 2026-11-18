@@ -93,5 +93,31 @@ describe("the audit log", () => {
     const theirs = (await manager.request("GET", `/api/audit?venueId=${pwani.id}`))
       .body as AuditList;
     expect(theirs.entries).toEqual([]);
+
+    // What people at their venues did for the whole business is theirs too; the owner's is not.
+    const musa = await businessMember(t.db, {
+      email: "musa@example.com",
+      name: "Musa Lyimo",
+      role: "venue_operator",
+      venueIds: [kijiwe.id],
+    });
+    const business = (actor: string) =>
+      t.db.auditLog.create({
+        data: {
+          actorMembershipId: actor,
+          businessId,
+          venueId: null,
+          action: "device.block",
+          category: "change",
+          targetType: "device",
+          targetId: null,
+          outcome: "success",
+        },
+      });
+    await business(musa.membershipId);
+    await business(neema.membershipId);
+    const blocks = (await manager.request("GET", "/api/audit?action=device.block"))
+      .body as AuditList;
+    expect(blocks.entries.map((e) => e.actor?.name)).toEqual(["Musa Lyimo"]);
   });
 });

@@ -17,6 +17,24 @@ const voucherNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That voucher does not exist."));
 
 /** Vouchers in the staff member's venues; admins also see ones whose venue is gone. */
+const LIST_INCLUDE = {
+  package: { select: { name: true } },
+  venue: { select: { name: true } },
+} as const;
+
+function listItem(
+  row: Parameters<typeof voucherRecord>[0] & {
+    package: { name: string } | null;
+    venue: { name: string } | null;
+  },
+): VoucherListItem {
+  return {
+    ...voucherRecord(row),
+    packageName: row.package?.name ?? null,
+    venueName: row.venue?.name ?? null,
+  };
+}
+
 function inScope(staff: Principal) {
   return staff.scope === "platform" ? {} : { venue: { is: venueScope(staff) } };
 }
@@ -44,18 +62,14 @@ export class VouchersService {
     };
     const rows = await this.db.voucher.findMany({
       where,
-      include: { package: { select: { name: true } }, venue: { select: { name: true } } },
+      include: LIST_INCLUDE,
       orderBy: { id: "desc" },
       take: query.limit + 1,
     });
     const page = rows.slice(0, query.limit);
     await this.recordRead(staff, page.length, query.venueId);
     return {
-      vouchers: page.map((row) => ({
-        ...voucherRecord(row),
-        packageName: row.package?.name ?? null,
-        venueName: row.venue?.name ?? null,
-      })),
+      vouchers: page.map(listItem),
       nextBefore: rows.length > query.limit ? (page.at(-1)?.id ?? null) : null,
     };
   }
@@ -120,15 +134,9 @@ export class VouchersService {
     if (voucher.venueId !== null) {
       void this.sync.removeVouchers(voucher.venueId, [voucher.code]).catch(captureFailure);
     }
-    const row = await this.db.voucher.findUniqueOrThrow({
-      where: { id },
-      include: { package: { select: { name: true } }, venue: { select: { name: true } } },
-    });
-    return {
-      ...voucherRecord(row),
-      packageName: row.package?.name ?? null,
-      venueName: row.venue?.name ?? null,
-    };
+    return listItem(
+      await this.db.voucher.findUniqueOrThrow({ where: { id }, include: LIST_INCLUDE }),
+    );
   }
 
   /**
@@ -157,15 +165,9 @@ export class VouchersService {
       target: { type: "voucher", id },
       change: { before: { devices: freed.count }, after: { devices: 0, sessionsEnded: ended } },
     });
-    const row = await this.db.voucher.findUniqueOrThrow({
-      where: { id },
-      include: { package: { select: { name: true } }, venue: { select: { name: true } } },
-    });
-    return {
-      ...voucherRecord(row),
-      packageName: row.package?.name ?? null,
-      venueName: row.venue?.name ?? null,
-    };
+    return listItem(
+      await this.db.voucher.findUniqueOrThrow({ where: { id }, include: LIST_INCLUDE }),
+    );
   }
 
   /** Showing codes is a read that reveals something (ADR-0012): recorded, with how many. */
