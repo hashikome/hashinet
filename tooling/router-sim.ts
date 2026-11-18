@@ -1423,11 +1423,38 @@ if (!action) {
 await action();
 
 /** The business the router sim's venue and packages belong to, created on first use. */
-async function simBusinessId(db: { business: PrismaClient["business"] }): Promise<string> {
-  const found = await db.business.findFirst({ where: { name: "Router sim business" } });
-  if (found) return found.id;
-  const created = await db.business.create({
-    data: { name: "Router sim business", region: "Dar es Salaam", area: "Sim" },
+/**
+ * The sim's business, with a protected owner: a venue serves guests only once its owner has
+ * protected their sign-in (ADR-0011, 9), so without one every redeem is refused as not open.
+ */
+async function simBusinessId(db: PrismaClient): Promise<string> {
+  const business =
+    (await db.business.findFirst({ where: { name: "Router sim business" } })) ??
+    (await db.business.create({
+      data: { name: "Router sim business", region: "Dar es Salaam", area: "Sim" },
+    }));
+  const owner = await db.membership.findFirst({
+    where: { businessId: business.id, role: "owner", status: "active" },
   });
-  return created.id;
+  const userId =
+    owner?.userId ??
+    (
+      await db.membership.create({
+        data: {
+          scope: "business",
+          role: "owner",
+          business: { connect: { id: business.id } },
+          user: {
+            create: {
+              id: Bun.randomUUIDv7(),
+              email: "sim-owner@example.com",
+              name: "Sim owner",
+              emailVerified: true,
+            },
+          },
+        },
+      })
+    ).userId;
+  await db.user.update({ where: { id: userId }, data: { twoFactorEnabled: true } });
+  return business.id;
 }
