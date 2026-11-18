@@ -70,3 +70,13 @@ describe("HTTP wide events", () => {
     expect(JSON.stringify(event)).not.toContain("AA:BB");
   });
 });
+
+describe("caching", () => {
+  test("no answer is kept by a browser unless its route says so", async () => {
+    const health = await fetch(`${api.url}/api/health`);
+    expect(health.headers.get("cache-control")).toBe("no-store");
+    const refused = await fetch(`${api.url}/api/venues`);
+    expect(refused.status).toBe(401);
+    expect(refused.headers.get("cache-control")).toBe("no-store");
+  });
+});

@@ -72,3 +72,14 @@ export function guestSessionPreflight(): RequestHandler {
       .end();
   };
 }
+
+/**
+ * Answers are about now (a venue's payment details, who is online), so no browser keeps one. A
+ * route that is cacheable says so itself (the portal's images), which replaces this.
+ */
+export function noStoreByDefault(): RequestHandler {
+  return (_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("Cache-Control", "no-store");
+    next();
+  };
+}

@@ -3,7 +3,6 @@
 import {
   groupedCode,
   type PackageRecord,
-  type PaymentWay,
   type RouterList,
   type SaleResult,
   type VenuePackages,
@@ -14,6 +13,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { formatDuration } from "@/lib/duration";
+import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useCan } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
@@ -251,19 +251,12 @@ function CheckStep({
 }) {
   const [method, setMethod] = useState<Method>("cash");
   const [phone, setPhone] = useState("");
-  const [ways, setWays] = useState<PaymentWay[]>([]);
   const { busy, errors, run } = useSubmit();
   const mobile = method === "mobile_money";
-  useEffect(() => {
-    let live = true;
-    api
-      .get<VenuePaymentDetails>(`/api/venues/${venue.id}/payment-details`)
-      .then((r) => live && setWays(r.ways))
-      .catch(() => live && setWays([]));
-    return () => {
-      live = false;
-    };
-  }, [venue.id]);
+  const details = useLoad(
+    () => api.get<VenuePaymentDetails>(`/api/venues/${venue.id}/payment-details`),
+    [venue.id],
+  );
   const confirm = async () => {
     let result: SaleResult | null = null;
     const ok = await run(async () => {
@@ -302,21 +295,22 @@ function CheckStep({
             ))}
           </div>
         </fieldset>
-        {mobile ? (
-          ways.length ? (
-            ways.map((w) => (
-              <div className="pay-to" key={`${w.through}${w.number}`}>
-                <span className="lbl">Pay to · {w.through}</span>
-                <b>{w.number}</b>
-                <small>{w.name}</small>
-              </div>
-            ))
-          ) : (
-            <p className="note">
-              No payment details yet. An owner or manager adds them on the venue's page.
-            </p>
-          )
-        ) : null}
+        {!mobile ? null : details.error ? (
+          // A failed load is not "no details": the seller would send the guest nowhere.
+          <LoadFailed error={details.error} retry={details.reload} />
+        ) : details.data === null ? null : details.data.ways.length ? (
+          details.data.ways.map((w) => (
+            <div className="pay-to" key={`${w.through}${w.number}`}>
+              <span className="lbl">Pay to · {w.through}</span>
+              <b>{w.number}</b>
+              <small>{w.name}</small>
+            </div>
+          ))
+        ) : (
+          <p className="note">
+            No payment details yet. An owner or manager adds them on the venue's page.
+          </p>
+        )}
         <Field
           label={mobile ? "Guest's mobile money number" : "Guest's mobile number (optional)"}
           id="sn"

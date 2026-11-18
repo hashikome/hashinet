@@ -10,6 +10,7 @@ import { ErrorEnvelopeFilter } from "./http/error-envelope.js";
 import {
   guestSessionPreflight,
   httpWideEvents,
+  noStoreByDefault,
   requireTrustedOrigin,
 } from "./http/http-middleware.js";
 import { LiveHub } from "./live/live-hub.js";
@@ -39,6 +40,7 @@ export async function bootstrap(
   );
   // Order matters: the wide event first, so every refusal below it is recorded.
   app.use(httpWideEvents());
+  app.use(noStoreByDefault());
   app.use(guestSessionPreflight());
   app.enableCors({ origin: config.frontendOrigin, credentials: true });
   app.use(requireTrustedOrigin([config.frontendOrigin]));
