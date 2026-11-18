@@ -41,7 +41,9 @@ export const POLICY = {
   "session.read": BUSINESS_ALL,
   "session.terminate": BUSINESS_ALL,
   "device.read": BUSINESS_ALL,
-  "device.block": WHOLE_BUSINESS,
+  // Whoever is at the counter keeps a misusing device off; the block is the business's, at every
+  // venue. Forgetting a device stays with those who reach the whole business.
+  "device.block": BUSINESS_ALL,
   "device.delete": WHOLE_BUSINESS,
   "payment.read": BUSINESS_ALL,
   "sale.record": BUSINESS_ALL,

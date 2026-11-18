@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
+import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, testBusinessId } from "./people.js";
 
@@ -134,12 +134,9 @@ describe("devices", () => {
     expect(next.nextBefore).toBeNull();
   });
 
-  test("blocking ends the device's sessions everywhere; only the owner and business managers block or delete", async () => {
+  test("blocking ends the device's sessions everywhere; only the owner and business managers remove", async () => {
     const w = await world();
     const path = `/api/devices/${w.phone.id}`;
-    expect(
-      (await w.own.client.request("PUT", `${path}/status`, { status: "blocked" })).status,
-    ).toBe(403);
     expect((await w.own.client.request("DELETE", path)).status).toBe(403);
 
     const c = await owner();
@@ -166,6 +163,31 @@ describe("devices", () => {
 });
 
 describe("blocking is a business's own", () => {
+  test("an operator blocks a device seen at their venue, for the whole business", async () => {
+    const w = await world();
+    await businessMember(t.db, {
+      email: "musa@example.com",
+      name: "Musa",
+      role: "venue_operator",
+      venueIds: [w.mine.id],
+    });
+    const musa = browser(api);
+    await signInWithCode(api, musa, "musa@example.com");
+    const blocked = await musa.request("PUT", `/api/devices/${w.phone.id}/status`, {
+      status: "blocked",
+    });
+    expect(blocked.body).toMatchObject({ device: { status: "blocked" } });
+    // Seen at their venue, blocked at the other venue of the business too.
+    expect(
+      (await t.db.wifiSession.findUniqueOrThrow({ where: { id: w.atTheirs.id } })).status,
+    ).toBe("terminated");
+    // A device never seen at their venues is not theirs to block, and removing is not theirs.
+    expect(
+      (await musa.request("PUT", `/api/devices/${w.only.id}/status`, { status: "blocked" })).status,
+    ).toBe(404);
+    expect((await musa.request("DELETE", `/api/devices/${w.phone.id}`)).status).toBe(403);
+  });
+
   test("a device one business blocks stays online at another's", async () => {
     const w = await world();
     const elsewhere = await t.db.business.create({

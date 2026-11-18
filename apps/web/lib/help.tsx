@@ -64,8 +64,6 @@ const PLATFORM: HelpRole[] = ["platform-staff", "platform-operator"];
 const BUSINESS: HelpRole[] = ["owner", "business-manager", "venue-manager", "operator"];
 /** Those who run a team: owners and managers. */
 const MANAGERS: HelpRole[] = ["owner", "business-manager", "venue-manager"];
-/** Those who act for the whole business, such as blocking a device. */
-const WHOLE: HelpRole[] = ["owner", "business-manager"];
 
 const PROTECT_OPERATOR: Guide = {
   id: "protect",
@@ -170,7 +168,7 @@ const COUNTER: Guide[] = [
   {
     id: "block",
     area: "Guests and devices",
-    for: WHOLE,
+    for: BUSINESS,
     title: "Block a device",
     gist: "Keep a device off your WiFi.",
     steps: [
@@ -178,8 +176,8 @@ const COUNTER: Guide[] = [
         Open <b>Devices</b> and find it by its name or MAC address.
       </>,
       <>
-        Tick it and tap <b>Block</b>. Its session ends and it can't sign in again at your venues. To
-        block several, tick them all.
+        Tick it and tap <b>Block</b>. Its session ends and it can't sign in again at any of the
+        business's venues. To block several, tick them all.
       </>,
       <>
         To let it back, choose <b>Blocked</b>, then tap <b>Unblock</b> on its row.
@@ -542,12 +540,6 @@ export const QUESTIONS: Question[] = [
     area: "Selling",
     q: "Do we print vouchers before we sell them?",
     a: "No. A voucher is made when it is sold, so none can be taken or go unsold. Print one if the guest wants paper.",
-  },
-  {
-    for: ["venue-manager", "operator"],
-    area: "Guests and devices",
-    q: "A device is misusing the WiFi. Can I block it?",
-    a: "Blocking is for the owner and business managers. Tell them which device it is; they block it from Devices.",
   },
   {
     for: MANAGERS,

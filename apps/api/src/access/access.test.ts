@@ -79,9 +79,10 @@ describe("the policy (ADR-0011)", () => {
     expect(allows("owner", "router.manage")).toBe(false);
   });
 
-  test("operators sell and read, but neither block nor read the audit log", () => {
+  test("operators sell and block, but neither remove a device nor read the audit log", () => {
     expect(allows("venue_operator", "sale.record")).toBe(true);
-    expect(allows("venue_operator", "device.block")).toBe(false);
+    expect(allows("venue_operator", "device.block")).toBe(true);
+    expect(allows("venue_operator", "device.delete")).toBe(false);
     expect(allows("venue_operator", "audit.read")).toBe(false);
   });
 
