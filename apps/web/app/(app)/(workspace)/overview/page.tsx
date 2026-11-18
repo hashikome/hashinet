@@ -225,7 +225,7 @@ function OperatorToday({
               rows={mine.data.payments.map((p) => ({
                 key: p.id,
                 cells: [
-                  p.kind === "refund" ? `Refund · ${p.packageName ?? ""}` : (p.packageName ?? ""),
+                  p.packageName ?? "A package since removed",
                   p.source === "mobile_money" ? "Mobile money" : "Cash",
                   clock(p.occurredAt),
                   tsh(p.amountTsh),

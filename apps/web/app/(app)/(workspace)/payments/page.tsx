@@ -113,14 +113,7 @@ export default function PaymentsPage() {
                     <span className="nowrap" key="t">
                       {when(p.occurredAt)}
                     </span>,
-                    p.kind === "refund" ? (
-                      <span key="p">
-                        Refund
-                        <div className="sub">{p.packageName ?? "A package since removed"}</div>
-                      </span>
-                    ) : (
-                      (p.packageName ?? "A package since removed")
-                    ),
+                    p.packageName ?? "A package since removed",
                     <span key="m">
                       {METHOD[p.source]}
                       <div className="sub">
