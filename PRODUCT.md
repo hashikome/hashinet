@@ -11,7 +11,7 @@ It began with a chore at home: letting a guest's phone onto the router, then rem
 it off again. Every venue that shares its WiFi has the same chore, multiplied: a guest house, a
 café, a hostel, a bar. Most hand out one password that never changes, or switch devices on and off
 by hand. HashiNet lets them sell access instead: by time and number of devices, through a captive
-portal in the venue's own name, paid with mobile money or a printed voucher. The router enforces
+portal in the venue's own name, bought at the venue's counter or on the portal. The router enforces
 what was bought and ends it on time, and nobody has to ask for the password.
 
 HashiNet is the software and the setup behind that service. It is not what guests see: they see
@@ -25,8 +25,8 @@ the venue.
 - **A venue** is a place where the business offers WiFi: a lodge, a café, a home.
 - **A router** is a MikroTik router installed at a venue. It enforces each guest's package; a large
   venue has several, and a voucher works on any of them.
-- **A guest** joins the venue's WiFi on a phone and gets online through the venue's own portal and
-  printed vouchers.
+- **A guest** joins the venue's WiFi on a phone and gets online through the venue's own portal, with
+  a voucher bought at its counter or on the portal.
 
 ## 2. Users and use
 
@@ -49,11 +49,11 @@ first venue.
 
 - **Nobody has to ask.** Self-service purchase on the portal is the default way in; it works at
   any hour without the owner or a venue's staff acting for the guest.
-- **Cash still works.** Printed vouchers sold for cash are a first-class way in for guests who
-  will not use a mobile wallet.
-- **Every way in is one mechanism and is recorded.** Self-service, an assisted sale and a
-  pre-printed card all end in a voucher the router confirms, and every one is counted as a sale
-  at its venue. Which one fits is a venue's choice, not the product's.
+- **Cash still works.** A sale at the counter, for cash or mobile money paid to the venue, is a
+  first-class way in for guests who will not pay on the portal.
+- **Every way in is one mechanism and is recorded.** Self-service and a sale at the counter both end
+  in a voucher the router confirms, and a voucher exists only by its sale, so every one is counted
+  as a sale at its venue (ADR-0017).
 - **Access follows the router, not the database.** HashiNet reports access granted only
   after the router confirms it.
 - **The voucher is the guest's identity.** MAC addresses are a soft device signal:
@@ -87,10 +87,14 @@ limit, and is offered at selected venues.
 
 ### 4.3 Vouchers
 
-Admins and managers generate vouchers in batches for a package and print them with their price and QR
-codes, to sell for cash. A voucher bought on the portal is the same kind of voucher, issued
-when the payment is confirmed. A voucher belongs to its venue and works on every router there, and its device limit counts the devices online at once. After the first device, a voucher needs its switch PIN, shown once at the first sign-in; staff can release a voucher for a guest who lost it (ADR-0015). A voucher's lifecycle is `unused → pending_activation → active → expired`, decided by
-the API and the router.
+A voucher exists only by its sale (ADR-0017): it is made when whoever is at the counter sells it,
+or when a portal payment is confirmed, never in advance as stock. A voucher belongs to its venue and
+works on every router there, and its device limit counts the devices online at once. Whoever is at
+the counter releases a voucher in use for a guest whose phone changed: its devices go offline and
+the next one signs in with the code, while its time runs on (ADR-0015). An owner or manager refunds
+a voucher while it is unused, recording how the money went back; it stops working, and is never
+revoked or undone. A voucher's lifecycle is `unused → pending_activation → active → expired` (or
+`used`), or `unused → refunded`, decided by the API and the router.
 
 ### 4.4 Captive portal
 
@@ -103,13 +107,20 @@ Acceptance: a phone on a HashiNet hotspot reaches the portal, redeems a voucher 
 the voucher's limits and expiry are enforced by the router.
 
 Branding is per venue: its name, logo, background, colours and wording, shown on its portal and
-printed vouchers. A venue that has set none shows the HashiNet default. Admins edit the default,
+the vouchers it sells. A venue that has set none shows the HashiNet default. Admins edit the default,
 and managers brand their own venues.
 
 ### 4.5 Sessions and figures
 
-Live sessions per venue and router, automatic expiry, usage analytics and revenue,
-calculated by the API.
+Live sessions per venue and router, soonest to end first, which anyone at the venue can end;
+automatic expiry; usage analytics and revenue, calculated by the API. Revenue is sales less refunds:
+a refund is its own line on the day it is made, so takings show gross, refunds and net, and each
+seller's cash to hand over is their cash sales less the cash they gave back. HashiNet's fees are
+monthly, on net sales.
+
+A device is a guest's phone or laptop as the network sees it. Anyone at a business blocks a device
+their venues have seen, for every venue of that business; another business that saw it is not
+affected. The owner and business managers remove one, which forgets it for their business alone.
 
 ### 4.6 Team and audit
 
@@ -126,12 +137,12 @@ owners, managers, venues and its guests as counts, never a device, code or sessi
 
 ### 4.7 Selling access: three paths, one mechanism
 
-**At launch, printed vouchers are the way in.** Self-service and assisted sales are built and held:
-they turn on when the mobile money and SMS providers' credentials are set. Until then a guest sees
-the voucher form and what the venue sells, and buys a card from the venue.
+**At launch, the counter is the way in.** Self-service is built and held: it turns on when the
+mobile money provider's credentials are set, and texting codes when the SMS provider's are. Until
+then a guest sees the voucher form and what the venue sells, and buys at the counter.
 
-All three end in a voucher confirmed by the router before access starts, and all three record
-a sale for the venue's figures. They suit different places, and a venue can use all of them.
+Both end in a voucher confirmed by the router before access starts, and both record a sale for the
+venue's figures. A venue can use both.
 
 - **Self-service on the portal (the default).** The guest picks a package and pays with their
   mobile number. When the payment is confirmed, HashiNet issues a voucher and logs **the device
@@ -144,14 +155,14 @@ a sale for the venue's figures. They suit different places, and a venue can use 
   Works at any
   hour with nobody acting for the guest. A payment that succeeds while the router is
   unreachable is retried until the guest has access, and is shown as access owed until then.
-- **Assisted sale.** Anyone at the counter sells a voucher in one step: they record a payment (cash or
-  mobile money), with the guest's phone number if they have it; HashiNet issues the voucher, shows it on the sale screen as a QR code the guest scans and as a code (to type or
-  copy), and sends it to that phone by SMS on a package of a day or longer if the business has credits, or the manager prints it. The fullest record: who paid, how, at which venue, for which voucher. Suits
-  regulars. An operator's sale issues at once and waits in Payments for an owner or manager to
-  confirm the money.
-- **Pre-printed cards.** Vouchers printed in batches are stock at a known price per venue,
-  handed over for cash with no phone number or typing: the fastest, for a busy venue. A card
-  counts as a cash sale at its venue when it is redeemed; unsold cards remain stock.
+- **A sale at the counter.** Anyone at the counter sells a voucher in one step, with the money in
+  hand: they tap the package, choose cash or mobile money and confirm. For mobile money the guest
+  pays the venue directly, to one of up to three ways its owner or a manager sets (a Lipa namba, a
+  bank, a mobile money number), read out from the screen, and the seller enters the guest's mobile
+  money number; for cash the number is optional. HashiNet makes the voucher and shows it as a QR
+  code the guest scans and as a code to read out; the seller can also send it (by the phone's share
+  sheet, or by SMS when the business has credits) or print it. The fullest record: who sold it, how
+  it was paid, at which venue.
 
 Codes reach phones by **SMS**, through BRIQ, the messaging provider shared with other Hashikome
 products. Not WhatsApp or email: a guest asking for WiFi usually has no data, and SMS reaches
@@ -190,13 +201,11 @@ Development and tests use invented data only.
 
 ## 8. Delivery
 
-Active plan: [the build plan](docs/exec-plans/active/build-hashinet.md).
+Active plan: [build in slices](docs/exec-plans/active/build-in-slices.md).
 
-Status (11 November 2026): HashiNet is in development. `hashinet.hashikome.com` runs a first build,
-a hotspot-billing admin and captive portal for one owner, which proves the release path; it has no
-customers. Businesses, venues and the platform, business and venue roles exist as an approved
-prototype (`prototypes/hearth-design/`) and in the plans
-([business-scopes](docs/exec-plans/active/business-scopes.md),
-[redesign-admin](docs/exec-plans/active/redesign-admin.md)), not yet in the build. Routers are tested
-on a virtual MikroTik router and virtual phones (`bun run router-sim`); a physical router has yet to
-pass the same tests.
+HashiNet is in development and built in slices from the approved prototype
+(`prototypes/hearth-design/`), each a complete journey accepted live before the next
+([build-in-slices](docs/exec-plans/active/build-in-slices.md)): HashiNet's team and onboarding a
+business, then the counter. `hashinet.hashikome.com` runs the build; it has no customers yet. Routers
+are tested on a virtual MikroTik router and virtual phones (`bun run router-sim`); a physical router
+has yet to pass the same tests.

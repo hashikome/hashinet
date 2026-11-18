@@ -41,7 +41,7 @@ Status has four meanings, defined once in `lib/status-pill.ts` (owner's decision
 green for done and working (online, serving, active, accepted, paid; `#1d7a45` light, `#5fd08f`
 dark), amber-yellow for waiting on something (setting up, not connected yet, invited, waiting;
 `#8a6a00` text on a `#f4c430` tint, `#f2cf5b` dark), red for what needs a human or has ended
-(offline, failed, expired, revoked), and neutral for everything else. Ember is the brand and the
+(offline, failed, blocked, denied), and neutral for everything else. Ember is the brand and the
 action colour, never a status, so a status never reads as a button or a live figure. Each status
 text meets 4.5:1 on its panel in both themes.
 
@@ -59,9 +59,9 @@ background photo sits under a 55% black scrim.
 The guest portal is two pages that link to each other: the voucher page (scan the QR code or enter
 the code, then Join the WiFi; under "No voucher?", a link to buy time) and the buy page (choose a package,
 enter the mobile number, Pay; under "Have a voucher?", a link to the voucher page). A venue chooses which
-opens first: the voucher page where it sells printed vouchers, the buy page where guests buy on the
+opens first: the voucher page where it sells at the counter, the buy page where guests buy on the
 portal. After paying, the guest lands on the voucher page with the paid code entered, signing in. The
-venue's name and place sit at the top left and its logo, which is optional, at the top right, as on the
+venue's name and place sit at the top left and its logo, which is optional, at the top right, as on a
 printed voucher. The whole page is one colour with the action button filled, and the HashiNet arc sits
 faint in the bottom corner, as on sign-in. Every page fits one phone screen, the signature included;
 fields and buttons are 44px.

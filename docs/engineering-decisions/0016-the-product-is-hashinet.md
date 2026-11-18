@@ -16,7 +16,7 @@ venues, with platform, business and venue roles (ADR-0011). The owner chose a na
    `@hashinet/*`, services `hashinet-*`, the database and role `hashinet`, secrets `hashinet_*`, the
    R2 bucket `hashinet`, and the routers' management interface `hashinet-mgmt`.
 2. **Guests still see the venue.** HashiNet is not the guest-facing brand; the captive portal and
-   printed vouchers carry the venue's identity (ADR-0009), with "Runs on hashinet" as the signature.
+   the vouchers it sells carry the venue's identity (ADR-0009), with "Runs on hashinet" as the signature.
 3. **No compatibility.** The old host is dropped, not redirected; nothing reads the old names once the
    cutover is done (AGENTS.md, pre-deployment compatibility).
 4. **Data moves by copy, not rename.** Production's database is restored into a new `hashinet`

@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- The counter (slice 2 of `build-in-slices.md`): a voucher exists only by its sale (ADR-0017).
+  - Sell a voucher from the Sell button, or the Sell tab on a phone: tap the package, choose cash or
+    mobile money, confirm with the money in hand. For mobile money the guest pays the venue to one of
+    the ways its owner or a manager sets on the venue's page (up to three: a Lipa namba, a bank or a
+    number), read out from the screen. The voucher shows at once as a QR code and a code, to send or
+    print. Printed batches, Print vouchers and revoking are gone.
+  - An owner or manager refunds a voucher while it is unused, recording how the money went back. A
+    refund is its own row on its day: takings show gross, refunds and net, and Payments names who
+    sold or refunded each row.
+  - Whoever is at the counter releases a voucher in use for a guest whose phone changed.
+  - An operator's Today shows who is ending soon and their own sales, with the cash to hand over.
+  - Live sessions, soonest to end first, with End session. Devices, with Block, Unblock and Remove:
+    a block is the business's own, at every venue, and anyone at the business can block; removing
+    forgets a device for that business alone.
+  - A business's team by invitation: business managers, venue managers and operators, each at the
+    venues they work at. A venue manager sees the people at their venues.
+  - The Audit log, filtered by who, venue, action and day. A router that stays unreachable is
+    audited once, with the count of failed syncs on its page, instead of a row every poll.
+  - Help for every business role. Next.js 16.4.5.
 - A venue's setup shows what its owner gets ready before the visit (their protected sign-in and a
   package on sale), on the owner's Overview and on the setup issue: the owner is
   there and sells HashiNet's team the first voucher.

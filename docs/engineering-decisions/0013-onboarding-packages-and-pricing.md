@@ -116,7 +116,7 @@ and the guests. Owners are not network technicians, so the team installs it.
    each successful payment, so an online sale costs 7.5% in all. Snippe holds the money in escrow and
    charges TSh 1,500 a payout. Businesses are paid out weekly, once TSh 20,000 or more is waiting, and
    the TSh 1,500 comes out of the payout. Whether hashifi may direct payouts from that escrow to other
-   businesses is still to be confirmed. Printed vouchers stay at the plain fee. Payouts are sent by
+   businesses is still to be confirmed. Sales at the counter stay at the plain fee. Payouts are sent by
    HashiFi's API through Snippe's payout API and recorded from its webhooks (`payout.completed`,
    `payout.failed`, `payout.reversed`), with a daily check for any it has not heard back on; nobody
    records a payout by hand. A failed or reversed payout is a platform issue to retry

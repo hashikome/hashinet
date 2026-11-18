@@ -904,7 +904,7 @@ async function demo(): Promise<void> {
     }
   }
 
-  // `demo payments` adds the stand-in providers; by default it is what launches: printed vouchers.
+  // `demo payments` adds the stand-in providers; by default it is what launches: selling at the counter.
   const api = await startApi(state, true, args[0] === "payments");
   const web = Bun.spawn(["bun", "run", "--filter", "@hashinet/web", "dev"], {
     cwd: ROOT,

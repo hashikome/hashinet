@@ -562,12 +562,12 @@ The backend uses the voucher code as both `username` and `password`:
 
 Replace `482716936518` with an active voucher code (12 digits, no spaces) from your database.
 
-### 8.3 Print fresh vouchers
+### 8.3 Sell a voucher
 
-1. Open `http://localhost:3006/vouchers/print`, signed in as the business's owner
-2. Choose the package and how many, then print
-3. HashiNet pushes each code to the venue's routers; a router that missed the push gets the code
-   when a guest redeems it (§11)
+1. Open `http://localhost:3006/overview`, signed in as anyone at the venue, and tap **Sell**
+2. Choose the package, cash or mobile money, and confirm
+3. HashiNet pushes the code to the venue's routers after the sale answers; a router that missed
+   the push gets the code when a guest redeems it (§11)
 
 ---
 
@@ -802,7 +802,7 @@ credentials from the `routers` table.
 
 | Event                           | Action                                                                             |
 | ------------------------------- | ---------------------------------------------------------------------------------- |
-| Voucher batch generated         | `pushVouchersToVenueRouters` — pushes all new codes to every router in venue       |
+| Voucher sold                    | `pushVouchers` — pushes the new code to every router in the venue                  |
 | New router added via admin      | `syncNewRouter` — pushes all existing venue vouchers to the new router             |
 | Admin clicks "Sync" on a router | `syncNewRouter` called manually                                                    |
 | Admin terminates a session      | `kickVoucherFromVenueRouters` — kicks the active session from MikroTik immediately |

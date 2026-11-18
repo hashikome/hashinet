@@ -2,7 +2,7 @@
 _The platform for running WiFi businesses._
 
 **HashiNet** lets a business sell **time-bound, device-limited WiFi access** at its venues,
-through a captive portal and printed vouchers in the venue's own name: guest houses, cafés,
+through a captive portal in the venue's own name, with vouchers sold at the counter or on the portal: guest houses, cafés,
 hostels, bars, and a home. Hashikome's team sets up each venue's MikroTik routers; the business
 runs its packages, vouchers and team.
 
@@ -11,10 +11,9 @@ disabling access and tracking MAC addresses by hand, sometimes late at night.
 
 > **Status:** in development. The plan is
 > [docs/exec-plans/active/build-in-slices.md](docs/exec-plans/active/build-in-slices.md).
-> The API, the admin web and the captive portal work together, deployed as a first build at
-> `hashinet.hashikome.com`; printed vouchers are the launch workflow, and mobile money and SMS are held
-> until their providers are set up. Businesses, venues and their roles are an approved prototype, not
-> yet built ([PRODUCT.md](PRODUCT.md#8-delivery)).
+> The API, the dashboard and the captive portal work together, deployed at `hashinet.hashikome.com`;
+> selling at the counter is the launch workflow, and self-service mobile money and SMS are held
+> until their providers are set up ([PRODUCT.md](PRODUCT.md#8-delivery)).
 
 ## How it works
 
@@ -36,10 +35,11 @@ backend sells packages, issues vouchers, configures each router and tracks sessi
 
 - Venues, each with routers, packages and a branded captive portal
 - Packages by duration, speed, data and device limits
-- Vouchers generated in batches, printable with QR codes
+- Vouchers made by their sale at the counter (cash or mobile money paid to the venue), with QR codes
+  to scan, send or print; refunds while unused, and release for a guest's new phone
 - Router onboarding: a generated bootstrap script, then automated, verifiable setup
 - Live sessions, automatic expiry, analytics and revenue
-- Admin and manager roles, with an audit log
+- Platform and business roles by invitation, with an audit log
 
 Mobile-money payments are planned after vouchers.
 

@@ -11,13 +11,12 @@ External documents are references only. Keep this file short: it is a map, not a
 
 ## Current state
 
-The [build plan](docs/exec-plans/active/build-hashinet.md) tracks the work: read
-it before changing anything under `apps/`. M1 to M5 are done. HashiNet launches on printed vouchers; M6
-(mobile money and SMS) is built and held until its providers' credentials exist: `apps/api` is NestJS on Bun with Prisma on PostgreSQL 18, and `apps/web` runs on it
-through `lib/api.ts` and `@hashinet/types`, including the captive portal and purchases.
-Next: HashiNet rebuilt from the approved Hearth prototype in six slices, each one complete journey
-accepted live before the next ([build-in-slices](docs/exec-plans/active/build-in-slices.md), which sets
-the order). The detail stays in [business-scopes](docs/exec-plans/active/business-scopes.md) (schema,
+`apps/api` is NestJS on Bun with Prisma on PostgreSQL 18, and `apps/web` runs on it through
+`lib/api.ts` and `@hashinet/types`, including the captive portal. HashiNet is rebuilt from the
+approved Hearth prototype in slices, each one complete journey accepted live before the next
+([build-in-slices](docs/exec-plans/active/build-in-slices.md), which sets the order; read it before
+changing anything under `apps/`). Selling at the counter is the launch workflow (ADR-0017);
+self-service mobile money and SMS are built and held until their providers' credentials exist. The detail stays in [business-scopes](docs/exec-plans/active/business-scopes.md) (schema,
 access, sign-in, invitations) and [redesign-admin](docs/exec-plans/active/redesign-admin.md) (screens).
 
 ## Map

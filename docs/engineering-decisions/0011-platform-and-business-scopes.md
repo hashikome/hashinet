@@ -57,8 +57,8 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    the business. A venue manager or venue operator reaches only the venues on their membership, at
    least one. A venue manager may add packages that are sold only at their own venues. A business has a default set of packages,
    and a venue follows it until its owner gives that venue its own price or stops selling a package
-   there; a change to a default price never touches a venue with its own, and a printed voucher keeps
-   the price on it.
+   there; a change to a default price never touches a venue with its own, and a voucher already sold
+   keeps its price.
 5. **Platform staff see every business.** Platform roles reach all businesses and venues, narrowing
    to one with the scope filter at the top of the sidebar, which never changes workspace. Only Hashikome invites businesses and adds and configures routers: a router is configuration, not something a business types in. A business owner creates their business and first venue only by accepting an invitation, and adds further venues themselves, each waiting for a router (ADR-0014). Platform staff see a business's devices and sessions only as counts (ADR-0014).
 6. **Nobody gives more than they have.** A person invites only roles below their own, inside their

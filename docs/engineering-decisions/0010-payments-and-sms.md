@@ -1,7 +1,7 @@
 # ADR-0010: Payments, vouchers and SMS
 
 Status: accepted, 31 October 2026, as proved against test doubles and the router sim. Held: HashiFi
-launches on printed vouchers, and this turns on with the providers' credentials. Real mobile money
+launches with sales at the counter (ADR-0017), and this turns on with the providers' credentials. Real mobile money
 and SMS have not run yet. ADR-0013 makes SMS something a business buys, so point 7 applies only to a
 business with credits. Narrowed 14 November 2026: ADR-0017 replaces point 6 (a voucher exists only by
 its sale; there is no printed stock).

@@ -40,8 +40,8 @@ The portal is public and reachable before guests authenticate, so it is the most
 surface:
 
 - Voucher codes are 12 digits from a cryptographic generator (about 39.9 bits), never
-  `Math.random`, and never travel in a URL query: printing is by batch or voucher id, QR codes
-  and the router's redirects use fragments, which reach no server or log. Showing codes to
+  `Math.random`, and never travel in a URL query: a code is made by its sale and shown in the
+  sale's answer, QR codes and the router's redirects use fragments, which reach no server or log. Showing codes to
   staff is recorded in the audit log.
 - A voucher code is the hotspot username and password. It goes from the portal to the API and
   from the API to the router, never over the WiFi in clear, and no API response carries it
@@ -88,7 +88,10 @@ unexpected failure is a plain 500, reported to Sentry.
 ## Personal data
 
 HashiNet holds staff emails; for guest devices, the MAC address, device name and type, and
-sessions; and from M6, a paying customer's mobile number and payments. Managers see devices and customers only at their venues. External telemetry
+sessions; a guest's mobile number on a sale (required for mobile money, optional for cash) and on a
+refund by mobile money, with its reference; and from M6, a paying customer's mobile number and
+payments. Venue roles see devices, sales and customers only at their venues; a block or a removal
+of a device is its business's own. External telemetry
 never carries personal data unredacted. Development and tests use invented data; real
 customers' data never enters the
 repository, `ref/` or logs.
