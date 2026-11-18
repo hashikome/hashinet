@@ -270,8 +270,15 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     devices, filtered the Audit log. A sweep of 16 routes at the three widths in both themes found
     no overflow, unnamed control, small target or contrast failure. Verify passes; integration
     167/167.
-  - [ ] (h) finish-work on the branch, then PRODUCT.md, the design docs and the handbook say the
-    sale model (they still describe printed vouchers).
+  - [x] (2026-11-18) (h) finish-work on the branch. The code review found ten, eight fixed with
+    tests (a removed device's block lifted on the routers; a refunded voucher never pushed back; a
+    venue manager's Team and Audit log; one list-item mapping; the failure count reset without a
+    query); two skipped (blocks copied by the per-business migration: production had one business;
+    printed-batch revenue: test data, ADR-0017). The security review found one, fixed with a test:
+    inviting no longer revokes a pending invitation the inviter couldn't revoke. PRODUCT.md, the
+    README, AGENTS.md, DESIGN.md, SECURITY.md, ARCHITECTURE.md, four ADRs, the runbooks and the
+    CHANGELOG say the sale model; the handbook follows the release. Verify passes; integration
+    170/170.
   - [ ] (i) Release and live acceptance: Paul's home invites an operator, who sells a voucher by
     mobile money reading out the venue's Lipa namba; the guest gets online with it; the owner
     refunds an unused one and sees both in Payments.
