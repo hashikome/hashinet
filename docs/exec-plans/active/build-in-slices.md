@@ -482,6 +482,32 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   limits, and a real-phone test. Slice 2 releases a voucher by clearing its devices and sessions,
   which works with today's sign-in.
   Date/Author: 2026-11-14 / owner.
+- Decision: a venue sells only while one of its routers is serving guests: set up and online.
+  The API refuses a sale otherwise (`VENUE_NOT_SERVING`), and each venue says whether it sells, so
+  the web offers Sell only there.
+  Rationale: Paul's home had a router record but no router, and its Sell sold a voucher nothing
+  could take; a guest pays, cannot get online, and the refund follows ("No network").
+  Date/Author: 2026-11-18 / owner.
+- Decision: guests get back the paid time an outage took. HashiNet records when each router stops
+  serving (unreachable, or reachable with no internet) and when it serves again; once it serves
+  again with a working internet line, every paid voucher whose time ran during the outage at that
+  router is extended by the time lost, up to the time it had left when the outage began (20 minutes
+  left gives back at most 20; a week's voucher that lost two hours gets two hours). Vouchers stay
+  wall-clock, not counted by connected time: a voucher that only ran while connected would never
+  end for a guest who doesn't come back. Not built yet; it comes with checking each router's own
+  internet line, so "no internet" stops sales and counts as an outage.
+  Date/Author: 2026-11-18 / owner.
+- Decision: API answers are `private, no-cache` with their ETag, so a browser revalidates and gets
+  a 304 when nothing changed; only answers carrying voucher codes are `no-store`. A blanket
+  `no-store` (e2c2184) made every screen download every answer in full, and the dashboard lagged on
+  phones. Showing cached data at once and refreshing it in the background (stale-while-revalidate,
+  invalidated after a change) is the next step for the web.
+  Date/Author: 2026-11-18 / owner.
+- Decision: slice 2's live acceptance is split while there is no physical router: the counter on
+  `hashinet.hashikome.com` (selling with payment details, the operator invited, a refund, Payments);
+  the guest getting online on the router sim (`guest-test`); and a real phone on a real MikroTik
+  recorded as an open check (ADR-0008's Consequences), not slice 2's to close.
+  Date/Author: 2026-11-18 / owner.
 - Decision: everyone at a business blocks a device their venues have seen, operators included; the
   block stays the business's, at every venue. Removing a device stays with the owner and business
   managers. A router's sync and push failures are audited once per run, with the run's count on the
