@@ -438,6 +438,8 @@ export interface VenueRecord {
   area: string;
   status: VenueStatus;
   routerCount: number;
+  /** A router here is serving guests now (set up and online), so a voucher sold here can be used. */
+  sells: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

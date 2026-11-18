@@ -56,7 +56,7 @@ export function SellProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   // A sale changes Today, Vouchers and Payments: whatever is on screen asks again behind it.
   const refreshAll = useRefreshAll();
-  const sellable = all.filter((v) => v.routerCount > 0);
+  const sellable = all.filter((v) => v.sells);
   // Sell opens full: what it shows is loaded before it is asked for, and refreshed when it opens.
   const prefetch = usePrefetch();
   const selling = can("sale.record");
@@ -106,9 +106,7 @@ function SellDialog({
   onClose: () => void;
 }) {
   const { shown } = useVenues();
-  const [venueId, setVenueId] = useState(
-    (shown.find((v) => v.routerCount > 0) ?? venues[0])?.id ?? "",
-  );
+  const [venueId, setVenueId] = useState((shown.find((v) => v.sells) ?? venues[0])?.id ?? "");
   const [pkg, setPkg] = useState<PackageRecord | null>(null);
   const [sold, setSold] = useState<Sold | null>(null);
   const venue = venues.find((v) => v.id === venueId) ?? null;

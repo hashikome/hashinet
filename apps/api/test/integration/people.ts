@@ -103,3 +103,26 @@ export async function scheduledSetup(db: PrismaClient, venueId: string): Promise
     update: { setupDate: new Date() },
   });
 }
+
+/**
+ * A venue that can sell: its routers are serving (set up and online), or it gets one that is. Its
+ * address answers nothing, so pushing a sold code fails quietly in the background.
+ */
+export async function sellingVenue(db: PrismaClient, venueId: string): Promise<void> {
+  const setUp = { ok: true, phases: [], blockers: [] };
+  const { count } = await db.router.updateMany({
+    where: { venueId },
+    data: { lastSetup: setUp, status: "online" },
+  });
+  if (count === 0) {
+    await db.router.create({
+      data: {
+        venueId,
+        name: "Counter",
+        ipAddress: "192.0.2.1",
+        lastSetup: setUp,
+        status: "online",
+      },
+    });
+  }
+}

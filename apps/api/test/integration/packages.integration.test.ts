@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, testBusinessId } from "./people.js";
+import { businessMember, sellingVenue, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
@@ -259,6 +259,7 @@ describe("packages", () => {
     const venue = await t.db.venue.create({
       data: { businessId, name: "Home", region: "Dar es Salaam", area: "Mbweni" },
     });
+    await sellingVenue(t.db, venue.id);
     const pkg = await t.db.package.create({ data: { businessId, ...DAY } });
     for (let i = 0; i < 2; i++) {
       const sold = await c.request("POST", "/api/sales", {

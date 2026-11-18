@@ -96,7 +96,7 @@ export function portalSettingsRecord(row: PortalSetting): PortalSettingsRecord {
   };
 }
 
-export function venueRecord(row: Venue, routerCount: number): VenueRecord {
+export function venueRecord(row: Venue, routerCount: number, sells: boolean): VenueRecord {
   return {
     id: row.id,
     name: row.name,
@@ -106,6 +106,7 @@ export function venueRecord(row: Venue, routerCount: number): VenueRecord {
     area: row.area,
     status: row.status,
     routerCount,
+    sells,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };

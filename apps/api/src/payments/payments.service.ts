@@ -11,6 +11,7 @@ import {
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
   HttpException,
   HttpStatus,
   Inject,
@@ -33,6 +34,7 @@ import { SMS_SENDER, type SmsSender } from "../messaging/sms-sender.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
+import { SERVING } from "../routers/router-journey.js";
 import { describeFailures, outcomeOk, RouterSync } from "../services/router-sync.js";
 import { generateCodes } from "../vouchers/voucher-codes.js";
 import { type ChargeState, MOBILE_MONEY, type MobileMoneyGateway } from "./mobile-money.js";
@@ -479,6 +481,15 @@ export class PaymentsService {
    */
   async recordSale(staff: Principal, input: SaleInput): Promise<SaleResult> {
     const sold = await this.packages.soldAt(staff, input.venueId);
+    // A voucher with no router to take it sells nothing a guest can use.
+    if ((await this.db.router.count({ where: { venueId: input.venueId, ...SERVING } })) === 0) {
+      throw new ConflictException(
+        apiError(
+          "VENUE_NOT_SERVING",
+          "This venue has no router serving guests right now, so it can't sell.",
+        ),
+      );
+    }
     const pkg = sold.packages.find((p) => p.id === input.packageId) ?? null;
     if (pkg === null) {
       throw new BadRequestException(

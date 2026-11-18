@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, protectedOwner, testBusinessId } from "./people.js";
+import { businessMember, protectedOwner, sellingVenue, testBusinessId } from "./people.js";
 
 /**
  * No provider credentials: what launches. A sale at the counter needs neither provider: the money
@@ -23,6 +23,7 @@ async function setting() {
   const router = await t.db.router.create({
     data: { venueId: venue.id, name: "Lobby", ipAddress: "192.168.88.2" },
   });
+  await sellingVenue(t.db, venue.id);
   const pkg = await t.db.package.create({
     data: {
       businessId: await testBusinessId(t.db),

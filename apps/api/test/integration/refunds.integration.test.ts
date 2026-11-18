@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, testBusinessId } from "./people.js";
+import { businessMember, sellingVenue, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
@@ -23,6 +23,7 @@ async function setting() {
   const venue = await t.db.venue.create({
     data: { businessId, name: "Kijiwe Cafe", region: "Mwanza", area: "Kirumba" },
   });
+  await sellingVenue(t.db, venue.id);
   const pkg = await t.db.package.create({
     data: {
       businessId,

@@ -9,7 +9,13 @@ import { PaymentsService } from "../../src/payments/payments.service.js";
 import { RouterSync } from "../../src/services/router-sync.js";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, protectedOwner, testBusinessId } from "./people.js";
+import {
+  businessMember,
+  platformMember,
+  protectedOwner,
+  sellingVenue,
+  testBusinessId,
+} from "./people.js";
 
 const PAY_SECRET = "pay-secret";
 const SMS_SECRET = "sms-secret";
@@ -86,6 +92,7 @@ async function setting(price = "2000") {
   const router = await t.db.router.create({
     data: { venueId: venue.id, name: "Lobby", ipAddress: "192.168.88.2" },
   });
+  await sellingVenue(t.db, venue.id);
   const pkg = await t.db.package.create({
     data: {
       businessId: await testBusinessId(t.db),
@@ -522,6 +529,7 @@ describe("sales and records", () => {
       role: "venue_manager",
     });
     await t.db.membershipVenue.create({ data: { membershipId: id, venueId: theirs.id } });
+    await sellingVenue(t.db, theirs.id);
     await c.request("POST", "/api/sales", {
       venueId: venue.id,
       packageId: pkg.id,

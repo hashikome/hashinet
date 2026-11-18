@@ -285,8 +285,7 @@ export function Shell({
   const tabbed =
     !space &&
     me.active.scope === "business" &&
-    (me.active.role === "venue_operator" ||
-      (shown.length === 1 && (shown[0]?.routerCount ?? 0) > 0));
+    (me.active.role === "venue_operator" || (shown.length === 1 && shown[0]?.sells === true));
   return (
     <SellProvider>
       <div

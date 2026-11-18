@@ -6,6 +6,15 @@ import type {
 } from "@hashinet/types";
 import { PHASE_TITLES, type SetupPhaseId } from "../services/router-provision/setup.js";
 
+/**
+ * A router serving guests now: its last setup passed and it is online. A venue sells only while one
+ * is, or a guest pays for a voucher nothing can take, and the refund follows.
+ */
+export const SERVING = {
+  lastSetup: { path: ["ok"], equals: true },
+  status: "online",
+} as const;
+
 /** A run this old with no finish was ended by a restart; setup itself takes minutes. */
 export const SETUP_STALE_MS = 10 * 60 * 1000;
 

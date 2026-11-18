@@ -7,9 +7,16 @@ import { BrandService } from "../brand/brand.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { OnboardingService } from "../onboarding/onboarding.service.js";
+import { SERVING } from "../routers/router-journey.js";
 import { venueRecord } from "../serializers/records.js";
 import { venueNotFound } from "./venue-errors.js";
 import type { VenueInput } from "./venue-input.js";
+
+/** Its routers, and one serving if any: a venue sells while one is (`SERVING`). */
+const VENUE_COUNTS = {
+  _count: { select: { routers: true } },
+  routers: { where: SERVING, select: { id: true }, take: 1 },
+} as const;
 
 @Injectable()
 export class VenuesService {
@@ -24,19 +31,19 @@ export class VenuesService {
   async list(staff: Principal): Promise<VenueRecord[]> {
     const rows = await this.db.venue.findMany({
       where: venueScope(staff),
-      include: { _count: { select: { routers: true } } },
+      include: VENUE_COUNTS,
       orderBy: { createdAt: "desc" },
     });
-    return rows.map((row) => venueRecord(row, row._count.routers));
+    return rows.map((row) => venueRecord(row, row._count.routers, row.routers.length > 0));
   }
 
   async get(staff: Principal, id: string): Promise<VenueRecord> {
     const row = await this.db.venue.findFirst({
       where: { id, ...venueScope(staff) },
-      include: { _count: { select: { routers: true } } },
+      include: VENUE_COUNTS,
     });
     if (!row) throw venueNotFound();
-    return venueRecord(row, row._count.routers);
+    return venueRecord(row, row._count.routers, row.routers.length > 0);
   }
 
   async create(staff: Principal, input: VenueInput): Promise<VenueRecord> {
@@ -67,7 +74,7 @@ export class VenuesService {
       );
       return created;
     });
-    return venueRecord(row, 0);
+    return venueRecord(row, 0, false);
   }
 
   async update(staff: Principal, id: string, input: VenueInput): Promise<VenueRecord> {
@@ -77,10 +84,10 @@ export class VenuesService {
     const row = await this.db.venue.update({
       where: { id },
       data: fields,
-      include: { _count: { select: { routers: true } } },
+      include: VENUE_COUNTS,
     });
     await this.record(staff, "venue.update", row);
-    return venueRecord(row, row._count.routers);
+    return venueRecord(row, row._count.routers, row.routers.length > 0);
   }
 
   /**

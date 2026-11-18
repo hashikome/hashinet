@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
-import { businessMember, testBusinessId } from "./people.js";
+import { businessMember, sellingVenue, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
 const api = useApi();
@@ -36,6 +36,7 @@ async function setting(operatorId: string | null) {
       area: "Dar es Salaam",
     },
   });
+  await sellingVenue(t.db, venue.id);
   if (operatorId)
     await t.db.membershipVenue.create({ data: { membershipId: operatorId, venueId: venue.id } });
   const pkg = await t.db.package.create({
@@ -89,6 +90,7 @@ describe("vouchers", () => {
         area: "Arusha",
       },
     });
+    await sellingVenue(t.db, other.id);
     await sell(own.client, venue.id, pkg.id, 5);
     await sell(c, other.id, pkg.id, 3);
     const elsewhere = await own.client.request("POST", "/api/sales", {
@@ -121,5 +123,31 @@ describe("vouchers", () => {
     expect((await c.request("GET", "/api/vouchers/batches")).status).toBe(404);
     expect((await c.request("POST", "/api/vouchers/revoke", { ids: [] })).status).toBe(404);
     expect((await c.request("POST", "/api/vouchers/print", { ids: [] })).status).toBe(404);
+  });
+});
+
+describe("a venue sells only while a router serves it", () => {
+  test("no router serving, no sale: set up but offline is refused too", async () => {
+    const { venue, pkg } = await setting(null);
+    const c = await owner();
+    const sells = async () =>
+      ((await c.request("GET", `/api/venues/${venue.id}`)).body as { venue: { sells: boolean } })
+        .venue.sells;
+    expect(await sells()).toBe(true);
+
+    await t.db.router.updateMany({ where: { venueId: venue.id }, data: { status: "offline" } });
+    expect(await sells()).toBe(false);
+    const refused = await c.request("POST", "/api/sales", {
+      venueId: venue.id,
+      packageId: pkg.id,
+      method: "cash",
+    });
+    expect(refused.status).toBe(409);
+    expect(refused.body).toMatchObject({ code: "VENUE_NOT_SERVING" });
+    expect(await t.db.voucher.count({ where: { venueId: venue.id } })).toBe(0);
+
+    await sellingVenue(t.db, venue.id);
+    expect(await sells()).toBe(true);
+    await sell(c, venue.id, pkg.id, 1);
   });
 });
