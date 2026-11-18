@@ -475,6 +475,14 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   limits, and a real-phone test. Slice 2 releases a voucher by clearing its devices and sessions,
   which works with today's sign-in.
   Date/Author: 2026-11-14 / owner.
+- Decision: everyone at a business blocks a device their venues have seen, operators included; the
+  block stays the business's, at every venue. Removing a device stays with the owner and business
+  managers. A router's sync and push failures are audited once per run, with the run's count on the
+  router (`failed_syncs`), since the audit log is append-only (ADR-0012).
+  Rationale: whoever is at the counter sees a misusing device first; a person misusing one venue's
+  WiFi is the same at the business's others, and most businesses have one venue. An unreachable
+  router wrote a row per poll (thousands in development), burying what people did.
+  Date/Author: 2026-11-18 / owner.
 - Decision: removing a device forgets it for the remover's business alone; the device row goes
   only once no business refers to it.
   Rationale: a device is shared by every business that saw it, and its blocks and voucher places
@@ -487,7 +495,7 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   assignments sells every active package, so a venue-only package would leak there), with their own
   permission and routes, and they sit on the same screen as prices per venue, which slice 5 builds.
   Slice 2's counter needs neither.
-  Date/Author: 2026-11-14 / agent, to confirm with the owner.
+  Date/Author: 2026-11-14 / agent; confirmed by the owner 2026-11-18.
 
 ## Outcomes & Retrospective
 
