@@ -485,6 +485,8 @@ export interface RouterRecord {
   architecture: string | null;
   provisionedAt: Timestamp | null;
   lastSeenAt: Timestamp | null;
+  /** Syncs and pushes that failed in a row; 0 once one works. */
+  failedSyncs: number;
   uptimeSeconds: number;
   connectedDevices: number;
   status: RouterStatus;

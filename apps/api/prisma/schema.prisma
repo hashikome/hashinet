@@ -504,6 +504,8 @@ model Router {
   lastSetup                 Json?        @map("last_setup")
   lastSetupAt               DateTime?    @map("last_setup_at") @db.Timestamptz(3)
   lastSeenAt                DateTime?    @map("last_seen_at") @db.Timestamptz(3)
+  /// Syncs and pushes that failed in a row; 0 once one works. Only the first of a run is audited.
+  failedSyncs               Int          @default(0) @map("failed_syncs")
   uptimeSeconds             Int          @default(0) @map("uptime_seconds")
   connectedDevices          Int          @default(0) @map("connected_devices")
   status                    RouterStatus @default(offline)

@@ -121,3 +121,30 @@ describe("voucher reconciliation", () => {
     expect(JSON.stringify(audit)).not.toContain("WIFI-STUCK");
   });
 });
+
+describe("a router that stays unreachable", () => {
+  test("is audited once for the run of failures, and counts each one", async () => {
+    // Nothing listens on port 1 here: every sync fails, after the one-second connect timeout.
+    const access = new RouterAccess(new SecretBox(randomBytes(32)), 1, 1);
+    const sync = new RouterSync(t.db, access, new AuditLog(t.db));
+    const { venue } = await venueWithVouchers([
+      { code: "300000000001", status: "unused", expiresIn: HOUR },
+    ]);
+    const router = await t.db.router.create({
+      data: {
+        venueId: venue.id,
+        name: "Lobby",
+        ipAddress: "127.0.0.1",
+        apiUsername: "hashinet",
+        apiPasswordEncrypted: access.sealPassword("secret"),
+      },
+    });
+
+    for (let i = 0; i < 3; i++) await sync.syncRouter(router.id);
+
+    expect(
+      await t.db.auditLog.count({ where: { action: "router.sync_failed", targetId: router.id } }),
+    ).toBe(1);
+    expect((await t.db.router.findUniqueOrThrow({ where: { id: router.id } })).failedSyncs).toBe(3);
+  }, 15_000);
+});

@@ -1,3 +1,4 @@
+import type { AuditChange } from "@hashinet/types";
 import { getLogger } from "@logtape/logtape";
 import type { AuditLog } from "../audit/audit-log.js";
 import type { Package, PrismaClient, Router } from "../generated/prisma/client.js";
@@ -248,16 +249,11 @@ export class RouterSync {
           },
         );
         outcome.succeeded++;
+        await this.worked(router.id);
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
         outcome.failures.push({ router: router.name, error });
-        await this.audit.system({
-          action: "router.push_failed",
-          target: { type: "router", id: router.id },
-          ...(await this.audit.atVenue(router.venueId)),
-          outcome: "failed",
-          change: { before: {}, after: { codes: codes.length } },
-        });
+        await this.failed(router, "router.push_failed", { codes: codes.length });
       }
     }
     enrichWideEvent({ "sync.attempted": outcome.attempted, "sync.succeeded": outcome.succeeded });
@@ -319,17 +315,12 @@ export class RouterSync {
       }
       await this.db.router.update({
         where: { id: routerId },
-        data: { status: "online", lastSeenAt: new Date() },
+        data: { status: "online", lastSeenAt: new Date(), failedSyncs: 0 },
       });
       enrichWideEvent({ "sync.attempted": venueVouchers.length, "sync.succeeded": synced });
     } catch {
       await this.db.router.update({ where: { id: routerId }, data: { status: "error" } });
-      await this.audit.system({
-        action: "router.sync_failed",
-        target: { type: "router", id: routerId },
-        ...(await this.audit.atVenue(router.venueId)),
-        outcome: "failed",
-      });
+      await this.failed(router, "router.sync_failed", null);
     } finally {
       if (conn) await closeConnection(conn);
     }
@@ -408,18 +399,46 @@ export class RouterSync {
           },
         );
         outcome.succeeded++;
+        await this.worked(router.id);
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);
         outcome.failures.push({ router: router.name, error });
-        await this.audit.system({
-          action: "router.sync_failed",
-          target: { type: "router", id: router.id },
-          ...(await this.audit.atVenue(router.venueId)),
-          outcome: "failed",
-        });
+        await this.failed(router, "router.sync_failed", null);
       }
     }
     return outcome;
+  }
+
+  /**
+   * A failed sync or push adds to the router's count; only the first of a run is audited, so a
+   * router that stays unreachable leaves one row, not one per poll.
+   */
+  private async failed(
+    router: { id: string; venueId: string },
+    action: "router.sync_failed" | "router.push_failed",
+    after: AuditChange | null,
+  ): Promise<void> {
+    const { failedSyncs } = await this.db.router.update({
+      where: { id: router.id },
+      data: { failedSyncs: { increment: 1 } },
+      select: { failedSyncs: true },
+    });
+    if (failedSyncs > 1) return;
+    await this.audit.system({
+      action,
+      target: { type: "router", id: router.id },
+      ...(await this.audit.atVenue(router.venueId)),
+      outcome: "failed",
+      change: after === null ? null : { before: {}, after },
+    });
+  }
+
+  /** A sync or push that worked ends the run of failures. */
+  private async worked(routerId: string): Promise<void> {
+    await this.db.router.updateMany({
+      where: { id: routerId, failedSyncs: { gt: 0 } },
+      data: { failedSyncs: 0 },
+    });
   }
 
   /** Ends a voucher's active hotspot session without removing it. Best effort. */

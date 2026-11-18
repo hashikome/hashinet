@@ -313,11 +313,17 @@ function RouterView({
         <ul className="rows">
           <SettingRow
             title="Status"
-            sub={
+            sub={[
               router.lastSeenAt
                 ? `Last heard from ${when(router.lastSeenAt)}`
-                : "Not heard from yet"
-            }
+                : "Not heard from yet",
+              // A run of failures is one row in the Audit log; how long it has run shows here.
+              router.failedSyncs > 0
+                ? `could not be brought up to date ${router.failedSyncs} ${router.failedSyncs === 1 ? "time" : "times"} in a row`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
             action={<Pill kind={kind}>{label}</Pill>}
           />
           <SettingRow title="Venue" sub={venueName} />

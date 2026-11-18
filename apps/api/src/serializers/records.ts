@@ -142,6 +142,7 @@ export function routerRecord(
     architecture: row.architecture,
     provisionedAt: isoOrNull(row.provisionedAt),
     lastSeenAt: isoOrNull(row.lastSeenAt),
+    failedSyncs: row.failedSyncs,
     uptimeSeconds: row.uptimeSeconds,
     connectedDevices: row.connectedDevices,
     status: row.status,
