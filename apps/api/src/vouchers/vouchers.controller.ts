@@ -1,5 +1,5 @@
 import type { VoucherList, VoucherListItem } from "@hashinet/types";
-import { Body, Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Header, HttpCode, Param, Post, Query } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
 import { idParam } from "../http/id-param.js";
@@ -13,6 +13,8 @@ export class VouchersController {
   constructor(private readonly vouchers: VouchersService) {}
 
   @Get()
+  // Voucher codes are credentials: no browser keeps them.
+  @Header("Cache-Control", "no-store")
   @Can("voucher.read")
   list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<VoucherList> {
     return this.vouchers.list(staff, parseInput(listQuery, query));

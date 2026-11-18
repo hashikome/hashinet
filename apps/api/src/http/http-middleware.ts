@@ -74,12 +74,16 @@ export function guestSessionPreflight(): RequestHandler {
 }
 
 /**
- * Answers are about now (a venue's payment details, who is online), so no browser keeps one. A
- * route that is cacheable says so itself (the portal's images), which replaces this.
+ * A browser may keep an answer but must ask before using it again: never stale, and an unchanged
+ * one comes back as a 304 with no body (the ETag), which matters on a phone's connection. Private
+ * and varying by cookie, so no shared cache serves one person's answer to another. A route whose
+ * answer is a credential (voucher codes) says `no-store` itself, as one that is cacheable for good
+ * (the portal's images) says so, and either replaces this.
  */
-export function noStoreByDefault(): RequestHandler {
+export function revalidateByDefault(): RequestHandler {
   return (_req: Request, res: Response, next: NextFunction) => {
-    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Cache-Control", "private, no-cache");
+    res.vary("Cookie");
     next();
   };
 }

@@ -1,5 +1,5 @@
 import type { SessionList, SessionResponse } from "@hashinet/types";
-import { Controller, Get, HttpCode, Param, Post, Query } from "@nestjs/common";
+import { Controller, Get, Header, HttpCode, Param, Post, Query } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
 import { idParam } from "../http/id-param.js";
@@ -11,12 +11,16 @@ export class SessionsController {
   constructor(private readonly sessions: SessionsService) {}
 
   @Get()
+  // Voucher codes are credentials: no browser keeps them.
+  @Header("Cache-Control", "no-store")
   @Can("session.read")
   list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<SessionList> {
     return this.sessions.list(staff, parseInput(sessionQuery, query));
   }
 
   @Get(":id")
+  // Voucher codes are credentials: no browser keeps them.
+  @Header("Cache-Control", "no-store")
   @Can("session.read")
   async get(
     @CurrentPrincipal() staff: Principal,

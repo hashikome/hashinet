@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import type { LogRecord } from "@logtape/logtape";
 import { initializeTelemetry } from "../../src/observability/telemetry.js";
-import { browser, requestSignInCode, signInWithCode, useApi } from "./api.js";
+import { browser, FRONTEND_ORIGIN, requestSignInCode, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember } from "./people.js";
 
@@ -72,11 +72,30 @@ describe("HTTP wide events", () => {
 });
 
 describe("caching", () => {
-  test("no answer is kept by a browser unless its route says so", async () => {
+  test("answers are revalidated, never stale; voucher codes are never kept", async () => {
     const health = await fetch(`${api.url}/api/health`);
-    expect(health.headers.get("cache-control")).toBe("no-store");
-    const refused = await fetch(`${api.url}/api/venues`);
-    expect(refused.status).toBe(401);
-    expect(refused.headers.get("cache-control")).toBe("no-store");
+    expect(health.headers.get("cache-control")).toBe("private, no-cache");
+    expect(health.headers.get("vary")).toContain("Cookie");
+
+    await businessMember(t.db, {
+      email: "musa@example.com",
+      name: "Musa",
+      role: "venue_operator",
+    });
+    const musa = browser(api);
+    await signInWithCode(api, musa, "musa@example.com");
+    const as = (path: string, extra: Record<string, string> = {}) =>
+      fetch(`${api.url}${path}`, {
+        headers: { Cookie: musa.cookieHeader(), Origin: FRONTEND_ORIGIN, ...extra },
+      });
+    // Unchanged since the browser last asked: a 304 with no body.
+    const first = await as("/api/venues");
+    const etag = first.headers.get("etag") ?? "";
+    expect(etag).not.toBe("");
+    expect((await as("/api/venues", { "If-None-Match": etag })).status).toBe(304);
+
+    const codes = await as("/api/vouchers");
+    expect(codes.status).toBe(200);
+    expect(codes.headers.get("cache-control")).toBe("no-store");
   });
 });
