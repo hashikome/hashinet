@@ -31,7 +31,7 @@ export default function SessionsPage() {
     const timer = setTimeout(() => setTyped(search.trim()), 250);
     return () => clearTimeout(timer);
   }, [search]);
-  const list = useLoad(async () => {
+  const list = useLoad("live-sessions", async () => {
     const q = new URLSearchParams({ status: "connected", order: "ending", limit: "500" });
     if (venueId) q.set("venueId", venueId);
     if (typed) q.set("search", typed);

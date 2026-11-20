@@ -50,7 +50,7 @@ export default function DevicesPage() {
     if (before) q.set("before", before);
     return `/api/devices?${q}`;
   };
-  const list = useLoad(async () => {
+  const list = useLoad("devices", async () => {
     const page = await api.get<DeviceList>(query(null));
     setMore([]);
     setNext(page.nextBefore);

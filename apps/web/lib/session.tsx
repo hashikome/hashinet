@@ -12,7 +12,7 @@ import {
   useState,
 } from "react";
 import { ApiRequestError, api } from "./api";
-import { LoadFailed } from "./load";
+import { LoadFailed, useForgetAll } from "./load";
 import { homeOf } from "./nav";
 import { applyTheme } from "./theme";
 
@@ -36,6 +36,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [unreachable, setUnreachable] = useState(false);
+  // What one workspace loaded is never shown in another, nor after signing out.
+  const forgetAll = useForgetAll();
 
   const load = useCallback(async (): Promise<Me | null> => {
     try {
@@ -66,16 +68,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await api.post("/api/auth/sign-out").catch(() => undefined);
+    forgetAll();
     router.replace("/sign-in");
-  }, [router]);
+  }, [router, forgetAll]);
 
   const switchTo = useCallback(
     async (membershipId: string) => {
       await api.post("/api/me/membership", { membershipId });
+      forgetAll();
       const next = await load();
       if (next) router.push(homeOf(next));
     },
-    [load, router],
+    [load, router, forgetAll],
   );
 
   const value = useMemo(

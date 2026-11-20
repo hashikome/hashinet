@@ -72,7 +72,11 @@ function SignInSettings() {
   const { me, refresh } = useSession();
   const toast = useToast();
   const params = useSearchParams();
-  const passkeys = useLoad(() => api.get<Passkey[]>("/api/auth/passkey/list-user-passkeys"), []);
+  const passkeys = useLoad(
+    "passkeys",
+    () => api.get<Passkey[]>("/api/auth/passkey/list-user-passkeys"),
+    [],
+  );
   const [flow, setFlow] = useState<Flow | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

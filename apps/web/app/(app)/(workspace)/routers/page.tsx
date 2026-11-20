@@ -16,7 +16,7 @@ export default function RoutersPage() {
   const { me } = useSession();
   const [search, setSearch] = useState("");
   const [state, setState] = useState<RouterCondition | "">("");
-  const data = useLoad(async () => {
+  const data = useLoad("routers-and-businesses", async () => {
     const [r, b] = await Promise.all([
       api.get<RouterList>("/api/routers"),
       api.get<BusinessList>("/api/businesses"),

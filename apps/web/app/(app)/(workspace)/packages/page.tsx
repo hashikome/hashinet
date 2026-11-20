@@ -32,7 +32,7 @@ export default function PackagesPage() {
   const { all: venues } = useVenues();
   const owner = can("package.manage");
   const [open, setOpen] = useState<Open | null>(null);
-  const list = useLoad(() => api.get<PackageList>("/api/packages"), [me.active.id]);
+  const list = useLoad("packages", () => api.get<PackageList>("/api/packages"), [me.active.id]);
 
   const soldAt = (p: PackageList["packages"][number]) => {
     const at = p.venueIds.length ? venues.filter((v) => p.venueIds.includes(v.id)) : venues;

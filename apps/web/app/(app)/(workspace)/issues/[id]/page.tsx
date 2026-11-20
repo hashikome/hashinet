@@ -31,7 +31,7 @@ import { Agreed, PackageSteps, SetupSteps } from "./onboarding-steps";
 export default function IssuePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { me } = useSession();
-  const data = useLoad(async () => {
+  const data = useLoad("issue", async () => {
     const detail = await api.get<IssueDetail>(`/api/issues/${id}`);
     const venueId = detail.issue.kind !== "router_offline" ? detail.issue.venue?.id : null;
     const onboarding = venueId

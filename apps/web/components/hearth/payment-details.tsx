@@ -29,6 +29,7 @@ export function PayCard({ way }: { way: PaymentWay }) {
  */
 export function PaymentDetails({ venueId, edit }: { venueId: string; edit: boolean }) {
   const details = useLoad(
+    "payment-details",
     () => api.get<VenuePaymentDetails>(`/api/venues/${venueId}/payment-details`),
     [venueId],
   );

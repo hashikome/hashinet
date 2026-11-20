@@ -13,7 +13,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { formatDuration } from "@/lib/duration";
-import { LoadFailed, useLoad } from "@/lib/load";
+import { LoadFailed, useLoad, usePrefetch, useRefreshAll } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useCan } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
@@ -41,11 +41,9 @@ interface Selling {
   /** Whether the reader may sell here, at a venue with a router. */
   can: boolean;
   open: () => void;
-  /** How many sales this page has made: pages that show sales reload when it changes. */
-  sales: number;
 }
 
-const SellContext = createContext<Selling>({ can: false, open: () => {}, sales: 0 });
+const SellContext = createContext<Selling>({ can: false, open: () => {} });
 export const useSell = () => useContext(SellContext);
 
 /**
@@ -56,22 +54,29 @@ export function SellProvider({ children }: { children: ReactNode }) {
   const can = useCan();
   const { all } = useVenues();
   const [open, setOpen] = useState(false);
-  const [sales, setSales] = useState(0);
+  // A sale changes Today, Vouchers and Payments: whatever is on screen asks again behind it.
+  const refreshAll = useRefreshAll();
   const sellable = all.filter((v) => v.routerCount > 0);
+  // Sell opens full: what it shows is loaded before it is asked for, and refreshed when it opens.
+  const prefetch = usePrefetch();
+  const selling = can("sale.record");
+  const ids = sellable.map((v) => v.id).join(",");
+  useEffect(() => {
+    if (!selling) return;
+    for (const id of ids.split(",").filter(Boolean)) {
+      prefetch("venue-packages", () => packagesAt(id), [id]);
+      prefetch("payment-details", () => paymentDetailsAt(id), [id]);
+    }
+  }, [selling, ids, prefetch]);
   const value = {
     can: can("sale.record") && sellable.length > 0,
     open: () => setOpen(true),
-    sales,
   };
   return (
     <SellContext.Provider value={value}>
       {children}
       {open ? (
-        <SellDialog
-          venues={sellable}
-          onSold={() => setSales((n) => n + 1)}
-          onClose={() => setOpen(false)}
-        />
+        <SellDialog venues={sellable} onSold={refreshAll} onClose={() => setOpen(false)} />
       ) : null}
     </SellContext.Provider>
   );
@@ -167,23 +172,13 @@ function PickStep({
   onPick: (p: PackageRecord) => void;
   onClose: () => void;
 }) {
-  const [packages, setPackages] = useState<PackageRecord[] | null>(null);
+  const sold = useLoad("venue-packages", () => packagesAt(venue.id), [venue.id]);
+  const packages = sold.data?.packages ?? null;
   const first = useRef<HTMLButtonElement>(null);
-  // The packages arrive after the dialog opens: focus moves to the first one when they do.
+  // Focus starts on the first package, as soon as there is one.
   useEffect(() => {
     if (packages?.length) first.current?.focus();
   }, [packages]);
-  useEffect(() => {
-    let live = true;
-    setPackages(null);
-    api
-      .get<VenuePackages>(`/api/venues/${venue.id}/packages`)
-      .then((r) => live && setPackages(r.packages))
-      .catch(() => live && setPackages([]));
-    return () => {
-      live = false;
-    };
-  }, [venue.id]);
   return (
     <Dialog label="Sell a voucher" className="sell" onClose={onClose}>
       <h2>Sell a voucher</h2>
@@ -204,7 +199,9 @@ function PickStep({
           </select>
         </Field>
       ) : null}
-      {packages === null ? null : packages.length ? (
+      {sold.error ? (
+        <LoadFailed error={sold.error} retry={sold.reload} />
+      ) : packages === null ? null : packages.length ? (
         <div className="pkg-rows">
           {packages.map((p, i) => (
             <button
@@ -232,6 +229,10 @@ function PickStep({
   );
 }
 
+const packagesAt = (venueId: string) => api.get<VenuePackages>(`/api/venues/${venueId}/packages`);
+const paymentDetailsAt = (venueId: string) =>
+  api.get<VenuePaymentDetails>(`/api/venues/${venueId}/payment-details`);
+
 /**
  * Step 2: the check, centred like the voucher, with the price large. For mobile money it shows where
  * to pay and needs the guest's mobile money number; Confirm sale means the money is in hand.
@@ -253,10 +254,7 @@ function CheckStep({
   const [phone, setPhone] = useState("");
   const { busy, errors, run } = useSubmit();
   const mobile = method === "mobile_money";
-  const details = useLoad(
-    () => api.get<VenuePaymentDetails>(`/api/venues/${venue.id}/payment-details`),
-    [venue.id],
-  );
+  const details = useLoad("payment-details", () => paymentDetailsAt(venue.id), [venue.id]);
   const confirm = async () => {
     let result: SaleResult | null = null;
     const ok = await run(async () => {

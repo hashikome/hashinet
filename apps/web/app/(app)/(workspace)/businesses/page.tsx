@@ -30,7 +30,7 @@ export default function BusinessesPage() {
   const toast = useToast();
   const [inviting, setInviting] = useState(false);
   const [search, setSearch] = useState("");
-  const list = useLoad(async () => {
+  const list = useLoad("businesses-and-invitations", async () => {
     const [b, i] = await Promise.all([
       api.get<BusinessList>("/api/businesses"),
       api.get<InvitationList>("/api/invitations/businesses"),

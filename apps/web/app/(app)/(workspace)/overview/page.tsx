@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/hearth/onboarding";
 import { ProtectNotice } from "@/components/hearth/protect";
-import { SellButton, useSell } from "@/components/hearth/sell";
+import { SellButton } from "@/components/hearth/sell";
 import {
   Attention,
   Button,
@@ -45,13 +45,13 @@ import { useVenues } from "@/lib/venues";
 export default function OverviewPage() {
   const { me } = useSession();
   const { shown, filter } = useVenues();
-  const { sales } = useSell();
   const venueId = filter === "all" ? "" : filter;
   const today = useLoad(
+    "today",
     () => api.get<TodaySummary>(`/api/analytics/today${venueId ? `?venueId=${venueId}` : ""}`),
-    [venueId, me.active.id, sales],
+    [venueId, me.active.id],
   );
-  const routers = useLoad(() => api.get<RouterList>("/api/routers"), [me.active.id]);
+  const routers = useLoad("routers", () => api.get<RouterList>("/api/routers"), [me.active.id]);
   const one = shown.length === 1 ? shown[0] : null;
   const inView = (routers.data?.routers ?? []).filter((r) => shown.some((v) => v.id === r.venueId));
   const serving = inView.filter((r) => r.condition !== "setting-up");
@@ -158,15 +158,16 @@ function OperatorToday({
   venue: VenueRecord | null;
 }) {
   const { me } = useSession();
-  const { sales } = useSell();
   const venueQuery = venue ? `&venueId=${venue.id}` : "";
   const ending = useLoad(
+    "ending-soon",
     () => api.get<SessionList>(`/api/sessions?status=connected&order=ending&limit=4${venueQuery}`),
     [me.active.id, venueQuery],
   );
   const mine = useLoad(
+    "my-sales",
     () => api.get<PaymentsReceived>(`/api/payments/received?by=me&day=${today.day}${venueQuery}`),
-    [me.active.id, venueQuery, today.day, sales],
+    [me.active.id, venueQuery, today.day],
   );
   const router = routers[0];
   return (
@@ -256,6 +257,7 @@ function SettingUp({ sub }: { sub: string }) {
   const first = me.name.split(/\s+/)[0] ?? me.name;
   const venue = shown[0];
   const onboarding = useLoad(
+    "onboarding",
     () =>
       venue && can("onboarding.read")
         ? api.get<VenueOnboarding>(`/api/venues/${venue.id}/onboarding`)

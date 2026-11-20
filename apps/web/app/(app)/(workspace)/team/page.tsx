@@ -45,7 +45,7 @@ export default function TeamPage() {
   const toast = useToast();
   const [ask, setAsk] = useState<Ask>(null);
   const [search, setSearch] = useState("");
-  const team = useLoad(() => api.get<TeamList>("/api/team"), [me.active.id]);
+  const team = useLoad("team", () => api.get<TeamList>("/api/team"), [me.active.id]);
   const { all: venues } = useVenues();
   const business = me.active.scope === "business";
   const who = business

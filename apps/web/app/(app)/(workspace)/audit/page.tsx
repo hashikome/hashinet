@@ -49,7 +49,7 @@ export default function AuditPage() {
     if (before) q.set("before", before);
     return `/api/audit?${q}`;
   };
-  const list = useLoad(async () => {
+  const list = useLoad("audit", async () => {
     const page = await api.get<AuditList>(query(null));
     setMore([]);
     setNext(page.nextBefore);

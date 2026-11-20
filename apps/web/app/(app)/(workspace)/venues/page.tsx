@@ -17,7 +17,9 @@ export default function VenuesPage() {
   const { me } = useSession();
   const [search, setSearch] = useState("");
   const [business, setBusiness] = useState("");
-  const data = useLoad(() => api.get<BusinessList>("/api/businesses"), [me.active.id]);
+  const data = useLoad("businesses", () => api.get<BusinessList>("/api/businesses"), [
+    me.active.id,
+  ]);
   const all = (data.data?.businesses ?? []).flatMap((b) =>
     b.venues.map((v) => ({ ...v, business: { id: b.id, name: b.name } })),
   );

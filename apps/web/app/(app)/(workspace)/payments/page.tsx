@@ -35,7 +35,7 @@ export default function PaymentsPage() {
     if (before) q.set("before", before);
     return `/api/payments/received?${q}`;
   };
-  const list = useLoad(async () => {
+  const list = useLoad("payments", async () => {
     const page = await api.get<PaymentsReceived>(path(null));
     setMore([]);
     setNext(page.nextBefore);
@@ -43,6 +43,7 @@ export default function PaymentsPage() {
   }, [me.active.id, month, venueId]);
 
   const today = useLoad(
+    "today",
     () => api.get<TodaySummary>(`/api/analytics/today${venueId ? `?venueId=${venueId}` : ""}`),
     [me.active.id, venueId],
   );

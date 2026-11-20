@@ -21,7 +21,7 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
   const { id } = use(params);
   const { me } = useSession();
   const can = useCan();
-  const data = useLoad(async () => {
+  const data = useLoad("business", async () => {
     const [business, issues] = await Promise.all([
       api.get<BusinessDetail>(`/api/businesses/${id}`),
       can("issue.read") ? api.get<IssueList>(`/api/issues?status=open&businessId=${id}`) : null,

@@ -54,7 +54,7 @@ const CHECK: Record<RouterChecks["checks"][number]["status"], [string, PillKind]
 export default function RouterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: venueId } = use(params);
   const can = useCan();
-  const data = useLoad(async () => {
+  const data = useLoad("router-page", async () => {
     const [{ venue }, { routers }] = await Promise.all([
       api.get<VenueResponse>(`/api/venues/${venueId}`),
       api.get<RouterList>(`/api/routers?venueId=${venueId}`),
@@ -256,6 +256,7 @@ function RouterView({
   const install = can("router.install");
   const check = can("router.check");
   const journey = useLoad(
+    "router-journey",
     () => api.get<RouterJourney>(`/api/routers/${router.id}/journey`),
     [router.id],
   );

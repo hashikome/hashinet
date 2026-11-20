@@ -1,36 +1,75 @@
 "use client";
 
-import { type DependencyList, useCallback, useEffect, useRef, useState } from "react";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type DependencyList, type ReactNode, useCallback, useState } from "react";
 import { Attention, Button } from "@/components/hearth/ui";
 import { messageOf } from "./api";
 
 /**
- * Loads what a page shows. `data` is null until it arrives; a failure is `error`, never an empty
- * page, and `reload` asks again (after a change, or from the failure's Try again).
+ * The pages' shared memory of what they loaded (stale-while-revalidate): a page shows what it last
+ * loaded at once and asks again in the background, on every visit and when the tab comes back. A
+ * failure is shown at once, with Try again, rather than retried behind the person's back.
  */
-export function useLoad<T>(load: () => Promise<T>, deps: DependencyList) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [at, setAt] = useState<Date | null>(null);
-  const latest = useRef(load);
-  latest.current = load;
-  // The caller names what the load depends on; it runs again when any of them changes.
-  const key = JSON.stringify(deps);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `key` stands for the caller's dependencies
-  const run = useCallback(async () => {
-    try {
-      const next = await latest.current();
-      setData(next);
-      setError(null);
-      setAt(new Date());
-    } catch (e) {
-      setError(messageOf(e));
-    }
-  }, [key]);
-  useEffect(() => {
-    void run();
-  }, [run]);
-  return { data, error, reload: run, at };
+export function LoadProvider({ children }: { children: ReactNode }) {
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { staleTime: 0, retry: false } },
+      }),
+  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
+
+/**
+ * Loads what a page shows. `name` and `deps` say what it is: loads with the same name and deps
+ * share what was loaded (Today's figures on Overview and Payments). `data` is null only until the
+ * first answer; a failure is `error`, never an empty page; `reload` asks again.
+ */
+export function useLoad<T>(name: string, load: () => Promise<T>, deps: DependencyList) {
+  const query = useQuery({ queryKey: keyOf(name, deps), queryFn: load });
+  const { refetch } = query;
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+  return {
+    data: query.data ?? null,
+    error: query.error === null ? null : messageOf(query.error),
+    reload,
+    at: query.dataUpdatedAt === 0 ? null : new Date(query.dataUpdatedAt),
+  };
+}
+
+const keyOf = (name: string, deps: DependencyList) => [name, ...deps];
+
+/**
+ * Loads ahead what a screen is about to show (the Sell dialog's packages), under the key `useLoad`
+ * gives the same name and deps, so the screen opens with it.
+ */
+export function usePrefetch(): <T>(
+  name: string,
+  load: () => Promise<T>,
+  deps: DependencyList,
+) => void {
+  const client = useQueryClient();
+  return useCallback(
+    (name, load, deps) => void client.prefetchQuery({ queryKey: keyOf(name, deps), queryFn: load }),
+    [client],
+  );
+}
+
+/**
+ * After a change other screens show (a sale, a refund), every load on screen asks again in the
+ * background, keeping what it shows until the answer comes.
+ */
+export function useRefreshAll(): () => void {
+  const client = useQueryClient();
+  return useCallback(() => void client.invalidateQueries(), [client]);
+}
+
+/** Forgets everything loaded, when the workspace changes or the person signs out. */
+export function useForgetAll(): () => void {
+  const client = useQueryClient();
+  return useCallback(() => client.clear(), [client]);
 }
 
 /** A load that failed: what happened, and Try again. */

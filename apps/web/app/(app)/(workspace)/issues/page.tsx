@@ -24,10 +24,10 @@ export default function IssuesPage() {
   const [kind, setKind] = useState<IssueKind | "">("");
   const [search, setSearch] = useState("");
   const asked = status === "stalled" ? "open" : status;
-  const list = useLoad(
-    () => api.get<IssueList>(`/api/issues?status=${asked}`),
-    [me.active.id, asked],
-  );
+  const list = useLoad("issues", () => api.get<IssueList>(`/api/issues?status=${asked}`), [
+    me.active.id,
+    asked,
+  ]);
   const rows = (list.data?.issues ?? []).filter(
     (i) =>
       (status !== "stalled" || i.stalled) &&

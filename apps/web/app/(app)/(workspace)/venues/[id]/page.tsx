@@ -15,7 +15,7 @@ import { useCan } from "@/lib/session";
 export default function VenuePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const can = useCan();
-  const data = useLoad(() => api.get<VenueResponse>(`/api/venues/${id}`), [id]);
+  const data = useLoad("venue", () => api.get<VenueResponse>(`/api/venues/${id}`), [id]);
   if (data.error) return <LoadFailed error={data.error} retry={data.reload} />;
   if (!data.data) return null;
   const { venue } = data.data;
