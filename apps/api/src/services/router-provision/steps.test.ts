@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { ProvisionContext } from "./context.js";
+import { dialectFor } from "./dialect.js";
+import type { RouterProfile } from "./probe.js";
 import { type RosClient, RosRow, toRows } from "./ros-client.js";
 import {
   addRuleFirst,
@@ -312,5 +314,86 @@ describe("a venue's allowed sites", () => {
     expect(fake.calls[1]).toContain("=dst-host=hotel.co.tz");
     expect(fake.calls[1]).toContain("=comment=wbs:allowed-site:hotel.co.tz");
     expect(fake.calls).toHaveLength(2);
+  });
+});
+
+describe("an open guest WiFi", () => {
+  const found = PROVISION_STEPS.find((s) => s.id === "hotspot-radio-open");
+  if (!found) throw new Error("no step");
+  const step = found;
+  const ctxFor = (stack: "wifi" | "wireless") =>
+    ({
+      profile: { capabilities: { hotspot: true }, wirelessStack: stack },
+      hotspot: { interface: "wifi2", interfaceIsRadio: true },
+      dialect: dialectFor({
+        capabilities: { toolFetch: true, userSharedUsers: true, userRateLimit: true },
+        wirelessStack: stack,
+      } as unknown as RouterProfile),
+    }) as unknown as ProvisionContext;
+
+  /** A board whose menus hold `rows`, keyed by menu then name; records every write. */
+  function board(rows: Record<string, Record<string, Record<string, string>>>) {
+    const calls: string[] = [];
+    const ros = {
+      findByName: async (menu: string, name: string) => {
+        const row = rows[menu]?.[name];
+        return row ? new RosRow(row) : null;
+      },
+      set: async (menu: string, id: string, params: string[]) => {
+        calls.push(`set ${menu} ${id} ${params.join(" ")}`);
+      },
+      add: async (menu: string, params: string[]) => {
+        calls.push(`add ${menu} ${params.join(" ")}`);
+        return null;
+      },
+    } as unknown as RosClient;
+    return { ros, calls };
+  }
+
+  test("the wifi package: authentication emptied on the guest radio itself, and nothing else", async () => {
+    const secured = board({
+      "/interface/wifi": {
+        wifi2: { ".id": "*2", name: "wifi2", "security.authentication-types": "wpa2-psk,wpa3-psk" },
+      },
+    });
+    const ctx = ctxFor("wifi");
+    expect(await step.check({ ros: secured.ros, ctx })).toBe(false);
+    await step.apply({ ros: secured.ros, ctx });
+    expect(secured.calls).toEqual(["set /interface/wifi *2 =security.authentication-types="]);
+    const open = board({
+      "/interface/wifi": {
+        wifi2: { ".id": "*2", name: "wifi2", "security.authentication-types": "" },
+      },
+    });
+    expect(await step.check({ ros: open.ros, ctx })).toBe(true);
+  });
+
+  test("legacy wireless: its own mode=none profile on the guest radio, never `default`", async () => {
+    const fresh = board({
+      "/interface/wireless": {
+        wifi2: { ".id": "*2", name: "wifi2", "security-profile": "default" },
+      },
+    });
+    const ctx = ctxFor("wireless");
+    expect(await step.check({ ros: fresh.ros, ctx })).toBe(false);
+    await step.apply({ ros: fresh.ros, ctx });
+    expect(fresh.calls).toEqual([
+      "add /interface/wireless/security-profiles =name=wbs-open =mode=none =comment=wbs:hotspot-radio-open",
+      "set /interface/wireless *2 =security-profile=wbs-open",
+    ]);
+    expect(fresh.calls.join(" ")).not.toContain("default");
+    const done = board({
+      "/interface/wireless": {
+        wifi2: { ".id": "*2", name: "wifi2", "security-profile": "wbs-open" },
+      },
+      "/interface/wireless/security-profiles": {
+        "wbs-open": { ".id": "*5", name: "wbs-open", mode: "none" },
+      },
+    });
+    expect(await step.check({ ros: done.ros, ctx })).toBe(true);
+  });
+
+  test("it never aborts a first setup", () => {
+    expect(step.critical).toBe(false);
   });
 });

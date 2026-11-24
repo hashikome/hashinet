@@ -34,6 +34,12 @@ describe("radio menus per wireless stack", () => {
       // ap-bridge, not `ap` — `ap` is a legacy alias that does not bridge clients.
       modeValue: "ap-bridge",
       runningCheckField: "disable-running-check",
+      // Its own profile for the guest radio; `default` is never changed.
+      open: {
+        kind: "profile",
+        menu: "/interface/wireless/security-profiles",
+        profile: "wbs-open",
+      },
     });
   });
 
@@ -46,6 +52,8 @@ describe("radio menus per wireless stack", () => {
       modeValue: "ap",
       // No equivalent property on this stack.
       runningCheckField: null,
+      // Set on the interface, which wins over any profile the owner's own WiFi shares.
+      open: { kind: "interface", field: "security.authentication-types" },
     });
   });
 

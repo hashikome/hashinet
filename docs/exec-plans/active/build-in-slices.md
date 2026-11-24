@@ -351,17 +351,30 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     (`tel:+255…`), and the sell dialog's QR code and wording. An in-sentence link's default button
     padding left a gap before its full stop on every portal page; `.g-link` has none.
   - [ ] (l) Guest WiFi that protects guests with no password (owner, 25 November 2026). A guest
-    network has no password; it is encrypted where the phone can be: OWE transition mode, an open
-    network and a hidden OWE twin with the same name, so a phone that supports Enhanced Open joins
-    encrypted and an older one joins open, and both reach the portal. Setup today runs the hotspot
-    on the radio itself and never touches its security, so a factory password stays on. Setup
-    probes the radio, then on the wifi package makes the radio open
-    (`security.authentication-types=""`), adds the OWE twin (`authentication-types=owe`,
-    `owe-transition-interface` each way, `hide-ssid`) and runs the hotspot on a guest bridge of the
-    two; on the legacy wireless package, open (security profile `mode=none`), and the router's page
-    says its guests' traffic is not encrypted. Unit tests from MikroTik's documentation; accepted
-    only on a real router with a radio (the sim has none): an iPhone and an Android join, one over
-    OWE, and both see the portal.
+    network has no password; it is encrypted where the phone can be. Built in two stages, the first
+    because the WiFi QR codes now printed say `nopass`, and a board that ships with a password
+    would refuse them.
+    - Stage 1, the open radio (built 25 November 2026): `hotspot-radio-open`, non-critical, after
+      the SSID. On the wifi package it empties `security.authentication-types` on the guest radio
+      itself, which wins over any profile (MikroTik's documented priority), so a profile the
+      owner's own WiFi (a second radio) shares is never touched; on legacy wireless it gives the
+      guest radio setup's own `wbs-open` profile (`mode=none`) and never changes `default`. Verify
+      warns when the guest WiFi may still ask for a password. Unit tests for both stacks; the router
+      sim (no radio) sets up and verifies as before, the new check skipped. Open on hardware: what
+      a real board reports for an emptied `security.authentication-types` (if it omits the key,
+      the step stays "not done" and verify warns), and whether a factory password comes from the
+      interface or a profile. Make the step critical once a board has shown it.
+    - Stage 2, OWE transition mode (waits for a router with a radio): the guest radio and a hidden
+      OWE twin with the same name (`authentication-types=owe`, `owe-transition-interface` each
+      way) under a guest bridge (`wbs-guest`) that the hotspot runs on, so a phone that supports
+      Enhanced Open joins encrypted and an older one joins open, and both reach the portal. It
+      separates the radio from where the hotspot runs: the radio steps and `verify` read the radio,
+      the addressing reads the bridge, and the unbridge step leaves the guest bridge alone, or it
+      and the bridge step undo each other on every run. The twin joins the bridge before the base
+      radio names it, and the base radio drops it if anything after fails, so no phone joins a twin
+      with no portal. Legacy wireless has no OWE and stays open, and the router's page says its
+      guests' traffic is not encrypted. Accepted on a real router: an iPhone and an Android join,
+      one over OWE, and both see the portal; the sim must still pass `guest-test` 20/20.
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).

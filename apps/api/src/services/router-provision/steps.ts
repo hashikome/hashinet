@@ -335,6 +335,60 @@ const hotspotRadioSsid: ProvisionStep = {
 };
 
 /**
+ * Whether the guest radio asks for no password. On the wifi package the interface's own
+ * `security.authentication-types` is set empty, which MikroTik documents as no authentication; on
+ * legacy wireless the radio uses setup's own `mode=none` profile.
+ */
+export async function radioIsOpen(
+  ros: RosClient,
+  { menu, open }: RadioDialect,
+  radio: string,
+): Promise<boolean> {
+  const row = await ros.findByName(menu, radio);
+  if (!row) return false;
+  if (open.kind === "interface") return row.get(open.field) === "";
+  if (row.get("security-profile") !== open.profile) return false;
+  const profile = await ros.findByName(open.menu, open.profile);
+  return profile?.get("mode") === "none";
+}
+
+/**
+ * Make the guest radio open: a guest network has no password, and a voucher's QR code joins it as
+ * `WIFI:T:nopass`. A board can ship with its WiFi secured by a password, which setup otherwise
+ * leaves on. Only the hotspot radio changes, set on the radio itself: a profile the owner's own
+ * WiFi (a second radio) may share is never touched. Non-critical, as the SSID step is: what a real
+ * board reports back for these properties is unproved on hardware, and a read-back that differs
+ * must not abort a first setup. `verify` says plainly when the guest WiFi still asks for one.
+ */
+const hotspotRadioOpen: ProvisionStep = {
+  id: "hotspot-radio-open",
+  title: "Open the guest WiFi: no password",
+  critical: false,
+  appliesTo: (ctx) =>
+    ctx.profile.capabilities.hotspot && ctx.hotspot.interfaceIsRadio && ctx.dialect.radio !== null,
+  check: ({ ros, ctx }) => radioIsOpen(ros, radioOf(ctx), ctx.hotspot.interface),
+  async apply({ ros, ctx }) {
+    const { menu, open } = radioOf(ctx);
+    const row = await ros.findByName(menu, ctx.hotspot.interface);
+    if (!row?.get(".id")) return;
+    if (open.kind === "interface") {
+      await ros.set(menu, rowId(row), [`=${open.field}=`]);
+      return;
+    }
+    const profile = await ros.findByName(open.menu, open.profile);
+    if (profile?.get(".id")) await ros.set(open.menu, rowId(profile), ["=mode=none"]);
+    else {
+      await ros.add(open.menu, [
+        `=name=${open.profile}`,
+        "=mode=none",
+        `=comment=${tagFor("hotspot-radio-open")}`,
+      ]);
+    }
+    await ros.set(menu, rowId(row), [`=security-profile=${open.profile}`]);
+  },
+};
+
+/**
  * Stop the radio's `running` flag tracking associated clients, so the DHCP server stops reporting
  * itself invalid on a hotspot nobody has connected to yet.
  *
@@ -830,6 +884,7 @@ export const PROVISION_STEPS: ProvisionStep[] = [
   hotspotInterfaceUnbridged,
   hotspotRadioEnabled,
   hotspotRadioSsid,
+  hotspotRadioOpen,
   // Before the DHCP steps: it is the DHCP server that copies the flag this fixes.
   hotspotRadioRunningCheck,
   hotspotPool,

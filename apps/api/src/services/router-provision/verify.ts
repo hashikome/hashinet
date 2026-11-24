@@ -31,6 +31,7 @@ import type { RouterCapabilities } from "./probe.js";
 // Same check/report shape as readiness.ts on purpose: one frontend component renders both.
 import type { ReadinessCheck, ReadinessStatus } from "./readiness.js";
 import { RosClient, rowId } from "./ros-client.js";
+import { radioIsOpen } from "./steps.js";
 
 export interface VerifyReport {
   /** False when something proves the hotspot is not serving. */
@@ -245,6 +246,29 @@ async function radioBroadcastingCheck(
       `"${plan.interface}" is enabled in ${mode ?? dialect.radio.modeValue} mode` +
       `${ssid ? `, broadcasting "${ssid}"` : ""}` +
       `${associated ? `, ${associated.length} device(s) associated` : ""}.`,
+  };
+}
+
+/** A guest WiFi that still asks for a password can't be joined from a voucher's QR code. */
+async function guestWifiOpenCheck(
+  ros: RosClient,
+  dialect: Dialect,
+  plan: HotspotPlan,
+): Promise<ReadinessCheck> {
+  const base = { id: "guest-wifi-open", title: "The guest WiFi asks for no password" };
+  if (!plan.interfaceIsRadio || !dialect.radio) {
+    return { ...base, status: "skipped", detail: "The hotspot does not run on a radio." };
+  }
+  if (await radioIsOpen(ros, dialect.radio, plan.interface)) {
+    return { ...base, status: "pass", detail: `"${plan.interface}" is open.` };
+  }
+  return {
+    ...base,
+    status: "warn",
+    detail: `"${plan.interface}" may still ask for a password.`,
+    fix:
+      "Guests can't join from a voucher's QR code, which says the WiFi has none. Run Set up " +
+      "again; if this stays, the board reports its security in a way setup doesn't read yet.",
   };
 }
 
@@ -625,6 +649,7 @@ export async function verifyRouter(ros: RosClient, input: VerifyInput): Promise<
   checks.push(await hotspotServerCheck(ros, plan));
   checks.push(await dhcpServerCheck(ros, dialect, plan));
   checks.push(await radioBroadcastingCheck(ros, dialect, plan));
+  checks.push(await guestWifiOpenCheck(ros, dialect, plan));
   checks.push(await loginModeCheck(ros, plan));
   checks.push(await portalFilesCheck(ros, endpoints.portal.origin, routerId));
   checks.push(await walledGardenCheck(ros, endpoints.portal));

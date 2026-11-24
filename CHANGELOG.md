@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Router setup opens the guest WiFi: no password on the guest radio, set on that radio alone, so the
+  owner's own WiFi keeps its password (slice 2, step l, stage 1). Verify warns when the guest WiFi
+  may still ask for one, since a voucher's QR code joins it without.
 - The guest portal shows every guest the plans (slice 2, step k). Where the business takes payments
   online, they buy there; otherwise the page lists the plans, says where to buy in person and shows
   a number to call, if the venue gives one. The voucher page's button is Connect. A voucher's QR

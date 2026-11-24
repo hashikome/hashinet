@@ -33,7 +33,20 @@ export interface RadioDialect {
    * has no equivalent property, hence nullable.
    */
   runningCheckField: string | null;
+  /** How the guest radio is made open, with no password (`hotspot-radio-open`). */
+  open: OpenRadio;
 }
+
+/**
+ * A guest network has no password: the portal and the voucher control access (owner, 25 November
+ * 2026). The wifi package sets authentication on the interface itself, which takes priority over
+ * any profile ("1. Value in interface settings", MikroTik's WiFi documentation), so a profile the
+ * owner's own WiFi shares is never touched. Legacy wireless takes a security profile: setup gives
+ * the guest radio one of its own with `mode=none`, and never changes `default`.
+ */
+export type OpenRadio =
+  | { kind: "interface"; field: string }
+  | { kind: "profile"; menu: string; profile: string };
 
 export interface Dialect {
   /** Menu for radio interfaces, or null on boards with no wireless (hEX, CRS…) */
@@ -71,6 +84,7 @@ export function dialectFor(profile: RouterProfile): Dialect {
           modeField: "configuration.mode",
           modeValue: "ap",
           runningCheckField: null,
+          open: { kind: "interface", field: "security.authentication-types" },
         }
       : wirelessStack === "wireless"
         ? {
@@ -80,6 +94,11 @@ export function dialectFor(profile: RouterProfile): Dialect {
             // ap-bridge, not `ap` — `ap` is a legacy alias that does not bridge clients.
             modeValue: "ap-bridge",
             runningCheckField: "disable-running-check",
+            open: {
+              kind: "profile",
+              menu: "/interface/wireless/security-profiles",
+              profile: "wbs-open",
+            },
           }
         : null;
 
