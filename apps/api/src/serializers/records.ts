@@ -5,6 +5,7 @@ import type {
   RouterRecord,
   SessionRecord,
   VenueRecord,
+  VenueSelling,
   VoucherRecord,
 } from "@hashinet/types";
 import type {
@@ -96,7 +97,7 @@ export function portalSettingsRecord(row: PortalSetting): PortalSettingsRecord {
   };
 }
 
-export function venueRecord(row: Venue, routerCount: number, sells: boolean): VenueRecord {
+export function venueRecord(row: Venue, routerCount: number, selling: VenueSelling): VenueRecord {
   return {
     id: row.id,
     name: row.name,
@@ -106,7 +107,7 @@ export function venueRecord(row: Venue, routerCount: number, sells: boolean): Ve
     area: row.area,
     status: row.status,
     routerCount,
-    sells,
+    selling,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };

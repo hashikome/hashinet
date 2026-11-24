@@ -3,6 +3,7 @@ import type {
   RouterJourney,
   RouterSetupPhase,
   RouterStage,
+  VenueSelling,
 } from "@hashinet/types";
 import { PHASE_TITLES, type SetupPhaseId } from "../services/router-provision/setup.js";
 
@@ -14,6 +15,24 @@ export const SERVING = {
   lastSetup: { path: ["ok"], equals: true },
   status: "online",
 } as const;
+
+/** Whether a venue sells now, from its routers: the API decides it, the web says it. */
+export function sellingOf(
+  routers: { status: string; lastSetup: unknown; lastSeenAt: Date | null }[],
+): VenueSelling {
+  const setUp = routers.filter((r) => passedSetup(r.lastSetup));
+  if (setUp.some((r) => r.status === "online")) return { state: "selling" };
+  if (setUp.length === 0) return { state: "not-set-up" };
+  const heard = setUp.flatMap((r) => (r.lastSeenAt === null ? [] : [r.lastSeenAt.getTime()]));
+  return {
+    // As the router's condition says it: answering but failing is "needs attention" (`conditionOf`).
+    state: setUp.some((r) => r.status === "error") ? "needs-attention" : "offline",
+    since: heard.length ? new Date(Math.max(...heard)).toISOString() : null,
+  };
+}
+
+const passedSetup = (last: unknown) =>
+  typeof last === "object" && last !== null && "ok" in last && last.ok === true;
 
 /** A run this old with no finish was ended by a restart; setup itself takes minutes. */
 export const SETUP_STALE_MS = 10 * 60 * 1000;

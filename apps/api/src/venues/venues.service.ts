@@ -7,15 +7,14 @@ import { BrandService } from "../brand/brand.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { OnboardingService } from "../onboarding/onboarding.service.js";
-import { SERVING } from "../routers/router-journey.js";
+import { sellingOf } from "../routers/router-journey.js";
 import { venueRecord } from "../serializers/records.js";
 import { venueNotFound } from "./venue-errors.js";
 import type { VenueInput } from "./venue-input.js";
 
-/** Its routers, and one serving if any: a venue sells while one is (`SERVING`). */
+/** What its routers say about it: how many, and whether it sells (`sellingOf`). */
 const VENUE_COUNTS = {
-  _count: { select: { routers: true } },
-  routers: { where: SERVING, select: { id: true }, take: 1 },
+  routers: { select: { status: true, lastSetup: true, lastSeenAt: true } },
 } as const;
 
 @Injectable()
@@ -34,7 +33,7 @@ export class VenuesService {
       include: VENUE_COUNTS,
       orderBy: { createdAt: "desc" },
     });
-    return rows.map((row) => venueRecord(row, row._count.routers, row.routers.length > 0));
+    return rows.map((row) => venueRecord(row, row.routers.length, sellingOf(row.routers)));
   }
 
   async get(staff: Principal, id: string): Promise<VenueRecord> {
@@ -43,7 +42,7 @@ export class VenuesService {
       include: VENUE_COUNTS,
     });
     if (!row) throw venueNotFound();
-    return venueRecord(row, row._count.routers, row.routers.length > 0);
+    return venueRecord(row, row.routers.length, sellingOf(row.routers));
   }
 
   async create(staff: Principal, input: VenueInput): Promise<VenueRecord> {
@@ -74,7 +73,7 @@ export class VenuesService {
       );
       return created;
     });
-    return venueRecord(row, 0, false);
+    return venueRecord(row, 0, { state: "not-set-up" });
   }
 
   async update(staff: Principal, id: string, input: VenueInput): Promise<VenueRecord> {
@@ -87,7 +86,7 @@ export class VenuesService {
       include: VENUE_COUNTS,
     });
     await this.record(staff, "venue.update", row);
-    return venueRecord(row, row._count.routers, row.routers.length > 0);
+    return venueRecord(row, row.routers.length, sellingOf(row.routers));
   }
 
   /**

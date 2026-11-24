@@ -12,15 +12,16 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { when } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { LoadFailed, useLoad, usePrefetch, useRefreshAll } from "@/lib/load";
 import { tsh } from "@/lib/money";
-import { useCan } from "@/lib/session";
+import { useCan, useSession } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
 import { Dialog } from "./dialog";
 import { Icon } from "./icons";
-import { Button, Field, useToast } from "./ui";
+import { Button, ButtonLink, Field, Pill, useToast } from "./ui";
 import { VoucherCard, voucherLink } from "./voucher-card";
 
 type Method = "cash" | "mobile_money";
@@ -38,12 +39,14 @@ interface Sold {
 }
 
 interface Selling {
-  /** Whether the reader may sell here, at a venue with a router. */
+  /** Whether the reader sells: Sell shows, even while it is paused. */
   can: boolean;
+  /** No venue in reach has a router serving guests: Sell stays, quieter, and a tap says why. */
+  paused: boolean;
   open: () => void;
 }
 
-const SellContext = createContext<Selling>({ can: false, open: () => {} });
+const SellContext = createContext<Selling>({ can: false, paused: false, open: () => {} });
 export const useSell = () => useContext(SellContext);
 
 /**
@@ -56,7 +59,7 @@ export function SellProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   // A sale changes Today, Vouchers and Payments: whatever is on screen asks again behind it.
   const refreshAll = useRefreshAll();
-  const sellable = all.filter((v) => v.sells);
+  const sellable = all.filter((v) => v.selling.state === "selling");
   // Sell opens full: what it shows is loaded before it is asked for, and refreshed when it opens.
   const prefetch = usePrefetch();
   const selling = can("sale.record");
@@ -69,15 +72,18 @@ export function SellProvider({ children }: { children: ReactNode }) {
     }
   }, [selling, ids, prefetch]);
   const value = {
-    can: can("sale.record") && sellable.length > 0,
+    can: can("sale.record") && all.length > 0,
+    paused: sellable.length === 0,
     open: () => setOpen(true),
   };
   return (
     <SellContext.Provider value={value}>
       {children}
-      {open ? (
+      {!open ? null : value.paused ? (
+        <PausedDialog onClose={() => setOpen(false)} />
+      ) : (
         <SellDialog venues={sellable} onSold={refreshAll} onClose={() => setOpen(false)} />
-      ) : null}
+      )}
     </SellContext.Provider>
   );
 }
@@ -86,10 +92,87 @@ export function SellProvider({ children }: { children: ReactNode }) {
 export function SellButton() {
   const sell = useSell();
   if (!sell.can) return null;
-  return (
+  return sell.paused ? (
+    // Not disabled: a disabled button explains nothing, and a tap here says why.
+    <Button
+      kind="primary"
+      icon="plus"
+      className="paused"
+      aria-disabled="true"
+      aria-describedby="sell-paused"
+      data-act="sell-open"
+      onClick={sell.open}
+    >
+      Sell a voucher
+      <span className="sr" id="sell-paused">
+        Selling is paused: no router is serving guests.
+      </span>
+    </Button>
+  ) : (
     <Button kind="primary" icon="plus" data-act="sell-open" onClick={sell.open}>
       Sell a voucher
     </Button>
+  );
+}
+
+/**
+ * Why Sell is paused, and what to do: whoever runs the venue goes to its router or its setup; at the
+ * counter the seller tells them. Selling comes back by itself once a router serves.
+ */
+function PausedDialog({ onClose }: { onClose: () => void }) {
+  const can = useCan();
+  const { me } = useSession();
+  const { shown, all } = useVenues();
+  const venue = shown[0] ?? all[0];
+  if (!venue) return null;
+  const { selling } = venue;
+  const offline = selling.state === "offline" || selling.state === "needs-attention";
+  const runsIt = can("router.read") && me.active.role !== "venue_operator";
+  const since =
+    selling.state !== "selling" && selling.state !== "not-set-up" && selling.since
+      ? ` since ${when(selling.since)}`
+      : "";
+  const status =
+    selling.state === "needs-attention"
+      ? "Router needs attention"
+      : `Router ${selling.state === "offline" ? "offline" : "not set up yet"}`;
+  return (
+    <Dialog label="Selling is paused" className="sell" onClose={onClose}>
+      <h2>Selling is paused</h2>
+      <p className="sell-state">
+        <Pill kind={offline ? "bad" : "wait"}>{offline ? `${status}${since}` : status}</Pill>
+      </p>
+      <p>
+        {offline
+          ? `A voucher sold now couldn't be used at ${venue.name}, so selling waits for the router. It comes back by itself as soon as the router is online.`
+          : `A voucher sold now couldn't be used at ${venue.name}, so selling starts once its router is set up.`}
+      </p>
+      {!runsIt ? (
+        <p className="note">
+          Tell your manager the router{" "}
+          {selling.state === "needs-attention"
+            ? "needs attention"
+            : offline
+              ? "is offline"
+              : "isn't set up yet"}
+          .
+        </p>
+      ) : offline ? (
+        <p className="note">
+          {selling.state === "needs-attention"
+            ? "It answers, but HashiNet can't bring it up to date. Its page says what failed."
+            : "Check it has power and its lights are on, and that the internet line works."}
+        </p>
+      ) : null}
+      <div className="dialog-actions">
+        {runsIt ? (
+          <ButtonLink kind="primary" href={offline ? `/venues/${venue.id}/router` : "/overview"}>
+            {offline ? "Open the router" : "See the setup"}
+          </ButtonLink>
+        ) : null}
+        <Button onClick={onClose}>Close</Button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -106,7 +189,9 @@ function SellDialog({
   onClose: () => void;
 }) {
   const { shown } = useVenues();
-  const [venueId, setVenueId] = useState((shown.find((v) => v.sells) ?? venues[0])?.id ?? "");
+  const [venueId, setVenueId] = useState(
+    (shown.find((v) => v.selling.state === "selling") ?? venues[0])?.id ?? "",
+  );
   const [pkg, setPkg] = useState<PackageRecord | null>(null);
   const [sold, setSold] = useState<Sold | null>(null);
   const venue = venues.find((v) => v.id === venueId) ?? null;

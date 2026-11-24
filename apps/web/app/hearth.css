@@ -467,6 +467,17 @@ ul {
   border-color: var(--border);
   background: var(--card);
 }
+/* Selling paused: Sell keeps its place, in the quiet fill with muted ink, and still answers a tap. */
+.btn.primary.paused {
+  background: var(--secondary);
+  color: var(--muted-fg);
+}
+.btn.primary.paused:hover {
+  background: color-mix(in oklab, var(--foreground) 9%, var(--secondary));
+}
+.sell-state {
+  margin: 4px 0 12px;
+}
 /* Waiting, not broken: a disabled button keeps its colour, a step quieter. */
 .btn:disabled {
   opacity: 0.72;
@@ -3122,6 +3133,10 @@ fieldset.plain {
   .tabbar a[aria-current="page"] {
     color: var(--foreground);
     font-weight: 600;
+  }
+  .tab-sell.paused {
+    background: var(--secondary);
+    color: var(--muted-fg);
   }
   .tab-sell {
     background: var(--foreground);

@@ -427,6 +427,16 @@ export interface ApiError {
 
 export type VenueStatus = "active" | "inactive" | "maintenance";
 
+/**
+ * Whether a venue sells now. A voucher sold where no router serves guests can't be used, so selling
+ * pauses: its routers are set up but offline or need attention (since they were last heard from),
+ * as their condition says it, or none is set up yet.
+ */
+export type VenueSelling =
+  | { state: "selling" }
+  | { state: "offline" | "needs-attention"; since: Timestamp | null }
+  | { state: "not-set-up" };
+
 export interface VenueRecord {
   id: string;
   name: string;
@@ -438,8 +448,8 @@ export interface VenueRecord {
   area: string;
   status: VenueStatus;
   routerCount: number;
-  /** A router here is serving guests now (set up and online), so a voucher sold here can be used. */
-  sells: boolean;
+  /** Whether it sells now: only while one of its routers serves guests (set up and online). */
+  selling: VenueSelling;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

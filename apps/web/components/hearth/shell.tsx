@@ -285,7 +285,8 @@ export function Shell({
   const tabbed =
     !space &&
     me.active.scope === "business" &&
-    (me.active.role === "venue_operator" || (shown.length === 1 && shown[0]?.sells === true));
+    (me.active.role === "venue_operator" ||
+      (shown.length === 1 && shown[0]?.selling.state !== "not-set-up"));
   return (
     <SellProvider>
       <div
@@ -362,7 +363,14 @@ function TabBar({ me, path }: { me: Me; path: string }) {
       {tab("/overview", "overview", me.active.role === "venue_operator" ? "Today" : "Overview")}
       {tab("/sessions", "sessions", "Sessions")}
       {sell.can ? (
-        <button className="tab-sell" type="button" onClick={sell.open}>
+        <button
+          className={`tab-sell${sell.paused ? " paused" : ""}`}
+          type="button"
+          {...(sell.paused
+            ? { "aria-disabled": "true", "aria-label": "Sell, paused: no router is serving guests" }
+            : {})}
+          onClick={sell.open}
+        >
           <Icon name="plus" size={20} />
           <span>Sell</span>
         </button>

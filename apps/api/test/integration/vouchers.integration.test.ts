@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import type { VenueRecord } from "@hashinet/types";
+import { Prisma } from "../../src/generated/prisma/client.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, sellingVenue, testBusinessId } from "./people.js";
@@ -127,16 +129,23 @@ describe("vouchers", () => {
 });
 
 describe("a venue sells only while a router serves it", () => {
-  test("no router serving, no sale: set up but offline is refused too", async () => {
+  test("no router serving, no sale: offline since it was last heard from, or not set up", async () => {
     const { venue, pkg } = await setting(null);
     const c = await owner();
-    const sells = async () =>
-      ((await c.request("GET", `/api/venues/${venue.id}`)).body as { venue: { sells: boolean } })
-        .venue.sells;
-    expect(await sells()).toBe(true);
+    const selling = async () =>
+      ((await c.request("GET", `/api/venues/${venue.id}`)).body as { venue: VenueRecord }).venue
+        .selling;
+    expect(await selling()).toEqual({ state: "selling" });
 
-    await t.db.router.updateMany({ where: { venueId: venue.id }, data: { status: "offline" } });
-    expect(await sells()).toBe(false);
+    const heard = new Date("2026-11-18T13:05:00Z");
+    await t.db.router.updateMany({
+      where: { venueId: venue.id },
+      data: { status: "offline", lastSeenAt: heard },
+    });
+    expect(await selling()).toEqual({ state: "offline", since: heard.toISOString() });
+    // Answering but failing is the router's "needs attention", as its condition says it.
+    await t.db.router.updateMany({ where: { venueId: venue.id }, data: { status: "error" } });
+    expect(await selling()).toEqual({ state: "needs-attention", since: heard.toISOString() });
     const refused = await c.request("POST", "/api/sales", {
       venueId: venue.id,
       packageId: pkg.id,
@@ -146,8 +155,15 @@ describe("a venue sells only while a router serves it", () => {
     expect(refused.body).toMatchObject({ code: "VENUE_NOT_SERVING" });
     expect(await t.db.voucher.count({ where: { venueId: venue.id } })).toBe(0);
 
+    // A router never set up is not offline: the venue isn't set up yet.
+    await t.db.router.updateMany({
+      where: { venueId: venue.id },
+      data: { lastSetup: Prisma.DbNull, status: "online" },
+    });
+    expect(await selling()).toEqual({ state: "not-set-up" });
+
     await sellingVenue(t.db, venue.id);
-    expect(await sells()).toBe(true);
+    expect(await selling()).toEqual({ state: "selling" });
     await sell(c, venue.id, pkg.id, 1);
   });
 });
