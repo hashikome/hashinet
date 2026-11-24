@@ -4012,7 +4012,7 @@ td .btn.danger:hover,
     min-height: 44px;
   }
 }
-/* Help already carries HashiNet's mark, so the side column's "Runs on hashinet" credit would repeat it. */
+/* Help already carries HashiNet's mark, so the side column's "Runs on HashiNet" credit would repeat it. */
 .help-app .credit {
   display: none;
 }

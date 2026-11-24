@@ -195,8 +195,8 @@ latest snapshot is confirmed in R2.
 
 ## Artifacts And Notes
 
-Design reference: round 3 of the Hearth review, each role's view, in git-ignored
-`prototypes/hearth-design/round-3-roles/`. This plan and ADR-0011 stand without it.
+Design reference: each role's view in the approved prototype, git-ignored
+`prototypes/hearth-design/prototype/`. This plan and ADR-0011 stand without it.
 
 ## Interfaces And Dependencies
 

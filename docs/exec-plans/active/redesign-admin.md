@@ -408,9 +408,8 @@ Not started for H1 to H7.
 - `apps/web/app/(portal)` and `components/portal-view.tsx`: the captive portal and its preview.
 - `apps/web/public/logo.svg`: the mark; `portal_settings` holds the portal's default brand.
 - `apps/api/src/analytics/`: today's figures; the comparisons and ranges of H3 are new.
-- Design reference: the review pages in git-ignored `prototypes/hearth-design/` (`round-1-variations/`,
-  `round-2-hearth-and-night-band/`, `round-3-roles/`, and `generator/`). The tokens and layouts this
-  plan needs are written below, so it stands without them.
+- Design reference: the approved prototype in git-ignored `prototypes/hearth-design/prototype/`. The
+  tokens and layouts this plan needs are written below, so it stands without it.
 
 ## Plan Of Work
 
