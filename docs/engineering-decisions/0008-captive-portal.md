@@ -1,6 +1,7 @@
 # ADR-0008: How a guest reaches the portal, signs in and comes back
 
 Status: accepted, 30 October 2026, as proved in the router sim. Amends ADR-0006 (decision 3).
+Decision 3 narrowed 25 November 2026: a voucher's QR code joins the WiFi and carries no code.
 
 ## Context
 
@@ -18,15 +19,14 @@ the router is HTTP, and query strings reach proxy logs.
    in the attempt limits. A guest's page loads no third-party asset.
 2. **The router names itself.** `login.html` is rendered per router and carries its id, served
    at `/portal/hotspot-files/:routerId/:name`. A gateway address cannot identify a router.
-3. **Fragments, not query strings.** The router sends a guest to `/join#router=…`, and a
-   printed QR code is `/join#code=…`. The guest joins the venue's WiFi, then scans
-   to sign in with nothing to type, or enters the code. The code is 12 digits with no prefix, printed
-   in three groups of four, about as hard to guess as the letters it replaces; the portal opens the
-   number keypad, groups the digits and signs in on the last one. A fragment reaches no server or log. A card scanned
-   with no router context keeps its code in the tab's `sessionStorage` on this origin and asks the
-   guest to join the WiFi and continue. Continuing opens a plain http address, carrying no code,
-   which the router intercepts and returns with context. That address is not ours, so the code
-   never goes to it.
+3. **Fragments, not query strings.** The router sends a guest to `/join#router=…`; a fragment
+   reaches no server or log. **A voucher's QR code joins the WiFi** (`WIFI:T:nopass;S:<name>;;`, as
+   phone cameras read one): finding the right network is what it saves, and the phone then opens the
+   portal by itself. It carries no code, so it gives nothing away and opens no page outside the
+   WiFi. The guest types the code printed beside it: 12 digits with no prefix, in three groups of
+   four, about as hard to guess as the letters it replaces; the portal opens the number keypad and
+   groups the digits. The portal has no scanner. Opened anywhere but through the router, it says to
+   join the WiFi.
 4. **Only the API signs a device in.** The hotspot has `login-by=mac-cookie` and no http method,
    so the router accepts no code over the network: a direct POST is refused even with the right
    one. The portal sends the code to the API over its own origin, and the API runs
@@ -74,9 +74,8 @@ refused, a device the router cannot see refused with the voucher's clock unstart
 through the walled garden, a session opened by the monitor, a device kept on after a kick, a
 device back by its cookie after 135 seconds away, a cookie lasting as long as its package, a block, and sign-in within 90 seconds of
 unblocking. The page was walked on a production build in headless Chrome with the router's redirect
-simulated: a scanned card held on this origin and restored after going round, with no code in any
-request to the outside address; a wrong code; a proxy answering with a page; online; and on to the
-destination.
+simulated: a wrong code; a proxy answering with a page; online; and on to the destination. A
+phone's camera offered to join the WiFi from a voucher's QR code (iPhone, 25 November 2026).
 
 ## What remains open
 
@@ -84,12 +83,8 @@ destination.
   whether a moving device can sign in without its code, and how a session's end is counted when it
   moves.
 
-- **The portal's scan icon** opens the camera where the page can use it. Apple's captive sheet cannot,
-  by design, so an iPhone is sent to its camera app, which opens the QR code's link in the browser.
-  Whether Android's captive sheet allows a camera is untested. Check in M8.
-
 - **A MAC address is only a claim.** Anyone on the network can copy one, and with it a device's
   cookie: inherent to hotspot networks. Nothing here treats a MAC as proof of anything else.
 - **RouterOS 6 is unproven.** The probe decides per board; only 7.25 has been run.
 - **A real phone and an https portal are unproved:** the sim serves http and its guest has no
-  browser. Check in M8, with the captive sheets of iOS and Android and a scanned card.
+  browser. Check in M8, with the captive sheets of iOS and Android, joining from a voucher's QR code.

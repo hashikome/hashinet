@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The guest portal shows every guest the plans (slice 2, step k). Where the business takes payments
+  online, they buy there; otherwise the page lists the plans, says where to buy in person and shows
+  a number to call, if the venue gives one. The voucher page's button is Connect. A voucher's QR
+  code now joins the venue's WiFi, as any WiFi QR code does, and the guest types the code; the
+  portal's scanner, and the page a QR link opened outside the WiFi, are gone.
 - Outages (slice 2, step j): HashiNet pings from each router, and a router that answers with no
   internet says "No internet", opens an issue that says so, and pauses selling with its own reason;
   the guest portal says the WiFi has no internet and takes no code. When a router that stopped

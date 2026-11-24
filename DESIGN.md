@@ -56,11 +56,14 @@ Each venue can set its own colours, logo and background (ADR-0009), with HashiNe
 on a midnight field. Text colours are computed from them, so any choice stays readable, and a
 background photo sits under a 55% black scrim.
 
-The guest portal is two pages that link to each other: the voucher page (scan the QR code or enter
-the code, then Join the WiFi; under "No voucher?", a link to buy time) and the buy page (choose a package,
-enter the mobile number, Pay; under "Have a voucher?", a link to the voucher page). A venue chooses which
-opens first: the voucher page where it sells at the counter, the buy page where guests buy on the
-portal. After paying, the guest lands on the voucher page with the paid code entered, signing in. The
+The guest portal is two pages that link to each other: the voucher page (enter the code, then
+Connect, since the phone has already joined the network; under "No voucher?", a link to the plans) and
+the buy page, the plans every guest sees. Where the business takes payments online, the guest chooses a
+package, enters the mobile number and taps Pay. Otherwise the plans are a plain list with no choosing,
+then "Where to buy" in the venue's words and a Call button when it gives a number; never a number to pay
+ahead, since a sale is recorded as it happens. Under "Have a voucher?", a link to the voucher page. A
+venue chooses which opens first: the voucher page where it sells at the counter, the buy page where
+guests buy on the portal. After paying, the guest lands on the voucher page with the paid code entered, signing in. The
 venue's name and place sit at the top left and its logo, which is optional, at the top right, as on a
 printed voucher. The whole page is one colour with the action button filled, and the HashiNet arc sits
 faint in the bottom corner, as on sign-in. Every page fits one phone screen, the signature included;
@@ -75,20 +78,16 @@ text is midnight or white. A button colour too close to the page colour is flagg
 say what to do in plain terms; the bonfire stays in the welcome and the brand, not in instructions.
 
 The journey: on the voucher path, a wrong code keeps what was typed; a voucher at its device limit asks
-for its switch PIN to move here; a scan opens the camera where the page can: a tall live view with a
-square to aim at whose corners breathe while it looks, the torch only where the phone lets a web page use
-it, and "Enter the code instead" always below. A read is not announced: it goes straight to signing in, or
-to what stands in the way (the voucher has run out: buy more time or scan another; it is in use: its
-switch PIN moves it here). If
-the camera is blocked it says how to allow it; where the page cannot open it at all (an iPhone's sign-in
-sheet), it says to use the camera app. On the buy path, Pay waits on the phone's approval and moves on by itself; a failed
-payment says nothing was taken. Join the WiFi, Move it here and Pay stay greyed until their field is
+for its switch PIN to move here; a voucher that has run out offers another voucher or the plans. The
+portal has no scanner: the QR code joins the WiFi, and the code is typed. On the buy path, Pay waits on the phone's approval and moves on by itself; a failed
+payment says nothing was taken. Connect, Move it here and Pay stay greyed until their field is
 complete. When a venue asks guests to accept terms, it writes them in its portal settings,
-and a line under Join the WiFi and Pay links to them: "By joining, you accept the venue's terms." Signing in shows the code and nothing else; the code gets a Copy button only where the guest
+and a line under Connect and Pay links to them: "By connecting, you accept the venue's terms." Signing in shows the code and nothing else; the code gets a Copy button only where the guest
 needs it: when the sign-in fails, and on the online page, where one button copies the code and the
 switch PIN together and asks the guest to keep both, since the PIN shows only once. The printed
-voucher says what to do in order (join our WiFi, then scan or enter this code) and asks the guest
-to keep nothing.
+voucher says what to do in order (scan to join our WiFi, then enter this code) and asks the guest
+to keep nothing. Its QR code is the venue's WiFi, as any WiFi QR code: a phone's camera offers to
+join it.
 
 ## Typography
 

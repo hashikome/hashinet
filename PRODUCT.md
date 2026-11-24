@@ -98,9 +98,11 @@ revoked or undone. A voucher's lifecycle is `unused → pending_activation → a
 
 ### 4.4 Captive portal
 
-A guest on a venue's WiFi sees that venue's branded portal and either buys a package with
-mobile money (4.7), is logged straight in, or enters or scans a voucher they were given or sent,
-and is online once the router confirms. A returning device with an active voucher reconnects
+Anyone in range taps the venue's WiFi, which has no password, and sees that venue's branded portal
+with its plans and prices. They buy a package with mobile money where the business takes payments
+online (4.7) and are logged straight in, or are told where to buy in person and who to call; or they
+enter a voucher's code, and are online once the router confirms. A voucher's QR code joins the WiFi,
+as any WiFi QR code does; the code is typed. A returning device with an active voucher reconnects
 without re-entering the code, without the code ever being exposed.
 
 Acceptance: a phone on a HashiNet hotspot reaches the portal, redeems a voucher and browses;
@@ -166,8 +168,8 @@ venue's figures. A venue can use both.
   hand: they tap the package, choose cash or mobile money and confirm. For mobile money the guest
   pays the venue directly, to one of up to three ways its owner or a manager sets (a Lipa namba, a
   bank, a mobile money number), read out from the screen, and the seller enters the guest's mobile
-  money number; for cash the number is optional. HashiNet makes the voucher and shows it as a QR
-  code the guest scans and as a code to read out; the seller can also send it (by the phone's share
+  money number; for cash the number is optional. HashiNet makes the voucher and shows its code, with a QR
+  code that joins the venue's WiFi; the seller can also send it (by the phone's share
   sheet, or by SMS when the business has credits) or print it. The fullest record: who sold it, how
   it was paid, at which venue.
 

@@ -326,6 +326,42 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     monitor poll and health check; the sim's `setup` didn't record its result as the API does
     (`storedSetup`, now shared), so HashiNet didn't count the sim router as set up; and `guest-test`
     didn't migrate the sim database first.
+  - [x] (2026-11-25) (k) The portal for every guest, and a QR code that joins the WiFi (owner, 24 and 25 November
+    2026; prototype approved 25 November). The voucher's QR code is the venue's WiFi
+    (`WIFI:T:nopass;S:<name>;;`): a phone's camera offers to join, the phone opens the sign-in
+    page by itself, and the guest types the code printed beside it. Typing a code is easy; finding
+    the right WiFi is what the QR code saves. So the portal has no scanner: its Scan, Camera blocked
+    and Scan with your camera pages go, and so does the page a QR link opened outside the WiFi, with
+    its Continue. Every guest sees the plans: where the business takes payments online, the buy
+    page as it is; otherwise the buy page lists the plans and prices, says where to buy in person
+    and shows a number to call, if the venue gives one. It never shows a number to pay ahead: a
+    sale is recorded as it happens, online or at the counter (ADR-0017). The voucher page's button
+    is Connect (the phone has already joined); "No voucher?" leads to the plans.
+    - API: the brand's `voucher_help` becomes `where_to_buy`, with `contact_phone` (optional), on
+      the default and on a venue's brand; `GuestContext.settings` carries both. A venue record
+      carries its WiFi name (`wifiName`: its router's SSID, else the venue's name), so the sell
+      dialog and the card no longer look it up.
+    - Web: the portal as the prototype; the card's and the sell dialog's QR code and wording ("Scan
+      to join <name>, then enter the code"); the text a seller sends names the WiFi and the code.
+      Setting where to buy and the number is the Portal design page of slice 5; until then the
+      portal says "Buy a voucher in person at <venue>."
+    Built: integration 176/176 (a venue's where to buy and number, the number a mobile number or
+    nothing); unit tests for the WiFi QR code's escaping and the venue's WiFi name. Walked at 390 on
+    the dev portal: Connect, the plans with no radio buttons, where to buy and Call
+    (`tel:+255…`), and the sell dialog's QR code and wording. An in-sentence link's default button
+    padding left a gap before its full stop on every portal page; `.g-link` has none.
+  - [ ] (l) Guest WiFi that protects guests with no password (owner, 25 November 2026). A guest
+    network has no password; it is encrypted where the phone can be: OWE transition mode, an open
+    network and a hidden OWE twin with the same name, so a phone that supports Enhanced Open joins
+    encrypted and an older one joins open, and both reach the portal. Setup today runs the hotspot
+    on the radio itself and never touches its security, so a factory password stays on. Setup
+    probes the radio, then on the wifi package makes the radio open
+    (`security.authentication-types=""`), adds the OWE twin (`authentication-types=owe`,
+    `owe-transition-interface` each way, `hide-ssid`) and runs the hotspot on a guest bridge of the
+    two; on the legacy wireless package, open (security profile `mode=none`), and the router's page
+    says its guests' traffic is not encrypted. Unit tests from MikroTik's documentation; accepted
+    only on a real router with a radio (the sim has none): an iPhone and an Android join, one over
+    OWE, and both see the portal.
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).
