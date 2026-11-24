@@ -115,7 +115,7 @@ type Stage =
   | { kind: "signing" }
   | { kind: "sign-failed" }
   | { kind: "run-out"; message: string }
-  | { kind: "online"; expiresAt: string | null }
+  | { kind: "online"; expiresAt: string | null; givenBackMinutes: number }
   | { kind: "terms"; back: "voucher" | "buy" }
   | { kind: "buy" };
 
@@ -183,11 +183,11 @@ export function GuestPortal() {
       setError(null);
       setStage({ kind: "signing" });
       try {
-        const { dst, expiresAt } = await post<RedeemResult>("/api/guest/redeem", {
+        const { dst, expiresAt, givenBackMinutes } = await post<RedeemResult>("/api/guest/redeem", {
           ...request,
           code,
         });
-        setStage({ kind: "online", expiresAt });
+        setStage({ kind: "online", expiresAt, givenBackMinutes });
         if (dst !== null) window.setTimeout(() => window.location.replace(dst), 1800);
       } catch (err) {
         const refused =
@@ -314,6 +314,16 @@ export function GuestPortal() {
       {body}
     </Frame>
   );
+
+  // With no internet nothing would load: the page says so and takes no code, keeping the voucher.
+  if (!context.internet && payment === null) {
+    return frame(
+      <Say title="This WiFi has no internet right now">
+        The venue's internet line is down, so nothing would load. Your voucher keeps the time the
+        outage takes: it's given back as soon as the internet returns.
+      </Say>,
+    );
+  }
 
   // A purchase under way takes the page until it is online or has failed.
   if (payment !== null) {
@@ -489,6 +499,12 @@ export function GuestPortal() {
                 <b>{left(stage.expiresAt)}</b>
               </li>
             </ul>
+          ) : null}
+          {stage.givenBackMinutes > 0 ? (
+            <p className="g-note">
+              The WiFi was down for part of your time. We've added{" "}
+              {formatDuration(stage.givenBackMinutes)} back to your voucher.
+            </p>
           ) : null}
           <Shown code={digits} />
           <CopyCode code={digits} />

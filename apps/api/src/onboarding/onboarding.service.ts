@@ -256,6 +256,7 @@ export class OnboardingService {
             venueId,
             routerId: null,
             holderId: input.goesId,
+            cause: null,
           },
           tx,
         );

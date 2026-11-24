@@ -149,7 +149,7 @@ export function routerRecord(
     connectedDevices: row.connectedDevices,
     status: row.status,
     stage,
-    condition: conditionOf(stage, row.status),
+    condition: conditionOf(stage, row.status, row.internetOk),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };

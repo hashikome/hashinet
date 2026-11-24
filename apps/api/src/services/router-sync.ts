@@ -23,6 +23,7 @@ import {
   rateLimitFor,
   removeHotspotUser,
   setDeviceBlocked,
+  setHotspotUserMinutes,
   throttledProfileNameForPackage,
   throttledRateLimitFor,
   userProfileNameForPackage,
@@ -168,6 +169,8 @@ function buildUserOpts(
   pkg: Package,
   dataLimitGb: number | null,
   durationMinutes: number | null,
+  /** Time given back after outages: the router's limit is raised by as much. */
+  givenBackMinutes: number,
   profileName: string | null,
 ): CreateHotspotUserOptions {
   return {
@@ -176,7 +179,7 @@ function buildUserOpts(
     downloadSpeedMbps: pkg.downloadSpeedMbps,
     uploadSpeedMbps: pkg.uploadSpeedMbps ?? null,
     dataLimitGb: dataLimitGb ?? pkg.dataLimitGb ?? null,
-    durationMinutes: durationMinutes ?? pkg.durationMinutes,
+    durationMinutes: (durationMinutes ?? pkg.durationMinutes) + givenBackMinutes,
     profileName,
   };
 }
@@ -225,7 +228,7 @@ export class RouterSync {
                 if (!(await hotspotUserExists(conn, code))) {
                   await createHotspotUser(
                     conn,
-                    buildUserOpts(code, pkg, dataLimitGb, null, profileName),
+                    buildUserOpts(code, pkg, dataLimitGb, null, 0, profileName),
                     caps,
                   );
                 } else if (profileName) {
@@ -307,6 +310,7 @@ export class RouterSync {
               pkg,
               voucher.dataLimitGb,
               voucher.durationMinutes,
+              voucher.givenBackMinutes,
               profileName,
             ),
             caps,
@@ -391,6 +395,7 @@ export class RouterSync {
                     pkg,
                     voucher.dataLimitGb,
                     voucher.durationMinutes,
+                    voucher.givenBackMinutes,
                     await ensureProfileFor(conn, pkg),
                   ),
                   caps,
@@ -418,6 +423,34 @@ export class RouterSync {
     const now = await this.db.voucher.findUnique({ where: { code }, select: { status: true } });
     if (now !== null && !isLive(now.status)) await this.removeVouchers(venueId, [code]);
     return outcome;
+  }
+
+  /**
+   * Raises a voucher's limit on its venue's routers to its time with what was given back, and puts
+   * it back on any router that no longer has it (one expired during the outage). Best effort: a
+   * router that misses this gets it when the guest signs in (`ensureVoucher`).
+   */
+  async extendVoucher(venueId: string, code: string, minutes: number): Promise<void> {
+    for (const router of await this.db.router.findMany({ where: { venueId } })) {
+      const creds = this.access.credentials(router);
+      if (!creds) continue;
+      let conn: MikroTikConn | null = null;
+      try {
+        conn = await connectToRouter(creds);
+        if (!(await setHotspotUserMinutes(conn, code, minutes))) {
+          await closeConnection(conn);
+          conn = null;
+          await this.ensureVoucher(venueId, code, router.id);
+        }
+      } catch (err) {
+        logger.warn("Could not give {router} a voucher's time back", {
+          router: router.name,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      } finally {
+        if (conn) await closeConnection(conn);
+      }
+    }
   }
 
   /**

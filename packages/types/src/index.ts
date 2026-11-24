@@ -236,6 +236,8 @@ export interface IssueRecord {
   business: { id: string; name: string } | null;
   venue: { id: string; name: string } | null;
   router: { id: string; name: string } | null;
+  /** What took a router issue's router down when it opened; null for other kinds. */
+  cause: RouterCondition | null;
   holder: IssuePerson | null;
   /** The reader holds it. */
   mine: boolean;
@@ -429,12 +431,12 @@ export type VenueStatus = "active" | "inactive" | "maintenance";
 
 /**
  * Whether a venue sells now. A voucher sold where no router serves guests can't be used, so selling
- * pauses: its routers are set up but offline or need attention (since they were last heard from),
- * as their condition says it, or none is set up yet.
+ * pauses: its routers are set up but offline, without internet or in need of attention (since they
+ * were last seen serving), as their condition says it, or none is set up yet.
  */
 export type VenueSelling =
   | { state: "selling" }
-  | { state: "offline" | "needs-attention"; since: Timestamp | null }
+  | { state: "offline" | "no-internet" | "needs-attention"; since: Timestamp | null }
   | { state: "not-set-up" };
 
 export interface VenueRecord {
@@ -516,7 +518,15 @@ export type RouterStage = "connect" | "set-up" | "serving";
  * How a router, or a business across its routers, is doing, as every page says it: being set up
  * until it first serves; then serving, offline, or needing attention (an error).
  */
-export type RouterCondition = "setting-up" | "serving" | "offline" | "needs-attention";
+/** "no-internet": it answers, but can't reach the internet itself, so guests get nothing. */
+export const ROUTER_CONDITIONS = [
+  "setting-up",
+  "serving",
+  "offline",
+  "no-internet",
+  "needs-attention",
+] as const;
+export type RouterCondition = (typeof ROUTER_CONDITIONS)[number];
 
 export type RouterSetupPhaseStatus = "pending" | "running" | "pass" | "warn" | "fail" | "skipped";
 
@@ -882,6 +892,7 @@ export const AUDIT_ACTIONS = [
   "router.unreachable",
   "router.push_failed",
   "router.sync_failed",
+  "router.time_given_back",
   "package.create",
   "package.update",
   "package.delete",
@@ -991,6 +1002,11 @@ export type LiveMessage =
 /** What the portal page shows a guest: `POST /api/guest/context`. */
 export interface GuestContext {
   venueName: string;
+  /**
+   * Whether the router reaches the internet. Without it the portal says so and takes no code, so a
+   * guest's paid time doesn't start for nothing.
+   */
+  internet: boolean;
   /** Whether guests can buy here; until then the portal is for vouchers. */
   mobileMoney: boolean;
   settings: Pick<
@@ -1026,6 +1042,8 @@ export interface RedeemResult {
   /** Where to go now the device is online, when it was a safe web address. */
   dst: string | null;
   expiresAt: Timestamp | null;
+  /** Paid time given back after outages, already in `expiresAt`: the portal says so. */
+  givenBackMinutes: number;
 }
 
 /** `GET /api/capabilities`: each is on once its provider's credentials are set. */

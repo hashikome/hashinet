@@ -20,5 +20,6 @@ export async function beginOnboarding(
     venueId,
     routerId: null,
     holderId: null,
+    cause: null,
   });
 }

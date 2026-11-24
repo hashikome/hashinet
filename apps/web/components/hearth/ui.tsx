@@ -477,9 +477,19 @@ export function Tabs<K extends string>({
   );
 }
 
+/** What a router that is down is doing, said after its name. */
+export const DOWN: Record<RouterCondition, string> = {
+  "setting-up": "is setting up",
+  serving: "is serving",
+  offline: "is offline",
+  "no-internet": "has no internet",
+  "needs-attention": "needs attention",
+};
+
 export const CONDITION: Record<RouterCondition, [string, PillKind]> = {
   "setting-up": ["Setting up", "wait"],
   serving: ["Serving", "ok"],
   offline: ["Offline", "bad"],
+  "no-internet": ["No internet", "bad"],
   "needs-attention": ["Needs attention", "bad"],
 };

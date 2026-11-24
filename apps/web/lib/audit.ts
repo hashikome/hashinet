@@ -18,6 +18,7 @@ export const ACTION_NAME: Record<AuditAction, string> = {
   "router.unreachable": "Router could not be reached",
   "router.push_failed": "Router refused a change",
   "router.sync_failed": "Router could not be brought up to date",
+  "router.time_given_back": "Gave guests back the time an outage took",
   "package.create": "Added a package",
   "package.update": "Changed a package",
   "package.delete": "Took a package off sale",

@@ -1,13 +1,15 @@
-import type {
-  IssueAction,
-  IssueCount,
-  IssueDetail,
-  IssueEventData,
-  IssueList,
-  IssueMoved,
-  IssuePerson,
-  IssueRecord,
-  MembershipRole,
+import {
+  type IssueAction,
+  type IssueCount,
+  type IssueDetail,
+  type IssueEventData,
+  type IssueList,
+  type IssueMoved,
+  type IssuePerson,
+  type IssueRecord,
+  type MembershipRole,
+  ROUTER_CONDITIONS,
+  type RouterCondition,
 } from "@hashinet/types";
 import {
   BadRequestException,
@@ -281,7 +283,8 @@ export class IssuesService {
     const down = new Map<string, (typeof routers)[number]>();
     for (const r of routers) {
       const condition = routerCondition(r);
-      if (condition === "offline" || condition === "needs-attention") down.set(`router:${r.id}`, r);
+      if (condition === "offline" || condition === "no-internet" || condition === "needs-attention")
+        down.set(`router:${r.id}`, r);
     }
     for (const [key, r] of down) {
       for (const workspace of [
@@ -296,6 +299,7 @@ export class IssuesService {
           venueId: r.venueId,
           routerId: r.id,
           holderId: null,
+          cause: routerCondition(r),
         }).catch(captureFailure);
       }
     }
@@ -305,6 +309,23 @@ export class IssuesService {
       const reason = present.has(i.key) ? "serving" : "router_removed";
       await this.resolve(i, i.key, { reason }).catch(captureFailure);
     }
+  }
+
+  /**
+   * A step HashiNet took about a router, such as giving guests back the time an outage took, on
+   * the router's latest issue in each workspace that has one.
+   */
+  async logRouterStep(routerId: string, data: IssueEventData): Promise<void> {
+    const issues = await this.db.issue.findMany({
+      where: { kind: "router_offline", key: `router:${routerId}` },
+      orderBy: { openedAt: "desc" },
+      distinct: ["scope", "businessId"],
+      select: { id: true },
+    });
+    if (issues.length === 0) return;
+    await this.db.issueEvent.createMany({
+      data: issues.map((i) => ({ issueId: i.id, action: "step" as const, data })),
+    });
   }
 
   /** Opens an issue unless one is open for its key in the workspace; idempotent. */
@@ -513,6 +534,7 @@ export class IssuesService {
       business: row.business ?? row.venue?.business ?? null,
       venue: row.venue ? { id: row.venue.id, name: row.venue.name } : null,
       router: row.router,
+      cause: ROUTER_CONDITIONS.find((c) => c === row.cause) ?? null,
       holder: row.holder ? person(row.holder) : null,
       mine,
       canClaim: open && row.holderId === null,
@@ -532,6 +554,8 @@ export type IssueOpening = Workspace & {
   venueId: string | null;
   routerId: string | null;
   holderId: string | null;
+  /** What took a router issue's router down; null for other kinds. */
+  cause: RouterCondition | null;
 };
 
 /** Opens an issue unless one is open for its key in the workspace; idempotent. */
@@ -545,6 +569,7 @@ export async function openIssue(db: Db | PrismaClient, input: IssueOpening): Pro
       data: {
         ...where,
         kind: input.kind,
+        cause: input.cause,
         venueId: input.venueId,
         routerId: input.routerId,
         holderId: input.holderId,

@@ -10,6 +10,7 @@ import type {
 } from "@hashinet/types";
 import { CONDITION, type PillKind } from "@/components/hearth/ui";
 import { calendarDay, dayName } from "./dates";
+import { formatDuration } from "./duration";
 import { tsh } from "./money";
 import { ROLE_NAME } from "./nav";
 
@@ -59,7 +60,12 @@ export function issueTitle(i: IssueRecord): string {
   const venue = i.venue?.name ?? "A venue";
   switch (i.kind) {
     case "router_offline":
-      return `${i.router?.name ?? "A router"} ${open ? "is" : "was"} offline`;
+      // Said as what took it down: "has no internet" reads truer than "offline" for a router that answers.
+      return i.cause === "no-internet"
+        ? `${i.router?.name ?? "A router"} ${open ? "has" : "had"} no internet`
+        : i.cause === "needs-attention"
+          ? `${i.router?.name ?? "A router"} ${open ? "needs" : "needed"} attention`
+          : `${i.router?.name ?? "A router"} ${open ? "is" : "was"} offline`;
     case "venue_package":
       return open ? `Confirm ${venue}'s package` : `${venue}'s package was agreed`;
     case "venue_setup":
@@ -126,6 +132,13 @@ function stepText(d: Record<string, string | number | boolean | null>): string {
       return `Scheduled the setup for ${setupDay(String(d.date))}`;
     case "rescheduled":
       return `Moved the setup to ${setupDay(String(d.date))}`;
+    case "time_given_back": {
+      const each = String(d.minutes)
+        .split(",")
+        .map((m) => formatDuration(Number(m)));
+      const list = each.length > 1 ? `${each.slice(0, -1).join(", ")} and ${each.at(-1)}` : each[0];
+      return `Gave ${d.guests} ${d.guests === 1 ? "guest" : "guests"} their time back: ${list}`;
+    }
     default:
       return "A step";
   }

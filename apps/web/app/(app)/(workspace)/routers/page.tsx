@@ -33,15 +33,13 @@ export default function RoutersPage() {
       matchesSearch(search, r.name, r.model, r.venueName, businessOf.get(r.venueId) ?? null),
   );
   const serving = all.filter((r) => r.condition === "serving").length;
-  const down = all.filter(
-    (r) => r.condition === "offline" || r.condition === "needs-attention",
-  ).length;
+  const down = all.filter((r) => r.condition !== "serving" && r.condition !== "setting-up").length;
   const states = [...new Set(all.map((r) => r.condition))];
   return (
     <>
       <Head
         title="Routers"
-        sub={`${serving} serving${down ? `, ${down} offline` : ""} · every business`}
+        sub={`${serving} serving${down ? `, ${down} not serving` : ""} · every business`}
       />
       {data.error ? <LoadFailed error={data.error} retry={data.reload} /> : null}
       {all.length ? (

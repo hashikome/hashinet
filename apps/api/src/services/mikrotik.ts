@@ -1,7 +1,7 @@
 import { getLogger } from "@logtape/logtape";
 import { RouterOSAPI } from "routeros";
 import { minutesToRosUptime } from "../utils/duration.js";
-import { toRows } from "./router-provision/ros-client.js";
+import { pingTotals, toRows } from "./router-provision/ros-client.js";
 
 const logger = getLogger(["hashinet", "router"]);
 
@@ -218,6 +218,26 @@ export async function closeConnection(conn: MikroTikConn): Promise<void> {
   }
 }
 
+/**
+ * Sets how long a voucher's user may be logged in, in whole minutes: RouterOS counts a logged-in
+ * user's time, which runs on while the internet is down, so time given back raises it. False when
+ * the router doesn't have the user.
+ */
+export async function setHotspotUserMinutes(
+  conn: MikroTikConn,
+  code: string,
+  minutes: number,
+): Promise<boolean> {
+  const [row] = toRows(await conn.write("/ip/hotspot/user/print", [`?name=${code}`]));
+  const id = row?.get(".id") ?? null;
+  if (id === null) return false;
+  await conn.write("/ip/hotspot/user/set", [
+    `=.id=${id}`,
+    `=limit-uptime=${minutesToRosUptime(minutes)}`,
+  ]);
+  return true;
+}
+
 export async function hotspotUserExists(conn: MikroTikConn, code: string): Promise<boolean> {
   const result = await conn.write("/ip/hotspot/user/print", [`?name=${code}`]);
   return Array.isArray(result) && result.length > 0;
@@ -426,6 +446,22 @@ export async function removeHotspotUser(conn: MikroTikConn, code: string): Promi
   const rosId = row?.get(".id") ?? null;
   if (rosId === null) return;
   await conn.write("/ip/hotspot/user/remove", [`=.id=${rosId}`]);
+}
+
+/**
+ * Whether the router itself reaches the internet: a reply from either of two addresses run by
+ * different companies, so one of them being down isn't read as the line being down. A router that
+ * refuses the ping counts as no reply.
+ */
+export async function reachesInternet(conn: MikroTikConn): Promise<boolean> {
+  for (const address of ["8.8.8.8", "1.1.1.1"]) {
+    const rows = await conn
+      .write("/ping", [`=address=${address}`, "=count=2"])
+      .then(toRows)
+      .catch(() => []);
+    if (pingTotals(rows).received > 0) return true;
+  }
+  return false;
 }
 
 export async function getSystemUptimeSeconds(conn: MikroTikConn): Promise<number> {

@@ -506,6 +506,14 @@ model Router {
   lastSeenAt                DateTime?    @map("last_seen_at") @db.Timestamptz(3)
   /// Syncs and pushes that failed in a row; 0 once one works. Only the first of a run is audited.
   failedSyncs               Int          @default(0) @map("failed_syncs")
+  /// Whether the router itself reaches the internet, from the live monitor's ping. A router that
+  /// answers with no internet serves nobody, so it doesn't sell and its outage is given back.
+  internetOk                Boolean      @default(true) @map("internet_ok")
+  /// Pings that failed in a row: two mark it down, one good one marks it up, so a lost ping
+  /// doesn't flap it.
+  internetFails             Int          @default(0) @map("internet_fails")
+  /// When it last reached the internet: an outage without internet began then.
+  internetSeenAt            DateTime?    @map("internet_seen_at") @db.Timestamptz(3)
   uptimeSeconds             Int          @default(0) @map("uptime_seconds")
   connectedDevices          Int          @default(0) @map("connected_devices")
   status                    RouterStatus @default(offline)
@@ -513,9 +521,10 @@ model Router {
   updatedAt                 DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   issues   Issue[]
-  venue    Venue         @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue    Venue          @relation(fields: [venueId], references: [id], onDelete: Cascade)
   sessions WifiSession[]
   payments Payment[]
+  outages  RouterOutage[]
 
   @@index([venueId])
   @@index([status])
@@ -615,6 +624,9 @@ model Voucher {
   dataUsedBytes      BigInt        @default(0) @map("data_used_bytes")
   /// Whole minutes; null inherits the package's.
   durationMinutes    Int?          @map("duration_minutes")
+  /// Paid time given back after outages (router_outages): its end moved on by as much, and the
+  /// router's limit for it raised by as much, every time it is pushed.
+  givenBackMinutes   Int           @default(0) @map("given_back_minutes")
   priceTsh           Decimal       @map("price_tsh") @db.Decimal(12, 2)
   activatedAt        DateTime?     @map("activated_at") @db.Timestamptz(3)
   expiresAt          DateTime?     @map("expires_at") @db.Timestamptz(3)
@@ -962,7 +974,9 @@ model Issue {
   venueId    String?         @map("venue_id") @db.Uuid
   routerId   String?         @map("router_id") @db.Uuid
   holderId   String?         @map("holder_id") @db.Uuid
-  /// Bounded facts the kind needs (a preference, a price, a date); never names or addresses.
+  /// What took a router issue's router down when it opened: offline, no-internet or
+  /// needs-attention (its `RouterCondition`), so the issue says it even after it closes.
+  cause      String?         @db.VarChar(40)
   openedAt   DateTime        @default(now()) @map("opened_at") @db.Timestamptz(3)
   resolvedAt DateTime?       @map("resolved_at") @db.Timestamptz(3)
   updatedAt  DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -1145,4 +1159,29 @@ model DeviceBlock {
   @@id([businessId, deviceId])
   @@index([deviceId])
   @@map("device_blocks")
+}
+
+enum OutageKind {
+  offline
+  no_internet
+
+  @@map("outage_kind")
+}
+
+/// A time a set-up router stopped serving guests: unreachable or failing, or answering with no
+/// internet. Once it serves again with its internet working, the paid time it took is given back
+/// to the guests whose vouchers ran through it, once (`givenBackAt`).
+model RouterOutage {
+  id          String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  routerId    String     @map("router_id") @db.Uuid
+  kind        OutageKind
+  /// When the router was last seen serving.
+  startedAt   DateTime   @map("started_at") @db.Timestamptz(3)
+  endedAt     DateTime?  @map("ended_at") @db.Timestamptz(3)
+  givenBackAt DateTime?  @map("given_back_at") @db.Timestamptz(3)
+
+  router Router @relation(fields: [routerId], references: [id], onDelete: Cascade)
+
+  @@index([routerId, startedAt])
+  @@map("router_outages")
 }

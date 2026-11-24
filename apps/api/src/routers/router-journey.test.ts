@@ -60,11 +60,12 @@ describe("a router's journey", () => {
 
 describe("a router's condition", () => {
   test("setting up until it first serves, then what it last reported", () => {
-    expect(conditionOf("connect", "offline")).toBe("setting-up");
-    expect(conditionOf("set-up", "online")).toBe("setting-up");
-    expect(conditionOf("serving", "online")).toBe("serving");
-    expect(conditionOf("serving", "offline")).toBe("offline");
-    expect(conditionOf("serving", "error")).toBe("needs-attention");
+    expect(conditionOf("connect", "offline", true)).toBe("setting-up");
+    expect(conditionOf("set-up", "online", true)).toBe("setting-up");
+    expect(conditionOf("serving", "online", true)).toBe("serving");
+    expect(conditionOf("serving", "online", false)).toBe("no-internet");
+    expect(conditionOf("serving", "offline", true)).toBe("offline");
+    expect(conditionOf("serving", "error", true)).toBe("needs-attention");
   });
 
   test("a business is as its worst router, and setting up with none", () => {

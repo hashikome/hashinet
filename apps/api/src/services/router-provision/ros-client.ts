@@ -128,3 +128,22 @@ export class RosClient {
     return rows[0] ?? null;
   }
 }
+
+/**
+ * `/ping` streams one `!re` per reply and carries running totals on each. Read the totals off
+ * the last row where possible, and fall back to counting rows that came back with a time.
+ */
+export function pingTotals(rows: RosRow[]): { sent: number; received: number } {
+  const last = rows[rows.length - 1] ?? null;
+  const total = (field: string): number | null => {
+    const raw = last?.get(field) ?? null;
+    if (raw === null) return null;
+    const count = Number(raw);
+    return Number.isFinite(count) ? count : null;
+  };
+  const sent = total("sent");
+  return {
+    sent: sent !== null && sent > 0 ? sent : rows.length,
+    received: total("received") ?? rows.filter((r) => r.get("time") !== null).length,
+  };
+}

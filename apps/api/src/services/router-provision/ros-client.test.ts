@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { pingTotals } from "./readiness.js";
-import { RosRow, rowId, toRows } from "./ros-client.js";
+import { pingTotals, RosRow, rowId, toRows } from "./ros-client.js";
 
 describe("RouterOS rows", () => {
   test("a field the router did not send is null, not undefined", () => {

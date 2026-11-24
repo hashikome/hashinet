@@ -75,6 +75,7 @@ export class GuestService {
     ]);
     return {
       venueName: venue.name,
+      internet: router.internetOk,
       mobileMoney: this.config.features.mobileMoney,
       settings: {
         brandName: settings.brandName,
@@ -125,6 +126,10 @@ export class GuestService {
     enrichWideEvent({ "router.id": router.id, "venue.id": router.venueId });
 
     await this.refuseBlocked(input.mac, router.venueId);
+    // Nothing would load: starting the voucher's time now would only lose the guest's time.
+    if (!router.internetOk) {
+      throw refuse("NO_INTERNET", "This WiFi has no internet right now. Your voucher is kept.");
+    }
 
     const code = input.code.toUpperCase();
     const voucher = await this.db.voucher.findUnique({
@@ -139,8 +144,14 @@ export class GuestService {
     refuseIfFinished(voucher);
 
     await this.admit(router, voucher, voucher.package?.deviceLimit ?? 1, input);
-    const { expiresAt } = await this.db.voucher.findUniqueOrThrow({ where: { id: voucher.id } });
-    return { dst: safeDestination(input.linkOrig), expiresAt: expiresAt?.toISOString() ?? null };
+    const { expiresAt, givenBackMinutes } = await this.db.voucher.findUniqueOrThrow({
+      where: { id: voucher.id },
+    });
+    return {
+      dst: safeDestination(input.linkOrig),
+      expiresAt: expiresAt?.toISOString() ?? null,
+      givenBackMinutes,
+    };
   }
 
   /** Refuses a device the venue's business has blocked; another business's block is not this one's. */

@@ -44,9 +44,13 @@ async function opened(input: {
   key: string;
   venueId?: string;
 }): Promise<string> {
-  await api.app
-    .get(IssuesService)
-    .open({ ...input, venueId: input.venueId ?? null, routerId: null, holderId: null });
+  await api.app.get(IssuesService).open({
+    ...input,
+    venueId: input.venueId ?? null,
+    routerId: null,
+    holderId: null,
+    cause: null,
+  });
   const row = await t.db.issue.findFirstOrThrow({
     where: { scope: input.scope, businessId: input.businessId, key: input.key, status: "open" },
   });

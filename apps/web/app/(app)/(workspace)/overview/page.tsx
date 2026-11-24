@@ -22,6 +22,7 @@ import {
   Button,
   ButtonLink,
   CONDITION,
+  DOWN,
   Figs,
   Head,
   Panel,
@@ -79,9 +80,7 @@ export default function OverviewPage() {
   }
 
   const t = today.data;
-  const offline = inView.filter(
-    (r) => r.condition === "offline" || r.condition === "needs-attention",
-  );
+  const offline = inView.filter((r) => r.condition !== "serving" && r.condition !== "setting-up");
   const routerFact: [string, string, string] =
     inView.length === 1 && inView[0]
       ? ["Router", CONDITION[inView[0].condition][0], routerDetail(inView[0])]
@@ -90,9 +89,9 @@ export default function OverviewPage() {
           String(inView.filter((r) => r.condition === "serving").length),
           offline.length === 0
             ? "all serving"
-            : offline.length === 1
-              ? `${offline[0]?.name} is offline`
-              : `${offline.length} offline`,
+            : offline.length === 1 && offline[0]
+              ? `${offline[0].name} ${DOWN[offline[0].condition]}`
+              : `${offline.length} not serving`,
         ];
   return (
     <>

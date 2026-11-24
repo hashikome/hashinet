@@ -151,7 +151,11 @@ describe("the guest portal", () => {
     const active = await t.db.voucher.findUniqueOrThrow({ where: { id: voucher.id } });
     expect(done).toEqual({
       status: 200,
-      body: { dst: "http://example.com/a?b=1", expiresAt: active.expiresAt?.toISOString() },
+      body: {
+        dst: "http://example.com/a?b=1",
+        expiresAt: active.expiresAt?.toISOString(),
+        givenBackMinutes: 0,
+      },
     });
     expect(active.status).toBe("active");
     expect(active.activatedAt).toEqual(pending.activatedAt);

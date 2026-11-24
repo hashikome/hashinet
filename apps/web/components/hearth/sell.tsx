@@ -8,6 +8,7 @@ import {
   type VenuePackages,
   type VenuePaymentDetails,
   type VenueRecord,
+  type VenueSelling,
 } from "@hashinet/types";
 import { QRCodeSVG } from "qrcode.react";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
@@ -21,7 +22,7 @@ import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
 import { Dialog } from "./dialog";
 import { Icon } from "./icons";
-import { Button, ButtonLink, Field, Pill, useToast } from "./ui";
+import { Button, ButtonLink, Field, Pill, type PillKind, useToast } from "./ui";
 import { VoucherCard, voucherLink } from "./voucher-card";
 
 type Method = "cash" | "mobile_money";
@@ -115,59 +116,83 @@ export function SellButton() {
   );
 }
 
+type Paused = Exclude<VenueSelling["state"], "selling">;
+
+/** Each reason Sell can be paused, as the router's condition says it, and what to check. */
+const PAUSED: Record<
+  Paused,
+  { pill: string; kind: PillKind; why: (venue: string) => string; check: string; tell: string }
+> = {
+  offline: {
+    pill: "Router offline",
+    kind: "bad",
+    why: (v) =>
+      `A voucher sold now couldn't be used at ${v}, so selling waits for the router. It comes back by itself as soon as the router is online.`,
+    check: "Check it has power and its lights are on, and that the internet line works.",
+    tell: "is offline",
+  },
+  "no-internet": {
+    pill: "No internet",
+    kind: "bad",
+    why: (v) =>
+      `The router is on, but its internet line isn't working, so a voucher sold now couldn't be used at ${v}. Selling comes back by itself once the internet does.`,
+    check:
+      "Check the internet router: its lights, the cable into the MikroTik router's port 1, and its data bundle.",
+    tell: "has no internet",
+  },
+  "needs-attention": {
+    pill: "Router needs attention",
+    kind: "bad",
+    why: (v) =>
+      `A voucher sold now couldn't be used at ${v}, so selling waits for the router. It comes back by itself as soon as the router is serving.`,
+    check: "It answers, but HashiNet can't bring it up to date. Its page says what failed.",
+    tell: "needs attention",
+  },
+  "not-set-up": {
+    pill: "Router not set up yet",
+    kind: "wait",
+    why: (v) =>
+      `A voucher sold now couldn't be used at ${v}, so selling starts once its router is set up.`,
+    check: "",
+    tell: "isn't set up yet",
+  },
+};
+
 /**
  * Why Sell is paused, and what to do: whoever runs the venue goes to its router or its setup; at the
- * counter the seller tells them. Selling comes back by itself once a router serves.
+ * counter the seller tells them. Selling comes back by itself once a router serves, and guests get
+ * back the time an outage took.
  */
 function PausedDialog({ onClose }: { onClose: () => void }) {
   const can = useCan();
   const { me } = useSession();
   const { shown, all } = useVenues();
   const venue = shown[0] ?? all[0];
-  if (!venue) return null;
+  if (!venue || venue.selling.state === "selling") return null;
   const { selling } = venue;
-  const offline = selling.state === "offline" || selling.state === "needs-attention";
+  const words = PAUSED[selling.state];
+  const down = selling.state !== "not-set-up";
   const runsIt = can("router.read") && me.active.role !== "venue_operator";
-  const since =
-    selling.state !== "selling" && selling.state !== "not-set-up" && selling.since
-      ? ` since ${when(selling.since)}`
-      : "";
-  const status =
-    selling.state === "needs-attention"
-      ? "Router needs attention"
-      : `Router ${selling.state === "offline" ? "offline" : "not set up yet"}`;
+  const since = down && selling.since ? ` since ${when(selling.since)}` : "";
+  const kept = down ? " Guests get back the time the outage takes." : "";
   return (
     <Dialog label="Selling is paused" className="sell" onClose={onClose}>
       <h2>Selling is paused</h2>
       <p className="sell-state">
-        <Pill kind={offline ? "bad" : "wait"}>{offline ? `${status}${since}` : status}</Pill>
+        <Pill kind={words.kind}>{`${words.pill}${since}`}</Pill>
       </p>
-      <p>
-        {offline
-          ? `A voucher sold now couldn't be used at ${venue.name}, so selling waits for the router. It comes back by itself as soon as the router is online.`
-          : `A voucher sold now couldn't be used at ${venue.name}, so selling starts once its router is set up.`}
-      </p>
-      {!runsIt ? (
-        <p className="note">
-          Tell your manager the router{" "}
-          {selling.state === "needs-attention"
-            ? "needs attention"
-            : offline
-              ? "is offline"
-              : "isn't set up yet"}
-          .
-        </p>
-      ) : offline ? (
-        <p className="note">
-          {selling.state === "needs-attention"
-            ? "It answers, but HashiNet can't bring it up to date. Its page says what failed."
-            : "Check it has power and its lights are on, and that the internet line works."}
-        </p>
-      ) : null}
+      <p>{words.why(venue.name)}</p>
+      {runsIt ? (
+        words.check || kept ? (
+          <p className="note">{`${words.check}${kept}`.trim()}</p>
+        ) : null
+      ) : (
+        <p className="note">{`Tell your manager the router ${words.tell}.${kept}`}</p>
+      )}
       <div className="dialog-actions">
         {runsIt ? (
-          <ButtonLink kind="primary" href={offline ? `/venues/${venue.id}/router` : "/overview"}>
-            {offline ? "Open the router" : "See the setup"}
+          <ButtonLink kind="primary" href={down ? `/venues/${venue.id}/router` : "/overview"}>
+            {down ? "Open the router" : "See the setup"}
           </ButtonLink>
         ) : null}
         <Button onClick={onClose}>Close</Button>

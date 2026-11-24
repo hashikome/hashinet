@@ -14,19 +14,30 @@ import { PHASE_TITLES, type SetupPhaseId } from "../services/router-provision/se
 export const SERVING = {
   lastSetup: { path: ["ok"], equals: true },
   status: "online",
+  internetOk: true,
 } as const;
 
 /** Whether a venue sells now, from its routers: the API decides it, the web says it. */
 export function sellingOf(
-  routers: { status: string; lastSetup: unknown; lastSeenAt: Date | null }[],
+  routers: {
+    status: string;
+    internetOk: boolean;
+    lastSetup: unknown;
+    lastSeenAt: Date | null;
+  }[],
 ): VenueSelling {
   const setUp = routers.filter((r) => passedSetup(r.lastSetup));
-  if (setUp.some((r) => r.status === "online")) return { state: "selling" };
+  if (setUp.some((r) => r.status === "online" && r.internetOk)) return { state: "selling" };
   if (setUp.length === 0) return { state: "not-set-up" };
   const heard = setUp.flatMap((r) => (r.lastSeenAt === null ? [] : [r.lastSeenAt.getTime()]));
+  // As the routers' condition says it (`conditionOf`), the one most to do about first.
+  const conditions = setUp.map((r) => conditionOf("serving", r.status, r.internetOk));
   return {
-    // As the router's condition says it: answering but failing is "needs attention" (`conditionOf`).
-    state: setUp.some((r) => r.status === "error") ? "needs-attention" : "offline",
+    state: conditions.includes("needs-attention")
+      ? "needs-attention"
+      : conditions.includes("no-internet")
+        ? "no-internet"
+        : "offline",
     since: heard.length ? new Date(Math.max(...heard)).toISOString() : null,
   };
 }
@@ -63,12 +74,23 @@ function runningPhases(current: string | null): RouterSetupPhase[] {
   }));
 }
 
-export function conditionOf(stage: RouterStage, status: string): RouterCondition {
+export function conditionOf(
+  stage: RouterStage,
+  status: string,
+  internetOk: boolean,
+): RouterCondition {
   if (stage !== "serving") return "setting-up";
-  return status === "online" ? "serving" : status === "error" ? "needs-attention" : "offline";
+  if (status === "online") return internetOk ? "serving" : "no-internet";
+  return status === "error" ? "needs-attention" : "offline";
 }
 
-const WORST: RouterCondition[] = ["needs-attention", "offline", "setting-up", "serving"];
+const WORST: RouterCondition[] = [
+  "needs-attention",
+  "offline",
+  "no-internet",
+  "setting-up",
+  "serving",
+];
 
 /** A business's condition across its routers: the worst one; setting up while it has none. */
 export function worstCondition(conditions: RouterCondition[]): RouterCondition {
@@ -109,6 +131,7 @@ export function routerJourney(
 /** The router fields a journey and a condition are read from. */
 export const JOURNEY_SELECT = {
   status: true,
+  internetOk: true,
   setupStartedAt: true,
   setupPhase: true,
   lastSetupAt: true,
@@ -116,6 +139,12 @@ export const JOURNEY_SELECT = {
 } as const;
 
 /** A router's condition, from the fields `JOURNEY_SELECT` reads. */
-export function routerCondition(row: JourneyRow & { lastSetup: unknown }): RouterCondition {
-  return conditionOf(routerJourney(row, row.lastSetup as StoredSetup | null).stage, row.status);
+export function routerCondition(
+  row: JourneyRow & { lastSetup: unknown; internetOk: boolean },
+): RouterCondition {
+  return conditionOf(
+    routerJourney(row, row.lastSetup as StoredSetup | null).stage,
+    row.status,
+    row.internetOk,
+  );
 }

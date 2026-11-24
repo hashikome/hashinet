@@ -19,6 +19,7 @@ import { RouterSync } from "../services/router-sync.js";
 import { VoucherExpiry } from "../vouchers/voucher-expiry.js";
 import { VoucherReconciler } from "../vouchers/voucher-reconciler.js";
 import { backendSettings } from "./backend-settings.js";
+import { RouterOutages } from "./router-outages.js";
 import { RoutersController } from "./routers.controller.js";
 import { RoutersService } from "./routers.service.js";
 import { TUNNEL_ALLOCATOR, TunnelAllocator } from "./tunnel-allocator.js";
@@ -37,6 +38,7 @@ export class BackgroundJobs extends ScheduledJobs {
     monitor: LiveMonitor,
     expiry: VoucherExpiry,
     reconciler: VoucherReconciler,
+    outages: RouterOutages,
     live: LiveHub,
   ) {
     super(config.jobsEnabled);
@@ -50,6 +52,8 @@ export class BackgroundJobs extends ScheduledJobs {
         }
       }),
       new IntervalJob("live-monitor.health", HEALTH_CHECK_INTERVAL_MS, () => monitor.healthCheck()),
+      // After the monitor has recorded each router: outages open and close, and time goes back.
+      new IntervalJob("router.outages", MINUTE, () => outages.track()),
       new IntervalJob("voucher.expiry", MINUTE, async () => {
         await expiry.runOnce();
       }),
@@ -113,12 +117,14 @@ export class BackgroundJobs extends ScheduledJobs {
             }),
     },
     RoutersService,
+    RouterOutages,
     LiveHub,
     BackgroundJobs,
   ],
   controllers: [RoutersController, TunnelPeersController],
   exports: [
     LiveHub,
+    RouterOutages,
     RouterAccess,
     RouterSync,
     PrismaRouterStore,

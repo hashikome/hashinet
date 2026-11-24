@@ -10,6 +10,7 @@ import {
   loginHotspotClient,
   type MikroTikActiveClient,
   type MikroTikConn,
+  reachesInternet,
   throttledProfileNameForPackage,
   userProfileNameForPackage,
 } from "./mikrotik.js";
@@ -27,6 +28,8 @@ export const HEALTH_CHECK_INTERVAL_MS = 60_000;
  */
 export const IDLE_POLL_EVERY_N_TICKS = 6;
 const THROTTLE_RETRY_MS = 10 * 60_000;
+/** Pings that fail in a row before a router counts as having no internet. */
+const INTERNET_FAILS_DOWN = 2;
 
 /** One router's live clients, for the admin live view. */
 export interface HotspotUpdate {
@@ -95,9 +98,10 @@ export class LiveMonitor {
         let conn: MikroTikConn | null = null;
         try {
           conn = await connectToRouter(creds);
-          const [clients, uptimeSeconds] = await Promise.all([
+          const [clients, uptimeSeconds, internet] = await Promise.all([
             getActiveClients(conn),
             getSystemUptimeSeconds(conn),
+            reachesInternet(conn),
           ]);
           const venueSet = activeByVenue.get(router.venueId) ?? new Set<string>();
           activeByVenue.set(router.venueId, venueSet);
@@ -118,6 +122,7 @@ export class LiveMonitor {
             where: { id: router.id },
             data: { lastSeenAt: new Date(), connectedDevices: clients.length, uptimeSeconds },
           });
+          await recordInternet(this.db, router.id, internet);
 
           await this.recordClients(router, clients);
           await this.applyThrottle(conn, router.id, clients, eatHour);
@@ -356,5 +361,32 @@ export class LiveMonitor {
         data: { isThrottled: shouldThrottle },
       });
     }
+  }
+}
+
+/**
+ * Whether the router reaches the internet itself. Two failed pings in a row mark it down and one
+ * good one marks it up, so one lost ping doesn't flap it; `internetSeenAt` keeps the last good one,
+ * when an outage without internet began.
+ */
+export async function recordInternet(
+  db: Pick<PrismaClient, "router">,
+  routerId: string,
+  reached: boolean,
+): Promise<void> {
+  if (reached) {
+    await db.router.update({
+      where: { id: routerId },
+      data: { internetOk: true, internetFails: 0, internetSeenAt: new Date() },
+    });
+    return;
+  }
+  const { internetFails } = await db.router.update({
+    where: { id: routerId },
+    data: { internetFails: { increment: 1 } },
+    select: { internetFails: true },
+  });
+  if (internetFails >= INTERNET_FAILS_DOWN) {
+    await db.router.update({ where: { id: routerId }, data: { internetOk: false } });
   }
 }
