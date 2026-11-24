@@ -3,12 +3,12 @@
 import {
   groupedCode,
   type PackageRecord,
-  type RouterList,
   type SaleResult,
   type VenuePackages,
   type VenuePaymentDetails,
   type VenueRecord,
   type VenueSelling,
+  wifiQrCode,
 } from "@hashinet/types";
 import { QRCodeSVG } from "qrcode.react";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
@@ -23,7 +23,7 @@ import { useVenues } from "@/lib/venues";
 import { Dialog } from "./dialog";
 import { Icon } from "./icons";
 import { Button, ButtonLink, Field, Pill, type PillKind, useToast } from "./ui";
-import { VoucherCard, voucherLink } from "./voucher-card";
+import { VoucherCard } from "./voucher-card";
 
 type Method = "cash" | "mobile_money";
 const METHODS: [Method, string][] = [
@@ -468,24 +468,10 @@ function SoldStep({
   onAgain: () => void;
 }) {
   const toast = useToast();
-  const [ssid, setSsid] = useState(sold.venue.name);
   const { code } = sold.result;
-  const link = voucherLink(code);
-  useEffect(() => {
-    let live = true;
-    api
-      .get<RouterList>("/api/routers")
-      .then((r) => {
-        const named = r.routers.find((x) => x.venueId === sold.venue.id && x.ssid);
-        if (live && named?.ssid) setSsid(named.ssid);
-      })
-      .catch(() => {});
-    return () => {
-      live = false;
-    };
-  }, [sold.venue.id]);
+  const wifi = sold.venue.wifiName;
   const send = async () => {
-    const text = `Your WiFi voucher: ${groupedCode(code)}. Join ${ssid}, then open ${link}`;
+    const text = `Your WiFi voucher: ${groupedCode(code)}. Join the WiFi ${wifi}, then enter the code on the page that opens.`;
     if (navigator.share) {
       // Closing the share sheet without sending is no failure.
       await navigator.share({ title: "WiFi voucher", text }).catch(() => {});
@@ -509,10 +495,10 @@ function SoldStep({
         ) : null}
       </p>
       <p className="sold-wifi">
-        Join <b>{ssid}</b>, then scan
+        Scan to join <b>{wifi}</b>, then enter the code
       </p>
       <div className="sale-qr">
-        <QRCodeSVG value={link} size={176} title={`QR code for voucher ${groupedCode(code)}`} />
+        <QRCodeSVG value={wifiQrCode(wifi)} size={176} title={`QR code to join the WiFi ${wifi}`} />
       </div>
       <p className="sale-code">{groupedCode(code)}</p>
       <div className="actions">
@@ -529,6 +515,7 @@ function SoldStep({
           face={{
             code,
             venue: sold.venue.name,
+            wifiName: wifi,
             price: Number(sold.pkg.priceTsh),
             packageName: sold.pkg.name,
             devices: sold.pkg.deviceLimit,

@@ -147,7 +147,7 @@ describe("the guest portal", () => {
     expect(pending.status).toBe("pending_activation");
 
     routerConfirms(true);
-    const done = await redeem(router.id, { linkOrig: "http://example.com/a?code=WIFI-X&b=1" });
+    const done = await redeem(router.id, { linkOrig: "http://example.com/a?b=1" });
     const active = await t.db.voucher.findUniqueOrThrow({ where: { id: voucher.id } });
     expect(done).toEqual({
       status: 200,

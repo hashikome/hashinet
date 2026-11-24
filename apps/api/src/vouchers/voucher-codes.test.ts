@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { CODE_LENGTH, groupedCode, normalCode } from "@hashinet/types";
+import { CODE_LENGTH, groupedCode, normalCode, wifiQrCode } from "@hashinet/types";
 import { generateCode, generateCodes } from "./voucher-codes.js";
 
 describe("voucher codes", () => {
@@ -42,5 +42,12 @@ describe("voucher codes", () => {
 
   test("a store that reports every code taken fails rather than loops", async () => {
     await expect(generateCodes(3, async (c) => new Set(c))).rejects.toThrow(/unique/);
+  });
+});
+
+describe("a voucher's QR code", () => {
+  test("is the venue's WiFi, open, with the characters a WiFi QR code reserves escaped", () => {
+    expect(wifiQrCode("Juma's home")).toBe("WIFI:T:nopass;S:Juma's home;;");
+    expect(wifiQrCode('Cafe; "A":B,\\')).toBe('WIFI:T:nopass;S:Cafe\\; \\"A\\"\\:B\\,\\\\;;');
   });
 });

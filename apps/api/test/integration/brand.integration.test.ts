@@ -76,6 +76,22 @@ describe("venue branding", () => {
     expect(actions).toEqual(["brand.update", "brand.reset"]);
   });
 
+  test("where to buy, and a number to call that is a mobile number or nothing", async () => {
+    const c = await owner();
+    const cafe = await venue();
+    const save = (contactPhone: string | null) =>
+      c.request("PUT", `/api/venues/${cafe.id}/brand`, {
+        ...SETTINGS,
+        whereToBuy: "At the reception desk, 8:00 to 22:00.",
+        contactPhone,
+      });
+    expect((await save("0754 210 388")).body).toMatchObject({
+      brand: { whereToBuy: "At the reception desk, 8:00 to 22:00.", contactPhone: "+255754210388" },
+    });
+    expect((await save("")).body).toMatchObject({ brand: { contactPhone: null } });
+    expect((await save("12345")).status).toBe(400);
+  });
+
   test("a logo is re-encoded, keeps its transparency, loses its metadata, and is served", async () => {
     const c = await owner();
     const cafe = await venue();

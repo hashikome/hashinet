@@ -100,8 +100,8 @@ const COUNTER: Guide[] = [
         Tap <b>Confirm sale</b> once the money is in your hand, or has reached the venue.
       </>,
       <>
-        Hand it over: the guest joins the WiFi named on screen and scans the QR code, or you tap{" "}
-        <b>Send</b> or <b>Print</b>.
+        Hand it over: the guest scans the QR code with the phone&apos;s camera to join the WiFi, and
+        enters the code on the page that opens. Or you tap <b>Send</b> or <b>Print</b>.
       </>,
       <>
         Tap <b>Sell another</b> for the next guest.
@@ -120,7 +120,7 @@ const COUNTER: Guide[] = [
       ],
       [
         "The guest can't get online",
-        "Check they joined the WiFi named on screen, then scan again. The voucher's time starts only when they get online.",
+        "Check they joined the WiFi named on screen: scanning the QR code joins it. The voucher's time starts only when they get online.",
       ],
     ],
   },
@@ -365,10 +365,11 @@ export const GUIDES: Guide[] = [
     title: "Help a guest get online",
     gist: "From joining the WiFi to browsing.",
     steps: [
-      "The guest joins the venue's WiFi. On most phones the sign-in page opens by itself.",
-      "If it doesn't, they open any website and are sent to it, or they scan the voucher's QR code.",
+      "The guest joins the venue's WiFi: they scan the voucher's QR code with the phone's camera, or pick the WiFi from the phone's list.",
+      "The sign-in page opens by itself. If it doesn't, they open any website and are sent to it.",
       <>
-        They scan the code or type its 12 digits, and tap <b>Connect</b>.
+        They type the voucher's 12 digits and tap <b>Connect</b>. Without a voucher, the page shows
+        the plans and how to buy one.
       </>,
     ],
     wrong: [

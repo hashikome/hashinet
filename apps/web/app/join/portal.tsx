@@ -9,16 +9,12 @@ import {
   groupedCode,
   type RedeemResult,
 } from "@hashinet/types";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { clock, weekday } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { tsh } from "@/lib/money";
 import { portalVars } from "@/lib/portal-colours";
 
-/** Any plain http address: the router intercepts it and sends the guest back here, with context. */
-const TRIGGER_URL = "http://neverssl.com/";
-/** Holds a scanned card's code on this origin while the guest goes round through the router. */
-const CARD_KEY = "hashinet.card";
 /** Proof this tab paid: kept here so a reload still finds the code, and nowhere else. */
 const PAYMENT_KEY = "hashinet.payment";
 const POLL_MS = 3_000;
@@ -49,22 +45,22 @@ interface FromRouter {
   linkOrig: string;
 }
 
-/** The page never sends what is after `#` to a server, so codes stay out of every log. */
-function readFragment(): { fromRouter: FromRouter | null; code: string } {
+/** What the router's redirect says, after `#`, which the page never sends to a server. */
+function fromRouter(): FromRouter | null {
   const fragment = new URLSearchParams(window.location.hash.slice(1));
   const router = fragment.get("router");
-  const code = fragment.get("code") ?? "";
-  if (!router) return { fromRouter: null, code };
+  if (!router) return null;
   return {
-    fromRouter: {
-      router,
-      mac: fragment.get("mac") ?? "",
-      ip: fragment.get("ip") ?? "",
-      linkOrig: fragment.get("link-orig") ?? "",
-    },
-    code,
+    router,
+    mac: fragment.get("mac") ?? "",
+    ip: fragment.get("ip") ?? "",
+    linkOrig: fragment.get("link-orig") ?? "",
   };
 }
+
+/** "0754 210 388", as a guest dials it, from "+255754210388". */
+const dialed = (phone: string) =>
+  `0${phone.replace(/^\+255/, "")}`.replace(/^(\d{4})(\d{3})(\d+)$/, "$1 $2 $3");
 
 /** The API's refusal: `code` says what happened, `message` is written for the guest. */
 class Refused extends Error {
@@ -94,7 +90,6 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-/** "4827 1693 6518", as it is printed. */
 /** "Friday 18:04": when a voucher ends, in Dar es Salaam time. */
 const until = (iso: string) => `${weekday(iso)} ${clock(iso)}`;
 /** "23h 59m" left until `iso`. */
@@ -106,12 +101,9 @@ function left(iso: string): string {
 }
 type Stage =
   | { kind: "loading" }
-  | { kind: "not-on-wifi"; cardHeld: boolean }
+  | { kind: "not-on-wifi" }
   | { kind: "unavailable"; message: string }
   | { kind: "voucher" }
-  | { kind: "scan" }
-  | { kind: "scan-help" }
-  | { kind: "camera-off" }
   | { kind: "signing" }
   | { kind: "sign-failed" }
   | { kind: "run-out"; message: string }
@@ -120,9 +112,11 @@ type Stage =
   | { kind: "buy" };
 
 /**
- * The guest portal (prototype portal.js): a voucher page, scanning, signing in and online, in the
- * venue's colours, and buying with mobile money where the venue sells online. Nothing says online
- * until the router confirms it.
+ * The guest portal (prototype portal.js): a voucher page, signing in and online, in the venue's
+ * colours. Every guest sees the plans: bought here with mobile money where the venue sells online,
+ * otherwise in person, where the page says and with a number to call. It never shows a number to
+ * pay ahead: a sale is recorded as it happens (ADR-0017). Nothing says online until the router
+ * confirms it.
  */
 export function GuestPortal() {
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
@@ -142,27 +136,14 @@ export function GuestPortal() {
   }, []);
 
   useEffect(() => {
-    const { fromRouter, code: scanned } = readFragment();
-    if (fromRouter === null) {
-      // A scanned card opens this page directly, with no router behind it. The code stays on this
-      // origin: the address the guest goes on to is not ours, and must not see it.
-      if (scanned !== "") {
-        store.set(CARD_KEY, scanned);
-        window.history.replaceState(null, "", window.location.pathname);
-      }
-      setStage({ kind: "not-on-wifi", cardHeld: (store.get(CARD_KEY) ?? "") !== "" });
+    // Opened anywhere but through the router, it has no device to sign in: join the WiFi first.
+    const from = fromRouter();
+    if (from === null) {
+      setStage({ kind: "not-on-wifi" });
       return;
     }
-    // This also runs a second time on one load in development, by when the card has gone.
-    const card = (store.get(CARD_KEY) ?? "").replace(/\D/g, "");
-    if (card !== "") setDigits(card.slice(0, CODE_LENGTH));
-    store.set(CARD_KEY, null);
-    setRequest(fromRouter);
-    post<GuestContext>("/api/guest/context", {
-      router: fromRouter.router,
-      mac: fromRouter.mac,
-      ip: fromRouter.ip,
-    })
+    setRequest(from);
+    post<GuestContext>("/api/guest/context", { router: from.router, mac: from.mac, ip: from.ip })
       .then((found) => {
         setContext(found);
         setStage({ kind: "voucher" });
@@ -267,15 +248,8 @@ export function GuestPortal() {
 
   // Before the router: the dark sign-in frame, no venue yet.
   if (!context) {
-    const body =
-      stage.kind === "not-on-wifi" && stage.cardHeld ? (
-        <>
-          <Say title="Your voucher is ready">Join the venue&apos;s WiFi, then continue.</Say>
-          <a className="g-btn" href={TRIGGER_URL}>
-            Continue
-          </a>
-        </>
-      ) : (
+    return (
+      <Frame vars={portalVars("#0d1b2a", "#f59e2a")}>
         <Say
           title={
             stage.kind === "unavailable"
@@ -291,18 +265,19 @@ export function GuestPortal() {
               ? "Loading your venue's page."
               : "Join the venue's WiFi network, and this page opens by itself."}
         </Say>
-      );
-    return <Frame vars={portalVars("#0d1b2a", "#f59e2a")}>{body}</Frame>;
+      </Frame>
+    );
   }
 
   const s = context.settings;
   const vars = portalVars(s.backgroundColor, s.primaryColor);
   const sells = context.mobileMoney && context.packages.some((p) => p.payable);
   const welcome = s.headline || "Karibu. Pull up a seat.";
+  const toPlans = () => setStage({ kind: "buy" });
   const terms = (back: "voucher" | "buy") =>
     s.requireTerms ? (
       <p className="g-note">
-        By joining, you accept{" "}
+        By connecting, you accept{" "}
         <button className="g-link" type="button" onClick={() => setStage({ kind: "terms", back })}>
           the venue&apos;s terms
         </button>
@@ -394,44 +369,6 @@ export function GuestPortal() {
   }
 
   switch (stage.kind) {
-    case "scan":
-      return frame(
-        <Scanner
-          onCode={(code) => void redeem(code)}
-          onBlocked={() => setStage({ kind: "camera-off" })}
-          onUnsupported={() => setStage({ kind: "scan-help" })}
-          onType={() => setStage({ kind: "voucher" })}
-        />,
-      );
-    case "scan-help":
-      return frame(
-        <>
-          <Say title="Scan with your camera">
-            This page can&apos;t open the camera on your phone. Open the camera app, point it at the
-            QR code on your voucher, and tap the link it shows.
-          </Say>
-          <p className="g-say g-gap">
-            <button className="g-link" type="button" onClick={() => setStage({ kind: "voucher" })}>
-              Enter the code instead
-            </button>
-          </p>
-        </>,
-      );
-    case "camera-off":
-      return frame(
-        <>
-          <Say title="The camera is off">
-            To scan, allow the camera when your phone asks. If it doesn&apos;t ask, turn the camera
-            on for this page in your browser&apos;s settings.
-          </Say>
-          <button className="g-btn" type="button" onClick={() => setStage({ kind: "scan" })}>
-            Try again
-          </button>
-          <button className="g-btn alt" type="button" onClick={() => setStage({ kind: "voucher" })}>
-            Enter the code instead
-          </button>
-        </>,
-      );
     case "signing":
       return frame(
         <>
@@ -465,7 +402,7 @@ export function GuestPortal() {
       return frame(
         <>
           <Say title="This voucher can't be used">
-            {stage.message} Use another voucher, or ask at the counter.
+            {stage.message} Use another voucher, or buy more time.
           </Say>
           <button
             className="g-btn"
@@ -477,11 +414,9 @@ export function GuestPortal() {
           >
             Enter another voucher
           </button>
-          {sells ? (
-            <button className="g-btn alt" type="button" onClick={() => setStage({ kind: "buy" })}>
-              Buy more time
-            </button>
-          ) : null}
+          <button className="g-btn alt" type="button" onClick={toPlans}>
+            {sells ? "Buy more time" : "See the plans"}
+          </button>
         </>,
       );
     case "online":
@@ -530,6 +465,42 @@ export function GuestPortal() {
         </>,
       );
     case "buy": {
+      if (!sells) {
+        // Bought in person: the plans to read, where to buy, and the seller's number if given.
+        return frame(
+          <>
+            <Say title={welcome}>Our plans. Buy a voucher in person, then enter its code here.</Say>
+            <ul className="g-rows g-list" aria-label="Plans">
+              {context.packages.map((p) => (
+                <li className="g-row" key={p.id}>
+                  <Plan name={p.name} minutes={p.durationMinutes} />
+                  <b>{tsh(p.priceTsh)}</b>
+                </li>
+              ))}
+            </ul>
+            <h2 className="g-sub">Where to buy</h2>
+            <p className="g-say">
+              {s.whereToBuy || `Buy a voucher in person at ${context.venueName}.`}
+            </p>
+            {s.contactPhone ? (
+              <a className="g-btn alt" href={`tel:${s.contactPhone}`}>
+                Call {dialed(s.contactPhone)}
+              </a>
+            ) : null}
+            <h2 className="g-sub">Have a voucher?</h2>
+            <p className="g-say">
+              <button
+                className="g-link"
+                type="button"
+                onClick={() => setStage({ kind: "voucher" })}
+              >
+                Enter its code
+              </button>
+              .
+            </p>
+          </>,
+        );
+      }
       const payable = context.packages.filter((p) => p.payable);
       const pick = payable.find((p) => p.id === chosen) ?? payable[0];
       const ready = phone.replace(/\D/g, "").length >= 10;
@@ -547,10 +518,7 @@ export function GuestPortal() {
                   checked={p.id === pick?.id}
                   onChange={() => setChosen(p.id)}
                 />
-                <span>
-                  {formatDuration(p.durationMinutes)}
-                  <small>{p.name}</small>
-                </span>
+                <Plan name={p.name} minutes={p.durationMinutes} />
                 <b>{tsh(p.priceTsh)}</b>
               </label>
             ))}
@@ -589,7 +557,7 @@ export function GuestPortal() {
           <h2 className="g-sub">Have a voucher?</h2>
           <p className="g-say">
             <button className="g-link" type="button" onClick={() => setStage({ kind: "voucher" })}>
-              Scan the QR code on it, or enter its code
+              Enter its code
             </button>
             .
           </p>
@@ -605,35 +573,23 @@ export function GuestPortal() {
             if (digits.length === CODE_LENGTH) void redeem(digits);
           }}
         >
-          <Say title={welcome}>
-            {s.message || "Scan the QR code on your voucher, or enter its code."}
-          </Say>
+          <Say title={welcome}>{s.message || "Enter the code on your voucher."}</Say>
           <label className="g-label" htmlFor="gcode">
             {s.voucherLabel || "Voucher code"}
           </label>
-          <div className="g-field">
-            <input
-              className="g-input"
-              id="gcode"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              value={groupedCode(digits)}
-              onChange={(e) => {
-                setError(null);
-                setDigits(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH));
-              }}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? "gcode-error" : "gcode-hint"}
-            />
-            <button
-              className="g-scan"
-              type="button"
-              aria-label="Scan your voucher"
-              onClick={() => setStage({ kind: "scan" })}
-            >
-              <ScanIcon />
-            </button>
-          </div>
+          <input
+            className="g-input"
+            id="gcode"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={groupedCode(digits)}
+            onChange={(e) => {
+              setError(null);
+              setDigits(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH));
+            }}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "gcode-error" : "gcode-hint"}
+          />
           {error ? null : (
             <p className="g-hint" id="gcode-hint">
               The 12 digits on your voucher
@@ -649,22 +605,17 @@ export function GuestPortal() {
             type="submit"
             disabled={digits.length < CODE_LENGTH || busy}
           >
-            Join the WiFi
+            Connect
           </button>
           {terms("voucher")}
           <h2 className="g-sub">No voucher?</h2>
           <p className="g-say">
-            {sells ? (
-              <>
-                Ask at the counter, or{" "}
-                <button className="g-link" type="button" onClick={() => setStage({ kind: "buy" })}>
-                  buy time here with mobile money
-                </button>
-                .
-              </>
-            ) : (
-              s.voucherHelp || "Ask at the counter for a voucher."
-            )}
+            <button className="g-link" type="button" onClick={toPlans}>
+              {sells
+                ? "See the plans and buy here with mobile money"
+                : "See the plans and where to buy"}
+            </button>
+            .
           </p>
         </form>,
       );
@@ -726,6 +677,17 @@ function Say({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
+/** A package by its name, with how long it lasts where the name doesn't already say it. */
+function Plan({ name, minutes }: { name: string; minutes: number }) {
+  const lasts = formatDuration(minutes);
+  return (
+    <span>
+      {name}
+      {name.toLowerCase() === lasts.toLowerCase() ? null : <small>{lasts}</small>}
+    </span>
+  );
+}
+
 function Shown({ code }: { code: string }) {
   if (!code) return null;
   return (
@@ -754,94 +716,5 @@ function CopyCode({ code }: { code: string }) {
     >
       {copied ? "Copied" : "Copy code"}
     </button>
-  );
-}
-
-const ScanIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.8}
-    strokeLinecap="round"
-    aria-hidden="true"
-  >
-    <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16" />
-  </svg>
-);
-
-/** The code in a scanned QR link (`…/join#code=…`) or the digits themselves. */
-function codeIn(text: string): string | null {
-  const fromLink = /[#&?]code=([\d\s-]+)/.exec(text)?.[1] ?? text;
-  const digits = fromLink.replace(/\D/g, "");
-  return digits.length === CODE_LENGTH ? digits : null;
-}
-
-/**
- * Reads the voucher's QR code with the camera, where the browser can (BarcodeDetector). A phone's
- * sign-in sheet usually can't open the camera; then the guest is shown how to scan with the camera
- * app. A read is not announced: it goes straight to signing in.
- */
-function Scanner({
-  onCode,
-  onBlocked,
-  onUnsupported,
-  onType,
-}: {
-  onCode: (code: string) => void;
-  onBlocked: () => void;
-  onUnsupported: () => void;
-  onType: () => void;
-}) {
-  const video = useRef<HTMLVideoElement>(null);
-  // The latest handlers, so a new render never restarts the camera.
-  const on = useRef({ onCode, onBlocked, onUnsupported });
-  on.current = { onCode, onBlocked, onUnsupported };
-  useEffect(() => {
-    type Detector = { detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]> };
-    const Ctor = (
-      window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Detector }
-    ).BarcodeDetector;
-    if (!Ctor || !navigator.mediaDevices?.getUserMedia) {
-      on.current.onUnsupported();
-      return;
-    }
-    let stream: MediaStream | null = null;
-    let timer = 0;
-    let live = true;
-    const detector = new Ctor({ formats: ["qr_code"] });
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment" } })
-      .then(async (s) => {
-        stream = s;
-        if (!live || !video.current) return;
-        video.current.srcObject = s;
-        await video.current.play();
-        const look = async () => {
-          if (!live || !video.current) return;
-          const found = await detector.detect(video.current).catch(() => []);
-          const code = found.map((f) => codeIn(f.rawValue)).find(Boolean);
-          if (code) on.current.onCode(code);
-          else timer = window.setTimeout(look, 300);
-        };
-        void look();
-      })
-      .catch(() => on.current.onBlocked());
-    return () => {
-      live = false;
-      window.clearTimeout(timer);
-      for (const track of stream?.getTracks() ?? []) track.stop();
-    };
-  }, []);
-  return (
-    <>
-      <Say title="Scan your voucher">Hold your phone over the QR code on your voucher.</Say>
-      <video ref={video} className="g-video" muted playsInline aria-label="Camera view" />
-      <button className="g-btn alt" type="button" onClick={onType}>
-        Enter the code instead
-      </button>
-    </>
   );
 }

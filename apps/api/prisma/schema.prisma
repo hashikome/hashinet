@@ -839,8 +839,10 @@ model PortalSetting {
   backgroundColor String   @map("background_color") @db.VarChar(16)
   radius          Int      @default(18)
   voucherLabel    String   @map("voucher_label") @db.VarChar(100)
-  /// Upper-case (CHECK), as voucher codes are.
-  voucherHelp     String   @map("voucher_help")
+  /// Where a guest with no voucher buys one in person; empty says "at the venue".
+  whereToBuy      String   @map("where_to_buy")
+  /// A number guests can call to find the seller, shown to anyone on the WiFi.
+  contactPhone    String?  @map("contact_phone") @db.VarChar(20)
   ticketTitle     String   @map("ticket_title") @db.VarChar(160)
   ticketFooter    String   @map("ticket_footer") @db.VarChar(255)
   requireTerms    Boolean  @default(true) @map("require_terms")
@@ -862,7 +864,8 @@ model VenueBrand {
   backgroundColor String   @map("background_color") @db.VarChar(16)
   radius          Int      @default(18)
   voucherLabel    String   @map("voucher_label") @db.VarChar(100)
-  voucherHelp     String   @map("voucher_help")
+  whereToBuy      String   @map("where_to_buy")
+  contactPhone    String?  @map("contact_phone") @db.VarChar(20)
   ticketTitle     String   @map("ticket_title") @db.VarChar(160)
   ticketFooter    String   @map("ticket_footer") @db.VarChar(255)
   requireTerms    Boolean  @default(true) @map("require_terms")

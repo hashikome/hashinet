@@ -1,6 +1,7 @@
 import type { PortalSettingsRecord } from "@hashinet/types";
 import { z } from "zod";
 import { oneLine, paragraph } from "../http/validation.js";
+import { mobileNumber } from "../payments/payment-input.js";
 
 /** The HashiNet default, until an admin saves another; a venue may set its own. */
 export const DEFAULT_PORTAL_SETTINGS: PortalSettingsRecord = {
@@ -12,7 +13,8 @@ export const DEFAULT_PORTAL_SETTINGS: PortalSettingsRecord = {
   backgroundColor: "#0D1B2A",
   radius: 18,
   voucherLabel: "Voucher code",
-  voucherHelp: "Ask at the counter for a voucher.",
+  whereToBuy: "",
+  contactPhone: null,
   ticketTitle: "Internet Access Voucher",
   ticketFooter: "Thank you for your purchase",
   requireTerms: true,
@@ -35,7 +37,9 @@ export const portalInput = z.object({
   backgroundColor: colour,
   radius: z.number().int("must be a whole number").min(0).max(32),
   voucherLabel: line(100).min(1, "is required"),
-  voucherHelp: paragraph(500),
+  whereToBuy: paragraph(500),
+  /** Optional: an empty field shows no number. */
+  contactPhone: z.union([z.literal("").transform(() => null), z.null(), mobileNumber]),
   ticketTitle: line(160).min(1, "is required"),
   ticketFooter: line(255),
   requireTerms: z.boolean(),

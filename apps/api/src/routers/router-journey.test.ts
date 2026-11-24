@@ -4,12 +4,21 @@ import {
   routerJourney,
   SETUP_STALE_MS,
   type StoredSetup,
+  wifiNameOf,
   worstCondition,
 } from "./router-journey.js";
 
 const now = new Date("2026-11-01T10:00:00Z");
 const idle = { status: "offline", setupStartedAt: null, setupPhase: null, lastSetupAt: null };
 const passed: StoredSetup = { ok: true, phases: [], blockers: [] };
+
+describe("a venue's WiFi name", () => {
+  test("its routers' network name, else the venue's own", () => {
+    expect(wifiNameOf("Juma's home", [{ ssid: null }, { ssid: " Juma WiFi " }])).toBe("Juma WiFi");
+    expect(wifiNameOf("Juma's home", [{ ssid: "" }])).toBe("Juma's home");
+    expect(wifiNameOf("Juma's home", [])).toBe("Juma's home");
+  });
+});
 
 describe("a router's journey", () => {
   test("starts at connecting, and an online router moves to set up", () => {

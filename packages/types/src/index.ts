@@ -87,7 +87,10 @@ export interface PortalSettingsRecord {
   backgroundColor: string;
   radius: number;
   voucherLabel: string;
-  voucherHelp: string;
+  /** Where a guest with no voucher buys one in person; empty for "at the venue". */
+  whereToBuy: string;
+  /** A number guests can call to find the seller (+255…), shown to anyone on the WiFi; optional. */
+  contactPhone: string | null;
   ticketTitle: string;
   ticketFooter: string;
   requireTerms: boolean;
@@ -452,6 +455,8 @@ export interface VenueRecord {
   routerCount: number;
   /** Whether it sells now: only while one of its routers serves guests (set up and online). */
   selling: VenueSelling;
+  /** The WiFi guests join here: its routers' network name, else the venue's name. */
+  wifiName: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -1019,7 +1024,8 @@ export interface GuestContext {
     | "backgroundColor"
     | "radius"
     | "voucherLabel"
-    | "voucherHelp"
+    | "whereToBuy"
+    | "contactPhone"
     | "requireTerms"
     | "logoUrl"
     | "backgroundUrl"
@@ -1138,6 +1144,15 @@ export const CODE_LENGTH = 12;
 /** "4827 1693 6518": a code in the three groups it is printed and read aloud in. */
 export function groupedCode(code: string): string {
   return code.replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+
+/**
+ * What a voucher's QR code holds: the venue's WiFi, as phone cameras read a WiFi QR code. Scanning
+ * it offers to join; with no internet yet the phone opens the portal, and the guest types the code.
+ * A guest network has no password (`nopass`); `\ ; , : "` in a name are escaped.
+ */
+export function wifiQrCode(wifiName: string): string {
+  return `WIFI:T:nopass;S:${wifiName.replace(/([\\;,:"])/g, "\\$1")};;`;
 }
 
 /** A code as someone typed or printed it ("4827 1693 6518"), in the form it is stored. */

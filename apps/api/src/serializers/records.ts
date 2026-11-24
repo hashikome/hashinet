@@ -5,7 +5,6 @@ import type {
   RouterRecord,
   SessionRecord,
   VenueRecord,
-  VenueSelling,
   VoucherRecord,
 } from "@hashinet/types";
 import type {
@@ -16,7 +15,14 @@ import type {
   Voucher,
   WifiSession,
 } from "../generated/prisma/client.js";
-import { conditionOf, routerJourney, type StoredSetup } from "../routers/router-journey.js";
+import {
+  conditionOf,
+  routerJourney,
+  type StoredSetup,
+  sellingOf,
+  type VenueRouter,
+  wifiNameOf,
+} from "../routers/router-journey.js";
 import { DEFAULT_HOTSPOT_NETWORK } from "../services/router-provision/context.js";
 
 /**
@@ -88,7 +94,8 @@ export function portalSettingsRecord(row: PortalSetting): PortalSettingsRecord {
     backgroundColor: row.backgroundColor,
     radius: row.radius,
     voucherLabel: row.voucherLabel,
-    voucherHelp: row.voucherHelp,
+    whereToBuy: row.whereToBuy,
+    contactPhone: row.contactPhone,
     ticketTitle: row.ticketTitle,
     ticketFooter: row.ticketFooter,
     requireTerms: row.requireTerms,
@@ -97,7 +104,7 @@ export function portalSettingsRecord(row: PortalSetting): PortalSettingsRecord {
   };
 }
 
-export function venueRecord(row: Venue, routerCount: number, selling: VenueSelling): VenueRecord {
+export function venueRecord(row: Venue, routers: VenueRouter[]): VenueRecord {
   return {
     id: row.id,
     name: row.name,
@@ -106,8 +113,9 @@ export function venueRecord(row: Venue, routerCount: number, selling: VenueSelli
     region: row.region as Region,
     area: row.area,
     status: row.status,
-    routerCount,
-    selling,
+    routerCount: routers.length,
+    selling: sellingOf(routers),
+    wifiName: wifiNameOf(row.name, routers),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };

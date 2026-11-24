@@ -120,7 +120,7 @@ const buy = (routerId: string, packageId: string, changes: Record<string, unknow
     ip: "10.5.50.20",
     packageId,
     phone: "0712 345 678",
-    linkOrig: "http://example.com/?code=WIFI-X",
+    linkOrig: "http://example.com/",
     ...changes,
   });
 

@@ -86,7 +86,8 @@ export class GuestService {
         backgroundColor: settings.backgroundColor,
         radius: settings.radius,
         voucherLabel: settings.voucherLabel,
-        voucherHelp: settings.voucherHelp,
+        whereToBuy: settings.whereToBuy,
+        contactPhone: settings.contactPhone,
         requireTerms: settings.requireTerms,
         logoUrl: settings.logoUrl,
         backgroundUrl: settings.backgroundUrl,
@@ -344,7 +345,5 @@ export function safeDestination(linkOrig: string): string | null {
   if (!URL.canParse(linkOrig)) return null;
   const url = new URL(linkOrig);
   if (!["http:", "https:"].includes(url.protocol)) return null;
-  // A scanned card's code stays out of the address the browser goes on to.
-  url.searchParams.delete("code");
   return url.toString();
 }

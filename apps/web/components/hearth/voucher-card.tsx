@@ -1,21 +1,15 @@
 "use client";
 
-import { groupedCode } from "@hashinet/types";
+import { groupedCode, wifiQrCode } from "@hashinet/types";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef } from "react";
 import { tsh } from "@/lib/money";
 
-/** Where a printed card's QR code opens: the portal, the code in the fragment (ADR-0008). */
-export function voucherLink(code: string): string {
-  const origin =
-    process.env.NEXT_PUBLIC_PORTAL_URL ??
-    (typeof window === "undefined" ? "" : window.location.origin);
-  return `${origin}/join#code=${code}`;
-}
-
 export interface CardFace {
   code: string;
   venue: string;
+  /** The WiFi its QR code joins. */
+  wifiName: string;
   price: number;
   packageName: string;
   devices: number;
@@ -23,7 +17,8 @@ export interface CardFace {
 
 /**
  * A printed voucher, 100 by 46 mm (prototype `voucherCard`): a stub to keep with its number, and
- * the card the guest takes, with the price, what it buys, the code and its QR code.
+ * the card the guest takes, with the price, what it buys, the code, and a QR code that joins the
+ * venue's WiFi.
  */
 export function VoucherCard({ face, n }: { face: CardFace; n: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -67,16 +62,16 @@ export function VoucherCard({ face, n }: { face: CardFace; n: number }) {
             </div>
           </div>
           <div className="ticket-join">
-            <b>Join our WiFi</b>Then scan, or enter this code
+            <b>Scan to join our WiFi</b>Then enter this code
           </div>
           <span className="ticket-code">{code}</span>
         </div>
         <div className="ticket-qr">
           <QRCodeSVG
-            value={voucherLink(face.code)}
+            value={wifiQrCode(face.wifiName)}
             size={106}
             marginSize={0}
-            title={`QR code for voucher ${code}`}
+            title={`QR code to join the WiFi ${face.wifiName}`}
           />
         </div>
       </div>

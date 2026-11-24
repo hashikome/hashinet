@@ -43,7 +43,7 @@ import { type ProvisionReport, provisionRouter } from "../services/router-provis
 import { PrismaRouterStore } from "../services/router-provision/prisma-store.js";
 import { probeRouterMerged, type RouterProfile } from "../services/router-provision/probe.js";
 import { probeReadiness, type ReadinessReport } from "../services/router-provision/readiness.js";
-import { type SetupReport, setupRouter } from "../services/router-provision/setup.js";
+import { setupRouter } from "../services/router-provision/setup.js";
 import { probeVerify, type VerifyReport } from "../services/router-provision/verify.js";
 import { RouterSync } from "../services/router-sync.js";
 import { VoucherReconciler } from "../vouchers/voucher-reconciler.js";

@@ -21,16 +21,18 @@ export const SERVING = {
   internetOk: true,
 } as const;
 
+/** What a venue's record reads of each of its routers. */
+export interface VenueRouter {
+  status: string;
+  internetOk: boolean;
+  lastSetup: unknown;
+  lastSeenAt: Date | null;
+  internetSeenAt: Date | null;
+  ssid: string | null;
+}
+
 /** Whether a venue sells now, from its routers: the API decides it, the web says it. */
-export function sellingOf(
-  routers: {
-    status: string;
-    internetOk: boolean;
-    lastSetup: unknown;
-    lastSeenAt: Date | null;
-    internetSeenAt: Date | null;
-  }[],
-): VenueSelling {
+export function sellingOf(routers: Omit<VenueRouter, "ssid">[]): VenueSelling {
   const setUp = routers.filter((r) => passedSetup(r.lastSetup));
   if (setUp.some((r) => r.status === "online" && r.internetOk)) return { state: "selling" };
   if (setUp.length === 0) return { state: "not-set-up" };
@@ -51,6 +53,14 @@ export function sellingOf(
 
 const passedSetup = (last: unknown) =>
   typeof last === "object" && last !== null && "ok" in last && last.ok === true;
+
+/**
+ * The WiFi guests join at a venue: the name its routers broadcast (set at setup), else the venue's
+ * own name, which a router's WiFi takes by default.
+ */
+export function wifiNameOf(venueName: string, routers: Pick<VenueRouter, "ssid">[]): string {
+  return routers.map((r) => r.ssid?.trim() ?? "").find((name) => name !== "") ?? venueName;
+}
 
 /** What a setup run leaves on the router, as the router's page and its condition read it. */
 export function storedSetup(report: SetupReport): StoredSetup {
