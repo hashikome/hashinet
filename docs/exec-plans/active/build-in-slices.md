@@ -282,6 +282,38 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (i) Release and live acceptance: Paul's home invites an operator, who sells a voucher by
     mobile money reading out the venue's Lipa namba; the guest gets online with it; the owner
     refunds an unused one and sees both in Payments.
+  - [ ] (j) Outages: a router with no internet, and the time given back (owner, 18 and 19
+    November; prototype approved: `#juma-overview~nointernet`, `#musa-overview~nointernet`,
+    `#juma-issue-r3`, `#juma-guest-givenback`, `#juma-guest-nointernet`). On a local branch:
+    1. **The router's own internet.** The live monitor, which already connects to each online
+       router every poll, pings from the router (`/ping` to 8.8.8.8 and 1.1.1.1, as readiness
+       does) and records `internet_ok` and `internet_checked_at` on the router. Two failed polls in
+       a row mark it down, one good one marks it up, so one lost ping doesn't flap it. A router
+       that answers with no internet has the condition "No internet" (`RouterCondition`), opens a
+       router issue like offline, does not serve (`SERVING` adds `internet_ok`), and pauses selling
+       with its own reason (`VenueSelling` "no-internet"). The guest portal's context says so, and
+       the portal shows "This WiFi has no internet right now" instead of taking a code.
+    2. **Outages.** A table `router_outages` (router, kind offline or no internet, started at,
+       ended at, given back at). The monitor opens one when a set-up router stops serving
+       (unreachable, failing, or no internet) and closes it when it serves again with its internet
+       working; one open outage per router (a partial unique index). The time an outage starts is
+       when the router was last seen serving.
+    3. **Time given back.** When an outage closes, every paid voucher whose time ran during it at
+       that router (a session there open at its start, or opened during it) is given the overlap
+       of the outage with its time, never more than it had left when the outage began: its
+       `expires_at` moves on by that much, a voucher expired during the outage goes back to
+       active, and the router's hotspot user gets the same added to its `limit-uptime` (RouterOS
+       counts a logged-in user's time, which runs while the internet is down). Once per outage
+       (`given_back_at`, conditional update), audited as a system event with the count, and logged
+       on the router issue ("Gave 3 guests their time back: …"). The guest's status page says how
+       much was added back (`GuestSession` gains the last given-back minutes).
+    4. **Screens,** from the prototype: the router's status and issue title say "No internet"; the
+       paused-Sell dialog's third reason with what to check; the guest portal's two pages.
+    5. **Tests:** integration for the internet hysteresis, outage open and close, the give-back
+       rule (20 minutes left gives at most 20; a week gives the whole outage; an expired voucher
+       comes back; once per outage) and the paused reason; `guest-test` on the router sim cuts the
+       router's uplink (`/ip route disable`) and checks No internet, the pause, and the time given
+       back once the route is enabled again.
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).
