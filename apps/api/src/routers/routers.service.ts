@@ -54,7 +54,7 @@ import type {
   RouterInput,
   testConnectionInput,
 } from "./router-input.js";
-import { routerJourney, SETUP_STALE_MS, type StoredSetup } from "./router-journey.js";
+import { routerJourney, SETUP_STALE_MS, type StoredSetup, storedSetup } from "./router-journey.js";
 import { TUNNEL_ALLOCATOR, type TunnelAllocator } from "./tunnel-allocator.js";
 
 const withVenue = { venue: { select: { name: true } } } as const;
@@ -71,14 +71,6 @@ export interface ProbeResult {
   planError: string | null;
   readiness: ReadinessReport | null;
   log: readonly unknown[];
-}
-
-function storedSetup(report: SetupReport): StoredSetup {
-  return {
-    ok: report.ok,
-    phases: report.phases,
-    blockers: report.blockers.map((b) => ({ reason: b.reason, fix: b.fix ?? null })),
-  };
 }
 
 /** A run that threw before its phases could report. */

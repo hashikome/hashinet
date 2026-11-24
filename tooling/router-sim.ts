@@ -18,8 +18,9 @@ import { join, resolve } from "node:path";
 import { AuditLog } from "../apps/api/src/audit/audit-log.js";
 import { SecretBox } from "../apps/api/src/crypto/secret-box.js";
 import { createPrismaClient, type PrismaClient } from "../apps/api/src/database/client.js";
-import type { Router } from "../apps/api/src/generated/prisma/client.js";
+import type { Prisma, Router } from "../apps/api/src/generated/prisma/client.js";
 import { bootstrapPlatform } from "../apps/api/src/platform/bootstrap.js";
+import { storedSetup } from "../apps/api/src/routers/router-journey.js";
 import {
   closeConnection,
   connectToRouter,
@@ -614,6 +615,15 @@ async function setup(): Promise<void> {
     const logger = new RouterLogger("provision");
     const report = await setupRouter(router.id, store, { force: false, logger });
     printEvents(logger);
+    // As the API's Set up records it, so HashiNet counts the router as set up (it serves, sells,
+    // and has its outages tracked).
+    await db.router.update({
+      where: { id: router.id },
+      data: {
+        lastSetup: storedSetup(report) as unknown as Prisma.InputJsonValue,
+        lastSetupAt: new Date(),
+      },
+    });
     const saved = await db.router.findUniqueOrThrow({ where: { id: router.id } });
     console.log(
       `\nSetup ${report.ok ? "succeeded" : "FAILED"}${report.stoppedAt ? ` at ${report.stoppedAt}` : ""}.` +
@@ -975,6 +985,8 @@ HashiNet is running. Stop with Ctrl-C.
 async function guestTest(): Promise<void> {
   const state = readState();
   if (state.tunnel) throw new Error("The guest test runs the API on this machine: use LAN mode.");
+  // The API it starts reads the sim database as the latest migrations leave it.
+  ensureSimDatabase();
   const services = await simServices(state);
   const api = await startApi(state);
   const portalOrigin = portalOriginFor(
@@ -1140,12 +1152,12 @@ async function guestTest(): Promise<void> {
       }
     };
 
-    await signIn();
+    const answer = await signIn();
     const redeemed = await services.db.voucher.findUniqueOrThrow({ where: { code } });
     record(
       "The guest redeems through the walled garden, and the voucher goes active",
       redeemed.status === "active",
-      redeemed.status,
+      `${redeemed.status}; ${answer.output.trim().slice(-120)}`,
     );
     const loggedIn = await fetchPage("http://example.com/");
     record(
@@ -1280,6 +1292,57 @@ async function guestTest(): Promise<void> {
       "A guest buys a package on the portal and the paying device is online, with its code",
       bought.internet && /"code":"[A-Z0-9-]+"/.test(paid),
       describe(bought),
+    );
+
+    // The router's own line goes down while the guest is on: it answers, but has no internet. The
+    // monitor pings from the router each poll; two misses in a row mark it down.
+    const boughtCode = paid.match(/"code":"([A-Z0-9-]+)"/)?.[1] ?? "";
+    const defaultRoute = (disabled: boolean) =>
+      onRouter(async (conn) => {
+        const [route] = toRows(await conn.write("/ip/route/print", ["?dst-address=0.0.0.0/0"]));
+        const id = route?.get(".id") ?? null;
+        if (id !== null) {
+          await conn.write("/ip/route/set", [`=.id=${id}`, `=disabled=${disabled ? "yes" : "no"}`]);
+        }
+      });
+    const routerRow = () => services.db.router.findUniqueOrThrow({ where: { id: routerId } });
+    const waitFor = async (ok: () => Promise<boolean>, seconds: number) => {
+      for (let i = 0; i < seconds / 5 && !(await ok()); i++) await Bun.sleep(5_000);
+      return ok();
+    };
+    await defaultRoute(true);
+    try {
+      const cut = await waitFor(async () => !(await routerRow()).internetOk, 150);
+      const context = await shell.run(
+        "wget -q -T 20 -O - --header 'Content-Type: application/json' --post-data " +
+          `'${JSON.stringify({ router: routerId, mac, ip })}' ` +
+          `'${portalOrigin}/api/guest/context' 2>&1 | head -c 120`,
+        40_000,
+      );
+      record(
+        "A router whose own line is down has no internet, and the portal says so",
+        cut && context.output.includes('"internet":false'),
+        `${cut ? "no internet" : "still has internet"}; ${context.output.trim().slice(0, 60)}`,
+      );
+    } finally {
+      await defaultRoute(false);
+    }
+    const back = await waitFor(async () => (await routerRow()).internetOk, 150);
+    const closed = await waitFor(
+      async () =>
+        (await services.db.routerOutage.count({
+          where: { routerId, kind: "no_internet", givenBackAt: { not: null } },
+        })) > 0,
+      120,
+    );
+    const given = boughtCode
+      ? ((await services.db.voucher.findUnique({ where: { code: boughtCode } }))
+          ?.givenBackMinutes ?? 0)
+      : 0;
+    record(
+      "Its internet back, the outage closes and the guest gets the time it took",
+      back && closed && given > 0,
+      `${back ? "internet back" : "no internet"}; outage ${closed ? "closed" : "open"}; ${given} min given back`,
     );
   } finally {
     shell.close();

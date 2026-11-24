@@ -5,7 +5,11 @@ import type {
   RouterStage,
   VenueSelling,
 } from "@hashinet/types";
-import { PHASE_TITLES, type SetupPhaseId } from "../services/router-provision/setup.js";
+import {
+  PHASE_TITLES,
+  type SetupPhaseId,
+  type SetupReport,
+} from "../services/router-provision/setup.js";
 
 /**
  * A router serving guests now: its last setup passed and it is online. A venue sells only while one
@@ -44,6 +48,15 @@ export function sellingOf(
 
 const passedSetup = (last: unknown) =>
   typeof last === "object" && last !== null && "ok" in last && last.ok === true;
+
+/** What a setup run leaves on the router, as the router's page and its condition read it. */
+export function storedSetup(report: SetupReport): StoredSetup {
+  return {
+    ok: report.ok,
+    phases: report.phases,
+    blockers: report.blockers.map((b) => ({ reason: b.reason, fix: b.fix ?? null })),
+  };
+}
 
 /** A run this old with no finish was ended by a restart; setup itself takes minutes. */
 export const SETUP_STALE_MS = 10 * 60 * 1000;

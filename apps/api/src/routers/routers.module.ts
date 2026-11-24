@@ -49,11 +49,15 @@ export class BackgroundJobs extends ScheduledJobs {
         this.tick++;
         if (live.watching() || this.tick % IDLE_POLL_EVERY_N_TICKS === 0) {
           await monitor.pollOnce((update) => live.publishHotspot(update));
+          // Straight after the monitor records each router, so a short outage isn't missed between
+          // its records: outages open and close, and the time goes back.
+          await outages.track();
         }
       }),
-      new IntervalJob("live-monitor.health", HEALTH_CHECK_INTERVAL_MS, () => monitor.healthCheck()),
-      // After the monitor has recorded each router: outages open and close, and time goes back.
-      new IntervalJob("router.outages", MINUTE, () => outages.track()),
+      new IntervalJob("live-monitor.health", HEALTH_CHECK_INTERVAL_MS, async () => {
+        await monitor.healthCheck();
+        await outages.track();
+      }),
       new IntervalJob("voucher.expiry", MINUTE, async () => {
         await expiry.runOnce();
       }),
