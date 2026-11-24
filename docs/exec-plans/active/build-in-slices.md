@@ -282,7 +282,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (i) Release and live acceptance: Paul's home invites an operator, who sells a voucher by
     mobile money reading out the venue's Lipa namba; the guest gets online with it; the owner
     refunds an unused one and sees both in Payments.
-  - [ ] (j) Outages: a router with no internet, and the time given back (owner, 18 and 19
+  - [x] (2026-11-24) (j) Outages: a router with no internet, and the time given back (owner, 18 and 19
     November; prototype approved: `#juma-overview~nointernet`, `#musa-overview~nointernet`,
     `#juma-issue-r3`, `#juma-guest-givenback`, `#juma-guest-nointernet`). On a local branch:
     1. **The router's own internet.** The live monitor, which already connects to each online
@@ -300,13 +300,18 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
        when the router was last seen serving.
     3. **Time given back.** When an outage closes, every paid voucher whose time ran during it at
        that router (a session there open at its start, or opened during it) is given the overlap
-       of the outage with its time, never more than it had left when the outage began: its
-       `expires_at` moves on by that much, a voucher expired during the outage goes back to
-       active, and the router's hotspot user gets the same added to its `limit-uptime` (RouterOS
-       counts a logged-in user's time, which runs while the internet is down). Once per outage
-       (`given_back_at`, conditional update), audited as a system event with the count, and logged
-       on the router issue ("Gave 3 guests their time back: …"). The guest's status page says how
-       much was added back (`GuestSession` gains the last given-back minutes).
+       of the outage with its time, never more than it had left when the outage began, from when
+       it can be used again: its `expires_at` becomes the later of its end and the outage's, plus
+       that much (a voucher that would have ended 20 minutes into the outage gets its 20 minutes
+       after it), a voucher expired during the outage goes back to active, and the router's hotspot
+       user gets the same added to its `limit-uptime` (RouterOS counts a logged-in user's time,
+       which runs while the internet is down; `given_back_minutes` keeps it on every push). Once
+       per outage (`given_back_at`, conditional update), audited as a system event with the count,
+       and logged on the router issue ("Gave 3 guests their time back: …"). A router issue records
+       what took the router down (`issues.cause`), so it reads "had no internet" after it closes.
+       The portal's "You're online" page says how much was added back; the router's own status
+       page already follows the voucher's end from the API, so it is left as it is (changing it
+       would mean setting every router up again).
     4. **Screens,** from the prototype: the router's status and issue title say "No internet"; the
        paused-Sell dialog's third reason with what to check; the guest portal's two pages.
     5. **Tests:** integration for the internet hysteresis, outage open and close, the give-back
@@ -314,6 +319,13 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
        comes back; once per outage) and the paused reason; `guest-test` on the router sim cuts the
        router's uplink (`/ip route disable`) and checks No internet, the pause, and the time given
        back once the route is enabled again.
+    Built: integration 175/175 (`outages.integration.test.ts`); `guest-test` on the router sim 20/20,
+    its uplink cut and restored: "No internet" within two polls, the portal saying so, the outage
+    closed and the online guest given 2 minutes back. Three things the sim run found: the tracker
+    ran on its own minute and missed an outage shorter than that, so it runs right after each
+    monitor poll and health check; the sim's `setup` didn't record its result as the API does
+    (`storedSetup`, now shared), so HashiNet didn't count the sim router as set up; and `guest-test`
+    didn't migrate the sim database first.
 - [ ] Slice 4: getting paid.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).

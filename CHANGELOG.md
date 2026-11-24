@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Outages (slice 2, step j): HashiNet pings from each router, and a router that answers with no
+  internet says "No internet", opens an issue that says so, and pauses selling with its own reason;
+  the guest portal says the WiFi has no internet and takes no code. When a router that stopped
+  serving serves again, guests whose paid time ran through the outage get it back, up to what they
+  had left, once; the router's issue says who got what, and the portal says how much was added back.
+- Selling pauses while no router serves guests: Sell stays, quieter, and a tap says why and what to
+  do. Screens show what they last loaded at once and refresh behind it. The phone's menu covers the
+  tab bar, so the person at its foot shows.
 - The counter (slice 2 of `build-in-slices.md`): a voucher exists only by its sale (ADR-0017).
   - Sell a voucher from the Sell button, or the Sell tab on a phone: tap the package, choose cash or
     mobile money, confirm with the money in hand. For mobile money the guest pays the venue to one of

@@ -118,6 +118,13 @@ a refund is its own line on the day it is made, so takings show gross, refunds a
 seller's cash to hand over is their cash sales less the cash they gave back. HashiNet's fees are
 monthly, on net sales.
 
+A venue sells only while one of its routers serves guests: set up, reachable and with its own
+internet working, which HashiNet checks from the router itself. Otherwise Sell stays in its place,
+quieter, and says why (offline, no internet, needs attention, or not set up yet), and the guest
+portal says when the WiFi has no internet rather than starting a voucher's time. When a router that
+stopped serving serves again, each paid voucher whose time ran through it gets that time back, up to
+what it had left, from when it can be used again.
+
 A device is a guest's phone or laptop as the network sees it. Anyone at a business blocks a device
 their venues have seen, for every venue of that business; another business that saw it is not
 affected. The owner and business managers remove one, which forgets it for their business alone.
