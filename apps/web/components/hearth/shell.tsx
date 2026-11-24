@@ -183,10 +183,15 @@ function NavList({
 }) {
   const path = usePathname();
   // A space's first link is its own root, so it is on only there.
+  // A link is on for its own page, and for a page under it that no more specific link in the menu claims
+  // (a venue's page gives way to its router's).
+  const hrefs = entries.flatMap((e) =>
+    "href" in e ? [e.href] : "links" in e ? e.links.map((l) => l.href) : [],
+  );
   const isOn = (href: string) =>
     path === href ||
     (path.startsWith(`${href}/`) &&
-      !entries.some((e) => "href" in e && e.href !== href && path.startsWith(e.href)));
+      !hrefs.some((h) => h.length > href.length && (path === h || path.startsWith(`${h}/`))));
   const current = entries.find((e) => "links" in e && e.links.some((l) => isOn(l.href)));
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const shown = openGroup ?? (current && "links" in current ? current.label : "");

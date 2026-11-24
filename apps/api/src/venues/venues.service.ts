@@ -14,7 +14,15 @@ import type { VenueInput } from "./venue-input.js";
 
 /** What its routers say about it: how many, and whether it sells (`sellingOf`). */
 const VENUE_COUNTS = {
-  routers: { select: { status: true, internetOk: true, lastSetup: true, lastSeenAt: true } },
+  routers: {
+    select: {
+      status: true,
+      internetOk: true,
+      lastSetup: true,
+      lastSeenAt: true,
+      internetSeenAt: true,
+    },
+  },
 } as const;
 
 @Injectable()

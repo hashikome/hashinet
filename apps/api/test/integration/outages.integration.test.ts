@@ -75,7 +75,8 @@ describe("a router's own internet", () => {
     const { venue: record } = (await c.request("GET", `/api/venues/${venue.id}`)).body as {
       venue: VenueRecord;
     };
-    expect(record.selling).toEqual({ state: "no-internet", since: expect.any(String) });
+    // Since it last reached the internet, not since it was last heard from.
+    expect(record.selling).toEqual({ state: "no-internet", since: lost.toISOString() });
     const { routers } = (await c.request("GET", `/api/routers?venueId=${venue.id}`))
       .body as RouterList;
     expect(routers[0]?.condition).toBe("no-internet");

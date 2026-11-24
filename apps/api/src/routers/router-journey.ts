@@ -28,22 +28,25 @@ export function sellingOf(
     internetOk: boolean;
     lastSetup: unknown;
     lastSeenAt: Date | null;
+    internetSeenAt: Date | null;
   }[],
 ): VenueSelling {
   const setUp = routers.filter((r) => passedSetup(r.lastSetup));
   if (setUp.some((r) => r.status === "online" && r.internetOk)) return { state: "selling" };
   if (setUp.length === 0) return { state: "not-set-up" };
-  const heard = setUp.flatMap((r) => (r.lastSeenAt === null ? [] : [r.lastSeenAt.getTime()]));
   // As the routers' condition says it (`conditionOf`), the one most to do about first.
   const conditions = setUp.map((r) => conditionOf("serving", r.status, r.internetOk));
-  return {
-    state: conditions.includes("needs-attention")
-      ? "needs-attention"
-      : conditions.includes("no-internet")
-        ? "no-internet"
-        : "offline",
-    since: heard.length ? new Date(Math.max(...heard)).toISOString() : null,
-  };
+  const state = conditions.includes("needs-attention")
+    ? "needs-attention"
+    : conditions.includes("no-internet")
+      ? "no-internet"
+      : "offline";
+  // Since it last served: last heard from, or for no internet, last reaching the internet.
+  const heard = setUp.flatMap((r) => {
+    const at = state === "no-internet" ? r.internetSeenAt : r.lastSeenAt;
+    return at === null ? [] : [at.getTime()];
+  });
+  return { state, since: heard.length ? new Date(Math.max(...heard)).toISOString() : null };
 }
 
 const passedSetup = (last: unknown) =>
