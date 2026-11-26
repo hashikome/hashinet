@@ -489,13 +489,6 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     (`NO_PAYMENT_WAY`) and keeps the way read out (`payments.paid_through`, `paid_to_number`,
     `paid_to_name`), shown in Payments. Screens: Settings › Payments, the venue's Payments panel,
     the sell dialog. Test: `payment-ways.integration.test.ts`; integration 195/195.
-  - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
-    invoiced when added; the site opens once paid (owner, 26 November: an additional step). Adding
-    one issues its invoice as an onboarding charge's is issued, due 7 days later, and the site
-    opens once HashiNet records the payment ("Add site", never "Add and pay" until online payments
-    exist). Adding one stays on the venue's page: the site waits for payment there, and its invoice
-    joins the owner's bill issue (owner, 26 November). Owners and managers add and remove sites; only the owner opens the slot's invoice. A
-    paid slot stays with the venue if its site is removed.
   - [ ] (g) Service access follows overdue bills, by itself up to read-only (owner, 26 November
     2026). ADR-0014's steps run automatically on a business's oldest overdue invoice: a grace
     period from its due date, then read-only once it is 14 days overdue (no new vouchers, packages
@@ -749,6 +742,11 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   unlink their history. Found building the Devices screen in (g); test in
   `devices-sessions.integration.test.ts`.
   Date/Author: 2026-11-18 / Claude.
+- Decision: extra-site slots move from slice 4 to slice 5 (owner, 27 November 2026). Rationale: they
+  need the venue's Sites, which the app does not have yet: sites stored one per row with their
+  slots, a slot invoice, and site changes pushed to the routers, which only Set up does today; slice
+  5 builds the venue's page they belong on.
+  Date/Author: 2026-11-27 / owner.
 - Decision: a venue manager's venue-only packages move from slice 2 to slice 5.
   Rationale: they need a package's own venue and a change to the on-sale rule (a venue with no
   assignments sells every active package, so a venue-only package would leak there), with their own
@@ -863,7 +861,15 @@ it paid.
 Backend: the business manager role; venue managers over several venues; Add a venue and its
 onboarding package; prices per venue; packages a venue manager adds, sold only at their venues
 (ADR-0011, 4), which need a package's venue and the on-sale rule to keep them there; captive portal branding (ADR-0009); business-scopes M5 (the
-business profile with its logo); analytics computed by the API; the packages CSV export.
+business profile with its logo); analytics computed by the API; the packages CSV export. A venue's
+Sites, open before paying, with extra-site slots (moved from slice 4, owner, 27 November 2026):
+each site a row of its own, the first included and each more TSh 10,000 once, invoiced when added
+as an onboarding charge is, due 7 days later, on the owner's bill issue; adding one stays on the
+venue's page, the site waiting for payment until HashiNet records it ("Add site", never "Add and
+pay" until online payments exist). Owners and managers add and remove sites; only the owner opens
+the slot's invoice; a paid slot stays with the venue if its site is removed. A site reaches the
+venue's routers only once open, pushed on add, remove and payment, not only at Set up. The Blocked
+list waits until the router side exists.
 Screens: the venue switcher, Venues and a venue's page, Captive portal, General, Analytics (usage
 and sales), the business manager's and venue manager's views (H4: every list and form on a phone).
 Accepted live: the test business adds a second venue with its own price and portal; its business
