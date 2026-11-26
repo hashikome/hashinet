@@ -464,8 +464,8 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     number, kept with the billing settings; the company's TIN when it has one), billed to, issued and
     due, a line per venue saying how its fee came about (or per package item), total, each payment,
     amount due; "How to pay" with the reference while anything is due, each detail on its own
-    labelled line as a payer copies them (mobile money: Lipa namba and the name it shows; bank: account
-    name, bank, branch, account number, SWIFT code, currency), so Fees gains the Lipa name, the
+    labelled line as a payer copies them (bank transfer first: account name, bank, branch, account
+    number, SWIFT code, currency; then mobile money: Lipa namba and the name it shows), so Fees gains the Lipa name, the
     branch and the SWIFT code; the fee terms in the footer
     on a month's invoice only. Overdue reads without colour.
   - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
