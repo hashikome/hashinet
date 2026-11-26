@@ -498,10 +498,12 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     reason. Never on a first missed payment (ADR-0014, 2):
     a business's first overdue invoice stops at the grace period. The figures are starting points
     for Fees. Prototyped 27 November (Juma's home): only months' fees count, never one-off
-    charges; "late before" is an earlier month's fees paid after its due date. The owner sees the
-    amount and Pay what is overdue on every page, briefly ("Your bill of TSh 6,140 has been overdue
-    since 7 October. Pay it to sell again. Vouchers already sold keep working."); managers see that
-    selling pauses and who pays; operators see it only once selling stops. Read-only pauses Sell (its
+    charges; "late before" is an earlier month's fees paid after its due date. The notice is an issue,
+    as everything that needs someone is (owner, 27 November): the owner's bill issue becomes "Selling
+    is paused" ("Your bill of TSh 6,140 has been overdue since 7 October. Pay it to sell again.
+    Vouchers already sold keep working."), in Issues and the Overview banner, closing itself once
+    paid; managers get "Selling pauses on 21 October", then "Selling is paused", without the amount
+    and saying who pays; operators have no Issues and find out from Sell. Read-only pauses Sell (its
     dialog says why), hides package and price changes, and stops the guest portal's sales too ("if
     the business can't sell, there is no point", owner, 27 November): a voucher already sold still
     signs in. The business page's Service access says whether it is by its bills or set by hand,
