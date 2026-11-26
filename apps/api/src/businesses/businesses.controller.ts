@@ -7,6 +7,7 @@ import type {
 } from "@hashinet/types";
 import { Body, Controller, Get, NotFoundException, Param, Put } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
+import { allows } from "../access/policy.js";
 import type { Principal } from "../access/principal.js";
 import { accessChangeInput, ServiceAccessService } from "../billing/service-access.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -73,7 +74,10 @@ export class BusinessesController {
 
   @Get(":id")
   @Can("business.read")
-  async get(@Param("id", idParam()) id: string): Promise<BusinessDetail> {
+  async get(
+    @CurrentPrincipal() staff: Principal,
+    @Param("id", idParam()) id: string,
+  ): Promise<BusinessDetail> {
     const [b, counts, serviceAccess] = await Promise.all([
       this.db.business.findUnique({
         where: { id },
@@ -115,7 +119,10 @@ export class BusinessesController {
         venues: m.venues.map((v) => v.venue.name),
       })),
       venues: b.venues.map((v) => venueOf(v, counts)),
-      serviceAccess,
+      // Money is the admin's and managers' (billing is theirs): an operator sees the state, not the sums.
+      serviceAccess: allows(staff.role, "billing.overview")
+        ? serviceAccess
+        : { ...serviceAccess, overdueTsh: 0 },
     };
   }
 

@@ -218,6 +218,13 @@ describe("service access by hand", () => {
     const got = await paul.request("GET", `/api/businesses/${id}`);
     expect(got.status).toBe(200);
     const detail = got.body as BusinessDetail;
+    expect(detail.serviceAccess.overdueTsh).toBe(6_140);
+    // A platform operator sees the state, never the sums (billing is the admin's and managers').
+    await platformMember(t.db, { email: "hamisi@example.com", name: "Hamisi", role: "operator" });
+    const hamisi = browser(api);
+    await enrollAuthenticatorFor(api, hamisi, "hamisi@example.com");
+    const seen = (await hamisi.request("GET", `/api/businesses/${id}`)).body as BusinessDetail;
+    expect(seen.serviceAccess).toMatchObject({ access: "read_only", overdueTsh: 0 });
     expect(detail.serviceAccess.changes.map((c) => [c.access, c.held, c.by])).toEqual([
       ["read_only", false, "paul@example.com"],
       ["enabled", true, "asha@example.com"],
