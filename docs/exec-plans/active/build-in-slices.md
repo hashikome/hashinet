@@ -375,7 +375,43 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
       with no portal. Legacy wireless has no OWE and stays open, and the router's page says its
       guests' traffic is not encrypted. Accepted on a real router: an iPhone and an Android join,
       one over OWE, and both see the portal; the sim must still pass `guest-test` 20/20.
-- [ ] Slice 4: getting paid.
+- [ ] Slice 4: getting paid. Started 26 November 2026, with slice 2's router checks still open (owner:
+  start slice 4, 26 November). Built on the local branch `slice-4`; the prototype's Payments, a
+  business's bill, an invoice, the owner's Billing and Fees (approved 12 November).
+  - [ ] (a) Fee terms. The platform's fee terms (5%, 2.5% above TSh 2,000,000 a venue's month, a
+    TSh 5,000 minimum a venue) and HashiNet's payment details (a mobile money business number, a bank
+    account), on Fees: the platform admin edits, managers read. Each business keeps its own copy of
+    the fee terms, made when it is added; a change applies to businesses added after it. The
+    migration gives every existing business today's terms.
+  - [ ] (b) Invoices. One definition of a venue's net sales in a Dar es Salaam month (vouchers sold,
+    less refunds made that month, as Payments counts them). The fee per venue: marginal bands, never
+    below zero; the minimum from the first full month after the venue's setup, prorated by the share
+    of the month a router served it (outages, `router_outages`; before outages were recorded a router
+    counts as serving), raising the fee only when it falls short. On the 1st, in Dar es Salaam, a job
+    issues each business's invoice for the month before: one line per venue, its net sales and fee,
+    stored as issued and never recomputed; at most one per business and month (unique, conditional);
+    numbered from a sequence (`INV-2026-11-0001`); due on the 7th; emailed to the owner. Confirming a
+    venue's package with a charge issues its onboarding invoice, one line per package line, due 7
+    days later, and emails it. A month with no fee issues nothing.
+  - [ ] (c) Payments. Recording a payment (amount received, date, mobile money, bank transfer or
+    cash, an optional reference) by the platform admin or a manager, never above what is owed:
+    recorded on a business it settles the oldest invoice first; recorded on an invoice, or on the
+    setup issue for its onboarding charge, it settles that invoice. Allocations per invoice, so a
+    part payment leaves the rest due; an invoice is Due, Part paid, Paid, or Overdue after its due
+    date whatever came in. Remind emails the owner what is due (audited); the owner is also reminded
+    by email on a due date left unpaid. The setup issue's pay step reads its invoice, and slice 3's
+    by-hand payment (`venue_onboardings.paid_*`, `POST …/onboarding/payment`) goes: a package paid by
+    hand becomes its invoice and the payment that settled it, as it was recorded.
+  - [ ] (d) Screens. The platform's Payments (every business for a month, a quarter, a year or a
+    range: sales, rate, billed, paid, due, status; Record payment and Remind on each), a business's
+    bill and an invoice, the owner's Billing (their terms, what is due, how to pay, their invoices)
+    and its issue when a bill is due or overdue, Fees.
+  - [ ] (e) Invoice PDFs: Download PDF on each invoice (owner, 26 November: an additional step).
+  - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
+    invoiced when added; the site opens once paid (owner, 26 November: an additional step).
+  Accepted live: Paul's home's first monthly invoice is issued on 1 December (its router not yet
+  serving, so 5% of its net sales and no minimum); Asha records its payment; the owner sees it paid.
+  An onboarding charge can be confirmed, invoiced and paid live before then.
 - [ ] Slice 5: many venues.
 - [ ] Slice 6: online (held until the providers' credentials exist).
 - [ ] Slice 7: one voucher, devices online at once, through RADIUS (ADR-0015), with its switch PIN.
@@ -622,6 +658,19 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   permission and routes, and they sit on the same screen as prices per venue, which slice 5 builds.
   Slice 2's counter needs neither.
   Date/Author: 2026-11-14 / agent; confirmed by the owner 2026-11-18.
+
+- Decision: the monthly minimum is prorated by the share of the month a router served the venue
+  (owner, 26 November 2026): down 10 days of 30, it is TSh 3,333. Outages are recorded from 24
+  November 2026; before then a set-up router counts as serving. Rationale: the minimum pays for
+  infrastructure in use, and HashiNet records when it was not.
+  Date/Author: 2026-11-26 / owner.
+- Decision: a payment recorded on a charge settles that charge; one recorded on a business settles
+  the oldest invoice first (owner, 26 November 2026). Rationale: paying a new venue's onboarding must
+  schedule its setup, not quietly pay an older fee. ADR-0013, 6 is narrowed to match.
+  Date/Author: 2026-11-26 / owner.
+- Decision: HashiNet's payment details are a platform setting on Fees, edited by the platform admin
+  (owner, 26 November 2026); until they are set, Billing says to contact HashiNet.
+  Date/Author: 2026-11-26 / owner.
 
 ## Outcomes & Retrospective
 
