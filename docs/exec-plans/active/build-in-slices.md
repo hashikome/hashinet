@@ -459,12 +459,13 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (e) Invoice PDFs: Download PDF on each invoice (owner, 26 November: an additional step).
   - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
     invoiced when added; the site opens once paid (owner, 26 November: an additional step).
-  - [ ] (g) Service access follows overdue bills, by itself (owner, 26 November 2026). ADR-0014's
-    steps run automatically on a business's oldest overdue invoice: a grace period from its due
-    date, read-only once it is 14 days overdue (no new vouchers, packages or prices; vouchers sold
-    keep working), suspended at 30 days (the portal takes no new vouchers; anyone online keeps
-    their time); the owner is emailed at each step, paying restores it, and HashiNet's admin can
-    restore or hold a business by hand with a reason. Never on a first missed payment (ADR-0014, 2):
+  - [ ] (g) Service access follows overdue bills, by itself up to read-only (owner, 26 November
+    2026). ADR-0014's steps run automatically on a business's oldest overdue invoice: a grace
+    period from its due date, then read-only once it is 14 days overdue (no new vouchers, packages
+    or prices; vouchers sold keep working). Suspension is a separate operation, never automatic:
+    only the platform admin suspends, with a reason (ADR-0014, 4). The owner is emailed at each
+    step, paying restores it, and HashiNet's admin can restore or hold a business by hand with a
+    reason. Never on a first missed payment (ADR-0014, 2):
     a business's first overdue invoice stops at the grace period. The figures are starting points
     for Fees. To prototype with the owner first: the notice the owner and managers see, and the
     business page's Service access. Widens ADR-0014.
@@ -727,10 +728,11 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   the oldest invoice first (owner, 26 November 2026). Rationale: paying a new venue's onboarding must
   schedule its setup, not quietly pay an older fee. ADR-0013, 6 is narrowed to match.
   Date/Author: 2026-11-26 / owner.
-- Decision: service access follows overdue bills automatically, in fixed steps (grace period,
-  read-only at 14 days overdue, suspended at 30), the owner emailed at each, paying restoring it,
-  the admin able to restore or hold by hand; never on a first missed payment (owner, 26 November
-  2026). Rationale: the owner's common sense, that a business pays what is overdue to keep
+- Decision: service access follows overdue bills automatically up to read-only (grace period,
+  then read-only at 14 days overdue), the owner emailed at each, paying restoring it, the admin
+  able to restore or hold by hand; never on a first missed payment. Suspension is a separate
+  operation that is never triggered automatically: the platform admin suspends by hand (owner,
+  26 November 2026). Rationale: the owner's common sense, that a business pays what is overdue to keep
   operating, without HashiNet's team chasing each one.
   Date/Author: 2026-11-26 / owner.
 - Decision: HashiNet's payment details are a platform setting on Fees, edited by the platform admin
