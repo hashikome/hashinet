@@ -5,7 +5,8 @@ import { useState } from "react";
 import { BillActions, HowToPay, InvoicesPanel, percent } from "@/components/hearth/billing";
 import { Attention, Figs, Head, Panel, Pill, type PillKind, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
-import { fullDay, invoiceWhat, monthName } from "@/lib/billing";
+import { fullDay, STATE as INVOICE_STATE, owedList, owedTitle } from "@/lib/billing";
+import { monthName } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useSession } from "@/lib/session";
@@ -36,21 +37,12 @@ function OwnerBilling() {
   }
   const a = load.data;
   if (!a) return head;
-  const late = a.owed.filter((i) => i.state === "overdue");
-  const first = a.owed[0];
   return (
     <>
       {head}
-      {first ? (
-        <Attention
-          bad={late.length > 0}
-          title={
-            late.length
-              ? `${tsh(a.overdueTsh)} is overdue`
-              : `${tsh(a.dueTsh)} is due by ${fullDay(first.dueOn)}`
-          }
-        >
-          {a.owed.map((i) => `${invoiceWhat(i)}: ${tsh(i.dueTsh)}`).join(" · ")}
+      {a.owed.length ? (
+        <Attention bad={a.overdueTsh > 0} title={owedTitle(a)}>
+          {owedList(a.owed)}
         </Attention>
       ) : null}
       <Panel title={`${percent(a.terms.rateBp)} of each venue's sales`}>
@@ -65,11 +57,9 @@ function OwnerBilling() {
   );
 }
 
+/** A bill's state over a period: an invoice's, and two more for a period with nothing invoiced. */
 const STATE: Record<BillState, [string, PillKind]> = {
-  overdue: ["Overdue", "bad"],
-  part_paid: ["Part paid", "wait"],
-  due: ["Due", "wait"],
-  paid: ["Paid", "ok"],
+  ...INVOICE_STATE,
   open: ["Open", "neutral"],
   no_fee: ["No fee", "neutral"],
 };
@@ -98,19 +88,18 @@ function periods(by: By, months: string[]): [string, string, string][] {
  */
 function Payments() {
   const [by, setBy] = useState<By>("Month");
+  // Null until the reader picks: the API answers with the month in progress.
   const [range, setRange] = useState<[string, string] | null>(null);
-  const [custom, setCustom] = useState<[string, string] | null>(null);
   const [search, setSearch] = useState("");
   const [state, setState] = useState<BillState | "">("");
-  // The first load picks the newest month; later ones keep what the reader chose.
-  const load = useLoad("billing-overview", async () => {
-    const [from, to] = range ?? [null, null];
-    if (from && to) return api.get<BillingOverview>(`/api/billing/overview?from=${from}&to=${to}`);
-    const now = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Dar_es_Salaam" })
-      .format(new Date())
-      .slice(0, 7);
-    return api.get<BillingOverview>(`/api/billing/overview?from=${now}&to=${now}`);
-  }, [range?.[0], range?.[1]]);
+  const load = useLoad(
+    "billing-overview",
+    () =>
+      api.get<BillingOverview>(
+        range ? `/api/billing/overview?from=${range[0]}&to=${range[1]}` : "/api/billing/overview",
+      ),
+    [range?.[0], range?.[1]],
+  );
   const o = load.data;
   const months = o?.months ?? [];
   const list = periods(by, months);
@@ -129,19 +118,15 @@ function Payments() {
   const t = o?.totals;
   const pick = (next: By) => {
     setBy(next);
-    if (next === "Custom") {
-      const both = (o ? [o.from, o.to] : ["", ""]) as [string, string];
-      setCustom(both);
-      return;
-    }
+    if (next === "Custom") return;
     const first = periods(next, months)[0];
     if (first) setRange([first[1], first[2]]);
   };
   const rate = (r: BillingRow) => {
-    if (r.lowerRate && r.salesTsh > 0) {
+    if (r.lowerRate) {
       return (
         <>
-          <span className="num">{((r.feesTsh / r.salesTsh) * 100).toFixed(1)}%</span>
+          <span className="num">{percent(r.rateBp)}</span>
           <div className="sub">lower rate above the threshold</div>
         </>
       );
@@ -171,9 +156,9 @@ function Payments() {
             [
               "Paid",
               tsh(t.paidTsh),
-              t.billedTsh
-                ? `${Math.round((t.paidTsh / t.billedTsh) * 100)}% collected`
-                : "nothing billed",
+              t.collectedBp === null
+                ? "nothing billed"
+                : `${Math.round(t.collectedBp / 100)}% collected`,
             ],
             [
               "Due",
@@ -215,7 +200,7 @@ function Payments() {
               ))}
             </select>
           </div>
-          {by === "Custom" && custom ? (
+          {by === "Custom" && o ? (
             <>
               {(["From", "To"] as const).map((which, n) => (
                 <div className="field date-pair" key={which}>
@@ -223,13 +208,11 @@ function Payments() {
                   <select
                     id={`b${which}`}
                     className="input"
-                    value={custom[n]}
+                    value={n === 0 ? o.from : o.to}
                     onChange={(e) => {
                       const next: [string, string] =
-                        n === 0 ? [e.target.value, custom[1]] : [custom[0], e.target.value];
-                      const ordered = next.toSorted() as [string, string];
-                      setCustom(next);
-                      setRange(ordered);
+                        n === 0 ? [e.target.value, o.to] : [o.from, e.target.value];
+                      setRange(next.toSorted() as [string, string]);
                     }}
                   >
                     {months.map((m) => (
@@ -329,8 +312,8 @@ function Payments() {
                     row
                     businessId={r.businessId}
                     ownerName={r.ownerName}
-                    owedTsh={r.dueTsh}
-                    says={`${r.name} owes ${tsh(r.dueTsh)}. A payment settles the oldest bill first.`}
+                    owedTsh={r.owedTsh}
+                    says={`${r.name} owes ${tsh(r.owedTsh)} in all. A payment settles the oldest bill first.`}
                     onDone={load.reload}
                   />,
                 ],

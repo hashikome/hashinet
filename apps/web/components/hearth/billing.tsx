@@ -1,9 +1,10 @@
 "use client";
 
-import type { BillingAccount, FeeTerms, HashiNetPayTo, InvoiceRecord } from "@hashinet/types";
+import type { BillingProfile, FeeTerms, HashiNetPayTo, InvoiceRecord } from "@hashinet/types";
 import { useState } from "react";
 import { api, messageOf } from "@/lib/api";
-import { fullDay, invoiceWhat, METHOD_NAME, owesLine, STATE } from "@/lib/billing";
+import { fullDay, invoiceWhat, METHOD_NAME, STATE } from "@/lib/billing";
+import { longDate } from "@/lib/dates";
 import { LINE_NAME } from "@/lib/issues";
 import { tsh } from "@/lib/money";
 import { useCan } from "@/lib/session";
@@ -47,7 +48,7 @@ export function InvoicesPanel({ invoices }: { invoices: InvoiceRecord[] }) {
                 <div className="sub">{invoiceWhat(i)}</div>
               </div>,
               <span className="nowrap" key="i">
-                {fullDay(i.issuedAt.slice(0, 10))}
+                {longDate(i.issuedAt)}
               </span>,
               <span className="nowrap" key="d">
                 {fullDay(i.dueOn)}
@@ -229,21 +230,23 @@ export function BillActions({
   );
 }
 
-/** Bill actions on a business's account, settling the oldest first. */
-export function AccountActions({
-  account,
-  onDone,
-}: {
-  account: BillingAccount;
-  onDone: () => void;
-}) {
+/** Who a bill goes to: the owner and their email, on a bill's and an invoice's card. */
+export function BilledTo({ owner }: { owner: BillingProfile["owner"] }) {
   return (
-    <BillActions
-      businessId={account.business.id}
-      ownerName={account.owner?.name ?? null}
-      owedTsh={account.dueTsh}
-      says={owesLine(account.business.name, account.owed)}
-      onDone={onDone}
-    />
+    <div>
+      <dt>Billed to</dt>
+      <dd>
+        {owner ? (
+          <>
+            {owner.name}
+            <span className="sub">
+              <CopyText text={owner.email} />
+            </span>
+          </>
+        ) : (
+          <span className="muted">No owner yet</span>
+        )}
+      </dd>
+    </div>
   );
 }

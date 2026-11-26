@@ -31,12 +31,18 @@ const shillings = z
 const optional = (max: number) => oneLine(max).transform((v) => (v === "" ? null : v));
 
 export const billingSettingsInput = z.object({
-  terms: z.object({
-    rateBp: basisPoints,
-    lowerRateBp: basisPoints,
-    lowerRateAboveTsh: shillings,
-    minimumTsh: shillings,
-  }),
+  terms: z
+    .object({
+      rateBp: basisPoints,
+      lowerRateBp: basisPoints,
+      lowerRateAboveTsh: shillings,
+      minimumTsh: shillings,
+    })
+    // Volume lowers the rate, never raises it (ADR-0013, 3).
+    .refine((t) => t.lowerRateBp <= t.rateBp, {
+      path: ["lowerRateBp"],
+      message: "can't be above the fee",
+    }),
   payTo: z.object({
     mobileMoney: optional(40),
     bankName: optional(80),
@@ -55,12 +61,7 @@ function record(row: BillingSetting | null): BillingSettingsRecord {
     };
   }
   return {
-    terms: {
-      rateBp: row.feeRateBp,
-      lowerRateBp: row.feeLowerRateBp,
-      lowerRateAboveTsh: row.feeLowerRateAboveTsh,
-      minimumTsh: row.feeMinimumTsh,
-    },
+    terms: businessFeeTerms(row),
     payTo: {
       mobileMoney: row.payMobileMoney,
       bankName: row.payBankName,
@@ -87,10 +88,7 @@ export class BillingSettings {
   async save(staff: Principal, input: BillingSettingsInput): Promise<BillingSettingsRecord> {
     const before = await this.get();
     const data = {
-      feeRateBp: input.terms.rateBp,
-      feeLowerRateBp: input.terms.lowerRateBp,
-      feeLowerRateAboveTsh: input.terms.lowerRateAboveTsh,
-      feeMinimumTsh: input.terms.minimumTsh,
+      ...feeTermsColumns(input.terms),
       payMobileMoney: input.payTo.mobileMoney,
       payBankName: input.payTo.bankName,
       payBankAccount: input.payTo.bankAccount,

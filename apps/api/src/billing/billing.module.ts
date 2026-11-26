@@ -1,5 +1,5 @@
 import { Inject, Injectable, Module } from "@nestjs/common";
-import { businessDayOf } from "../analytics/business-day.js";
+import { businessDayOf, monthBefore } from "../analytics/business-day.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { IssuesModule } from "../issues/issues.module.js";
@@ -10,12 +10,6 @@ import { BILLING_STARTS, Invoices } from "./invoices.js";
 import { BillPayments } from "./payments.js";
 
 const HOUR = 60 * 60 * 1000;
-
-/** The month before the one `today` falls in, as its first day. */
-export function monthBefore(today: string): string {
-  const [y, m] = today.split("-").map(Number) as [number, number];
-  return m === 1 ? `${y - 1}-12-01` : `${y}-${String(m - 1).padStart(2, "0")}-01`;
-}
 
 /**
  * Every hour: last month's invoices, issued once each, so the 1st's are out within the hour and a

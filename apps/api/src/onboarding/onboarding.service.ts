@@ -13,7 +13,7 @@ import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { businessDayOf } from "../analytics/business-day.js";
 import { AuditLog } from "../audit/audit-log.js";
-import { Invoices, invoiceState } from "../billing/invoices.js";
+import { Invoices, invoiceSummary } from "../billing/invoices.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
@@ -94,9 +94,6 @@ const withFacts = {
 type VenueRow = Prisma.VenueGetPayload<{ include: typeof withFacts }>;
 type Onboarding = NonNullable<VenueFacts["onboarding"]>;
 
-/** A DATE column as YYYY-MM-DD. */
-const dueOn = (date: Date) => date.toISOString().slice(0, 10);
-
 /**
  * A venue's way to serving guests (ADR-0013, 2), through two issues in turn: its package (the
  * owner's preference, the call, the payment, the setup date), for the platform's admin and
@@ -148,11 +145,14 @@ export class OnboardingService {
     const venue = await this.venue(staff, venueId);
     const o = onboardingOf(venue);
     if (o.setupDate) throw notNow("The setup is scheduled; the package no longer changes.");
-    if ((onboardingInvoice(venue)?.paidTsh ?? 0) > 0) {
-      throw notNow("Payment has come in; the package no longer changes.");
-    }
     const total = totalOf(input.lines);
-    await this.db.$transaction(async (tx) => {
+    const invoice = await this.db.$transaction(async (tx) => {
+      // Held as a payment holds it, so nothing is paid on the old charge while this changes it.
+      await tx.$queryRaw`SELECT id FROM businesses WHERE id = ${venue.businessId}::uuid FOR UPDATE`;
+      const paid = await tx.billAllocation.count({
+        where: { invoice: { kind: "onboarding", venueId } },
+      });
+      if (paid > 0) throw notNow("Payment has come in; the package no longer changes.");
       // The fee first, then the rest as agreed.
       const lines = [...input.lines].sort(
         (a, b) => Number(b.kind === "onboarding_fee") - Number(a.kind === "onboarding_fee"),
@@ -180,9 +180,10 @@ export class OnboardingService {
         { plan: input.plan, totalTsh: total },
         tx,
       );
+      // Its charge, invoiced as agreed, due 7 days later (ADR-0013, 6).
+      return this.invoices.syncOnboarding(venueId, tx);
     });
-    // Once it commits: its charge is invoiced and emailed, due 7 days later (ADR-0013, 6).
-    await this.invoices.issueOnboarding(venueId);
+    await this.invoices.onboardingChanged(venue.businessId, invoice);
     return this.get(staff, venueId);
   }
 
@@ -348,15 +349,7 @@ export class OnboardingService {
               id: invoice.id,
               number: invoice.number,
               totalTsh: invoice.totalTsh,
-              paidTsh: invoice.paidTsh,
-              dueTsh: invoice.totalTsh - invoice.paidTsh,
-              dueOn: dueOn(invoice.dueOn),
-              state: invoiceState(
-                invoice.totalTsh,
-                invoice.paidTsh,
-                dueOn(invoice.dueOn),
-                businessDayOf(new Date()),
-              ),
+              ...invoiceSummary(invoice.totalTsh, invoice.paidTsh, invoice.dueOn, new Date()),
             }
           : null,
       setupDate: o.setupDate?.toISOString().slice(0, 10) ?? null,

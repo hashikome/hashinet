@@ -427,8 +427,6 @@ model UserPreference {
   @@map("user_preferences")
 }
 
-/// The packages every new business starts with (ADR-0011, 10); a change reaches only businesses
-/// added after it.
 /// HashiNet's billing settings, one row (`singleton`): the fee terms a new business starts with,
 /// and where businesses pay HashiNet. Until the platform admin saves, the API answers with today's
 /// terms and no payment details.
@@ -450,6 +448,8 @@ model BillingSetting {
   @@map("billing_settings")
 }
 
+/// The packages every new business starts with (ADR-0011, 10); a change reaches only businesses
+/// added after it.
 model PlatformDefaultPackage {
   id              String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name            String   @db.VarChar(180)
@@ -1247,6 +1247,16 @@ model Invoice {
   @@unique([businessId, period])
   @@index([businessId, issuedAt])
   @@map("invoices")
+}
+
+/// A month whose invoices were issued in one complete pass: it is never priced again, so a business
+/// that owed nothing on the 1st is not invoiced later from what changed since.
+model InvoiceRun {
+  /// The month, as its first day in Dar es Salaam.
+  period      DateTime @id @db.Date
+  completedAt DateTime @map("completed_at") @db.Timestamptz(3)
+
+  @@map("invoice_runs")
 }
 
 /// One line of an invoice: a venue's month (its net sales, the share a router served it, and the

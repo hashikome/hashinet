@@ -75,6 +75,11 @@ BEGIN
     SELECT COALESCE(SUM(amount_tsh), 0) INTO total
     FROM venue_onboarding_lines WHERE venue_id = r.venue_id;
     CONTINUE WHEN total <= 0;
+    -- More than the package came in by hand: stop, so the excess is decided on, never dropped.
+    IF r.paid_amount_tsh > total THEN
+      RAISE EXCEPTION 'Venue % paid % by hand for a package of %: decide where the rest goes before migrating',
+        r.venue_id, r.paid_amount_tsh, total;
+    END IF;
     SELECT id INTO inv FROM invoices WHERE kind = 'onboarding' AND venue_id = r.venue_id;
     IF inv IS NULL THEN
       INSERT INTO invoices (number, business_id, kind, venue_id, issued_at, due_on, total_tsh, updated_at)

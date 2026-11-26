@@ -33,6 +33,18 @@ import { JOURNEY_SELECT, routerCondition } from "../routers/router-journey.js";
 const DAY_MS = 86_400_000;
 
 export const PLATFORM_WORKSPACE = { scope: "platform", businessId: null } as const;
+
+/**
+ * Who sees each kind of issue, and whether people work it (claim, hand on, take over, note). A bill
+ * is its business's owner's alone, and paying it is what closes it (ADR-0011, 3).
+ */
+const KINDS: Record<IssueKind, { ownerOnly: boolean; worked: boolean }> = {
+  router_offline: { ownerOnly: false, worked: true },
+  venue_package: { ownerOnly: false, worked: true },
+  venue_setup: { ownerOnly: false, worked: true },
+  bill_due: { ownerOnly: true, worked: false },
+};
+const OWNER_ONLY = (Object.keys(KINDS) as IssueKind[]).filter((k) => KINDS[k].ownerOnly);
 type Workspace = { scope: "platform" | "business"; businessId: string | null };
 
 /** The kinds an issue can be handed to a platform operator in: a venue's package is for the
@@ -416,8 +428,7 @@ export class IssuesService {
       ...(staff.venueIds === null
         ? {}
         : { OR: [{ venueId: null }, { venueId: { in: staff.venueIds } }] }),
-      // What the business owes HashiNet is its owner's alone (ADR-0011, 3).
-      ...(staff.role === "owner" ? {} : { kind: { not: "bill_due" } }),
+      ...(staff.role === "owner" ? {} : { kind: { notIn: OWNER_ONLY } }),
     };
   }
 
@@ -437,8 +448,7 @@ export class IssuesService {
     if (row.status !== "open") {
       throw new ConflictException(apiError("CONFLICT", "This issue is resolved."));
     }
-    // Nobody works a bill for the owner: paying it is what closes it.
-    if (row.kind === "bill_due") {
+    if (!KINDS[row.kind].worked) {
       throw new ConflictException(
         apiError("CONFLICT", "This closes once HashiNet records the payment."),
       );
@@ -534,8 +544,7 @@ export class IssuesService {
     const lastActivity = row.events[0]?.at ?? row.openedAt;
     const open = row.status === "open";
     const mine = row.holderId === staff.membershipId;
-    // A bill is the owner's alone, so nobody claims it or hands it on; paying it closes it.
-    const held = open && row.kind !== "bill_due";
+    const held = open && KINDS[row.kind].worked;
     return {
       id: row.id,
       kind: row.kind,

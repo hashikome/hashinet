@@ -8,18 +8,25 @@ import { Body, Controller, Get, HttpCode, Param, Post, Put, Query } from "@nestj
 import { z } from "zod";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
+import { monthParam } from "../analytics/analytics.service.js";
 import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import { BillingSettings, billingSettingsInput } from "./billing-settings.js";
 import { Invoices } from "./invoices.js";
 import { BillPayments, recordPaymentInput } from "./payments.js";
 
-const invoicesQuery = z.object({ businessId: z.uuid().optional() });
+const accountQuery = z.object({ businessId: z.uuid().optional() });
 const remindInput = z.object({ businessId: z.uuid() });
-const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "must be a month, YYYY-MM");
 const overviewQuery = z
-  .object({ from: month, to: month })
-  .refine((q) => q.from <= q.to, { path: ["to"], message: "must not be before from" });
+  .object({ from: monthParam.optional(), to: monthParam.optional() })
+  .refine((q) => (q.from === undefined) === (q.to === undefined), {
+    path: ["to"],
+    message: "comes with from",
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    path: ["to"],
+    message: "must not be before from",
+  });
 
 @Controller("api/billing")
 export class BillingController {
@@ -52,7 +59,7 @@ export class BillingController {
     @CurrentPrincipal() staff: Principal,
     @Query() query: unknown,
   ): Promise<BillingAccount> {
-    const { businessId } = parseInput(invoicesQuery, query);
+    const { businessId } = parseInput(accountQuery, query);
     return this.invoices.account(staff, businessId ?? null);
   }
 
@@ -60,7 +67,7 @@ export class BillingController {
   @Can("billing.overview")
   async overview(@Query() query: unknown): Promise<BillingOverview> {
     const { from, to } = parseInput(overviewQuery, query);
-    return this.invoices.overview(from, to);
+    return this.invoices.overview(from && to ? { from, to } : null);
   }
 
   /** Money a business paid, as it arrived: on an invoice, or the oldest first. */
@@ -87,6 +94,6 @@ export class BillingController {
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
   ): Promise<InvoiceResponse> {
-    return { invoice: await this.invoices.get(staff, id) };
+    return this.invoices.get(staff, id);
   }
 }

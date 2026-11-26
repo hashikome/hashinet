@@ -1,23 +1,32 @@
 import type {
   BillingAccount,
   BillingOverview,
+  BillingProfile,
   BillingRow,
   BillState,
   FeeTerms,
   InvoiceLineRecord,
   InvoiceRecord,
+  InvoiceResponse,
   InvoiceState,
   OnboardingLineKind,
 } from "@hashinet/types";
 import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
-import { businessDayOf, businessDayStart } from "../analytics/business-day.js";
+import {
+  addDays,
+  businessDayOf,
+  businessDayStart,
+  dateOf,
+  monthOf,
+  nextMonth,
+} from "../analytics/business-day.js";
 import { REVENUE_EVENTS } from "../analytics/revenue-events.js";
 import { AuditLog } from "../audit/audit-log.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
-import { EMAIL_SENDER, type EmailSender } from "../email/email-sender.js";
+import { EMAIL_SENDER, type EmailMessage, type EmailSender } from "../email/email-sender.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
 import { IssuesService } from "../issues/issues.service.js";
@@ -33,34 +42,40 @@ export const BILLING_STARTS = "2026-11-01";
 const MONTH_DUE_DAY = 7;
 const CHARGE_DUE_DAYS = 7;
 
-/** "2026-12-01" from "2026-11-01": the first day of the month after. */
-export function nextMonth(firstDay: string): string {
-  const [y, m] = firstDay.split("-").map(Number) as [number, number];
-  return m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
-}
-
-/** The first day of the month a business day falls in. */
-const monthOf = (day: string) => `${day.slice(0, 7)}-01`;
-
-/** A day `n` days after another, both YYYY-MM-DD. */
-function addDays(day: string, n: number): string {
-  const d = new Date(`${day}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
-
-/** A DATE column as YYYY-MM-DD; Prisma reads it as midnight UTC. */
-const dayOf = (date: Date) => date.toISOString().slice(0, 10);
-
 /**
  * Where an invoice stands on `today`: paid in full, or overdue once its due date has passed with
  * anything left, whatever came in (ADR-0013, 6).
  */
-export function invoiceState(totalTsh: number, paidTsh: number, dueOn: string, today: string) {
-  if (paidTsh >= totalTsh) return "paid" satisfies InvoiceState;
-  if (today > dueOn) return "overdue" satisfies InvoiceState;
-  return paidTsh > 0 ? ("part_paid" satisfies InvoiceState) : ("due" satisfies InvoiceState);
+export function invoiceState(
+  totalTsh: number,
+  paidTsh: number,
+  dueOn: string,
+  today: string,
+): InvoiceState {
+  if (paidTsh >= totalTsh) return "paid";
+  if (today > dueOn) return "overdue";
+  return paidTsh > 0 ? "part_paid" : "due";
 }
+
+/** An invoice's money as of `now`: what was paid, what is left, and where it stands. */
+export function invoiceSummary(totalTsh: number, paidTsh: number, dueOn: Date, now: Date) {
+  const due = dateOf(dueOn);
+  return {
+    paidTsh,
+    dueTsh: totalTsh - paidTsh,
+    dueOn: due,
+    state: invoiceState(totalTsh, paidTsh, due, businessDayOf(now)),
+  };
+}
+
+/** The order a payment on a business settles its invoices in: the oldest due first. */
+export const OLDEST_FIRST = [
+  { dueOn: "asc" },
+  { issuedAt: "asc" },
+] as const satisfies Prisma.InvoiceOrderByWithRelationInput[];
+
+/** A business's active owners: who is billed, and who hears of it. */
+const OWNERS = { role: "owner", status: "active" } as const satisfies Prisma.MembershipWhereInput;
 
 const INVOICE_INCLUDE = {
   business: { select: { name: true } },
@@ -96,6 +111,10 @@ export class Invoices {
   async issueMonth(period: string, now = new Date()): Promise<number> {
     const from = businessDayStart(period);
     const to = businessDayStart(nextMonth(period));
+    const month = new Date(`${period}T00:00:00Z`);
+    // A month is priced in one pass, once: after it, nothing that changes is billed back into it.
+    if (await this.db.invoiceRun.findUnique({ where: { period: month } })) return 0;
+    const pending = { invoices: { none: { period: month } } } satisfies Prisma.BusinessWhereInput;
     const sales = await this.db.$queryRaw<{ venue_id: string; net: string }[]>`
       WITH ${REVENUE_EVENTS}
       SELECT venue_id, COALESCE(SUM(amount), 0)::numeric(14,2)::text AS net
@@ -103,15 +122,8 @@ export class Invoices {
       WHERE occurred_at >= ${from} AND occurred_at < ${to} AND venue_id IS NOT NULL
       GROUP BY venue_id`;
     const netOf = new Map(sales.map((s) => [s.venue_id, Math.round(Number(s.net))]));
-    const already = new Set(
-      (
-        await this.db.invoice.findMany({
-          where: { period: new Date(`${period}T00:00:00Z`) },
-          select: { businessId: true },
-        })
-      ).map((i) => i.businessId),
-    );
     const businesses = await this.db.business.findMany({
+      where: pending,
       include: {
         venues: {
           orderBy: { name: "asc" },
@@ -136,29 +148,40 @@ export class Invoices {
 
     let issued = 0;
     for (const business of businesses) {
-      if (already.has(business.id)) continue;
       const terms = businessFeeTerms(business);
       const lines = business.venues.flatMap((venue) => {
-        const line = this.venueLine(venue, netOf.get(venue.id) ?? 0, terms, period, from, to, now);
+        // A closed business or a venue out of service owes its fee on what it sold, no minimum.
+        const serving = business.status === "active" && venue.status === "active";
+        const line = this.venueLine(venue, netOf.get(venue.id) ?? 0, terms, {
+          period,
+          from,
+          to,
+          now,
+          serving,
+        });
         return line ? [line] : [];
       });
       const total = lines.reduce((sum, l) => sum + l.amountTsh, 0);
       if (total <= 0) continue;
-      const invoice = await this.create({
-        businessId: business.id,
-        kind: "monthly_fees",
-        period: new Date(`${period}T00:00:00Z`),
-        venueId: null,
-        dueOn: `${nextMonth(period).slice(0, 8)}${String(MONTH_DUE_DAY).padStart(2, "0")}`,
-        lines,
-        now,
-      });
+      const invoice = await this.db.$transaction((tx) =>
+        this.create(tx, {
+          businessId: business.id,
+          kind: "monthly_fees",
+          period: month,
+          venueId: null,
+          dueOn: `${nextMonth(period).slice(0, 8)}${String(MONTH_DUE_DAY).padStart(2, "0")}`,
+          lines,
+          now,
+        }),
+      );
       if (invoice) {
         issued++;
         await this.emailOwners(invoice);
-        await this.syncBillIssues(business.id, now);
       }
     }
+    await this.db.invoiceRun.create({ data: { period: month, completedAt: now } });
+    // The owners' bill issues, in one pass once every invoice is out.
+    if (issued > 0) await this.syncBillIssues(null, now);
     return issued;
   }
 
@@ -172,15 +195,19 @@ export class Invoices {
     },
     netSalesTsh: number,
     terms: FeeTerms,
-    period: string,
-    from: Date,
-    to: Date,
-    now: Date,
+    {
+      period,
+      from,
+      to,
+      now,
+      serving,
+    }: { period: string; from: Date; to: Date; now: Date; serving: boolean },
   ) {
     const setUp = venue.routers.filter((r) => passedSetup(r.lastSetup));
     const completed = venue.onboarding?.completedAt ?? null;
     // The minimum counts from the first full month after the venue's setup, while a router serves.
     const minimumApplies =
+      serving &&
       completed !== null &&
       setUp.length > 0 &&
       period >= nextMonth(monthOf(businessDayOf(completed)));
@@ -206,16 +233,22 @@ export class Invoices {
   }
 
   /**
-   * Issues, or brings up to date, a venue's onboarding invoice once its package is confirmed: one
-   * line per package line, due 7 days later. A package that is free has none. Run after the
-   * confirmation commits; the job catches one a crash left behind.
+   * Brings a venue's onboarding invoice in line with its confirmed package: one line per package
+   * line, due 7 days after confirming, none for a free package. Run in the transaction that
+   * confirms it, holding the business row as a payment does, so no payment lands between the two;
+   * the caller emails the invoice it returns once that commits. A paid invoice stays as it is.
    */
-  async issueOnboarding(venueId: string, now = new Date()): Promise<void> {
-    const onboarding = await this.db.venueOnboarding.findUnique({
+  async syncOnboarding(
+    venueId: string,
+    tx: Prisma.TransactionClient,
+    now = new Date(),
+  ): Promise<InvoiceRow | null> {
+    const onboarding = await tx.venueOnboarding.findUnique({
       where: { venueId },
       include: { lines: { orderBy: { position: "asc" } }, venue: { select: { businessId: true } } },
     });
-    if (!onboarding?.confirmedAt) return;
+    if (!onboarding?.confirmedAt) return null;
+    await tx.$queryRaw`SELECT id FROM businesses WHERE id = ${onboarding.venue.businessId}::uuid FOR UPDATE`;
     const lines = onboarding.lines.map((l) => ({
       venueId,
       label: l.description ?? "",
@@ -226,20 +259,20 @@ export class Invoices {
       amountTsh: l.amountTsh,
     }));
     const total = lines.reduce((sum, l) => sum + l.amountTsh, 0);
-    const existing = await this.db.invoice.findFirst({ where: { kind: "onboarding", venueId } });
     const dueOn = addDays(businessDayOf(onboarding.confirmedAt), CHARGE_DUE_DAYS);
+    const existing = await tx.invoice.findFirst({
+      where: { kind: "onboarding", venueId },
+      include: { allocations: { select: { id: true } } },
+    });
     if (existing) {
-      // Anything paid on it, and it stays as it is: the package no longer changes.
-      if (await this.db.billAllocation.count({ where: { invoiceId: existing.id } })) return;
+      if (existing.allocations.length > 0) return null;
       if (total <= 0) {
-        await this.db.invoice.delete({ where: { id: existing.id } });
-        await this.syncBillIssues(existing.businessId, now);
-        return;
+        await tx.invoice.delete({ where: { id: existing.id } });
+        return null;
       }
-      const same = existing.totalTsh === total && dayOf(existing.dueOn) === dueOn;
-      if (same) return;
-      // Changed on the call before it was paid: the same invoice, its lines as agreed now.
-      const updated = await this.db.invoice.update({
+      if (existing.totalTsh === total && dateOf(existing.dueOn) === dueOn) return null;
+      // Changed on the call before anything was paid: the same invoice, its lines as agreed now.
+      return tx.invoice.update({
         where: { id: existing.id },
         data: {
           totalTsh: total,
@@ -248,12 +281,9 @@ export class Invoices {
         },
         include: INVOICE_INCLUDE,
       });
-      await this.emailOwners(updated);
-      await this.syncBillIssues(updated.businessId, now);
-      return;
     }
-    if (total <= 0) return;
-    const invoice = await this.create({
+    if (total <= 0) return null;
+    return this.create(tx, {
       businessId: onboarding.venue.businessId,
       kind: "onboarding",
       period: null,
@@ -262,10 +292,12 @@ export class Invoices {
       lines,
       now,
     });
-    if (invoice) {
-      await this.emailOwners(invoice);
-      await this.syncBillIssues(invoice.businessId, now);
-    }
+  }
+
+  /** After a package's invoice changed: its owners hear, and their bill issue follows. */
+  async onboardingChanged(businessId: string, invoice: InvoiceRow | null): Promise<void> {
+    if (invoice) await this.emailOwners(invoice);
+    await this.syncBillIssues(businessId);
   }
 
   /** Confirmed packages with a charge and no invoice: what a crash between the two left behind. */
@@ -278,47 +310,49 @@ export class Invoices {
       },
       select: { venueId: true },
     });
-    for (const m of missing) await this.issueOnboarding(m.venueId, now);
+    for (const m of missing) {
+      const invoice = await this.db.$transaction((tx) => this.syncOnboarding(m.venueId, tx, now));
+      if (invoice) await this.onboardingChanged(invoice.businessId, invoice);
+    }
   }
 
   /** A new invoice with the next number, or null when one already holds its place. */
-  private async create(input: {
-    businessId: string;
-    kind: "monthly_fees" | "onboarding";
-    period: Date | null;
-    venueId: string | null;
-    dueOn: string;
-    lines: {
+  private async create(
+    tx: Prisma.TransactionClient,
+    input: {
+      businessId: string;
+      kind: "monthly_fees" | "onboarding";
+      period: Date | null;
       venueId: string | null;
-      label: string;
-      onboardingKind: OnboardingLineKind | null;
-      netSalesTsh: number | null;
-      servedBp: number | null;
-      minimumTsh: number | null;
-      amountTsh: number;
-    }[];
-    now: Date;
-  }): Promise<InvoiceRow | null> {
+      dueOn: string;
+      lines: {
+        venueId: string | null;
+        label: string;
+        onboardingKind: OnboardingLineKind | null;
+        netSalesTsh: number | null;
+        servedBp: number | null;
+        minimumTsh: number | null;
+        amountTsh: number;
+      }[];
+      now: Date;
+    },
+  ): Promise<InvoiceRow | null> {
     try {
-      return await this.db.$transaction(async (tx) => {
-        const [next] = await tx.$queryRaw<
-          { n: bigint }[]
-        >`SELECT nextval('invoice_number_seq') AS n`;
-        const month = businessDayOf(input.now).slice(0, 7);
-        return tx.invoice.create({
-          data: {
-            number: `INV-${month}-${String(next?.n ?? 0).padStart(4, "0")}`,
-            businessId: input.businessId,
-            kind: input.kind,
-            period: input.period,
-            venueId: input.venueId,
-            issuedAt: input.now,
-            dueOn: new Date(`${input.dueOn}T00:00:00Z`),
-            totalTsh: input.lines.reduce((sum, l) => sum + l.amountTsh, 0),
-            lines: { create: input.lines.map((l, position) => ({ ...l, position })) },
-          },
-          include: INVOICE_INCLUDE,
-        });
+      const [next] = await tx.$queryRaw<{ n: bigint }[]>`SELECT nextval('invoice_number_seq') AS n`;
+      const month = businessDayOf(input.now).slice(0, 7);
+      return await tx.invoice.create({
+        data: {
+          number: `INV-${month}-${String(next?.n ?? 0).padStart(4, "0")}`,
+          businessId: input.businessId,
+          kind: input.kind,
+          period: input.period,
+          venueId: input.venueId,
+          issuedAt: input.now,
+          dueOn: new Date(`${input.dueOn}T00:00:00Z`),
+          totalTsh: input.lines.reduce((sum, l) => sum + l.amountTsh, 0),
+          lines: { create: input.lines.map((l, position) => ({ ...l, position })) },
+        },
+        include: INVOICE_INCLUDE,
       });
     } catch (err) {
       // Another run issued it first: once a month, once a venue.
@@ -327,18 +361,24 @@ export class Invoices {
     }
   }
 
-  /** The owners of the business hear of it by email; a failure to send is reported, not fatal. */
-  private async emailOwners(invoice: InvoiceRow): Promise<void> {
+  /** An invoice as issued, emailed to its owners. */
+  private emailOwners(invoice: InvoiceRow): Promise<void> {
+    const record = this.record(invoice, new Date());
+    return this.mailOwners(invoice.businessId, (to, billing) => invoiceEmail(to, record, billing));
+  }
+
+  /** A business's owners hear by email; a failure to send is reported, not fatal. */
+  private async mailOwners(
+    businessId: string,
+    build: (to: string, billing: string) => EmailMessage,
+  ): Promise<void> {
     const owners = await this.db.membership.findMany({
-      where: { businessId: invoice.businessId, role: "owner", status: "active" },
+      where: { businessId, ...OWNERS },
       select: { user: { select: { email: true } } },
     });
-    const record = this.record(invoice, new Date());
-    for (const o of owners) {
-      void this.email
-        .send(invoiceEmail(o.user.email, record, `${this.config.frontendOrigin}/billing`))
-        .catch(captureFailure);
-    }
+    const billing = `${this.config.frontendOrigin}/billing`;
+    for (const o of owners)
+      void this.email.send(build(o.user.email, billing)).catch(captureFailure);
   }
 
   /**
@@ -348,10 +388,20 @@ export class Invoices {
   async syncBillIssues(businessId: string | null = null, now = new Date()): Promise<void> {
     const rows = await this.db.invoice.findMany({
       where: businessId ? { businessId } : {},
-      include: INVOICE_INCLUDE,
+      select: {
+        businessId: true,
+        totalTsh: true,
+        dueOn: true,
+        allocations: { select: { amountTsh: true } },
+      },
     });
     const owing = new Map<string, "due" | "overdue">();
-    for (const invoice of rows.map((row) => this.record(row, now))) {
+    for (const row of rows) {
+      const paid = row.allocations.reduce((sum, a) => sum + a.amountTsh, 0);
+      const invoice = {
+        businessId: row.businessId,
+        ...invoiceSummary(row.totalTsh, paid, row.dueOn, now),
+      };
       if (invoice.dueTsh <= 0) continue;
       const was = owing.get(invoice.businessId);
       owing.set(
@@ -396,7 +446,7 @@ export class Invoices {
     const rows = await this.db.invoice.findMany({
       where: { businessId },
       include: INVOICE_INCLUDE,
-      orderBy: [{ dueOn: "asc" }, { issuedAt: "asc" }],
+      orderBy: OLDEST_FIRST,
     });
     return rows.map((row) => this.record(row, now)).filter((i) => i.dueTsh > 0);
   }
@@ -439,52 +489,59 @@ export class Invoices {
     }
   }
 
-  private async sendReminder(businessId: string, owed: InvoiceRecord[]): Promise<void> {
-    const owners = await this.db.membership.findMany({
-      where: { businessId, role: "owner", status: "active" },
-      select: { user: { select: { email: true } } },
-    });
-    for (const o of owners) {
-      void this.email
-        .send(reminderEmail(o.user.email, owed, `${this.config.frontendOrigin}/billing`))
-        .catch(captureFailure);
-    }
+  private sendReminder(businessId: string, owed: InvoiceRecord[]): Promise<void> {
+    return this.mailOwners(businessId, (to, billing) => reminderEmail(to, owed, billing));
+  }
+
+  /** Who a business is, who is billed, its terms, and where it pays: a bill's and an invoice's header. */
+  private async profile(id: string): Promise<BillingProfile> {
+    const [business, settings] = await Promise.all([
+      this.db.business.findUnique({
+        where: { id },
+        include: {
+          memberships: {
+            where: OWNERS,
+            orderBy: { createdAt: "asc" },
+            take: 1,
+            select: { user: { select: { name: true, email: true } } },
+          },
+        },
+      }),
+      this.settings.get(),
+    ]);
+    if (!business) throw new NotFoundException(apiError("NOT_FOUND", "There is no such business."));
+    return {
+      business: { id, name: business.name, region: business.region, area: business.area },
+      owner: business.memberships[0]?.user ?? null,
+      terms: businessFeeTerms(business),
+      payTo: settings.payTo,
+    };
   }
 
   /** A business's account: a bill for HashiNet's staff, or the owner's own Billing. */
   async account(staff: Principal, businessId: string | null): Promise<BillingAccount> {
     const id = this.businessOf(staff, businessId);
-    const business = await this.db.business.findUnique({
-      where: { id },
-      include: {
-        memberships: {
-          where: { role: "owner", status: "active" },
-          orderBy: { createdAt: "asc" },
-          take: 1,
-          select: { user: { select: { name: true, email: true } } },
-        },
-      },
-    });
-    if (!business) throw new NotFoundException(apiError("NOT_FOUND", "There is no such business."));
     const now = new Date();
-    const rows = await this.db.invoice.findMany({
-      where: { businessId: id },
-      include: INVOICE_INCLUDE,
-      orderBy: { issuedAt: "desc" },
-    });
+    const [profile, rows, owed] = await Promise.all([
+      this.profile(id),
+      this.db.invoice.findMany({
+        where: { businessId: id },
+        include: INVOICE_INCLUDE,
+        orderBy: { issuedAt: "desc" },
+      }),
+      this.owing(id, now),
+    ]);
     const invoices = rows.map((row) => this.record(row, now));
-    const owed = invoices
-      .filter((i) => i.dueTsh > 0)
-      .sort((a, b) => a.dueOn.localeCompare(b.dueOn) || a.issuedAt.localeCompare(b.issuedAt));
-    const owner = business.memberships[0]?.user ?? null;
+    const sum = (list: InvoiceRecord[], f: (i: InvoiceRecord) => number) =>
+      list.reduce((total, i) => total + f(i), 0);
     return {
-      business: { id, name: business.name, region: business.region, area: business.area },
-      owner,
-      terms: businessFeeTerms(business),
-      payTo: (await this.settings.get()).payTo,
-      paidTsh: invoices.reduce((sum, i) => sum + i.paidTsh, 0),
-      dueTsh: owed.reduce((sum, i) => sum + i.dueTsh, 0),
-      overdueTsh: owed.filter((i) => i.state === "overdue").reduce((sum, i) => sum + i.dueTsh, 0),
+      ...profile,
+      paidTsh: sum(invoices, (i) => i.paidTsh),
+      dueTsh: sum(owed, (i) => i.dueTsh),
+      overdueTsh: sum(
+        owed.filter((i) => i.state === "overdue"),
+        (i) => i.dueTsh,
+      ),
       owed,
       invoices,
     };
@@ -495,8 +552,13 @@ export class Invoices {
    * fees invoiced, one-off charges issued then or still unpaid, what was paid on them and what is
    * due (the platform's Payments).
    */
-  async overview(from: string, to: string): Promise<BillingOverview> {
+  async overview(asked: { from: string; to: string } | null): Promise<BillingOverview> {
     const now = new Date();
+    // Unasked, the month in progress.
+    const { from, to } = asked ?? {
+      from: businessDayOf(now).slice(0, 7),
+      to: businessDayOf(now).slice(0, 7),
+    };
     const first = `${from}-01`;
     const after = nextMonth(`${to}-01`);
     const thisMonth = monthOf(businessDayOf(now));
@@ -519,21 +581,49 @@ export class Invoices {
           venues: { select: { routers: { select: { lastSetup: true } } } },
         },
       }),
-      this.db.invoice.findMany({ include: INVOICE_INCLUDE }),
+      // The months' fees in the period, and every one-off charge: those issued in it, or unpaid.
+      this.db.invoice.findMany({
+        where: {
+          OR: [
+            {
+              kind: "monthly_fees",
+              period: { gte: new Date(`${first}T00:00:00Z`), lt: new Date(`${after}T00:00:00Z`) },
+            },
+            { kind: "onboarding" },
+          ],
+        },
+        include: INVOICE_INCLUDE,
+      }),
     ]);
     const salesOf = new Map(sales.map((s) => [s.business_id, Math.round(Number(s.net))]));
-    const records = rows.map((row) => this.record(row, now));
-    const inPeriod = (i: InvoiceRecord) =>
-      i.kind === "monthly_fees"
-        ? i.period !== null && i.period >= from && i.period <= to
-        : (businessDayOf(new Date(i.issuedAt)).slice(0, 7) >= from &&
-            businessDayOf(new Date(i.issuedAt)).slice(0, 7) <= to) ||
-          i.dueTsh > 0;
+    // What each business owes in all, whatever the period: a payment on it settles that.
+    const owedOf = new Map(
+      (
+        await this.db.$queryRaw<{ business_id: string; owed: number }[]>`
+          SELECT i.business_id, SUM(i.total_tsh - COALESCE(a.paid, 0))::int AS owed
+          FROM invoices i
+          LEFT JOIN (SELECT invoice_id, SUM(amount_tsh) AS paid FROM bill_allocations GROUP BY invoice_id) a
+            ON a.invoice_id = i.id
+          WHERE i.total_tsh > COALESCE(a.paid, 0)
+          GROUP BY i.business_id`
+      ).map((r) => [r.business_id, r.owed]),
+    );
+    const byBusiness = new Map<string, InvoiceRecord[]>();
+    for (const record of rows.map((row) => this.record(row, now))) {
+      byBusiness.set(record.businessId, [...(byBusiness.get(record.businessId) ?? []), record]);
+    }
+    // A month's fees in their month; a one-off charge from the month it was issued, and in every
+    // later one while it is unpaid, never in one before it.
+    const inPeriod = (i: InvoiceRecord) => {
+      if (i.kind === "monthly_fees") return i.period !== null && i.period >= from && i.period <= to;
+      const issued = businessDayOf(new Date(i.issuedAt)).slice(0, 7);
+      return issued <= to && (issued >= from || i.dueTsh > 0);
+    };
     const openInPeriod = thisMonth >= first && thisMonth < after;
 
     const result: BillingRow[] = businesses.map((b) => {
       const terms = businessFeeTerms(b);
-      const own = records.filter((i) => i.businessId === b.id && inPeriod(i));
+      const own = (byBusiness.get(b.id) ?? []).filter(inPeriod);
       const months = own.filter((i) => i.kind === "monthly_fees");
       const oneOff = own.filter((i) => i.kind === "onboarding");
       const sum = (list: InvoiceRecord[], f: (i: InvoiceRecord) => number) =>
@@ -559,23 +649,28 @@ export class Invoices {
                 : "due"
               : "paid";
       const lines = months.flatMap((i) => i.lines);
+      const feesTsh = sum(months, (i) => i.totalTsh);
+      const lowerRate = lines.some((l) => (l.netSalesTsh ?? 0) > terms.lowerRateAboveTsh);
       return {
         businessId: b.id,
         name: b.name,
         ownerName: b.memberships[0]?.user.name ?? null,
         venues: b.venues.filter((v) => v.routers.some((r) => passedSetup(r.lastSetup))).length,
         salesTsh,
-        feesTsh: sum(months, (i) => i.totalTsh),
+        feesTsh,
         oneOffTsh: sum(oneOff, (i) => i.totalTsh),
         billedTsh: billed,
         paidTsh: paid,
         dueTsh: due,
         overdueTsh: overdue,
+        owedTsh: owedOf.get(b.id) ?? 0,
         state,
         monthsBilled: months.length,
         monthsPaid: months.filter((i) => i.state === "paid").length,
-        rateBp: terms.rateBp,
-        lowerRate: lines.some((l) => (l.netSalesTsh ?? 0) > terms.lowerRateAboveTsh),
+        // What its fees came to as a share of its sales, where the lower band brought it down.
+        rateBp:
+          lowerRate && salesTsh > 0 ? Math.round((feesTsh / salesTsh) * 10_000) : terms.rateBp,
+        lowerRate,
         minimum: lines.some((l) => l.minimumTsh !== null),
       };
     });
@@ -591,6 +686,10 @@ export class Invoices {
       totals: {
         billedTsh: total((r) => r.billedTsh),
         paidTsh: total((r) => r.paidTsh),
+        collectedBp:
+          total((r) => r.billedTsh) > 0
+            ? Math.round((total((r) => r.paidTsh) / total((r) => r.billedTsh)) * 10_000)
+            : null,
         dueTsh: total((r) => r.dueTsh),
         overdueTsh: total((r) => r.overdueTsh),
         salesTsh: total((r) => r.salesTsh),
@@ -601,12 +700,13 @@ export class Invoices {
     };
   }
 
-  async get(staff: Principal, id: string): Promise<InvoiceRecord> {
+  /** One invoice, with its business's header, for the invoice page in one request. */
+  async get(staff: Principal, id: string): Promise<InvoiceResponse> {
     const row = await this.db.invoice.findUnique({ where: { id }, include: INVOICE_INCLUDE });
     if (!row || (staff.scope === "business" && row.businessId !== staff.businessId)) {
       throw new NotFoundException(apiError("NOT_FOUND", "There is no such invoice."));
     }
-    return this.record(row, new Date());
+    return { invoice: this.record(row, new Date()), ...(await this.profile(row.businessId)) };
   }
 
   /** The business a reader asks about: an owner only ever their own. */
@@ -623,7 +723,6 @@ export class Invoices {
   }
 
   private record(row: InvoiceRow, now: Date): InvoiceRecord {
-    const dueOn = dayOf(row.dueOn);
     const paidTsh = row.allocations.reduce((sum, a) => sum + a.amountTsh, 0);
     const lines: InvoiceLineRecord[] = row.lines.map((l) => ({
       label: l.label,
@@ -640,17 +739,14 @@ export class Invoices {
       businessId: row.businessId,
       businessName: row.business.name,
       kind: row.kind,
-      period: row.period === null ? null : dayOf(row.period).slice(0, 7),
+      period: row.period === null ? null : dateOf(row.period).slice(0, 7),
       venueName: row.kind === "onboarding" ? (row.venue?.name ?? null) : null,
       issuedAt: row.issuedAt.toISOString(),
-      dueOn,
       totalTsh: row.totalTsh,
-      paidTsh,
-      dueTsh: row.totalTsh - paidTsh,
-      state: invoiceState(row.totalTsh, paidTsh, dueOn, businessDayOf(now)),
+      ...invoiceSummary(row.totalTsh, paidTsh, row.dueOn, now),
       lines,
       payments: row.allocations.map((a) => ({
-        receivedOn: dayOf(a.payment.receivedOn),
+        receivedOn: dateOf(a.payment.receivedOn),
         method: a.payment.method,
         reference: a.payment.reference,
         amountTsh: a.amountTsh,

@@ -549,3 +549,87 @@ describe("the owner's bill issue", () => {
     expect(await issues(c)).toEqual([]);
   });
 });
+
+describe("what the review found", () => {
+  test("a month is priced once: a venue set up after the run is not billed back into it", async () => {
+    const c = await owner();
+    // Not set up by the 1st: no minimum, nothing sold, nothing owed.
+    const late = await venue("Late", null);
+    const invoices = api.app.get(Invoices);
+    expect(await invoices.issueMonth(NOV, AFTER)).toBe(0);
+    // Its first guest arrives on 10 December, setting it up "since October" as far as a re-run knows.
+    await t.db.venueOnboarding.update({
+      where: { venueId: late.id },
+      data: { completedAt: new Date(Date.UTC(2026, 9, 1)) },
+    });
+    expect(await invoices.issueMonth(NOV, new Date(Date.UTC(2026, 11, 10)))).toBe(0);
+    expect(
+      ((await c.request("GET", "/api/billing/account")).body as BillingAccount).invoices,
+    ).toEqual([]);
+  });
+
+  test("a closed business, or a venue out of service, owes its fee on sales and no minimum", async () => {
+    const c = await owner();
+    const shut = await venue("Shut", new Date(Date.UTC(2026, 9, 1)));
+    await t.db.venue.update({ where: { id: shut.id }, data: { status: "inactive" } });
+    await sale(shut.id, 20_000, dar(3));
+    await api.app.get(Invoices).issueMonth(NOV, AFTER);
+    const [invoice] = ((await c.request("GET", "/api/billing/account")).body as BillingAccount)
+      .invoices;
+    expect(invoice?.lines[0]).toMatchObject({
+      netSalesTsh: 20_000,
+      minimumTsh: null,
+      amountTsh: 1_000,
+    });
+  });
+
+  test("a lower rate above the fee is refused", async () => {
+    await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
+    const admin = browser(api);
+    await enrollAuthenticatorFor(api, admin, "admin@example.com");
+    const refused = await admin.request("PUT", "/api/billing/settings", {
+      terms: { rateBp: 250, lowerRateBp: 500, lowerRateAboveTsh: 2_000_000, minimumTsh: 5_000 },
+      payTo: {
+        mobileMoney: "",
+        bankName: "",
+        bankAccount: "",
+        accountName: "Shikome Technology Limited",
+      },
+    });
+    expect(refused.status).toBe(400);
+  });
+
+  test("Payments counts a one-off charge from its month on, and a row's payment covers everything owed", async () => {
+    await owner();
+    const businessId = await testBusinessId(t.db);
+    const charge = (number: string, issued: string, total: number) =>
+      t.db.invoice.create({
+        data: {
+          number,
+          businessId,
+          kind: "onboarding",
+          issuedAt: new Date(`${issued}T06:00:00Z`),
+          dueOn: new Date(`${issued}T00:00:00Z`),
+          totalTsh: total,
+          lines: {
+            create: [
+              { position: 0, label: "In town", onboardingKind: "onboarding_fee", amountTsh: total },
+            ],
+          },
+        },
+      });
+    await charge("INV-2026-11-0950", "2026-11-20", 50_000);
+    await charge("INV-2026-10-0951", "2026-10-02", 30_000);
+    await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
+    const asha = browser(api);
+    await enrollAuthenticatorFor(api, asha, "asha@example.com");
+    const october = (await asha.request("GET", "/api/billing/overview?from=2026-10&to=2026-10"))
+      .body as BillingOverview;
+    // November's charge is not October's; October's own is.
+    expect(october.rows.find((r) => r.businessId === businessId)).toMatchObject({
+      oneOffTsh: 30_000,
+      dueTsh: 30_000,
+      owedTsh: 80_000,
+    });
+  });
+});

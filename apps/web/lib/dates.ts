@@ -46,3 +46,7 @@ export const calendarDay = (date: string) => `${date}T12:00:00+03:00`;
 /** Today's business day, YYYY-MM-DD (en-CA formats dates that way). */
 export const todayIso = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: ZONE }).format(new Date());
+
+/** "November 2026" from YYYY-MM. */
+export const monthName = (month: string) =>
+  new Date(`${month}-15T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });

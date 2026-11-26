@@ -227,26 +227,17 @@ export interface InvoiceRecord {
   payments: InvoicePaymentRecord[];
 }
 
-/**
- * `POST /api/billing/payments`: money a business paid, as it arrived. On an invoice it settles that
- * invoice; on the business, the oldest invoice first. Never more than is owed.
- */
-export interface RecordBillPayment {
-  businessId: string;
-  invoiceId: string | null;
-  amountTsh: number;
-  receivedOn: string;
-  method: BillPaymentMethod;
-  reference: string;
-}
-
-/** A business's account with HashiNet (`GET /api/billing/account`): a bill, or the owner's Billing. */
-export interface BillingAccount {
+/** Who a business is to HashiNet's billing: its name, who is billed, its terms, where it pays. */
+export interface BillingProfile {
   business: { id: string; name: string; region: string; area: string };
   /** Who it is billed to: the owner; null if the business has none. */
   owner: { name: string; email: string } | null;
   terms: FeeTerms;
   payTo: HashiNetPayTo;
+}
+
+/** A business's account with HashiNet (`GET /api/billing/account`): a bill, or the owner's Billing. */
+export interface BillingAccount extends BillingProfile {
   /** Everything it has paid HashiNet. */
   paidTsh: number;
   dueTsh: number;
@@ -281,10 +272,18 @@ export interface BillingRow {
   dueTsh: number;
   /** The part of what is due that is past its date. */
   overdueTsh: number;
+  /**
+   * Everything the business owes, whatever the period: what a payment recorded on it settles,
+   * oldest first.
+   */
+  owedTsh: number;
   state: BillState;
   monthsBilled: number;
   monthsPaid: number;
-  /** Its own fee rate (basis points), and whether its fees used the lower band or a minimum. */
+  /**
+   * Its fee rate (basis points): its own, or what its fees came to as a share of its sales where
+   * the lower band applied; and whether a minimum set any of them.
+   */
   rateBp: number;
   lowerRate: boolean;
   minimum: boolean;
@@ -302,6 +301,8 @@ export interface BillingOverview {
   totals: {
     billedTsh: number;
     paidTsh: number;
+    /** What was paid of what was billed (basis points); null with nothing billed. */
+    collectedBp: number | null;
     dueTsh: number;
     overdueTsh: number;
     salesTsh: number;
@@ -311,8 +312,8 @@ export interface BillingOverview {
   };
 }
 
-/** `GET /api/billing/invoices/:id`. */
-export interface InvoiceResponse {
+/** `GET /api/billing/invoices/:id`: one invoice, with its business's header. */
+export interface InvoiceResponse extends BillingProfile {
   invoice: InvoiceRecord;
 }
 

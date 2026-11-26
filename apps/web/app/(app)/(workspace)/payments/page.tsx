@@ -4,7 +4,7 @@ import type { PaymentsReceived, RevenueSource, TodaySummary } from "@hashinet/ty
 import { useState } from "react";
 import { Button, CopyText, Figs, Head, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
-import { when } from "@/lib/dates";
+import { monthName, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useSession } from "@/lib/session";
@@ -17,8 +17,6 @@ const METHOD: Record<RevenueSource, string> = {
 };
 
 /** "November 2026", from "2026-11". */
-const monthName = (month: string) =>
-  new Date(`${month}-15T12:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
 /** Payments (prototype `payments`): what guests paid this business in a month, and refunds. */
 export default function PaymentsPage() {

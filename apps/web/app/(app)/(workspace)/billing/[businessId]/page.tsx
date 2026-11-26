@@ -3,10 +3,10 @@
 import type { BillingAccount } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect } from "react";
-import { AccountActions, feeNote, InvoicesPanel } from "@/components/hearth/billing";
+import { BillActions, BilledTo, feeNote, InvoicesPanel } from "@/components/hearth/billing";
 import { BusinessMark } from "@/components/hearth/icons";
-import { CopyText } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
+import { owesLine } from "@/lib/billing";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 
@@ -57,21 +57,7 @@ export default function BillPage({ params }: { params: Promise<{ businessId: str
             </p>
           </div>
           <dl className="profile-list">
-            <div>
-              <dt>Billed to</dt>
-              <dd>
-                {a.owner ? (
-                  <>
-                    {a.owner.name}
-                    <span className="sub">
-                      <CopyText text={a.owner.email} />
-                    </span>
-                  </>
-                ) : (
-                  <span className="muted">No owner yet</span>
-                )}
-              </dd>
-            </div>
+            <BilledTo owner={a.owner} />
             <div>
               <dt>Paid to HashiNet</dt>
               <dd>
@@ -80,7 +66,13 @@ export default function BillPage({ params }: { params: Promise<{ businessId: str
               </dd>
             </div>
           </dl>
-          <AccountActions account={a} onDone={load.reload} />
+          <BillActions
+            businessId={a.business.id}
+            ownerName={a.owner?.name ?? null}
+            owedTsh={a.dueTsh}
+            says={owesLine(a.business.name, a.owed)}
+            onDone={load.reload}
+          />
         </div>
       </aside>
       <InvoicesPanel invoices={a.invoices} />

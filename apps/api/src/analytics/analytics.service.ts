@@ -29,12 +29,11 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 86_400_000;
 const RECEIVED_PAGE = 100;
 
+/** A month, YYYY-MM. */
+export const monthParam = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "must be YYYY-MM");
+
 export const monthQuery = z.object({
-  month: z
-    .string()
-    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "must be YYYY-MM")
-    .nullable()
-    .default(null),
+  month: monthParam.nullable().default(null),
 });
 
 export const receivedQuery = monthQuery.extend({

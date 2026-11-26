@@ -34,3 +34,28 @@ export function businessDayStart(day: string): Date {
     ?.value.replace("GMT", "");
   return new Date(`${day}T00:00:00${offset || "Z"}`);
 }
+
+/** A DATE column as YYYY-MM-DD; Prisma reads it as midnight UTC. */
+export const dateOf = (date: Date) => date.toISOString().slice(0, 10);
+
+/** The first day of the month a business day (YYYY-MM-DD) falls in. */
+export const monthOf = (day: string) => `${day.slice(0, 7)}-01`;
+
+/** "2026-12-01" from "2026-11-01": the first day of the month after. */
+export function nextMonth(firstDay: string): string {
+  const [y, m] = firstDay.split("-").map(Number) as [number, number];
+  return m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+}
+
+/** "2026-10-01" from "2026-11-26": the first day of the month before. */
+export function monthBefore(day: string): string {
+  const [y, m] = day.split("-").map(Number) as [number, number];
+  return m === 1 ? `${y - 1}-12-01` : `${y}-${String(m - 1).padStart(2, "0")}-01`;
+}
+
+/** A business day `n` days after another, both YYYY-MM-DD. */
+export function addDays(day: string, n: number): string {
+  const d = new Date(`${day}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}

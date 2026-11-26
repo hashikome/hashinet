@@ -17,11 +17,10 @@ import {
   useToast,
 } from "@/components/hearth/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
-import { fullDay, invoiceWhat } from "@/lib/billing";
+import { owedList, owedTitle } from "@/lib/billing";
 import { when } from "@/lib/dates";
 import { actorOf, eventText, issueTitle, issueWhere, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
-import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
 import { Contact } from "./contact";
 import { Agreed, PackageSteps, SetupSteps } from "./onboarding-steps";
@@ -90,14 +89,10 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
   return (
     <>
       <Head
-        title={account ? billTitle(account) : issueTitle(issue)}
-        sub={
-          account ? account.owed.map((i) => `${invoiceWhat(i)}: ${tsh(i.dueTsh)}`).join(" · ") : sub
-        }
+        title={account ? owedTitle(account) : issueTitle(issue)}
+        sub={account ? owedList(account.owed) : sub}
         crumb={crumb}
-        actions={
-          open && issue.kind !== "bill_due" ? <Holder detail={detail} reload={data.reload} /> : null
-        }
+        actions={open && workable(issue) ? <Holder detail={detail} reload={data.reload} /> : null}
       />
       {account ? (
         <>
@@ -145,12 +140,9 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
   );
 }
 
-/** What a bill issue's title says: what is overdue, or what is due and by when (prototype `bill-due`). */
-function billTitle(a: BillingAccount): string {
-  const first = a.owed[0];
-  if (a.overdueTsh > 0) return `${tsh(a.overdueTsh)} is overdue`;
-  return first ? `${tsh(a.dueTsh)} is due by ${fullDay(first.dueOn)}` : "Nothing is owed";
-}
+/** Someone can be responsible for it: it has a holder, or the API offers a step to take it. */
+const workable = (i: IssueDetail["issue"]) =>
+  i.holder !== null || i.canClaim || i.canRelease || i.canTakeOver || i.canNote;
 
 /** Responsible, and the steps that move the issue between people. */
 function Holder({ detail, reload }: { detail: IssueDetail; reload: () => Promise<void> }) {

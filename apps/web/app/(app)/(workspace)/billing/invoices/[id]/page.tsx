@@ -1,13 +1,20 @@
 "use client";
 
-import type { BillingAccount, InvoiceResponse } from "@hashinet/types";
+import type { InvoiceResponse } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect } from "react";
-import { BillActions, HowToPay, InvoiceLines, InvoiceStatus } from "@/components/hearth/billing";
+import {
+  BillActions,
+  BilledTo,
+  HowToPay,
+  InvoiceLines,
+  InvoiceStatus,
+} from "@/components/hearth/billing";
 import { BusinessMark } from "@/components/hearth/icons";
-import { CopyText, Panel } from "@/components/hearth/ui";
+import { Panel } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { fullDay, invoiceWhat } from "@/lib/billing";
+import { longDate } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useSession } from "@/lib/session";
@@ -20,13 +27,10 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
   const { id } = use(params);
   const { me } = useSession();
   const platform = me.active.scope === "platform";
-  const load = useLoad("invoice", async () => {
-    const { invoice } = await api.get<InvoiceResponse>(`/api/billing/invoices/${id}`);
-    const account = await api.get<BillingAccount>(
-      platform ? `/api/billing/account?businessId=${invoice.businessId}` : "/api/billing/account",
-    );
-    return { invoice, account };
-  }, [id, me.active.id]);
+  const load = useLoad("invoice", () => api.get<InvoiceResponse>(`/api/billing/invoices/${id}`), [
+    id,
+    me.active.id,
+  ]);
   const x = load.data?.invoice;
   useEffect(() => {
     if (x) document.title = `${x.number} · HashiNet`;
@@ -51,7 +55,7 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
     );
   }
   if (!load.data || !x) return crumb;
-  const a = load.data.account;
+  const a = load.data;
   return (
     <>
       {crumb}
@@ -74,24 +78,10 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
             </p>
           </div>
           <dl className="profile-list">
-            <div>
-              <dt>Billed to</dt>
-              <dd>
-                {a.owner ? (
-                  <>
-                    {a.owner.name}
-                    <span className="sub">
-                      <CopyText text={a.owner.email} />
-                    </span>
-                  </>
-                ) : (
-                  <span className="muted">No owner yet</span>
-                )}
-              </dd>
-            </div>
+            <BilledTo owner={a.owner} />
             <div>
               <dt>Issued date</dt>
-              <dd>{fullDay(x.issuedAt.slice(0, 10))}</dd>
+              <dd>{longDate(x.issuedAt)}</dd>
             </div>
             <div>
               <dt>Due date</dt>
