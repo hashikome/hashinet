@@ -516,7 +516,8 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     text until the shared email standard is built). `PUT /api/businesses/:id/service-access`
     (`business.access`, the platform's admin and managers; suspended by the admin alone) holds or
     releases it. The guard refuses `sale.record`, `package.manage` and `package.venue.assign` while
-    the business can't sell (`SELLING_PAUSED`), the session drops the package actions, a venue's
+    the business can't sell (`SELLING_PAUSED`), the session says the business can't sell (`me.active.selling`), so Sell and the package actions
+    stay in view, quieter, and a tap says why (as Sell does with no router serving), a venue's
     `selling` is `paused`, and the guest portal sells nothing (`GuestContext.selling`). Issues: the
     owner's `bill_due` reads "Selling is paused"; `selling_paused` for its managers. Screens: the
     business page's Service access (fact, why, history, Change service access), Billing, the bill

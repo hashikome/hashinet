@@ -123,8 +123,9 @@ describe("service access by a business's bills", () => {
     expect(sale.body).toMatchObject({ code: "SELLING_PAUSED" });
     expect((await owner.request("DELETE", `/api/packages/${pkg.id}`)).status).toBe(403);
     const me = (await owner.request("GET", "/api/me")).body as Me;
-    expect(me.active.capabilities).toContain("sale.record");
-    expect(me.active.capabilities).not.toContain("package.manage");
+    // The actions stay in view, paused: the web says why instead of hiding them.
+    expect(me.active).toMatchObject({ selling: false });
+    expect(me.active.capabilities).toContain("package.manage");
     const venue = (await owner.request("GET", `/api/venues/${v.id}`)).body as {
       venue: VenueRecord;
     };

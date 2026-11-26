@@ -7,6 +7,7 @@ import {
   type PackageResponse,
 } from "@hashinet/types";
 import { type FormEvent, useState } from "react";
+import { BillPausedDialog } from "@/components/hearth/bill-paused";
 import { Dialog } from "@/components/hearth/dialog";
 import { Button, Field, Head, Panel, Table, useToast } from "@/components/hearth/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
@@ -19,7 +20,8 @@ import { useVenues } from "@/lib/venues";
 type Open =
   | { kind: "add" }
   | { kind: "price"; pkg: PackageRecord }
-  | { kind: "remove"; pkg: PackageRecord };
+  | { kind: "remove"; pkg: PackageRecord }
+  | { kind: "paused" };
 
 /**
  * Packages (prototype `packages`): what guests can buy. A package keeps its name, time and devices
@@ -32,6 +34,13 @@ export default function PackagesPage() {
   const { all: venues } = useVenues();
   const owner = can("package.manage");
   const [open, setOpen] = useState<Open | null>(null);
+  // While the business can't sell, its package actions stay in view, quieter, and a tap says why,
+  // as Sell does when no router serves (ADR-0014, 2).
+  const paused = !me.active.selling;
+  const act = (next: Open) => () => setOpen(paused ? { kind: "paused" } : next);
+  const quiet = paused
+    ? ({ className: "paused", "aria-disabled": true, "aria-describedby": "pkg-paused" } as const)
+    : {};
   const list = useLoad("packages", () => api.get<PackageList>("/api/packages"), [me.active.id]);
 
   const soldAt = (p: PackageList["packages"][number]) => {
@@ -63,13 +72,18 @@ export default function PackagesPage() {
               Export CSV
             </Button>
             {owner ? (
-              <Button kind="primary" icon="plus" onClick={() => setOpen({ kind: "add" })}>
+              <Button kind="primary" icon="plus" {...quiet} onClick={act({ kind: "add" })}>
                 Add a package
               </Button>
             ) : null}
           </>
         }
       />
+      {paused ? (
+        <span className="sr" id="pkg-paused">
+          Paused: the bill to HashiNet is overdue.
+        </span>
+      ) : null}
       {list.error ? <LoadFailed error={list.error} retry={list.reload} /> : null}
       {list.data ? (
         <Panel
@@ -91,10 +105,10 @@ export default function PackagesPage() {
                   soldAt(p),
                   owner ? (
                     <div className="actions row-actions" key="a">
-                      <Button onClick={() => setOpen({ kind: "price", pkg: p })}>
+                      <Button {...quiet} onClick={act({ kind: "price", pkg: p })}>
                         Change price
                       </Button>
-                      <Button kind="danger" onClick={() => setOpen({ kind: "remove", pkg: p })}>
+                      <Button kind="danger" {...quiet} onClick={act({ kind: "remove", pkg: p })}>
                         Remove
                       </Button>
                     </div>
@@ -125,6 +139,8 @@ export default function PackagesPage() {
           onClose={() => setOpen(null)}
           onSaved={list.reload}
         />
+      ) : open?.kind === "paused" ? (
+        <BillPausedDialog what="packages" onClose={() => setOpen(null)} />
       ) : open?.kind === "add" ? (
         <AddDialog onClose={() => setOpen(null)} onSaved={list.reload} />
       ) : null}

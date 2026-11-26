@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common";
 import { z } from "zod";
 import { AccountRoute, CurrentPrincipal } from "../access/access.guard.js";
-import { capabilitiesOf, needsProtectedSession, pausedWhileReadOnly } from "../access/policy.js";
+import { capabilitiesOf, needsProtectedSession } from "../access/policy.js";
 import { mustProtect, type Principal, SETUP_DAYS } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -183,15 +183,14 @@ export class MeController {
         access: principal.access,
         // What this session may do now: nothing beyond Account and security until it may act,
         // and nothing sellable while it gets set up without protection (ADR-0011, 9).
-        // While its business is read-only, packages and prices can't change; Sell stays, to say why.
         capabilities:
           principal.access === "account"
             ? []
             : capabilitiesOf(principal.role).filter(
-                (action) =>
-                  (principal.access === "full" || !needsProtectedSession(action)) &&
-                  (principal.selling || action === "sale.record" || !pausedWhileReadOnly(action)),
+                (action) => principal.access === "full" || !needsProtectedSession(action),
               ),
+        // While its business can't sell, its selling and package actions stay, paused, saying why.
+        selling: principal.selling,
       },
       protection: {
         required: mustProtect(principal.role),

@@ -467,7 +467,7 @@ ul {
   border-color: var(--border);
   background: var(--card);
 }
-/* Selling paused: Sell keeps its place, in the quiet fill with muted ink, and still answers a tap. */
+/* Selling paused: Sell keeps its place, in the quiet fill, and still answers a tap. */
 .btn.primary.paused {
   background: var(--secondary);
   color: var(--muted-fg);
@@ -3809,6 +3809,11 @@ td .btn.danger:hover,
 /* A row's destructive action reads red, so removing never looks as light as changing. */
 td .btn.danger {
   color: var(--destructive);
+}
+/* Paused by an overdue bill: any action keeps its place in muted ink, and a tap says why. */
+.btn.paused,
+td .btn.paused {
+  color: var(--muted-fg);
 }
 
 /* Selecting rows for an action on many. */

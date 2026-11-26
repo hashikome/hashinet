@@ -699,6 +699,9 @@ export interface Me {
     venueIds: string[] | null;
     access: AccessLevel;
     capabilities: string[];
+    /** Whether its business may sell: false while it is read-only or suspended (ADR-0014, 2).
+     * Selling and package actions then stay in view, paused, and say why. */
+    selling: boolean;
   };
   protection: {
     /** Platform staff, owners and managers must protect their sign-in. */

@@ -20,6 +20,7 @@ import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
+import { BillPausedDialog } from "./bill-paused";
 import { Dialog } from "./dialog";
 import { Icon } from "./icons";
 import { PayCard } from "./payment-ways";
@@ -170,33 +171,6 @@ const PAUSED: Record<
 };
 
 /**
- * Sell paused by the business's access (ADR-0014, 2): the owner pays to sell again; everyone else
- * hears that the owner knows. Vouchers already sold keep working either way.
- */
-function BillPausedDialog({ onClose }: { onClose: () => void }) {
-  const can = useCan();
-  const pays = can("billing.read");
-  return (
-    <Dialog label="Selling is paused" className="sell" onClose={onClose}>
-      <h2>Selling is paused</h2>
-      <p>The bill to HashiNet is overdue, so new vouchers can&apos;t be sold.</p>
-      <p className="note">
-        {pays ? "Pay what is overdue to sell again." : "The owner has been told."} Vouchers already
-        sold keep working.
-      </p>
-      <div className="dialog-actions">
-        {pays ? (
-          <ButtonLink kind="primary" href="/billing">
-            Open Billing
-          </ButtonLink>
-        ) : null}
-        <Button onClick={onClose}>Close</Button>
-      </div>
-    </Dialog>
-  );
-}
-
-/**
  * Why Sell is paused, and what to do: whoever runs the venue goes to its router or its setup; at the
  * counter the seller tells them. Selling comes back by itself once a router serves, and guests get
  * back the time an outage took.
@@ -208,7 +182,7 @@ function PausedDialog({ onClose }: { onClose: () => void }) {
   const venue = shown[0] ?? all[0];
   if (!venue || venue.selling.state === "selling") return null;
   const { selling } = venue;
-  if (selling.state === "paused") return <BillPausedDialog onClose={onClose} />;
+  if (selling.state === "paused") return <BillPausedDialog what="sell" onClose={onClose} />;
   const words = PAUSED[selling.state];
   const down = selling.state !== "not-set-up";
   const runsIt = can("router.read") && me.active.role !== "venue_operator";
