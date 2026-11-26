@@ -416,6 +416,8 @@ export class IssuesService {
       ...(staff.venueIds === null
         ? {}
         : { OR: [{ venueId: null }, { venueId: { in: staff.venueIds } }] }),
+      // What the business owes HashiNet is its owner's alone (ADR-0011, 3).
+      ...(staff.role === "owner" ? {} : { kind: { not: "bill_due" } }),
     };
   }
 
@@ -434,6 +436,12 @@ export class IssuesService {
     const row = await this.row(staff, id);
     if (row.status !== "open") {
       throw new ConflictException(apiError("CONFLICT", "This issue is resolved."));
+    }
+    // Nobody works a bill for the owner: paying it is what closes it.
+    if (row.kind === "bill_due") {
+      throw new ConflictException(
+        apiError("CONFLICT", "This closes once HashiNet records the payment."),
+      );
     }
     return row;
   }
@@ -526,6 +534,8 @@ export class IssuesService {
     const lastActivity = row.events[0]?.at ?? row.openedAt;
     const open = row.status === "open";
     const mine = row.holderId === staff.membershipId;
+    // A bill is the owner's alone, so nobody claims it or hands it on; paying it closes it.
+    const held = open && row.kind !== "bill_due";
     return {
       id: row.id,
       kind: row.kind,
@@ -535,12 +545,13 @@ export class IssuesService {
       venue: row.venue ? { id: row.venue.id, name: row.venue.name } : null,
       router: row.router,
       cause: ROUTER_CONDITIONS.find((c) => c === row.cause) ?? null,
+      overdue: row.kind === "bill_due" && row.cause === "overdue",
       holder: row.holder ? person(row.holder) : null,
       mine,
-      canClaim: open && row.holderId === null,
-      canTakeOver: open && row.holder !== null && !mine && outranks(staff.role, row.holder.role),
-      canRelease: open && mine,
-      canNote: open && (mine || row.holderId === null),
+      canClaim: held && row.holderId === null,
+      canTakeOver: held && row.holder !== null && !mine && outranks(staff.role, row.holder.role),
+      canRelease: held && mine,
+      canNote: held && (mine || row.holderId === null),
       stalled: open && this.stalled(row, lastActivity),
       openedAt: row.openedAt.toISOString(),
       resolvedAt: row.resolvedAt?.toISOString() ?? null,
@@ -554,8 +565,8 @@ export type IssueOpening = Workspace & {
   venueId: string | null;
   routerId: string | null;
   holderId: string | null;
-  /** What took a router issue's router down; null for other kinds. */
-  cause: RouterCondition | null;
+  /** What took a router issue's router down, or a bill's "due" or "overdue"; null for other kinds. */
+  cause: RouterCondition | "due" | "overdue" | null;
 };
 
 /** Opens an issue unless one is open for its key in the workspace; idempotent. */

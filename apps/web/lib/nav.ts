@@ -50,6 +50,9 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
         ]
       : [];
     // Operators have a short list with no groups: sections would only add clicks.
+    // HashiNet's own Payments: what businesses owe it.
+    if (can("billing.overview"))
+      issues.push({ href: "/billing", label: "Payments", icon: "payments" });
     if (!can("team.read")) {
       const icons: Record<string, IconName> = {
         "/businesses": "businesses",
@@ -86,6 +89,8 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   top.push(...issues);
   if (can("voucher.read")) top.push({ href: "/vouchers", label: "Vouchers", icon: "vouchers" });
   if (can("payment.read")) top.push({ href: "/payments", label: "Payments", icon: "payments" });
+  // Owners also pay HashiNet, so they alone have Billing, beside what guests pay them.
+  if (can("billing.read")) top.push({ href: "/billing", label: "Billing", icon: "billing" });
   const entries: NavEntry[] = [...top];
   // Each venue's page (its payment details) and its router, then the devices the venues have seen.
   const one = venues.length === 1;

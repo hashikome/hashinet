@@ -1,4 +1,8 @@
 import type {
+  BillingAccount,
+  BillingOverview,
+  BillingRow,
+  BillState,
   FeeTerms,
   InvoiceLineRecord,
   InvoiceRecord,
@@ -16,9 +20,10 @@ import { PrismaService } from "../database/prisma.service.js";
 import { EMAIL_SENDER, type EmailSender } from "../email/email-sender.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
+import { IssuesService } from "../issues/issues.service.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { passedSetup } from "../routers/router-journey.js";
-import { businessFeeTerms } from "./billing-settings.js";
+import { BillingSettings, businessFeeTerms } from "./billing-settings.js";
 import { type Span, servedShare, venueFee } from "./fee.js";
 import { invoiceEmail, reminderEmail } from "./invoice-emails.js";
 
@@ -80,6 +85,8 @@ export class Invoices {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(EMAIL_SENDER) private readonly email: EmailSender,
     private readonly audit: AuditLog,
+    private readonly settings: BillingSettings,
+    private readonly issues: IssuesService,
   ) {}
 
   /**
@@ -149,6 +156,7 @@ export class Invoices {
       if (invoice) {
         issued++;
         await this.emailOwners(invoice);
+        await this.syncBillIssues(business.id, now);
       }
     }
     return issued;
@@ -225,6 +233,7 @@ export class Invoices {
       if (await this.db.billAllocation.count({ where: { invoiceId: existing.id } })) return;
       if (total <= 0) {
         await this.db.invoice.delete({ where: { id: existing.id } });
+        await this.syncBillIssues(existing.businessId, now);
         return;
       }
       const same = existing.totalTsh === total && dayOf(existing.dueOn) === dueOn;
@@ -240,6 +249,7 @@ export class Invoices {
         include: INVOICE_INCLUDE,
       });
       await this.emailOwners(updated);
+      await this.syncBillIssues(updated.businessId, now);
       return;
     }
     if (total <= 0) return;
@@ -252,7 +262,10 @@ export class Invoices {
       lines,
       now,
     });
-    if (invoice) await this.emailOwners(invoice);
+    if (invoice) {
+      await this.emailOwners(invoice);
+      await this.syncBillIssues(invoice.businessId, now);
+    }
   }
 
   /** Confirmed packages with a charge and no invoice: what a crash between the two left behind. */
@@ -328,6 +341,56 @@ export class Invoices {
     }
   }
 
+  /**
+   * Each business's bill issue, for its owner: open while anything is owed, saying whether any of
+   * it is overdue, and resolved once it is paid. `businessId` keeps one business in step at once.
+   */
+  async syncBillIssues(businessId: string | null = null, now = new Date()): Promise<void> {
+    const rows = await this.db.invoice.findMany({
+      where: businessId ? { businessId } : {},
+      include: INVOICE_INCLUDE,
+    });
+    const owing = new Map<string, "due" | "overdue">();
+    for (const invoice of rows.map((row) => this.record(row, now))) {
+      if (invoice.dueTsh <= 0) continue;
+      const was = owing.get(invoice.businessId);
+      owing.set(
+        invoice.businessId,
+        was === "overdue" || invoice.state === "overdue" ? "overdue" : "due",
+      );
+    }
+    const open = await this.db.issue.findMany({
+      where: { kind: "bill_due", status: "open", ...(businessId ? { businessId } : {}) },
+      select: { id: true, businessId: true, cause: true },
+    });
+    for (const [id, state] of owing) {
+      const issue = open.find((i) => i.businessId === id);
+      if (!issue) {
+        await this.issues.open({
+          scope: "business",
+          businessId: id,
+          kind: "bill_due",
+          key: `bill:${id}`,
+          venueId: null,
+          routerId: null,
+          holderId: null,
+          cause: state,
+        });
+      } else if (issue.cause !== state) {
+        await this.db.issue.update({ where: { id: issue.id }, data: { cause: state } });
+      }
+    }
+    for (const issue of open) {
+      if (issue.businessId && !owing.has(issue.businessId)) {
+        await this.issues.resolve(
+          { scope: "business", businessId: issue.businessId },
+          `bill:${issue.businessId}`,
+          { reason: "paid" },
+        );
+      }
+    }
+  }
+
   /** What a business still owes, oldest first. */
   private async owing(businessId: string, now: Date): Promise<InvoiceRecord[]> {
     const rows = await this.db.invoice.findMany({
@@ -388,16 +451,154 @@ export class Invoices {
     }
   }
 
-  /** A business's invoices, newest first: the owner's own, or any business's for HashiNet's staff. */
-  async list(staff: Principal, businessId: string | null): Promise<InvoiceRecord[]> {
+  /** A business's account: a bill for HashiNet's staff, or the owner's own Billing. */
+  async account(staff: Principal, businessId: string | null): Promise<BillingAccount> {
     const id = this.businessOf(staff, businessId);
+    const business = await this.db.business.findUnique({
+      where: { id },
+      include: {
+        memberships: {
+          where: { role: "owner", status: "active" },
+          orderBy: { createdAt: "asc" },
+          take: 1,
+          select: { user: { select: { name: true, email: true } } },
+        },
+      },
+    });
+    if (!business) throw new NotFoundException(apiError("NOT_FOUND", "There is no such business."));
+    const now = new Date();
     const rows = await this.db.invoice.findMany({
       where: { businessId: id },
       include: INVOICE_INCLUDE,
       orderBy: { issuedAt: "desc" },
     });
+    const invoices = rows.map((row) => this.record(row, now));
+    const owed = invoices
+      .filter((i) => i.dueTsh > 0)
+      .sort((a, b) => a.dueOn.localeCompare(b.dueOn) || a.issuedAt.localeCompare(b.issuedAt));
+    const owner = business.memberships[0]?.user ?? null;
+    return {
+      business: { id, name: business.name, region: business.region, area: business.area },
+      owner,
+      terms: businessFeeTerms(business),
+      payTo: (await this.settings.get()).payTo,
+      paidTsh: invoices.reduce((sum, i) => sum + i.paidTsh, 0),
+      dueTsh: owed.reduce((sum, i) => sum + i.dueTsh, 0),
+      overdueTsh: owed.filter((i) => i.state === "overdue").reduce((sum, i) => sum + i.dueTsh, 0),
+      owed,
+      invoices,
+    };
+  }
+
+  /**
+   * Every business's bill for the months `from` to `to` (YYYY-MM): its net sales, the months'
+   * fees invoiced, one-off charges issued then or still unpaid, what was paid on them and what is
+   * due (the platform's Payments).
+   */
+  async overview(from: string, to: string): Promise<BillingOverview> {
     const now = new Date();
-    return rows.map((row) => this.record(row, now));
+    const first = `${from}-01`;
+    const after = nextMonth(`${to}-01`);
+    const thisMonth = monthOf(businessDayOf(now));
+    const [sales, businesses, rows] = await Promise.all([
+      this.db.$queryRaw<{ business_id: string; net: string }[]>`
+        WITH ${REVENUE_EVENTS}
+        SELECT v.business_id, COALESCE(SUM(e.amount), 0)::numeric(14,2)::text AS net
+        FROM revenue_events e JOIN venues v ON v.id = e.venue_id
+        WHERE e.occurred_at >= ${businessDayStart(first)} AND e.occurred_at < ${businessDayStart(after)}
+        GROUP BY v.business_id`,
+      this.db.business.findMany({
+        orderBy: { name: "asc" },
+        include: {
+          memberships: {
+            where: { role: "owner", status: "active" },
+            orderBy: { createdAt: "asc" },
+            take: 1,
+            select: { user: { select: { name: true } } },
+          },
+          venues: { select: { routers: { select: { lastSetup: true } } } },
+        },
+      }),
+      this.db.invoice.findMany({ include: INVOICE_INCLUDE }),
+    ]);
+    const salesOf = new Map(sales.map((s) => [s.business_id, Math.round(Number(s.net))]));
+    const records = rows.map((row) => this.record(row, now));
+    const inPeriod = (i: InvoiceRecord) =>
+      i.kind === "monthly_fees"
+        ? i.period !== null && i.period >= from && i.period <= to
+        : (businessDayOf(new Date(i.issuedAt)).slice(0, 7) >= from &&
+            businessDayOf(new Date(i.issuedAt)).slice(0, 7) <= to) ||
+          i.dueTsh > 0;
+    const openInPeriod = thisMonth >= first && thisMonth < after;
+
+    const result: BillingRow[] = businesses.map((b) => {
+      const terms = businessFeeTerms(b);
+      const own = records.filter((i) => i.businessId === b.id && inPeriod(i));
+      const months = own.filter((i) => i.kind === "monthly_fees");
+      const oneOff = own.filter((i) => i.kind === "onboarding");
+      const sum = (list: InvoiceRecord[], f: (i: InvoiceRecord) => number) =>
+        list.reduce((total, i) => total + f(i), 0);
+      const billed = sum(own, (i) => i.totalTsh);
+      const paid = sum(own, (i) => i.paidTsh);
+      const due = sum(own, (i) => i.dueTsh);
+      const overdue = sum(
+        own.filter((i) => i.state === "overdue"),
+        (i) => i.dueTsh,
+      );
+      const salesTsh = salesOf.get(b.id) ?? 0;
+      const state: BillState =
+        billed === 0
+          ? openInPeriod && salesTsh > 0
+            ? "open"
+            : "no_fee"
+          : overdue > 0
+            ? "overdue"
+            : due > 0
+              ? paid > 0
+                ? "part_paid"
+                : "due"
+              : "paid";
+      const lines = months.flatMap((i) => i.lines);
+      return {
+        businessId: b.id,
+        name: b.name,
+        ownerName: b.memberships[0]?.user.name ?? null,
+        venues: b.venues.filter((v) => v.routers.some((r) => passedSetup(r.lastSetup))).length,
+        salesTsh,
+        feesTsh: sum(months, (i) => i.totalTsh),
+        oneOffTsh: sum(oneOff, (i) => i.totalTsh),
+        billedTsh: billed,
+        paidTsh: paid,
+        dueTsh: due,
+        overdueTsh: overdue,
+        state,
+        monthsBilled: months.length,
+        monthsPaid: months.filter((i) => i.state === "paid").length,
+        rateBp: terms.rateBp,
+        lowerRate: lines.some((l) => (l.netSalesTsh ?? 0) > terms.lowerRateAboveTsh),
+        minimum: lines.some((l) => l.minimumTsh !== null),
+      };
+    });
+    const total = (f: (r: BillingRow) => number) => result.reduce((sum, r) => sum + f(r), 0);
+    const months: string[] = [];
+    for (let m = BILLING_STARTS; m <= thisMonth; m = nextMonth(m)) months.push(m.slice(0, 7));
+    return {
+      from,
+      to,
+      months,
+      invoicedOn: openInPeriod ? nextMonth(thisMonth) : null,
+      rows: result,
+      totals: {
+        billedTsh: total((r) => r.billedTsh),
+        paidTsh: total((r) => r.paidTsh),
+        dueTsh: total((r) => r.dueTsh),
+        overdueTsh: total((r) => r.overdueTsh),
+        salesTsh: total((r) => r.salesTsh),
+        venues: total((r) => r.venues),
+        owing: result.filter((r) => r.dueTsh > 0).length,
+        overdue: result.filter((r) => r.overdueTsh > 0).map((r) => r.name),
+      },
+    };
   }
 
   async get(staff: Principal, id: string): Promise<InvoiceRecord> {

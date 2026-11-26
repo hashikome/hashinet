@@ -66,6 +66,8 @@ export const POLICY = {
   // pays them (ADR-0011, 3).
   "billing.read": [...PLATFORM_STAFF, "owner"],
   // Recording what came in and reminding an owner are HashiNet's admin's and managers' (ADR-0014, 4).
+  // Every business's bills together: the platform's Payments.
+  "billing.overview": PLATFORM_STAFF,
   "billing.record": PLATFORM_STAFF,
   "billing.remind": PLATFORM_STAFF,
   // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.

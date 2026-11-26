@@ -1,4 +1,9 @@
-import type { BillingSettingsResponse, InvoiceList, InvoiceResponse } from "@hashinet/types";
+import type {
+  BillingAccount,
+  BillingOverview,
+  BillingSettingsResponse,
+  InvoiceResponse,
+} from "@hashinet/types";
 import { Body, Controller, Get, HttpCode, Param, Post, Put, Query } from "@nestjs/common";
 import { z } from "zod";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
@@ -11,6 +16,10 @@ import { BillPayments, recordPaymentInput } from "./payments.js";
 
 const invoicesQuery = z.object({ businessId: z.uuid().optional() });
 const remindInput = z.object({ businessId: z.uuid() });
+const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "must be a month, YYYY-MM");
+const overviewQuery = z
+  .object({ from: month, to: month })
+  .refine((q) => q.from <= q.to, { path: ["to"], message: "must not be before from" });
 
 @Controller("api/billing")
 export class BillingController {
@@ -36,12 +45,22 @@ export class BillingController {
     return { settings: await this.settings.save(staff, parseInput(billingSettingsInput, body)) };
   }
 
-  /** The owner's own invoices; HashiNet's staff name the business. */
-  @Get("invoices")
+  /** A business's account: the owner's own, or the one HashiNet's staff name. */
+  @Get("account")
   @Can("billing.read")
-  async list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<InvoiceList> {
+  async account(
+    @CurrentPrincipal() staff: Principal,
+    @Query() query: unknown,
+  ): Promise<BillingAccount> {
     const { businessId } = parseInput(invoicesQuery, query);
-    return { invoices: await this.invoices.list(staff, businessId ?? null) };
+    return this.invoices.account(staff, businessId ?? null);
+  }
+
+  @Get("overview")
+  @Can("billing.overview")
+  async overview(@Query() query: unknown): Promise<BillingOverview> {
+    const { from, to } = parseInput(overviewQuery, query);
+    return this.invoices.overview(from, to);
   }
 
   /** Money a business paid, as it arrived: on an invoice, or the oldest first. */
@@ -49,7 +68,9 @@ export class BillingController {
   @HttpCode(204)
   @Can("billing.record")
   async record(@CurrentPrincipal() staff: Principal, @Body() body: unknown): Promise<void> {
-    await this.payments.record(staff, parseInput(recordPaymentInput, body));
+    const input = parseInput(recordPaymentInput, body);
+    await this.payments.record(staff, input);
+    await this.invoices.syncBillIssues(input.businessId);
   }
 
   /** Emails the business's owners what they owe. */

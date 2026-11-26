@@ -970,6 +970,8 @@ enum IssueKind {
   venue_package
   /// A venue's setup: add the router, install it, set it up; it resolves when a guest gets online.
   venue_setup
+  /// What a business owes HashiNet: its owner's alone, never claimed; it resolves once paid.
+  bill_due
 
   @@map("issue_kind")
 }

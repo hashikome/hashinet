@@ -150,7 +150,10 @@ export default function IssuesPage() {
                     <span className="num nowrap" key="s">
                       {when(i.openedAt)}
                     </span>,
-                    i.holder ? (
+                    // A bill is the owner's, who is the only one who sees it.
+                    i.kind === "bill_due" ? (
+                      "You"
+                    ) : i.holder ? (
                       i.mine ? (
                         "You"
                       ) : (

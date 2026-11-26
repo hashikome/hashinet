@@ -18,6 +18,7 @@ export const KIND_NAME: Record<IssueKind, string> = {
   router_offline: "Router",
   venue_package: "Package",
   venue_setup: "Setting up",
+  bill_due: "Billing",
 };
 
 /** The plans as an owner and the team read them (ADR-0013, 2): each one goes a step further. */
@@ -63,6 +64,10 @@ export function issueTitle(i: IssueRecord): string {
       return open ? `Confirm ${venue}'s package` : `${venue}'s package was agreed`;
     case "venue_setup":
       return open ? `Set up ${venue}'s router` : `${venue} was set up`;
+    case "bill_due":
+      return open
+        ? `HashiNet's bill is ${i.overdue ? "overdue" : "due"}`
+        : "HashiNet's bill was paid";
   }
 }
 
@@ -76,6 +81,7 @@ export function issueWhere(i: IssueRecord): string {
 export function issuePill(i: IssueRecord): [string, PillKind] {
   if (i.status === "resolved") return ["Resolved", "ok"];
   if (i.stalled) return ["Stalled", "bad"];
+  if (i.kind === "bill_due") return i.overdue ? ["Overdue", "bad"] : ["Due", "wait"];
   return i.kind === "router_offline" ? ["Offline", "bad"] : ["Waiting", "wait"];
 }
 

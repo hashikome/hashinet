@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { InvoiceList, InvoiceRecord } from "@hashinet/types";
+import type { BillingAccount, BillingOverview, InvoiceRecord, IssueList } from "@hashinet/types";
 import { Invoices } from "../../src/billing/invoices.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
@@ -106,8 +106,8 @@ describe("a month's invoice", () => {
     // Once a business a month, however often it runs.
     expect(await invoices.issueMonth(NOV, AFTER)).toBe(0);
 
-    const { invoices: list } = (await c.request("GET", "/api/billing/invoices"))
-      .body as InvoiceList;
+    const { invoices: list } = (await c.request("GET", "/api/billing/account"))
+      .body as BillingAccount;
     expect(list).toHaveLength(1);
     const invoice = list[0] as InvoiceRecord;
     expect(invoice).toMatchObject({
@@ -153,8 +153,8 @@ describe("a month's invoice", () => {
     await sale(late.id, 10_000, dar(12));
     const invoices = api.app.get(Invoices);
     expect(await invoices.issueMonth(NOV, AFTER)).toBe(1);
-    const { invoices: list } = (await c.request("GET", "/api/billing/invoices"))
-      .body as InvoiceList;
+    const { invoices: list } = (await c.request("GET", "/api/billing/account"))
+      .body as BillingAccount;
     expect(list[0]?.lines[0]).toMatchObject({
       netSalesTsh: 10_000,
       minimumTsh: null,
@@ -171,13 +171,14 @@ describe("who reads invoices", () => {
     const home = await venue("Home", new Date(Date.UTC(2026, 9, 10)));
     await sale(home.id, 200_000, dar(3));
     await api.app.get(Invoices).issueMonth(NOV, AFTER);
-    const [mine] = ((await c.request("GET", "/api/billing/invoices")).body as InvoiceList).invoices;
+    const [mine] = ((await c.request("GET", "/api/billing/account")).body as BillingAccount)
+      .invoices;
     expect(mine).toBeDefined();
 
     await businessMember(t.db, { email: "bm@example.com", name: "BM", role: "business_manager" });
     const manager = browser(api);
     await enrollAuthenticatorFor(api, manager, "bm@example.com");
-    expect((await manager.request("GET", "/api/billing/invoices")).status).toBe(403);
+    expect((await manager.request("GET", "/api/billing/account")).status).toBe(403);
 
     const other = await t.db.business.create({
       data: { name: "Other", region: "Dar es Salaam", area: "Sinza" },
@@ -192,7 +193,7 @@ describe("who reads invoices", () => {
     await enrollAuthenticatorFor(api, stranger, "other@example.com");
     expect((await stranger.request("GET", `/api/billing/invoices/${mine?.id}`)).status).toBe(404);
     expect(
-      ((await stranger.request("GET", "/api/billing/invoices")).body as InvoiceList).invoices,
+      ((await stranger.request("GET", "/api/billing/account")).body as BillingAccount).invoices,
     ).toEqual([]);
 
     await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
@@ -200,9 +201,9 @@ describe("who reads invoices", () => {
     await enrollAuthenticatorFor(api, asha, "asha@example.com");
     const theirs = await asha.request(
       "GET",
-      `/api/billing/invoices?businessId=${await testBusinessId(t.db)}`,
+      `/api/billing/account?businessId=${await testBusinessId(t.db)}`,
     );
-    expect((theirs.body as InvoiceList).invoices.map((i) => i.id)).toEqual([mine?.id]);
+    expect((theirs.body as BillingAccount).invoices.map((i) => i.id)).toEqual([mine?.id]);
     await platformMember(t.db, { email: "hamisi@example.com", name: "Hamisi", role: "operator" });
     const hamisi = browser(api);
     await enrollAuthenticatorFor(api, hamisi, "hamisi@example.com");
@@ -236,7 +237,7 @@ describe("an onboarding charge", () => {
     ).toBe(200);
 
     const read = async () =>
-      ((await c.request("GET", "/api/billing/invoices")).body as InvoiceList).invoices;
+      ((await c.request("GET", "/api/billing/account")).body as BillingAccount).invoices;
     const [first] = await read();
     const today = new Date().toISOString().slice(0, 10);
     expect(first).toMatchObject({
@@ -400,7 +401,7 @@ describe("reminders", () => {
     await sale(home.id, 200_000, dar(3));
     const invoices = api.app.get(Invoices);
     await invoices.issueMonth(NOV, AFTER);
-    const [invoice] = ((await c.request("GET", "/api/billing/invoices")).body as InvoiceList)
+    const [invoice] = ((await c.request("GET", "/api/billing/account")).body as BillingAccount)
       .invoices;
 
     await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
@@ -423,5 +424,128 @@ describe("reminders", () => {
     await invoices.remindDue(dueDay);
     await Bun.sleep(50);
     expect(api.email.sent.slice(mark).filter((m) => m.to === "owner@example.com")).toHaveLength(1);
+  });
+});
+
+describe("a business's account and the platform's Payments", () => {
+  test("the account says what is owed, oldest first; Payments a period's bills, one-off charges until paid", async () => {
+    const c = await owner();
+    const home = await venue("Home", new Date(Date.UTC(2026, 9, 10)));
+    await sale(home.id, 200_000, dar(3));
+    await api.app.get(Invoices).issueMonth(NOV, AFTER);
+    const businessId = await testBusinessId(t.db);
+    // An onboarding charge issued in October, still unpaid.
+    await t.db.invoice.create({
+      data: {
+        number: "INV-2026-10-0900",
+        businessId,
+        kind: "onboarding",
+        venueId: home.id,
+        issuedAt: new Date(Date.UTC(2026, 9, 5, 6)),
+        dueOn: new Date("2026-10-12T00:00:00Z"),
+        totalTsh: 50_000,
+        lines: {
+          create: [
+            { position: 0, label: "In town", onboardingKind: "onboarding_fee", amountTsh: 50_000 },
+          ],
+        },
+      },
+    });
+
+    const account = (await c.request("GET", "/api/billing/account")).body as BillingAccount;
+    expect(account).toMatchObject({
+      business: { name: "Test Business" },
+      owner: { name: "Owner", email: "owner@example.com" },
+      terms: { rateBp: 500, minimumTsh: 5_000 },
+      payTo: { accountName: "Shikome Technology Limited" },
+      paidTsh: 0,
+      dueTsh: 60_000,
+      overdueTsh: 50_000,
+    });
+    expect(account.owed.map((i) => i.kind)).toEqual(["onboarding", "monthly_fees"]);
+
+    await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
+    const asha = browser(api);
+    await enrollAuthenticatorFor(api, asha, "asha@example.com");
+    const november = (await asha.request("GET", "/api/billing/overview?from=2026-11&to=2026-11"))
+      .body as BillingOverview;
+    expect(november.rows.find((r) => r.businessId === businessId)).toMatchObject({
+      ownerName: "Owner",
+      venues: 1,
+      salesTsh: 200_000,
+      feesTsh: 10_000,
+      // Issued in October, still unpaid: on November's row too.
+      oneOffTsh: 50_000,
+      billedTsh: 60_000,
+      dueTsh: 60_000,
+      overdueTsh: 50_000,
+      state: "overdue",
+      monthsBilled: 1,
+      monthsPaid: 0,
+    });
+    expect(november.totals).toMatchObject({
+      billedTsh: 60_000,
+      owing: 1,
+      overdue: ["Test Business"],
+    });
+
+    // Paid, it stays in October's period only.
+    await asha.request("POST", "/api/billing/payments", {
+      businessId,
+      invoiceId: null,
+      amountTsh: 60_000,
+      receivedOn: new Date().toISOString().slice(0, 10),
+      method: "bank_transfer",
+      reference: "",
+    });
+    const again = (await asha.request("GET", "/api/billing/overview?from=2026-11&to=2026-11"))
+      .body as BillingOverview;
+    expect(again.rows.find((r) => r.businessId === businessId)).toMatchObject({
+      oneOffTsh: 0,
+      billedTsh: 10_000,
+      paidTsh: 10_000,
+      state: "paid",
+    });
+    expect((await c.request("GET", "/api/billing/overview?from=2026-11&to=2026-11")).status).toBe(
+      403,
+    );
+    expect(
+      (await asha.request("GET", "/api/billing/overview?from=2026-12&to=2026-11")).status,
+    ).toBe(400);
+  });
+});
+
+describe("the owner's bill issue", () => {
+  test("open while something is owed, for the owner alone, never claimed, and resolved once paid", async () => {
+    const c = await owner();
+    const home = await venue("Home", new Date(Date.UTC(2026, 9, 10)));
+    await sale(home.id, 200_000, dar(3));
+    await api.app.get(Invoices).issueMonth(NOV, AFTER);
+    const issues = async (client: Client) =>
+      ((await client.request("GET", "/api/issues?status=open")).body as IssueList).issues.filter(
+        (i) => i.kind === "bill_due",
+      );
+    const [bill] = await issues(c);
+    expect(bill).toMatchObject({ kind: "bill_due", canClaim: false, canNote: false });
+    expect((await c.request("POST", `/api/issues/${bill?.id}/claim`)).status).toBe(409);
+
+    await businessMember(t.db, { email: "bm@example.com", name: "BM", role: "business_manager" });
+    const manager = browser(api);
+    await enrollAuthenticatorFor(api, manager, "bm@example.com");
+    expect(await issues(manager)).toEqual([]);
+    expect((await manager.request("GET", `/api/issues/${bill?.id}`)).status).toBe(404);
+
+    await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
+    const asha = browser(api);
+    await enrollAuthenticatorFor(api, asha, "asha@example.com");
+    await asha.request("POST", "/api/billing/payments", {
+      businessId: await testBusinessId(t.db),
+      invoiceId: null,
+      amountTsh: 10_000,
+      receivedOn: new Date().toISOString().slice(0, 10),
+      method: "cash",
+      reference: "",
+    });
+    expect(await issues(c)).toEqual([]);
   });
 });

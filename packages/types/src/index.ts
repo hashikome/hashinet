@@ -240,9 +240,75 @@ export interface RecordBillPayment {
   reference: string;
 }
 
-/** `GET /api/billing/invoices`: a business's invoices, newest first. */
-export interface InvoiceList {
+/** A business's account with HashiNet (`GET /api/billing/account`): a bill, or the owner's Billing. */
+export interface BillingAccount {
+  business: { id: string; name: string; region: string; area: string };
+  /** Who it is billed to: the owner; null if the business has none. */
+  owner: { name: string; email: string } | null;
+  terms: FeeTerms;
+  payTo: HashiNetPayTo;
+  /** Everything it has paid HashiNet. */
+  paidTsh: number;
+  dueTsh: number;
+  overdueTsh: number;
+  /** What is owed, oldest first: what a payment on the business settles first. */
+  owed: InvoiceRecord[];
+  /** Every invoice, newest first. */
   invoices: InvoiceRecord[];
+}
+
+/**
+ * A business's bill over a period: `open` while its only fees are the month in progress, invoiced on
+ * the 1st; `no_fee` with nothing to bill.
+ */
+export type BillState = "overdue" | "part_paid" | "due" | "paid" | "open" | "no_fee";
+
+/** One business on the platform's Payments, for a period. */
+export interface BillingRow {
+  businessId: string;
+  name: string;
+  ownerName: string | null;
+  /** Its venues with a router set up. */
+  venues: number;
+  /** Net sales in the period, the month in progress so far included. */
+  salesTsh: number;
+  /** The months' fees invoiced in the period. */
+  feesTsh: number;
+  /** One-off charges: issued in the period, or still unpaid. */
+  oneOffTsh: number;
+  billedTsh: number;
+  paidTsh: number;
+  dueTsh: number;
+  /** The part of what is due that is past its date. */
+  overdueTsh: number;
+  state: BillState;
+  monthsBilled: number;
+  monthsPaid: number;
+  /** Its own fee rate (basis points), and whether its fees used the lower band or a minimum. */
+  rateBp: number;
+  lowerRate: boolean;
+  minimum: boolean;
+}
+
+/** `GET /api/billing/overview?from=YYYY-MM&to=YYYY-MM`: every business's bill for the months. */
+export interface BillingOverview {
+  from: string;
+  to: string;
+  /** Every month there is to show, oldest first (YYYY-MM): from the first billed to this one. */
+  months: string[];
+  /** The month in progress is in the period: its fees are invoiced on this day. */
+  invoicedOn: string | null;
+  rows: BillingRow[];
+  totals: {
+    billedTsh: number;
+    paidTsh: number;
+    dueTsh: number;
+    overdueTsh: number;
+    salesTsh: number;
+    venues: number;
+    owing: number;
+    overdue: string[];
+  };
 }
 
 /** `GET /api/billing/invoices/:id`. */
@@ -321,7 +387,7 @@ export interface BusinessDetail {
   venues: BusinessSummary["venues"];
 }
 
-export type IssueKind = "router_offline" | "venue_package" | "venue_setup";
+export type IssueKind = "router_offline" | "venue_package" | "venue_setup" | "bill_due";
 export type IssueStatus = "open" | "resolved";
 export type IssueAction =
   | "opened"
@@ -356,6 +422,8 @@ export interface IssueRecord {
   router: { id: string; name: string } | null;
   /** What took a router issue's router down when it opened; null for other kinds. */
   cause: RouterCondition | null;
+  /** A bill issue: something owed is past its due date. */
+  overdue: boolean;
   holder: IssuePerson | null;
   /** The reader holds it. */
   mine: boolean;

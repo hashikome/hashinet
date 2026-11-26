@@ -1,9 +1,10 @@
 "use client";
 
-import type { IssueDetail, IssueMoved, VenueOnboarding } from "@hashinet/types";
+import type { BillingAccount, IssueDetail, IssueMoved, VenueOnboarding } from "@hashinet/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, use, useState } from "react";
+import { HowToPay } from "@/components/hearth/billing";
 import { Dialog } from "@/components/hearth/dialog";
 import {
   Attention,
@@ -16,9 +17,11 @@ import {
   useToast,
 } from "@/components/hearth/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
+import { fullDay, invoiceWhat } from "@/lib/billing";
 import { when } from "@/lib/dates";
 import { actorOf, eventText, issueTitle, issueWhere, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
+import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
 import { Contact } from "./contact";
 import { Agreed, PackageSteps, SetupSteps } from "./onboarding-steps";
@@ -37,7 +40,12 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
     const onboarding = venueId
       ? await api.get<VenueOnboarding>(`/api/venues/${venueId}/onboarding`)
       : null;
-    return { detail, onboarding };
+    // A bill's issue says what is owed, from the owner's account.
+    const account =
+      detail.issue.kind === "bill_due" && detail.issue.status === "open"
+        ? await api.get<BillingAccount>("/api/billing/account")
+        : null;
+    return { detail, onboarding, account };
   }, [id, me.active.id]);
   const crumb = (
     <>
@@ -53,7 +61,7 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
     );
   }
   if (!data.data) return <Head title="Issue" sub="" crumb={crumb} />;
-  const { detail, onboarding } = data.data;
+  const { detail, onboarding, account } = data.data;
   const { issue } = detail;
   const open = issue.status === "open";
   const sub = (
@@ -82,11 +90,33 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
   return (
     <>
       <Head
-        title={issueTitle(issue)}
-        sub={sub}
+        title={account ? billTitle(account) : issueTitle(issue)}
+        sub={
+          account ? account.owed.map((i) => `${invoiceWhat(i)}: ${tsh(i.dueTsh)}`).join(" · ") : sub
+        }
         crumb={crumb}
-        actions={open ? <Holder detail={detail} reload={data.reload} /> : null}
+        actions={
+          open && issue.kind !== "bill_due" ? <Holder detail={detail} reload={data.reload} /> : null
+        }
       />
+      {account ? (
+        <>
+          <Panel title="What to do">
+            <ul className="rows">
+              <li>
+                <div>
+                  <b>Pay what is due</b>
+                  <span className="sub">This closes once HashiNet records your payment.</span>
+                </div>
+                <Link className="btn primary" href="/billing">
+                  <span>Open Billing</span>
+                </Link>
+              </li>
+            </ul>
+          </Panel>
+          <HowToPay payTo={account.payTo} />
+        </>
+      ) : null}
       {issue.kind === "router_offline" && open ? <RouterSteps detail={detail} lock={lock} /> : null}
       {issue.kind === "venue_package" && onboarding && open ? (
         <PackageSteps onboarding={onboarding} detail={detail} lock={lock} reload={data.reload} />
@@ -113,6 +143,13 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
       <History detail={detail} reload={data.reload} />
     </>
   );
+}
+
+/** What a bill issue's title says: what is overdue, or what is due and by when (prototype `bill-due`). */
+function billTitle(a: BillingAccount): string {
+  const first = a.owed[0];
+  if (a.overdueTsh > 0) return `${tsh(a.overdueTsh)} is overdue`;
+  return first ? `${tsh(a.dueTsh)} is due by ${fullDay(first.dueOn)}` : "Nothing is owed";
 }
 
 /** Responsible, and the steps that move the issue between people. */

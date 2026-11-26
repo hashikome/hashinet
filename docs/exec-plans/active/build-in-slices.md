@@ -429,10 +429,22 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     `venue_onboardings.paid_*` and `onboarding_paid_by`; `onboarding.pay` stays in the audit
     actions for the rows already logged. The shared Record payment dialog (prototype `payForm`)
     is on the setup issue. Integration 186/186.
-  - [ ] (d) Screens. The platform's Payments (every business for a month, a quarter, a year or a
+  - [x] (2026-11-26) (d) Screens. The platform's Payments (every business for a month, a quarter, a year or a
     range: sales, rate, billed, paid, due, status; Record payment and Remind on each), a business's
     bill and an invoice, the owner's Billing (their terms, what is due, how to pay, their invoices)
     and its issue when a bill is due or overdue, Fees.
+    Built: `GET /api/billing/account` (a business's account: owner, terms, where to pay, paid, due,
+    overdue, what is owed oldest first, its invoices) and `GET /api/billing/overview` (every
+    business for a range of months, with the months there are and the day the month in progress
+    is invoiced; `billing.overview`, the platform's admin and managers); `GET /api/billing/invoices`
+    gave way to the account. Pages: `/billing` (the platform's Payments, or the owner's Billing),
+    `/billing/[businessId]`, `/billing/invoices/[id]`; Record payment and Remind in the shared
+    dialog; Payments and Billing in the menus. The owner's bill is an issue (`bill_due`, in the
+    business's workspace, its cause due or overdue), seen by the owner alone, never claimed or
+    noted, opened and resolved by billing (on issuing, on each payment, and hourly). Its title in a
+    list says only due or overdue; its page says the amounts. Walked at 1440 and 390 as Paul
+    (Payments, a bill, an invoice with a part payment) and Zuhura (Billing, the bill issue).
+    Integration 188/188.
   - [ ] (e) Invoice PDFs: Download PDF on each invoice (owner, 26 November: an additional step).
   - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
     invoiced when added; the site opens once paid (owner, 26 November: an additional step).

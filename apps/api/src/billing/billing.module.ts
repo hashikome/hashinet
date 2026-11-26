@@ -34,6 +34,8 @@ export class BillingJobs extends ScheduledJobs {
         await invoices.issueMissingOnboarding();
         // Due today and unpaid: its owners hear, once.
         await invoices.remindDue();
+        // What each owner owes, as an issue at the top of theirs.
+        await invoices.syncBillIssues();
       }),
     ];
   }
