@@ -4670,3 +4670,30 @@ body {
   line-height: 12px;
   top: 0.3em;
 }
+
+/* How to pay HashiNet: each way a column, each detail on its own labelled line, as an invoice. */
+.pay-ways {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 32px;
+  margin-bottom: 12px;
+}
+.pay-ways h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.pay-ways dl > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+  padding: 3px 0;
+}
+.pay-ways dt {
+  color: var(--muted-fg);
+}
+@media (max-width: 700px) {
+  .pay-ways {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

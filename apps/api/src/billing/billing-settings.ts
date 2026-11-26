@@ -45,9 +45,19 @@ export const billingSettingsInput = z.object({
     }),
   payTo: z.object({
     mobileMoney: optional(40),
+    mobileMoneyName: optional(160),
     bankName: optional(80),
+    bankBranch: optional(80),
     bankAccount: optional(40),
+    bankSwift: optional(11),
     accountName: oneLine(160).min(1, "is required"),
+  }),
+  issuer: z.object({
+    postal: optional(160),
+    office: optional(160),
+    email: optional(160),
+    registration: optional(40),
+    tin: optional(20),
   }),
 });
 export type BillingSettingsInput = z.infer<typeof billingSettingsInput>;
@@ -56,7 +66,16 @@ function record(row: BillingSetting | null): BillingSettingsRecord {
   if (row === null) {
     return {
       terms: DEFAULT_FEE_TERMS,
-      payTo: { mobileMoney: null, bankName: null, bankAccount: null, accountName: ACCOUNT_NAME },
+      payTo: {
+        mobileMoney: null,
+        mobileMoneyName: null,
+        bankName: null,
+        bankBranch: null,
+        bankAccount: null,
+        bankSwift: null,
+        accountName: ACCOUNT_NAME,
+      },
+      issuer: { postal: null, office: null, email: null, registration: null, tin: null },
       updatedAt: null,
     };
   }
@@ -64,9 +83,19 @@ function record(row: BillingSetting | null): BillingSettingsRecord {
     terms: businessFeeTerms(row),
     payTo: {
       mobileMoney: row.payMobileMoney,
+      mobileMoneyName: row.payMobileMoneyName,
       bankName: row.payBankName,
+      bankBranch: row.payBankBranch,
       bankAccount: row.payBankAccount,
+      bankSwift: row.payBankSwift,
       accountName: row.payAccountName,
+    },
+    issuer: {
+      postal: row.issuerPostal,
+      office: row.issuerOffice,
+      email: row.issuerEmail,
+      registration: row.issuerRegistration,
+      tin: row.issuerTin,
     },
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -90,9 +119,17 @@ export class BillingSettings {
     const data = {
       ...feeTermsColumns(input.terms),
       payMobileMoney: input.payTo.mobileMoney,
+      payMobileMoneyName: input.payTo.mobileMoneyName,
       payBankName: input.payTo.bankName,
+      payBankBranch: input.payTo.bankBranch,
       payBankAccount: input.payTo.bankAccount,
+      payBankSwift: input.payTo.bankSwift,
       payAccountName: input.payTo.accountName,
+      issuerPostal: input.issuer.postal,
+      issuerOffice: input.issuer.office,
+      issuerEmail: input.issuer.email,
+      issuerRegistration: input.issuer.registration,
+      issuerTin: input.issuer.tin,
     };
     const row = await this.db.billingSetting.upsert({
       where: { singleton: true },
@@ -101,8 +138,16 @@ export class BillingSettings {
     });
     const after = record(row);
     // Only what changed, so the log says what the admin did.
-    const was: Record<string, string | number | null> = { ...before.terms, ...before.payTo };
-    const now: Record<string, string | number | null> = { ...after.terms, ...after.payTo };
+    const was: Record<string, string | number | null> = {
+      ...before.terms,
+      ...before.payTo,
+      ...before.issuer,
+    };
+    const now: Record<string, string | number | null> = {
+      ...after.terms,
+      ...after.payTo,
+      ...after.issuer,
+    };
     const changed = Object.keys(now).filter((k) => was[k] !== now[k]);
     await this.audit.record(staff, {
       action: "fees.update",

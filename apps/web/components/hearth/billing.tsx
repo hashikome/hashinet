@@ -32,13 +32,39 @@ export function InvoiceStatus({ invoice }: { invoice: InvoiceRecord }) {
   );
 }
 
+/** Download PDF: the invoice as the API makes it, saved under its number. */
+export function DownloadPdf({ invoice }: { invoice: InvoiceRecord }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      icon="download"
+      busy={busy}
+      onClick={async (e) => {
+        // In a row, it downloads rather than opening the invoice.
+        e.stopPropagation();
+        setBusy(true);
+        try {
+          await api.download(`/api/billing/invoices/${invoice.id}/pdf`, `${invoice.number}.pdf`);
+        } catch (err) {
+          toast(messageOf(err));
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      Download PDF
+    </Button>
+  );
+}
+
 /** A business's invoices, newest first; a row opens its invoice (prototype `invoicesPanel`). */
 export function InvoicesPanel({ invoices }: { invoices: InvoiceRecord[] }) {
   return (
     <Panel title={`Invoices · ${invoices.length}`}>
       {invoices.length ? (
         <Table
-          cols={[["Invoice"], ["Issued date"], ["Due date"], ["Total", true], ["Status"]]}
+          cols={[["Invoice"], ["Issued date"], ["Due date"], ["Total", true], ["Status"], [""]]}
           rows={invoices.map((i) => ({
             key: i.id,
             href: `/billing/invoices/${i.id}`,
@@ -55,6 +81,7 @@ export function InvoicesPanel({ invoices }: { invoices: InvoiceRecord[] }) {
               </span>,
               tsh(i.totalTsh),
               <InvoiceStatus invoice={i} key="s" />,
+              <DownloadPdf invoice={i} key="pdf" />,
             ],
           }))}
         />
@@ -116,37 +143,58 @@ export function InvoiceLines({ invoice, terms }: { invoice: InvoiceRecord; terms
   );
 }
 
-/** Where businesses pay HashiNet, from Fees; a way left empty is not offered. */
+/** Where businesses pay HashiNet, from Fees, as the invoice lists it: bank first, each detail on its own line. */
 export function HowToPay({ payTo }: { payTo: HashiNetPayTo }) {
-  const ways = [
-    payTo.mobileMoney ? (
-      <li key="mm">
-        <div>
-          <b>Mobile money</b>
-          <span className="sub">
-            Business number <CopyText text={payTo.mobileMoney} />
-          </span>
-        </div>
-      </li>
-    ) : null,
-    payTo.bankAccount ? (
-      <li key="bank">
-        <div>
-          <b>Bank transfer</b>
-          <span className="sub">
-            {payTo.accountName}
-            {payTo.bankName ? `, ${payTo.bankName}` : ""}, account{" "}
-            <CopyText text={payTo.bankAccount} />
-          </span>
-        </div>
-      </li>
-    ) : null,
-  ].filter(Boolean);
+  const ways: [string, [string, string | null][]][] = [
+    ...(payTo.bankAccount
+      ? [
+          [
+            "Bank transfer",
+            [
+              ["Account name", payTo.accountName],
+              ["Bank", payTo.bankName],
+              ["Branch", payTo.bankBranch],
+              ["Account number", payTo.bankAccount],
+              ["SWIFT code", payTo.bankSwift],
+            ],
+          ] as [string, [string, string | null][]],
+        ]
+      : []),
+    ...(payTo.mobileMoney
+      ? [
+          [
+            "Mobile money",
+            [
+              ["Lipa namba", payTo.mobileMoney],
+              ["Name", payTo.mobileMoneyName],
+            ],
+          ] as [string, [string, string | null][]],
+        ]
+      : []),
+  ];
   return (
     <Panel title="How to pay">
       {ways.length ? (
         <>
-          <ul className="rows">{ways}</ul>
+          <div className="pay-ways">
+            {ways.map(([title, details]) => (
+              <div key={title}>
+                <h3>{title}</h3>
+                <dl>
+                  {details.map(([label, value]) =>
+                    value ? (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>
+                          <CopyText text={value} />
+                        </dd>
+                      </div>
+                    ) : null,
+                  )}
+                </dl>
+              </div>
+            ))}
+          </div>
           <p className="muted small">
             Use the invoice number as the reference. A payment settles the oldest invoice first.
           </p>

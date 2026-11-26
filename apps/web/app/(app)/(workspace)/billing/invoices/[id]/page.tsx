@@ -6,6 +6,7 @@ import { use, useEffect } from "react";
 import {
   BillActions,
   BilledTo,
+  DownloadPdf,
   HowToPay,
   InvoiceLines,
   InvoiceStatus,
@@ -106,7 +107,7 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
           ) : null}
         </div>
       </aside>
-      <Panel title="Invoice">
+      <Panel title="Invoice" right={<DownloadPdf invoice={x} />}>
         <InvoiceLines invoice={x} terms={a.terms} />
       </Panel>
       {!platform && x.dueTsh > 0 ? <HowToPay payTo={a.payTo} /> : null}

@@ -4,7 +4,17 @@ import type {
   BillingSettingsResponse,
   InvoiceResponse,
 } from "@hashinet/types";
-import { Body, Controller, Get, HttpCode, Param, Post, Put, Query } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Put,
+  Query,
+  StreamableFile,
+} from "@nestjs/common";
 import { z } from "zod";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
@@ -12,6 +22,7 @@ import { monthParam } from "../analytics/analytics.service.js";
 import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import { BillingSettings, billingSettingsInput } from "./billing-settings.js";
+import { invoicePdf } from "./invoice-pdf.js";
 import { Invoices } from "./invoices.js";
 import { BillPayments, recordPaymentInput } from "./payments.js";
 
@@ -86,6 +97,22 @@ export class BillingController {
   @Can("billing.remind")
   async remind(@CurrentPrincipal() staff: Principal, @Body() body: unknown): Promise<void> {
     await this.invoices.remind(staff, parseInput(remindInput, body).businessId);
+  }
+
+  /** The invoice as a PDF, downloaded as a file named by its number. */
+  @Get("invoices/:id/pdf")
+  @Can("billing.read")
+  async pdf(
+    @CurrentPrincipal() staff: Principal,
+    @Param("id", idParam()) id: string,
+  ): Promise<StreamableFile> {
+    const invoice = await this.invoices.get(staff, id);
+    const bytes = await invoicePdf(invoice, await this.settings.get());
+    return new StreamableFile(bytes, {
+      type: "application/pdf",
+      disposition: `attachment; filename="${invoice.invoice.number}.pdf"`,
+      length: bytes.length,
+    });
   }
 
   @Get("invoices/:id")

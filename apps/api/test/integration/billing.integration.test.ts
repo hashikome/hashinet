@@ -30,9 +30,19 @@ const SETTINGS = {
   terms: { rateBp: 600, lowerRateBp: 300, lowerRateAboveTsh: 3_000_000, minimumTsh: 6_000 },
   payTo: {
     mobileMoney: "5512 8840",
+    mobileMoneyName: "",
     bankName: "",
+    bankBranch: "",
     bankAccount: "",
+    bankSwift: "",
     accountName: "Shikome Technology Limited",
+  },
+  issuer: {
+    postal: "P.O. Box 17108, Dar es Salaam",
+    office: "",
+    email: "",
+    registration: "",
+    tin: "",
   },
 };
 
@@ -49,11 +59,16 @@ describe("fees", () => {
 
     const saved = await admin.request("PUT", "/api/billing/settings", SETTINGS);
     expect(saved.status).toBe(200);
-    expect((saved.body as BillingSettingsResponse).settings.payTo).toEqual({
-      mobileMoney: "5512 8840",
-      bankName: null,
-      bankAccount: null,
-      accountName: "Shikome Technology Limited",
+    expect((saved.body as BillingSettingsResponse).settings).toMatchObject({
+      payTo: {
+        mobileMoney: "5512 8840",
+        mobileMoneyName: null,
+        bankName: null,
+        bankAccount: null,
+        bankSwift: null,
+        accountName: "Shikome Technology Limited",
+      },
+      issuer: { postal: "P.O. Box 17108, Dar es Salaam", office: null, tin: null },
     });
     expect(
       (

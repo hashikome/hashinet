@@ -22,11 +22,38 @@ interface Form {
   lowerRate: string;
   above: string;
   minimum: string;
-  mobileMoney: string;
-  bankName: string;
-  bankAccount: string;
   accountName: string;
+  bankName: string;
+  bankBranch: string;
+  bankAccount: string;
+  bankSwift: string;
+  mobileMoney: string;
+  mobileMoneyName: string;
+  postal: string;
+  office: string;
+  email: string;
+  registration: string;
+  tin: string;
 }
+
+type Path = `payTo.${string}` | `issuer.${string}`;
+/** Where businesses pay, bank first, as an invoice lists it; then what the invoice says of HashiNet. */
+const PAY: [keyof Form, Path, string][] = [
+  ["accountName", "payTo.accountName", "Account name"],
+  ["bankName", "payTo.bankName", "Bank (optional)"],
+  ["bankBranch", "payTo.bankBranch", "Branch (optional)"],
+  ["bankAccount", "payTo.bankAccount", "Account number (optional)"],
+  ["bankSwift", "payTo.bankSwift", "SWIFT code (optional)"],
+  ["mobileMoney", "payTo.mobileMoney", "Lipa namba (optional)"],
+  ["mobileMoneyName", "payTo.mobileMoneyName", "Name it shows (optional)"],
+];
+const ISSUER: [keyof Form, Path, string][] = [
+  ["postal", "issuer.postal", "Postal address (optional)"],
+  ["office", "issuer.office", "Office (optional)"],
+  ["email", "issuer.email", "Email (optional)"],
+  ["registration", "issuer.registration", "Incorporation number (optional)"],
+  ["tin", "issuer.tin", "TIN (optional)"],
+];
 
 function formOf(s: BillingSettingsRecord): Form {
   return {
@@ -34,10 +61,18 @@ function formOf(s: BillingSettingsRecord): Form {
     lowerRate: percent(s.terms.lowerRateBp),
     above: grouped(s.terms.lowerRateAboveTsh),
     minimum: grouped(s.terms.minimumTsh),
-    mobileMoney: s.payTo.mobileMoney ?? "",
-    bankName: s.payTo.bankName ?? "",
-    bankAccount: s.payTo.bankAccount ?? "",
     accountName: s.payTo.accountName,
+    bankName: s.payTo.bankName ?? "",
+    bankBranch: s.payTo.bankBranch ?? "",
+    bankAccount: s.payTo.bankAccount ?? "",
+    bankSwift: s.payTo.bankSwift ?? "",
+    mobileMoney: s.payTo.mobileMoney ?? "",
+    mobileMoneyName: s.payTo.mobileMoneyName ?? "",
+    postal: s.issuer.postal ?? "",
+    office: s.issuer.office ?? "",
+    email: s.issuer.email ?? "",
+    registration: s.issuer.registration ?? "",
+    tin: s.issuer.tin ?? "",
   };
 }
 
@@ -77,12 +112,9 @@ export default function FeesPage() {
       ["Lower rate starts above", `${tsh(s.terms.lowerRateAboveTsh)} a month`],
       ["Monthly minimum per venue", tsh(s.terms.minimumTsh)],
     ];
-    const pay: [string, string][] = [
-      ["Mobile money business number", s.payTo.mobileMoney ?? "Not set"],
-      ["Bank", s.payTo.bankName ?? "Not set"],
-      ["Bank account number", s.payTo.bankAccount ?? "Not set"],
-      ["Account name", s.payTo.accountName],
-    ];
+    const shown = (list: [keyof Form, Path, string][]): [string, string][] =>
+      list.map(([key, , label]) => [label.replace(" (optional)", ""), form[key] || "Not set"]);
+    const pay = shown(PAY);
     const list = (items: [string, string][]) => (
       <ul className="rows">
         {items.map(([label, value]) => (
@@ -98,6 +130,7 @@ export default function FeesPage() {
         <Head title="Fees" sub={sub} />
         <Panel title="Fees">{list(rows)}</Panel>
         <Panel title="Where businesses pay">{list(pay)}</Panel>
+        <Panel title="On invoices">{list(shown(ISSUER))}</Panel>
       </>
     );
   }
@@ -115,6 +148,12 @@ export default function FeesPage() {
       aria-invalid={errors[id] ? true : undefined}
     />
   );
+  const fields = (list: [keyof Form, Path, string][]) =>
+    list.map(([key, path, label]) => (
+      <Field key={path} label={label} id={path} error={errors[path]}>
+        {input(key, path)}
+      </Field>
+    ));
   const save = (done: string) =>
     run(async () => {
       const saved = await api.put<BillingSettingsResponse>("/api/billing/settings", {
@@ -125,10 +164,20 @@ export default function FeesPage() {
           minimumTsh: shillings(form.minimum),
         },
         payTo: {
-          mobileMoney: form.mobileMoney,
-          bankName: form.bankName,
-          bankAccount: form.bankAccount,
           accountName: form.accountName,
+          bankName: form.bankName,
+          bankBranch: form.bankBranch,
+          bankAccount: form.bankAccount,
+          bankSwift: form.bankSwift,
+          mobileMoney: form.mobileMoney,
+          mobileMoneyName: form.mobileMoneyName,
+        },
+        issuer: {
+          postal: form.postal,
+          office: form.office,
+          email: form.email,
+          registration: form.registration,
+          tin: form.tin,
         },
       });
       load.reload();
@@ -178,7 +227,8 @@ export default function FeesPage() {
           <h2>Where businesses pay</h2>
         </div>
         <p className="muted fee-lead">
-          Shown on every business&apos;s Billing, under How to pay. Changes show at once.
+          Shown on every business&apos;s Billing and invoices, under How to pay. Changes show at
+          once.
         </p>
         <form
           className="fee-form"
@@ -188,26 +238,30 @@ export default function FeesPage() {
             void save("Saved. Every business's Billing shows it now.");
           }}
         >
-          <Field
-            label="Mobile money business number (optional)"
-            id="payTo.mobileMoney"
-            error={errors["payTo.mobileMoney"]}
-          >
-            {input("mobileMoney", "payTo.mobileMoney")}
-          </Field>
-          <Field label="Bank (optional)" id="payTo.bankName" error={errors["payTo.bankName"]}>
-            {input("bankName", "payTo.bankName")}
-          </Field>
-          <Field
-            label="Bank account number (optional)"
-            id="payTo.bankAccount"
-            error={errors["payTo.bankAccount"]}
-          >
-            {input("bankAccount", "payTo.bankAccount")}
-          </Field>
-          <Field label="Account name" id="payTo.accountName" error={errors["payTo.accountName"]}>
-            {input("accountName", "payTo.accountName")}
-          </Field>
+          {fields(PAY)}
+          <div className="form-save">
+            <Button kind="primary" type="submit" busy={busy}>
+              Save
+            </Button>
+          </div>
+        </form>
+      </section>
+      <section className="panel">
+        <div className="panel-head">
+          <h2>On invoices</h2>
+        </div>
+        <p className="muted fee-lead">
+          Who issues HashiNet&apos;s invoices, under the account name, as every invoice prints it.
+        </p>
+        <form
+          className="fee-form"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            void save("Saved. Invoices print it from now on.");
+          }}
+        >
+          {fields(ISSUER)}
           <div className="form-save">
             <Button kind="primary" type="submit" busy={busy}>
               Save

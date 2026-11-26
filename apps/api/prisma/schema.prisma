@@ -437,11 +437,21 @@ model BillingSetting {
   feeLowerRateBp       Int      @map("fee_lower_rate_bp")
   feeLowerRateAboveTsh Int      @map("fee_lower_rate_above_tsh")
   feeMinimumTsh        Int      @map("fee_minimum_tsh")
-  /// HashiNet's mobile money business number.
+  /// HashiNet's Lipa namba, and the name a payment to it shows.
   payMobileMoney       String?  @map("pay_mobile_money") @db.VarChar(40)
+  payMobileMoneyName   String?  @map("pay_mobile_money_name") @db.VarChar(160)
   payBankName          String?  @map("pay_bank_name") @db.VarChar(80)
+  payBankBranch        String?  @map("pay_bank_branch") @db.VarChar(80)
   payBankAccount       String?  @map("pay_bank_account") @db.VarChar(40)
+  payBankSwift         String?  @map("pay_bank_swift") @db.VarChar(11)
   payAccountName       String   @map("pay_account_name") @db.VarChar(160)
+  /// Who issues the invoices, as they print: the company's postal address, office, email,
+  /// incorporation number and TIN.
+  issuerPostal         String?  @map("issuer_postal") @db.VarChar(160)
+  issuerOffice         String?  @map("issuer_office") @db.VarChar(160)
+  issuerEmail          String?  @map("issuer_email") @db.VarChar(160)
+  issuerRegistration   String?  @map("issuer_registration") @db.VarChar(40)
+  issuerTin            String?  @map("issuer_tin") @db.VarChar(20)
   createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 

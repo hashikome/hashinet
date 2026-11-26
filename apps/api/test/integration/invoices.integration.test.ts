@@ -591,12 +591,19 @@ describe("what the review found", () => {
       terms: { rateBp: 250, lowerRateBp: 500, lowerRateAboveTsh: 2_000_000, minimumTsh: 5_000 },
       payTo: {
         mobileMoney: "",
+        mobileMoneyName: "",
         bankName: "",
+        bankBranch: "",
         bankAccount: "",
+        bankSwift: "",
         accountName: "Shikome Technology Limited",
       },
+      issuer: { postal: "", office: "", email: "", registration: "", tin: "" },
     });
     expect(refused.status).toBe(400);
+    expect(refused.body).toMatchObject({
+      details: { "terms.lowerRateBp": "can't be above the fee" },
+    });
   });
 
   test("Payments counts a one-off charge from its month on, and a row's payment covers everything owed", async () => {
@@ -631,5 +638,25 @@ describe("what the review found", () => {
       dueTsh: 30_000,
       owedTsh: 80_000,
     });
+  });
+});
+
+describe("an invoice's PDF", () => {
+  test("the owner downloads their invoice as a PDF the API makes; HashiNet's operators can't", async () => {
+    const c = await owner();
+    const home = await venue("Home", new Date(Date.UTC(2026, 9, 10)));
+    await sale(home.id, 200_000, dar(3));
+    await api.app.get(Invoices).issueMonth(NOV, AFTER);
+    const [invoice] = ((await c.request("GET", "/api/billing/account")).body as BillingAccount)
+      .invoices;
+    const pdf = await c.request("GET", `/api/billing/invoices/${invoice?.id}/pdf`);
+    expect(pdf.status).toBe(200);
+    expect(String(pdf.body).startsWith("%PDF-")).toBe(true);
+    await platformMember(t.db, { email: "hamisi@example.com", name: "Hamisi", role: "operator" });
+    const hamisi = browser(api);
+    await enrollAuthenticatorFor(api, hamisi, "hamisi@example.com");
+    expect((await hamisi.request("GET", `/api/billing/invoices/${invoice?.id}/pdf`)).status).toBe(
+      403,
+    );
   });
 });

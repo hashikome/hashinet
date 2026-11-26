@@ -149,18 +149,32 @@ export interface FeeTerms {
 
 /** Where businesses pay HashiNet; a way left empty is not offered. */
 export interface HashiNetPayTo {
-  /** The mobile money business number. */
+  /** The Lipa namba, and the name a payment to it shows. */
   mobileMoney: string | null;
+  mobileMoneyName: string | null;
   bankName: string | null;
+  bankBranch: string | null;
   bankAccount: string | null;
+  bankSwift: string | null;
   /** Whose account it is: Shikome Technology Limited. */
   accountName: string;
+}
+
+/** Who issues HashiNet's invoices, as an invoice prints it; its name is the account name. */
+export interface HashiNetIssuer {
+  postal: string | null;
+  office: string | null;
+  email: string | null;
+  /** The company's incorporation number. */
+  registration: string | null;
+  tin: string | null;
 }
 
 /** `GET` and `PUT /api/billing/settings`: the terms new businesses start with, and where to pay. */
 export interface BillingSettingsRecord {
   terms: FeeTerms;
   payTo: HashiNetPayTo;
+  issuer: HashiNetIssuer;
   /** When the platform admin last saved; null while today's terms apply. */
   updatedAt: Timestamp | null;
 }

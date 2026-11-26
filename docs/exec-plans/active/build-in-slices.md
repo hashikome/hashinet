@@ -456,7 +456,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     nothing crossing a boundary. Simplify: one owner mailer, invoice summary and oldest-first
     order; the month helpers beside the business day's; the invoice page in one request; the API's
     default month, effective rate and collected share; a per-kind issue table. Integration 192/192.
-  - [ ] (e) Invoice PDFs: Download PDF on each invoice (owner, 26 November: an additional step;
+  - [x] (2026-11-26) (e) Invoice PDFs: Download PDF on each invoice (owner, 26 November: an additional step;
     prototype `invoice.html` reviewed and polished 26 November). The API makes the PDF and the web
     downloads it (`GET /api/billing/invoices/:id/pdf`, as an attachment named by its number), never
     the browser's print. One A4 page, black on white: the
@@ -468,6 +468,13 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     number, SWIFT code, currency; then mobile money: Lipa namba and the name it shows), so Fees gains the Lipa name, the
     branch and the SWIFT code; the fee terms in the footer
     on a month's invoice only. Overdue reads without colour.
+    Built: `billing/invoice-pdf.ts` with pdfkit 0.20.2 and Figtree's static weights
+    (`@fontsource/figtree`, WOFF: the PDF library's subsetting breaks on WOFF2's composite glyphs),
+    embedded; `GET /api/billing/invoices/:id/pdf` (`billing.read`), an attachment named by its
+    number; Download PDF on each invoice and in the invoices table. Fees gains the Lipa namba's
+    name, the branch and SWIFT code, and the issuer's postal address, office, email, incorporation
+    number and TIN (`billing_settings`). Billing's How to pay lists them as the PDF does. Rendered and
+    compared with the prototype; integration 193/193.
   - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
     invoiced when added; the site opens once paid (owner, 26 November: an additional step). Adding
     one issues its invoice as an onboarding charge's is issued, due 7 days later, and the site
