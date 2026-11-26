@@ -68,8 +68,8 @@ first venue.
 A venue gets online through two issues in turn (ADR-0013, 2). Its owner says how the router
 should come (Connect their own, Install one HashiNet brings, or Launch with a new internet line too,
 or talk first); HashiNet's admin or a manager calls them, agrees the package line by line (an
-onboarding fee agreed for the business and what the plan brings, all on one bill), records its
-payment and schedules the setup. The setup goes to whoever goes, a platform operator as a rule: they
+onboarding fee agreed for the business and what the plan brings, all on one bill), which invoices
+it, due 7 days later; once its payment is recorded they schedule the setup. The setup goes to whoever goes, a platform operator as a rule: they
 add the router, run its bootstrap script on a freshly reset MikroTik, and HashiNet configures the
 hotspot automatically and safely repeatably, with a readiness checklist of what is working. The
 setup closes when the venue's first guest is online. No router is added before its setup is
@@ -182,6 +182,23 @@ contact the venue. Payments use Snippe (build plan M6).
 Acceptance: on the router sim with Snippe's test environment, each path gets a guest online and
 expiry cuts them off, and each appears in the venue's figures; then on a physical router with a
 real payment and a real message (M8).
+
+### 4.8 What businesses pay HashiNet
+
+HashiNet invoices each business on the 1st for the month before, in Dar es Salaam: each venue's
+net sales at 5%, and 2.5% on the part above TSh 2,000,000 a month, with at least TSh 5,000 a month
+a serving venue from its first full month after setup, prorated by the days a router served it
+(ADR-0013, 3). Invoices are due on the 7th and emailed to the owner; a venue's package is invoiced
+when it is confirmed, due 7 days later. Each business keeps the terms it was added with; the
+platform admin sets those new businesses start with, and where businesses pay, on Fees. HashiNet's
+admin or a manager records what arrives, by mobile money, bank transfer or cash: on an invoice it
+settles that invoice, on the business the oldest first, never more than is owed. The owner sees
+their terms, what is due, how to pay and their invoices on Billing, and what they owe as an issue at
+the top of theirs; the owner is reminded on a due date left unpaid, and on request. HashiNet's team
+sees every business's bill on Payments.
+
+Acceptance: a business's first monthly invoice is issued on the 1st; its payment is recorded; its
+owner sees it paid.
 
 ## 5. Data
 

@@ -4,7 +4,8 @@ Status: accepted, 4 November 2026, by the owner. Figures are starting points, se
 Settings; the model is the decision. Widened 13 November 2026: the agreed package is itemized, all
 on HashiNet's bill, and platform operators work the setups handed to them. Narrowed 14 November
 2026: ADR-0017 replaces point 4's basis (a voucher exists only by its sale; fees are on each month's
-sales less refunds).
+sales less refunds). Narrowed 26 November 2026: the minimum is prorated by the share of the month a
+router served the venue, and a payment recorded on a charge settles that charge (points 3 and 6).
 
 ## Context
 
@@ -85,7 +86,8 @@ and the guests. Owners are not network technicians, so the team installs it.
    voucher pays TSh 25, with a minimum of TSh 5,000 a month per venue: a venue that sells little or
    nothing still pays for the infrastructure it uses, and a venue selling TSh 100,000 or more a month
    never meets the minimum. The minimum counts from the first full month after setup, and only while
-   a router is serving. Volume lowers the rate, as bank transaction fees do: a
+   a router is serving: it is prorated by the share of the month one of the venue's routers served
+   (down 10 days of 30, TSh 3,333), and a closed business or a venue out of service owes none. Volume lowers the rate, as bank transaction fees do: a
    venue's sales above TSh 2,000,000 in a month pay 2.5%. The bands are marginal, like tax bands: only
    the part above the threshold pays 2.5%, so selling one more voucher never raises the bill. A venue
    selling TSh 4,000,000 pays TSh 150,000. Rates, threshold and minimum are figures in the platform's Settings. There is
@@ -100,8 +102,9 @@ and the guests. Owners are not network technicians, so the team installs it.
    once set up, by SMS; staff remind one business as a follow-up, never all at once.
    Confirming a package with a charge emails its invoice to the owner at once, and the setup issue can
    record the payment or remind without leaving it. With online payments, a payment against the
-   invoice's control number closes that step by itself. Whatever does arrive is recorded as it arrived and settles the oldest
-   invoice first. A part payment does not stop an invoice going overdue, and service access follows
+   invoice's control number closes that step by itself. Whatever does arrive is recorded as it arrived:
+   recorded on a charge, such as a venue's onboarding, it settles that charge, so paying for a new
+   venue schedules its setup; recorded on the business, it settles the oldest invoice first. A part payment does not stop an invoice going overdue, and service access follows
    the overdue amount as usual (ADR-0014). Only fees count: they pay for service already used, while a one-off
    payment, such as an onboarding charge or an extra site, comes before what it buys, so leaving it
    unpaid only holds that back and leaves service access alone.

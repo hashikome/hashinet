@@ -445,6 +445,17 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     list says only due or overdue; its page says the amounts. Walked at 1440 and 390 as Paul
     (Payments, a bill, an invoice with a part payment) and Zuhura (Billing, the bill issue).
     Integration 188/188.
+  - Review of (a) to (d), 26 November 2026: a code review found a month re-priced hourly all month
+    (a business that owed nothing on the 1st invoiced later, overdue at once), a package changed
+    while a payment landed on its old invoice, the minimum charged to closed businesses and venues
+    out of service, a row's Record payment offering only the period's due while settling the
+    oldest first, one-off charges counted in periods before they were issued, a lower rate allowed
+    above the fee, and the by-hand migration dropping an overpayment silently. Each is fixed with a
+    test that fails before it (`invoice_runs`; the package's invoice synced inside its confirmation
+    under the business lock; the migration stops on an overpayment). The security review found
+    nothing crossing a boundary. Simplify: one owner mailer, invoice summary and oldest-first
+    order; the month helpers beside the business day's; the invoice page in one request; the API's
+    default month, effective rate and collected share; a per-kind issue table. Integration 192/192.
   - [ ] (e) Invoice PDFs: Download PDF on each invoice (owner, 26 November: an additional step).
   - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
     invoiced when added; the site opens once paid (owner, 26 November: an additional step).

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Getting paid (slice 4, steps a to d): HashiNet invoices each business on the 1st for the month
+  before (5% of each venue's net sales, 2.5% above TSh 2,000,000, a prorated minimum of TSh 5,000 a
+  serving venue), due on the 7th and emailed to the owner, and invoices a venue's package when it is
+  confirmed. Its admin and managers record payments (on an invoice, or the oldest first) and remind
+  owners; owners are reminded on a due date left unpaid. Screens: the platform's Payments, a
+  business's bill, an invoice, Fees, and the owner's Billing, with what they owe as an issue of
+  theirs. A package paid by hand became its invoice and its payment.
 - Router setup opens the guest WiFi: no password on the guest radio, set on that radio alone, so the
   owner's own WiFi keeps its password (slice 2, step l, stage 1). Verify warns when the guest WiFi
   may still ask for one, since a voucher's QR code joins it without.
