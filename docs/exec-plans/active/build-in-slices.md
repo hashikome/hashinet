@@ -787,6 +787,12 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   entered once, and a business with a till per branch still gets each venue's right. The sale shows
   the venue's way and keeps it.
   Date/Author: 2026-11-26 / owner.
+- Decision: an invoice is its PDF; there is no invoice page (owner, 27 November 2026). Invoice
+  rows are not links: each has Download PDF. Billing and the owner's bill issue drop How to pay,
+  which every invoice carries. HashiNet's Record payment says which invoice it settles when more
+  than one is open (the oldest first by default), which the invoice page's own Record payment did.
+  To build with (g): remove `/billing/invoices/[id]`, point invoice emails at Billing.
+  Date/Author: 2026-11-27 / owner.
 - Decision: HashiNet's payment details are a platform setting on Fees, edited by the platform admin
   (owner, 26 November 2026); until they are set, Billing says to contact HashiNet.
   Date/Author: 2026-11-26 / owner.
