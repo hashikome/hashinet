@@ -97,7 +97,7 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   const manage = [
     ...(can("router.read")
       ? venues.flatMap((v) => [
-          ...(can("payment_details.read")
+          ...(can("venue.payment_way.read")
             ? [{ href: `/venues/${v.id}`, label: one ? "Venue" : v.name }]
             : []),
           { href: `/venues/${v.id}/router`, label: one ? "Routers" : `${v.name}'s router` },
@@ -111,12 +111,10 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
     ...(can("audit.read") ? [{ href: "/audit", label: "Audit log" }] : []),
   ];
   if (business.length) entries.push({ label: "Business", icon: "team", links: business });
-  if (can("package.read")) {
-    entries.push({
-      label: "Settings",
-      icon: "settings",
-      links: [{ href: "/packages", label: "Packages" }],
-    });
-  }
+  const settings = [
+    ...(can("package.read") ? [{ href: "/packages", label: "Packages" }] : []),
+    ...(can("payment_way.read") ? [{ href: "/settings/payments", label: "Payments" }] : []),
+  ];
+  if (settings.length) entries.push({ label: "Settings", icon: "settings", links: settings });
   return entries;
 }

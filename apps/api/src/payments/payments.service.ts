@@ -34,6 +34,7 @@ import { SMS_SENDER, type SmsSender } from "../messaging/sms-sender.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
+import { PaymentWaysService } from "../payment-ways/payment-ways.service.js";
 import { SERVING } from "../routers/router-journey.js";
 import { describeFailures, outcomeOk, RouterSync } from "../services/router-sync.js";
 import { generateCodes } from "../vouchers/voucher-codes.js";
@@ -97,6 +98,7 @@ export class PaymentsService {
     private readonly brand: BrandService,
     private readonly packages: PackagesService,
     private readonly audit: AuditLog,
+    private readonly ways: PaymentWaysService,
     @Inject(MOBILE_MONEY) private readonly gateway: MobileMoneyGateway,
     @Inject(SMS_SENDER) private readonly sms: SmsSender,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
@@ -498,6 +500,17 @@ export class PaymentsService {
         }),
       );
     }
+    // By mobile money the guest pays the venue's way, so a sale needs one and keeps what was read out.
+    const paidTo =
+      input.method === "mobile_money" ? (await this.ways.resolve(input.venueId)).way : null;
+    if (input.method === "mobile_money" && paidTo === null) {
+      throw new ConflictException(
+        apiError(
+          "NO_PAYMENT_WAY",
+          "This business has no way to pay by mobile money yet. Sell for cash, or add one in Settings › Payments.",
+        ),
+      );
+    }
     const [code = ""] = await generateCodes(1, (candidates) => this.takenCodes(candidates));
     const { phone } = input;
     const payment = await this.db.$transaction(async (tx) => {
@@ -527,6 +540,9 @@ export class PaymentsService {
           phone,
           amountTsh: pkg.priceTsh,
           recordedById: staff.membershipId,
+          paidThrough: paidTo?.through ?? null,
+          paidToNumber: paidTo?.number ?? null,
+          paidToName: paidTo?.name ?? null,
         },
       });
     });

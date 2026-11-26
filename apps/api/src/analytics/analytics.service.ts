@@ -226,13 +226,17 @@ export class AnalyticsService {
           reference: string | null;
           occurred_at: Date;
           by_name: string | null;
+          paid_through: string | null;
+          paid_to_number: string | null;
+          paid_to_name: string | null;
         }[]
       >`
       WITH ${REVENUE_EVENTS}
       SELECT e.id, e.source, e.kind, e.amount::numeric(14,2)::text AS amount,
              p.name AS package_name, v.name AS venue_name, e.reference, e.occurred_at,
-             u.name AS by_name
+             u.name AS by_name, pay.paid_through, pay.paid_to_number, pay.paid_to_name
       FROM revenue_events e
+      LEFT JOIN payments pay ON e.kind = 'sale' AND pay.id = e.id
       LEFT JOIN packages p ON p.id = e.package_id
       LEFT JOIN venues v ON v.id = e.venue_id
       LEFT JOIN memberships m ON m.id = e.actor_id
@@ -256,6 +260,10 @@ export class AnalyticsService {
         venueName: r.venue_name,
         reference: r.reference,
         by: r.by_name,
+        paidTo:
+          r.paid_through !== null && r.paid_to_number !== null && r.paid_to_name !== null
+            ? { through: r.paid_through, number: r.paid_to_number, name: r.paid_to_name }
+            : null,
         occurredAt: r.occurred_at.toISOString(),
       })),
       nextBefore: (() => {

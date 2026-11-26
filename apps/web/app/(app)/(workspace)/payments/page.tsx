@@ -116,7 +116,13 @@ export default function PaymentsPage() {
                     <span key="m">
                       {METHOD[p.source]}
                       <div className="sub">
-                        {p.reference ? <CopyText text={p.reference} /> : "At the counter"}
+                        {p.reference ? (
+                          <CopyText text={p.reference} />
+                        ) : p.paidTo ? (
+                          `At the counter, to ${p.paidTo.through} ${p.paidTo.number}`
+                        ) : (
+                          "At the counter"
+                        )}
                       </div>
                     </span>,
                     p.by ?? "Bought online",

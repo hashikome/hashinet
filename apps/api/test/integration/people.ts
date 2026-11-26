@@ -109,6 +109,18 @@ export async function scheduledSetup(db: PrismaClient, venueId: string): Promise
  * address answers nothing, so pushing a sold code fails quietly in the background.
  */
 export async function sellingVenue(db: PrismaClient, venueId: string): Promise<void> {
+  // Its business has a way to pay, so it can sell by mobile money too.
+  const { businessId } = await db.venue.findUniqueOrThrow({ where: { id: venueId } });
+  const business = await db.business.findUniqueOrThrow({ where: { id: businessId } });
+  if (business.defaultPaymentWayId === null) {
+    const way = await db.paymentWay.create({
+      data: { businessId, kind: "lipa_namba", number: "5123 4567", name: "TEST BUSINESS" },
+    });
+    await db.business.update({
+      where: { id: businessId },
+      data: { defaultPaymentWayId: way.id },
+    });
+  }
   const setUp = { ok: true, phases: [], blockers: [] };
   const { count } = await db.router.updateMany({
     where: { venueId },

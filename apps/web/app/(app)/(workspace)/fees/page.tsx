@@ -226,7 +226,7 @@ export default function FeesPage() {
         <div className="panel-head">
           <h2>Where businesses pay</h2>
         </div>
-        <p className="muted fee-lead">
+        <p className="muted panel-lead">
           Shown on every business&apos;s Billing and invoices, under How to pay. Changes show at
           once.
         </p>
@@ -250,7 +250,7 @@ export default function FeesPage() {
         <div className="panel-head">
           <h2>On invoices</h2>
         </div>
-        <p className="muted fee-lead">
+        <p className="muted panel-lead">
           Who issues HashiNet&apos;s invoices, under the account name, as every invoice prints it.
         </p>
         <form

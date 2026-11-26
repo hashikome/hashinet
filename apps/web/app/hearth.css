@@ -3016,8 +3016,13 @@ td {
   min-width: 0;
 }
 /* Fees' second form says what it is for before its fields. */
-.fee-lead {
+/* A line under a panel's heading that says how its contents work. */
+.panel-lead {
   margin-bottom: 14px;
+}
+/* A venue's way to pay: a choice as wide as what it reads. */
+.venue-way {
+  max-width: 480px;
 }
 /* The platform's fees: short fields, two to a row. */
 .fee-form {
@@ -3380,43 +3385,6 @@ fieldset.plain {
 }
 .sold-wifi b {
   font-size: 18px;
-}
-/* A venue's payment details: each way as whoever sells sees it; a form only to add or change one. */
-.pay-set {
-  display: grid;
-  gap: 14px;
-}
-.pay-set .ways {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-  align-items: start;
-}
-.pay-set .way {
-  display: grid;
-  gap: 6px;
-}
-.way-acts {
-  display: flex;
-  justify-content: flex-end;
-  gap: 4px;
-}
-.way-acts .btn {
-  background: var(--secondary);
-  border-color: transparent;
-}
-.way-form {
-  grid-column: 1 / -1;
-  max-width: 480px;
-  display: grid;
-  gap: 14px;
-  padding: 14px;
-  background: var(--secondary);
-  border-radius: var(--r);
-}
-.way-form h3 {
-  font-size: 14px;
-  font-weight: 600;
 }
 fieldset.field {
   border: 0;
@@ -3876,6 +3844,10 @@ td .btn.secondary:hover,
 td .btn.danger:hover,
 .btn.ghost:hover {
   background: color-mix(in oklab, var(--foreground) 9%, var(--secondary));
+}
+/* A row's destructive action reads red, so removing never looks as light as changing. */
+td .btn.danger {
+  color: var(--destructive);
 }
 
 /* Selecting rows for an action on many. */

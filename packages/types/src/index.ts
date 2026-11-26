@@ -99,22 +99,53 @@ export interface PortalSettingsRecord {
   updatedAt: Timestamp | null;
 }
 
+/** What a way to pay is; each asks for what a guest needs to pay it. */
+export type PaymentWayKind = "lipa_namba" | "mobile_number" | "bank_account";
+
 /**
- * One way a guest pays a venue by mobile money at its counter (ADR-0017, 4), as its owner or a
- * manager keeps it, and as whoever sells reads it out.
+ * One way guests pay a business by mobile money at its counters (ADR-0017, 4), as whoever sells reads
+ * it out.
  */
 export interface PaymentWay {
-  /** What it is paid through: a Lipa namba, a bank, a mobile money network. */
-  through: string;
-  /** The Lipa namba, mobile number or account number. */
+  kind: PaymentWayKind;
+  /** The mobile money network or the bank; null for a Lipa namba. */
+  provider: string | null;
+  /** The Lipa namba, mobile money number or account number. */
   number: string;
-  /** The name the payment shows to the guest. */
+  /** The name the payment shows to the guest, or the bank account's name. */
   name: string;
+  /** A bank account's branch, when given. */
+  branch: string | null;
+  /** For the business's own people, such as "Lodge reception". */
+  label: string | null;
+  /** What whoever sells reads first: "Lipa namba", the network or the bank. A sale keeps it. */
+  through: string;
 }
 
-/** `GET` and `PUT /api/venues/:id/payment-details`: a venue's ways to pay, in order, at most 3. */
-export interface VenuePaymentDetails {
-  ways: PaymentWay[];
+/** A business's way to pay, as Settings › Payments lists it. */
+export interface PaymentWayRecord extends PaymentWay {
+  id: string;
+  /** Venues with no choice of their own read it out; it can't be removed while it is. */
+  isDefault: boolean;
+  addedAt: string;
+  /** Who added it; null once they have left. */
+  addedBy: string | null;
+  /** The venues that read it out, their own choice or the default, among those the reader sees. */
+  venues: { id: string; name: string }[];
+}
+
+/** `GET /api/payment-ways`: a business's ways to pay, the default first, then oldest first. */
+export interface PaymentWayList {
+  ways: PaymentWayRecord[];
+}
+
+/** `GET` and `PUT /api/venues/:id/payment-way`: the way whoever sells at a venue reads out. */
+export interface VenuePaymentWay {
+  /** What its sellers read out: its own choice, or the business's default; null when the business
+   * has no way to pay yet, and mobile money can't be sold there. */
+  way: PaymentWay | null;
+  /** The venue's own choice; null when it uses the business's default. */
+  choiceId: string | null;
 }
 
 /** What a venue shows: its own branding, or the HashiNet default. */
@@ -1043,6 +1074,13 @@ export interface RevenueByVenue {
  * definition of revenue: every sale recorded or paid online, and every printed voucher once a
  * guest used it. Newest first, a page at a time.
  */
+/** Where a guest paid at the counter: what it is paid through, its number and its name. */
+export interface PaidTo {
+  through: string;
+  number: string;
+  name: string;
+}
+
 export interface PaymentsReceived {
   month: BusinessMonth;
   /** Whether `month` is this month, so its figures are "so far". */
@@ -1064,6 +1102,8 @@ export interface PaymentsReceived {
     reference: string | null;
     /** Who sold it or refunded it; null for a guest's own purchase on the portal. */
     by: string | null;
+    /** A mobile money sale at the counter: the way to pay that was read out, as it was then. */
+    paidTo: PaidTo | null;
     occurredAt: Timestamp;
   }[];
   /** Pass as `before` for the next page; null on the last. */
@@ -1095,7 +1135,12 @@ export const AUDIT_ACTIONS = [
   "venue.create",
   "venue.update",
   "venue.delete",
+  // Recorded before ways to pay moved to the business; kept so those rows still read.
   "venue.payment_details.update",
+  "venue.payment_way.choose",
+  "payment_way.create",
+  "payment_way.update",
+  "payment_way.delete",
   "router.create",
   "router.update",
   "router.delete",

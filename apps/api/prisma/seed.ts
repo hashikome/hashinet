@@ -114,6 +114,32 @@ if (!lodge || !cafe) throw new Error("Neema Hospitality's venues are missing.");
 await businessMember(neema.id, "grace@example.com", "Grace Wambura", "business_manager");
 await businessMember(neema.id, "daudi@example.com", "Daudi Masanja", "venue_manager", [lodge.id]);
 await businessMember(neema.id, "musa@example.com", "Musa Lyimo", "venue_operator", [cafe.id]);
+// Two tills, invented: the lodge's is the default, and the café reads out its own.
+if ((await db.paymentWay.count({ where: { businessId: neema.id } })) === 0) {
+  const reception = await db.paymentWay.create({
+    data: {
+      businessId: neema.id,
+      kind: "lipa_namba",
+      number: "5123 4567",
+      name: "NEEMA HOSPITALITY",
+      label: "Lodge reception",
+    },
+  });
+  const till = await db.paymentWay.create({
+    data: {
+      businessId: neema.id,
+      kind: "lipa_namba",
+      number: "6620 1188",
+      name: "KIJIWE CAFE",
+      label: "Café till",
+    },
+  });
+  await db.business.update({
+    where: { id: neema.id },
+    data: { defaultPaymentWayId: reception.id },
+  });
+  await db.venue.update({ where: { id: cafe.id }, data: { paymentWayId: till.id } });
+}
 
 await business(
   "Juma's home",

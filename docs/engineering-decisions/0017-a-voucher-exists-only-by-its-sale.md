@@ -2,7 +2,9 @@
 
 Status: accepted, 14 November 2026, by the owner, from the approved prototype
 (`prototypes/hearth-design/prototype`). Replaces printed batches and narrows ADR-0010, 6, and ADR-0013,
-4. Widened the same day: who refunds, how refunds are reported, and the fee on net sales.
+4. Widened the same day: who refunds, how refunds are reported, and the fee on net sales. Point 4
+narrowed on 26 November 2026, by the owner: ways to pay belong to the business, and each venue
+chooses one.
 
 ## Context
 
@@ -23,11 +25,16 @@ wapi?").
    and when are recorded by the sale itself.
 3. **Confirm sale means the money is in hand.** For cash, in the seller's hand; for mobile money,
    arrived at the venue's number. A sale is never undone.
-4. **Where to pay is on the sale.** For mobile money the sale shows the venue's payment details,
-   which its owner or a manager keeps on the venue: up to three ways, each what it is paid through (a
-   Lipa namba, a bank, a mobile money network), its number and the name the payment shows. Counter
-   sales by mobile money need no payment provider; HashiNet's own online payments (ADR-0010) are for
-   guests who buy without a seller.
+4. **Where to pay is on the sale.** For mobile money the sale shows the venue's way to pay. A
+   business keeps its ways to pay in Settings › Payments, entered once for every venue: each a Lipa
+   namba, a mobile money number on a network, or a bank account, with its number, the name the
+   payment shows and an optional label. Its owner and business managers keep the list; one is the
+   default, which can't be removed while it is. Each venue reads out the way its managers chose, or
+   the default; removing a way moves the venues that chose it to the default. A business with no way
+   yet sells by cash only, and the API refuses a mobile money sale there. The sale keeps the way that
+   was read out, so removing a way later leaves the record as it was. Counter sales by mobile money
+   need no payment provider; HashiNet's own online payments (ADR-0010) are for guests who buy
+   without a seller.
 5. **The guest's number belongs to the sale.** For mobile money the guest's mobile money number is
    required: the number that paid is enough to find the payment again, at a refund for instance, so a
    sale takes no confirmation code. For cash their mobile number is optional. Texting the code to it
@@ -58,7 +65,7 @@ wapi?").
   recorded once.
 - Every figure of sales (Payments, Today, analytics, billing) comes from one definition: sold, less
   refunded, by the day of each.
-- Payment details are the venue's own data, so the copy rule (never name the payment company) covers
+- Ways to pay are the business's own data, so the copy rule (never name the payment company) covers
   HashiNet's words, not what an owner enters.
 
 ## Evidence

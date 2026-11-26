@@ -323,18 +323,23 @@ model Business {
   feeLowerRateBp       Int            @default(250) @map("fee_lower_rate_bp")
   feeLowerRateAboveTsh Int            @default(2000000) @map("fee_lower_rate_above_tsh")
   feeMinimumTsh        Int            @default(5000) @map("fee_minimum_tsh")
+  /// The way to pay its venues use unless they choose another; set whenever it has a way. The
+  /// database refuses to remove it while it is the default.
+  defaultPaymentWayId  String?        @map("default_payment_way_id") @db.Uuid
   createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  venues       Venue[]
-  memberships  Membership[]
-  invitations  Invitation[]
-  packages     Package[]
-  auditLogs    AuditLog[]
-  issues       Issue[]
-  deviceBlocks DeviceBlock[]
-  invoices     Invoice[]
-  billPayments BillPayment[]
+  defaultPaymentWay PaymentWay?   @relation("BusinessDefaultWay", fields: [id, defaultPaymentWayId], references: [businessId, id], onDelete: NoAction, onUpdate: NoAction)
+  paymentWays       PaymentWay[]  @relation("BusinessWays")
+  venues            Venue[]
+  memberships       Membership[]
+  invitations       Invitation[]
+  packages          Package[]
+  auditLogs         AuditLog[]
+  issues            Issue[]
+  deviceBlocks      DeviceBlock[]
+  invoices          Invoice[]
+  billPayments      BillPayment[]
 
   @@map("businesses")
 }
@@ -368,6 +373,7 @@ model Membership {
   refunds          Refund[]
   deviceBlocks     DeviceBlock[]
   billPayments     BillPayment[]
+  paymentWays      PaymentWay[]
 
   @@unique([userId, scope, businessId])
   @@index([businessId])
@@ -492,7 +498,9 @@ model Venue {
   routers      Router[]
   issues       Issue[]
   packages     VenuePackage[]
-  paymentWays  VenuePaymentWay[]
+  /// The business's way to pay whoever sells here reads out; null uses the business's default.
+  paymentWayId String?           @map("payment_way_id") @db.Uuid
+  paymentWay   PaymentWay?       @relation(fields: [businessId, paymentWayId], references: [businessId, id], onDelete: NoAction, onUpdate: NoAction)
   onboarding   VenueOnboarding?
   brand        VenueBrand?
   vouchers     Voucher[]
@@ -735,6 +743,10 @@ model Payment {
   /// Where the guest was going, for after they are online.
   destination         String?
   recordedById        String?         @map("recorded_by_id") @db.Uuid
+  /// A mobile money sale at the counter: the way to pay that was read out, as it was then.
+  paidThrough         String?         @map("paid_through") @db.VarChar(60)
+  paidToNumber        String?         @map("paid_to_number") @db.VarChar(40)
+  paidToName          String?         @map("paid_to_name") @db.VarChar(120)
   /// When the provider stops waiting for the guest to approve.
   expiresAt           DateTime?       @map("expires_at") @db.Timestamptz(3)
   lastCheckedAt       DateTime?       @map("last_checked_at") @db.Timestamptz(3)
@@ -1120,26 +1132,42 @@ model VenueOnboardingLine {
   @@map("venue_onboarding_lines")
 }
 
-/// Where guests pay a venue by mobile money at its counter, as its owner or a manager keeps them
-/// (ADR-0017, 4): up to three ways, in order. Whoever sells there reads them out.
-model VenuePaymentWay {
-  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  venueId   String   @map("venue_id") @db.Uuid
-  /// Its place in the venue's list, from 0.
-  position  Int
-  /// What it is paid through: a Lipa namba, a bank, a mobile money network, as the owner names it.
-  through   String   @db.VarChar(60)
-  /// The Lipa namba, mobile number or account number.
-  number    String   @db.VarChar(40)
-  /// The name the payment shows to the guest.
-  name      String   @db.VarChar(120)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+/// What a way to pay is: each asks for what a guest needs to pay it.
+enum PaymentWayKind {
+  lipa_namba
+  mobile_number
+  bank_account
 
-  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  @@map("payment_way_kind")
+}
 
-  @@unique([venueId, position])
-  @@map("venue_payment_ways")
+/// Where guests pay a business by mobile money at its counters, as its owner or a business manager
+/// keeps them (ADR-0017, 4). Each venue reads out the one it chose, or the business's default.
+model PaymentWay {
+  id         String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId String         @map("business_id") @db.Uuid
+  kind       PaymentWayKind
+  /// The mobile money network or the bank; null for a Lipa namba (a CHECK holds it).
+  provider   String?        @db.VarChar(60)
+  /// The Lipa namba, mobile money number or account number.
+  number     String         @db.VarChar(40)
+  /// The name the payment shows to the guest, or the bank account's name.
+  name       String         @db.VarChar(120)
+  /// A bank account's branch, when the owner gives it.
+  branch     String?        @db.VarChar(60)
+  /// For the business's own people, such as "Lodge reception".
+  label      String?        @db.VarChar(60)
+  addedById  String?        @map("added_by_id") @db.Uuid
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  business  Business    @relation("BusinessWays", fields: [businessId], references: [id], onDelete: Cascade)
+  addedBy   Membership? @relation(fields: [addedById], references: [id], onDelete: SetNull)
+  defaultOf Business[]  @relation("BusinessDefaultWay")
+  venues    Venue[]
+
+  @@unique([businessId, id])
+  @@map("payment_ways")
 }
 
 /// How a refund went back to the guest.

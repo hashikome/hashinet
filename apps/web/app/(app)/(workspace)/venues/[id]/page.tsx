@@ -2,14 +2,14 @@
 
 import type { VenueResponse } from "@hashinet/types";
 import { use } from "react";
-import { PaymentDetails } from "@/components/hearth/payment-details";
+import { VenueWay } from "@/components/hearth/payment-ways";
 import { Head } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan } from "@/lib/session";
 
 /**
- * A business's venue (prototype `venue`): where it is, and where its guests pay at the counter.
+ * A business's venue (prototype `venue`): where it is, and the way to pay its counter reads out.
  * Its brand, prices and sites come with slice 5's venue page.
  */
 export default function VenuePage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +22,7 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
   return (
     <>
       <Head title={venue.name} sub={`${venue.area}, ${venue.region}`} />
-      <PaymentDetails venueId={venue.id} edit={can("payment_details.update")} />
+      <VenueWay venueId={venue.id} choose={can("venue.payment_way.choose")} />
     </>
   );
 }

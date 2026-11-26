@@ -475,11 +475,26 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     name, the branch and SWIFT code, and the issuer's postal address, office, email, incorporation
     number and TIN (`billing_settings`). Billing's How to pay lists them as the PDF does. Rendered and
     compared with the prototype; integration 193/193.
+  - [x] (2026-11-27) Ways to pay belong to the business (prototype `paydetails` and `venueWay`,
+    approved 26 November). `payment_ways` (kind, provider, number, name, branch, label, who added
+    it), `businesses.default_payment_way_id` and `venues.payment_way_id`, each a foreign key on
+    (business, way) so a venue can't point at another business's way; the default can't be deleted
+    while it is. Migration `20261127090000_business_payment_ways` moves each venue's ways to its
+    business once each (same number and name), keeps each venue's first as its choice, makes the
+    most used the default, and drops `venue_payment_ways`. `GET`/`POST`/`PUT`/`DELETE
+    /api/payment-ways` (`payment_way.read` for owners and managers, `payment_way.manage` for the
+    owner and business managers, since every venue may read a way out); `GET` and `PUT
+    /api/venues/:id/payment-way` (`venue.payment_way.read` for whoever sells,
+    `venue.payment_way.choose` for its managers). A mobile money sale with no way is refused
+    (`NO_PAYMENT_WAY`) and keeps the way read out (`payments.paid_through`, `paid_to_number`,
+    `paid_to_name`), shown in Payments. Screens: Settings › Payments, the venue's Payments panel,
+    the sell dialog. Test: `payment-ways.integration.test.ts`; integration 195/195.
   - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
     invoiced when added; the site opens once paid (owner, 26 November: an additional step). Adding
     one issues its invoice as an onboarding charge's is issued, due 7 days later, and the site
     opens once HashiNet records the payment ("Add site", never "Add and pay" until online payments
-    exist). Owners and managers add and remove sites; only the owner opens the slot's invoice. A
+    exist). Adding one stays on the venue's page: the site waits for payment there, and its invoice
+    joins the owner's bill issue (owner, 26 November). Owners and managers add and remove sites; only the owner opens the slot's invoice. A
     paid slot stays with the venue if its site is removed.
   - [ ] (g) Service access follows overdue bills, by itself up to read-only (owner, 26 November
     2026). ADR-0014's steps run automatically on a business's oldest overdue invoice: a grace
@@ -757,13 +772,14 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   26 November 2026). Rationale: the owner's common sense, that a business pays what is overdue to keep
   operating, without HashiNet's team chasing each one.
   Date/Author: 2026-11-26 / owner.
-- Decision: a business keeps its ways to pay in Settings › Payments (a table: paid through,
-  number, name; added and changed in the shared dialog), and each venue chooses the one its counter
-  uses, on its page; until it chooses, it uses the business's first (owner, 26 November 2026).
-  Replaces slice 2's per-venue details (ADR-0017, 4, to be narrowed): the details are entered once,
-  and a business with a till per branch still gets each venue's right. The sale shows the venue's
-  way. To build with a migration that moves each business's venues' ways to the business, without
-  duplicates, and sets each venue's choice to the way it had.
+- Decision: a business keeps its ways to pay in Settings › Payments (a table: each way typed as a
+  Lipa namba, a mobile money number or a bank account, with an optional label; added and changed in
+  the shared dialog), and each venue chooses the one its counter uses, on its page; until it
+  chooses, it uses the business's default, which can't be removed while it is, and removing another
+  asks first and moves its venues to the default. With no way, sales are cash only (owner, 26
+  November 2026). Replaces slice 2's per-venue details (ADR-0017, 4, narrowed): the details are
+  entered once, and a business with a till per branch still gets each venue's right. The sale shows
+  the venue's way and keeps it.
   Date/Author: 2026-11-26 / owner.
 - Decision: HashiNet's payment details are a platform setting on Fees, edited by the platform admin
   (owner, 26 November 2026); until they are set, Billing says to contact HashiNet.

@@ -166,8 +166,8 @@ venue's figures. A venue can use both.
   unreachable is retried until the guest has access, and is shown as access owed until then.
 - **A sale at the counter.** Anyone at the counter sells a voucher in one step, with the money in
   hand: they tap the package, choose cash or mobile money and confirm. For mobile money the guest
-  pays the venue directly, to one of up to three ways its owner or a manager sets (a Lipa namba, a
-  bank, a mobile money number), read out from the screen, and the seller enters the guest's mobile
+  pays the business directly, to the venue's way to pay (a Lipa namba, a mobile money number or a
+  bank account, from the ways the business keeps in Settings › Payments), read out from the screen, and the seller enters the guest's mobile
   money number; for cash the number is optional. HashiNet makes the voucher and shows its code, with a QR
   code that joins the venue's WiFi; the seller can also send it (by the phone's share
   sheet, or by SMS when the business has credits) or print it. The fullest record: who sold it, how

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Invoices download as PDFs that the API makes (slice 4, step e): one A4 page with who issues it,
+  the lines, payments and amount due, and how to pay, bank transfer first. Fees holds what they
+  print: the Lipa namba's name, the bank's branch and SWIFT code, and the issuer's details.
+- Ways to pay belong to the business (ADR-0017, 4, narrowed). Its owner and business managers keep
+  them in Settings › Payments, a table of Lipa nambas, mobile money numbers and bank accounts, each
+  with where it is used; one is the default, and removing another asks first and moves its venues
+  to the default. Each venue's managers choose the way its counter reads out. A mobile money sale
+  needs a way to pay and keeps the one read out, shown in Payments. Each venue's own ways moved to
+  its business, once each, the venue keeping the one it listed first. Remove buttons in tables read
+  red.
 - Getting paid (slice 4, steps a to d): HashiNet invoices each business on the 1st for the month
   before (5% of each venue's net sales, 2.5% above TSh 2,000,000, a prorated minimum of TSh 5,000 a
   serving venue), due on the 7th and emailed to the owner, and invoices a venue's package when it is

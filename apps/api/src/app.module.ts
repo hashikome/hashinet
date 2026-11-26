@@ -15,7 +15,7 @@ import { InvitationsModule } from "./invitations/invitations.module.js";
 import { IssuesModule } from "./issues/issues.module.js";
 import { OnboardingModule } from "./onboarding/onboarding.module.js";
 import { PackagesModule } from "./packages/packages.module.js";
-import { PaymentDetailsModule } from "./payment-details/payment-details.module.js";
+import { PaymentWaysModule } from "./payment-ways/payment-ways.module.js";
 import { PaymentsModule } from "./payments/payments.module.js";
 import { PortalModule } from "./portal/portal.module.js";
 import { RoutersModule } from "./routers/routers.module.js";
@@ -44,13 +44,13 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
       VenuesModule,
       PackagesModule,
       VouchersModule,
-      PaymentDetailsModule,
       SessionsModule,
       AnalyticsModule,
       PortalModule,
       BillingModule,
       BrandModule,
       GuestModule,
+      PaymentWaysModule,
       PaymentsModule,
     ],
     controllers: [HealthController],

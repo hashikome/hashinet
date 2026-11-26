@@ -5,7 +5,7 @@ import {
   type PackageRecord,
   type SaleResult,
   type VenuePackages,
-  type VenuePaymentDetails,
+  type VenuePaymentWay,
   type VenueRecord,
   type VenueSelling,
   wifiQrCode,
@@ -22,6 +22,7 @@ import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
 import { Dialog } from "./dialog";
 import { Icon } from "./icons";
+import { PayCard } from "./payment-ways";
 import { Button, ButtonLink, Field, Pill, type PillKind, useToast } from "./ui";
 import { VoucherCard } from "./voucher-card";
 
@@ -69,7 +70,7 @@ export function SellProvider({ children }: { children: ReactNode }) {
     if (!selling) return;
     for (const id of ids.split(",").filter(Boolean)) {
       prefetch("venue-packages", () => packagesAt(id), [id]);
-      prefetch("payment-details", () => paymentDetailsAt(id), [id]);
+      prefetch("venue-payment-way", () => paymentWayAt(id), [id]);
     }
   }, [selling, ids, prefetch]);
   const value = {
@@ -338,8 +339,8 @@ function PickStep({
 }
 
 const packagesAt = (venueId: string) => api.get<VenuePackages>(`/api/venues/${venueId}/packages`);
-const paymentDetailsAt = (venueId: string) =>
-  api.get<VenuePaymentDetails>(`/api/venues/${venueId}/payment-details`);
+const paymentWayAt = (venueId: string) =>
+  api.get<VenuePaymentWay>(`/api/venues/${venueId}/payment-way`);
 
 /**
  * Step 2: the check, centred like the voucher, with the price large. For mobile money it shows where
@@ -362,7 +363,7 @@ function CheckStep({
   const [phone, setPhone] = useState("");
   const { busy, errors, run } = useSubmit();
   const mobile = method === "mobile_money";
-  const details = useLoad("payment-details", () => paymentDetailsAt(venue.id), [venue.id]);
+  const here = useLoad("venue-payment-way", () => paymentWayAt(venue.id), [venue.id]);
   const confirm = async () => {
     let result: SaleResult | null = null;
     const ok = await run(async () => {
@@ -401,20 +402,15 @@ function CheckStep({
             ))}
           </div>
         </fieldset>
-        {!mobile ? null : details.error ? (
-          // A failed load is not "no details": the seller would send the guest nowhere.
-          <LoadFailed error={details.error} retry={details.reload} />
-        ) : details.data === null ? null : details.data.ways.length ? (
-          details.data.ways.map((w) => (
-            <div className="pay-to" key={`${w.through}${w.number}`}>
-              <span className="lbl">Pay to · {w.through}</span>
-              <b>{w.number}</b>
-              <small>{w.name}</small>
-            </div>
-          ))
+        {!mobile ? null : here.error ? (
+          // A failed load is not "no way to pay": the seller would send the guest nowhere.
+          <LoadFailed error={here.error} retry={here.reload} />
+        ) : here.data === null ? null : here.data.way ? (
+          <PayCard way={here.data.way} />
         ) : (
           <p className="note">
-            No payment details yet. An owner or manager adds them on the venue's page.
+            No way to pay by mobile money yet: an owner or business manager adds one in Settings ›
+            Payments. Until then, sell for cash.
           </p>
         )}
         <Field
@@ -442,7 +438,8 @@ function CheckStep({
         <Button
           kind="primary"
           busy={busy}
-          disabled={mobile && phone.replace(/\D/g, "").length < 10}
+          // By mobile money the guest needs somewhere to pay; the API refuses a sale without it too.
+          disabled={mobile && (!here.data?.way || phone.replace(/\D/g, "").length < 10)}
           onClick={confirm}
         >
           Confirm sale · {tsh(pkg.priceTsh)}

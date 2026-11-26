@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { BillingAccount, BillingOverview, InvoiceRecord, IssueList } from "@hashinet/types";
+import { addDays, businessDayOf } from "../../src/analytics/business-day.js";
 import { Invoices } from "../../src/billing/invoices.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
@@ -239,7 +240,6 @@ describe("an onboarding charge", () => {
     const read = async () =>
       ((await c.request("GET", "/api/billing/account")).body as BillingAccount).invoices;
     const [first] = await read();
-    const today = new Date().toISOString().slice(0, 10);
     expect(first).toMatchObject({
       kind: "onboarding",
       venueName: "Baraka's Cafe",
@@ -250,9 +250,8 @@ describe("an onboarding charge", () => {
         { label: "hAP ax²", onboardingKind: "mikrotik_router", amountTsh: 250_000 },
       ],
     });
-    const due = new Date(`${today}T12:00:00Z`);
-    due.setUTCDate(due.getUTCDate() + 7);
-    expect(first?.dueOn).toBe(due.toISOString().slice(0, 10));
+    // Due 7 business days on, counted in Dar es Salaam, not UTC.
+    expect(first?.dueOn).toBe(addDays(businessDayOf(new Date()), 7));
     expect(
       api.email.sent.slice(before).some((m) => m.subject.endsWith("Baraka's Cafe's onboarding")),
     ).toBe(true);
