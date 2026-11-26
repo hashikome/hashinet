@@ -751,7 +751,8 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   operating, without HashiNet's team chasing each one.
   Date/Author: 2026-11-26 / owner.
 - Decision: a business's payment details (the ways a seller reads out at the counter) are
-  business-wide, in Settings › Payment details, used at every venue, with no per-venue exception
+  business-wide, in Settings › Payments (a table: paid through, number, name; added and changed
+  in the shared dialog), used at every venue, with no per-venue exception
   (owner, 26 November 2026). Replaces slice 2's per-venue details (ADR-0017, 4, to be narrowed):
   a business takes money into one account, and HashiNet already tells its venues' sales apart. A
   business that banks per branch can be met when one asks. To build with a migration that keeps
