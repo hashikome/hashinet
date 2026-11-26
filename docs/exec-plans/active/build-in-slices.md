@@ -456,9 +456,19 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     nothing crossing a boundary. Simplify: one owner mailer, invoice summary and oldest-first
     order; the month helpers beside the business day's; the invoice page in one request; the API's
     default month, effective rate and collected share; a per-kind issue table. Integration 192/192.
-  - [ ] (e) Invoice PDFs: Download PDF on each invoice (owner, 26 November: an additional step).
+  - [ ] (e) Invoice PDFs: Download PDF on each invoice (owner, 26 November: an additional step;
+    prototype `invoice.html` reviewed and polished 26 November). One A4 page, black on white: the
+    issuer (Shikome Technology Limited, its postal address, office, public email and incorporation
+    number, kept with the billing settings; the company's TIN when it has one), billed to, issued and
+    due, a line per venue saying how its fee came about (or per package item), total, each payment,
+    amount due; "How to pay" with the reference while anything is due; the fee terms in the footer
+    on a month's invoice only. Overdue reads without colour.
   - [ ] (f) Extra-site slots: a venue's second and further open sites, TSh 10,000 each, once,
-    invoiced when added; the site opens once paid (owner, 26 November: an additional step).
+    invoiced when added; the site opens once paid (owner, 26 November: an additional step). Adding
+    one issues its invoice as an onboarding charge's is issued, due 7 days later, and the site
+    opens once HashiNet records the payment ("Add site", never "Add and pay" until online payments
+    exist). Owners and managers add and remove sites; only the owner opens the slot's invoice. A
+    paid slot stays with the venue if its site is removed.
   - [ ] (g) Service access follows overdue bills, by itself up to read-only (owner, 26 November
     2026). ADR-0014's steps run automatically on a business's oldest overdue invoice: a grace
     period from its due date, then read-only once it is 14 days overdue (no new vouchers, packages
