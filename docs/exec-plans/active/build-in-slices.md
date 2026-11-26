@@ -745,6 +745,12 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   26 November 2026). Rationale: the owner's common sense, that a business pays what is overdue to keep
   operating, without HashiNet's team chasing each one.
   Date/Author: 2026-11-26 / owner.
+- Decision: a business's payment details (the ways a seller reads out at the counter) are
+  business-wide, in Settings, used at every venue; a venue that takes money separately can have its
+  own instead, on its page (owner, 26 November 2026). Replaces slice 2's per-venue only details
+  (ADR-0017, 4, to be widened): most businesses enter them once. To prototype, then build in
+  slice 4 or 5 with a migration that keeps each venue's details as they are where they differ.
+  Date/Author: 2026-11-26 / owner.
 - Decision: HashiNet's payment details are a platform setting on Fees, edited by the platform admin
   (owner, 26 November 2026); until they are set, Billing says to contact HashiNet.
   Date/Author: 2026-11-26 / owner.
