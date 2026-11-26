@@ -8,6 +8,7 @@ import { ConflictException, Inject, Injectable, NotFoundException } from "@nestj
 import { z } from "zod";
 import type { Principal } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
+import { BillingSettings, feeTermsColumns } from "../billing/billing-settings.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -68,6 +69,7 @@ export class InvitationsService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(EMAIL_SENDER) private readonly email: EmailSender,
     private readonly onboarding: OnboardingService,
+    private readonly billing: BillingSettings,
   ) {}
 
   /** The pending invitations to start a business, newest first. */
@@ -272,6 +274,7 @@ export class InvitationsService {
    * so two acceptances of one link never both create a business. It never signs anyone in.
    */
   async acceptBusiness(input: z.infer<typeof acceptBusinessInput>): Promise<AcceptedInvitation> {
+    const { terms } = await this.billing.get();
     return this.db.$transaction(async (tx) => {
       const now = new Date();
       const digest = digestOf(input.token);
@@ -309,6 +312,8 @@ export class InvitationsService {
           name: input.business.name,
           region: input.business.region,
           area: input.business.area,
+          // Its own copy of the fee terms as they stand (ADR-0013, 3).
+          ...feeTermsColumns(terms),
           venues: { create: { ...input.venue } },
         },
         include: { venues: true },

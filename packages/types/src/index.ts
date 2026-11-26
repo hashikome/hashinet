@@ -135,6 +135,40 @@ export interface PortalSettingsResponse {
   settings: PortalSettingsRecord;
 }
 
+/**
+ * HashiNet's fee on a venue's net sales in a month (ADR-0013, 3): `rateBp` of it, `lowerRateBp`
+ * on the part above `lowerRateAboveTsh`, and at least `minimumTsh` a serving venue. Rates are basis
+ * points: 500 is 5%.
+ */
+export interface FeeTerms {
+  rateBp: number;
+  lowerRateBp: number;
+  lowerRateAboveTsh: number;
+  minimumTsh: number;
+}
+
+/** Where businesses pay HashiNet; a way left empty is not offered. */
+export interface HashiNetPayTo {
+  /** The mobile money business number. */
+  mobileMoney: string | null;
+  bankName: string | null;
+  bankAccount: string | null;
+  /** Whose account it is: Shikome Technology Limited. */
+  accountName: string;
+}
+
+/** `GET` and `PUT /api/billing/settings`: the terms new businesses start with, and where to pay. */
+export interface BillingSettingsRecord {
+  terms: FeeTerms;
+  payTo: HashiNetPayTo;
+  /** When the platform admin last saved; null while today's terms apply. */
+  updatedAt: Timestamp | null;
+}
+
+export interface BillingSettingsResponse {
+  settings: BillingSettingsRecord;
+}
+
 /** One of the person's memberships, for the account menu's workspaces. */
 export interface MembershipSummary {
   id: string;
@@ -917,6 +951,7 @@ export const AUDIT_ACTIONS = [
   "device.delete",
   "sale.record",
   "portal.defaults.update",
+  "fees.update",
   "brand.update",
   "brand.reset",
   "brand.image.upload",

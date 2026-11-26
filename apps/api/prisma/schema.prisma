@@ -310,15 +310,21 @@ model SignInCodeBudget {
 
 /// A business: the tenant. It owns its venues; its people are memberships in it.
 model Business {
-  id        String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  name      String         @db.VarChar(160)
+  id                   String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name                 String         @db.VarChar(160)
   /// One of Tanzania's 31 regions, chosen from the closed list in `@hashinet/types`.
-  region    String         @db.VarChar(40)
+  region               String         @db.VarChar(40)
   /// The area or street, as the owner types it.
-  area      String         @db.VarChar(160)
-  status    BusinessStatus @default(active)
-  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  area                 String         @db.VarChar(160)
+  status               BusinessStatus @default(active)
+  /// Its own copy of HashiNet's fee terms, made when it was added (ADR-0013, 3): a change to the
+  /// platform's terms reaches only businesses added after it. Rates in basis points (500 is 5%).
+  feeRateBp            Int            @default(500) @map("fee_rate_bp")
+  feeLowerRateBp       Int            @default(250) @map("fee_lower_rate_bp")
+  feeLowerRateAboveTsh Int            @default(2000000) @map("fee_lower_rate_above_tsh")
+  feeMinimumTsh        Int            @default(5000) @map("fee_minimum_tsh")
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   venues       Venue[]
   memberships  Membership[]
@@ -420,6 +426,27 @@ model UserPreference {
 
 /// The packages every new business starts with (ADR-0011, 10); a change reaches only businesses
 /// added after it.
+/// HashiNet's billing settings, one row (`singleton`): the fee terms a new business starts with,
+/// and where businesses pay HashiNet. Until the platform admin saves, the API answers with today's
+/// terms and no payment details.
+model BillingSetting {
+  id                   String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  singleton            Boolean  @unique @default(true)
+  feeRateBp            Int      @map("fee_rate_bp")
+  feeLowerRateBp       Int      @map("fee_lower_rate_bp")
+  feeLowerRateAboveTsh Int      @map("fee_lower_rate_above_tsh")
+  feeMinimumTsh        Int      @map("fee_minimum_tsh")
+  /// HashiNet's mobile money business number.
+  payMobileMoney       String?  @map("pay_mobile_money") @db.VarChar(40)
+  payBankName          String?  @map("pay_bank_name") @db.VarChar(80)
+  payBankAccount       String?  @map("pay_bank_account") @db.VarChar(40)
+  payAccountName       String   @map("pay_account_name") @db.VarChar(160)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("billing_settings")
+}
+
 model PlatformDefaultPackage {
   id              String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name            String   @db.VarChar(180)

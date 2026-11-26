@@ -378,11 +378,17 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
 - [ ] Slice 4: getting paid. Started 26 November 2026, with slice 2's router checks still open (owner:
   start slice 4, 26 November). Built on the local branch `slice-4`; the prototype's Payments, a
   business's bill, an invoice, the owner's Billing and Fees (approved 12 November).
-  - [ ] (a) Fee terms. The platform's fee terms (5%, 2.5% above TSh 2,000,000 a venue's month, a
+  - [x] (2026-11-26) (a) Fee terms. The platform's fee terms (5%, 2.5% above TSh 2,000,000 a venue's month, a
     TSh 5,000 minimum a venue) and HashiNet's payment details (a mobile money business number, a bank
     account), on Fees: the platform admin edits, managers read. Each business keeps its own copy of
     the fee terms, made when it is added; a change applies to businesses added after it. The
     migration gives every existing business today's terms.
+    Built: a business's terms are four columns on it (`fee_*`, defaulting to today's figures, so
+    the migration and any business made outside an invitation get them); `billing_settings` is
+    one row (checked), absent until the admin saves; `GET`/`PUT /api/billing/settings`
+    (`fees.read` admin and managers, `fees.update` the admin), audited with only what changed.
+    Accepting a business invitation copies the platform's terms. Fees in the platform's Settings,
+    with "Where businesses pay" added to the prototype first. Integration 178/178.
   - [ ] (b) Invoices. One definition of a venue's net sales in a Dar es Salaam month (vouchers sold,
     less refunds made that month, as Payments counts them). The fee per venue: marginal bands, never
     below zero; the minimum from the first full month after the venue's setup, prorated by the share

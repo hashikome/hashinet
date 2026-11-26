@@ -2,6 +2,7 @@ import { type DynamicModule, Module } from "@nestjs/common";
 import { AnalyticsModule } from "./analytics/analytics.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { AuthModule } from "./auth/auth.module.js";
+import { BillingModule } from "./billing/billing.module.js";
 import { BrandModule } from "./brand/brand.module.js";
 import { BusinessesModule } from "./businesses/businesses.module.js";
 import type { AppConfig } from "./config/config.js";
@@ -47,6 +48,7 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
       SessionsModule,
       AnalyticsModule,
       PortalModule,
+      BillingModule,
       BrandModule,
       GuestModule,
       PaymentsModule,

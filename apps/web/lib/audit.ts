@@ -37,6 +37,7 @@ export const ACTION_NAME: Record<AuditAction, string> = {
   "device.delete": "Removed a device",
   "sale.record": "Sold a voucher",
   "portal.defaults.update": "Changed the portal's defaults",
+  "fees.update": "Changed the fees or where businesses pay",
   "brand.update": "Changed a venue's branding",
   "brand.reset": "Restored a venue's default branding",
   "brand.image.upload": "Uploaded a logo or picture",
@@ -62,6 +63,7 @@ export const OUTCOME: Record<AuditOutcome, [string, PillKind]> = {
 /** What a target without a name is called: its kind. */
 const KIND: Record<string, string> = {
   voucher: "A voucher",
+  fees: "Fees",
   device: "A device",
   session: "A session",
   payment: "A payment",

@@ -3015,6 +3015,10 @@ td {
   gap: 16px;
   min-width: 0;
 }
+/* Fees' second form says what it is for before its fields. */
+.fee-lead {
+  margin-bottom: 14px;
+}
 /* The platform's fees: short fields, two to a row. */
 .fee-form {
   display: grid;

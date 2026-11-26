@@ -58,6 +58,10 @@ export const POLICY = {
   "portal.defaults.update": PLATFORM_STAFF,
   "brand.read": BUSINESS_ALL,
   "brand.update": BUSINESS_MANAGERS,
+  // What businesses pay HashiNet: its admin and managers read the terms and where to pay; only the
+  // admin changes them, and a change reaches only businesses added after it (ADR-0013, 3).
+  "fees.read": PLATFORM_STAFF,
+  "fees.update": ["admin"],
   // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.
   "business.read": PLATFORM_ALL,
   "business.invite": PLATFORM_STAFF,

@@ -69,6 +69,15 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
           ...(can("audit.read") ? [{ href: "/audit", label: "Audit log" }] : []),
         ],
       },
+      ...(can("fees.read")
+        ? [
+            {
+              label: "Settings",
+              icon: "settings" as const,
+              links: [{ href: "/fees", label: "Fees" }],
+            },
+          ]
+        : []),
     ];
   }
   const top: NavLink[] = [{ href: "/overview", label: "Overview", icon: "overview" }];
