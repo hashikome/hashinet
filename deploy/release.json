@@ -57,13 +57,14 @@
     "R2_SECRET_ACCESS_KEY_SECRET"
   ],
   "inputs": {
+    "INGRESS_NETWORK": "hashikome-edge",
     "BACKEND_NETWORK": "hashikome-network",
     "DATABASE_URL_SECRET": "hashinet_database_url_20261111_v1",
     "MIGRATION_DATABASE_URL_SECRET": "hashinet_migration_database_url_20261111_v1"
   },
   "requiredValues": {
     "PUBLIC_HOST": "hashinet.hashikome.com",
-    "INGRESS_NETWORK": "dokploy-network"
+    "INGRESS_NETWORK": "hashikome-edge"
   },
   "sharedInputs": ["BACKEND_NETWORK", "MIGRATION_DATABASE_URL_SECRET"]
 }
