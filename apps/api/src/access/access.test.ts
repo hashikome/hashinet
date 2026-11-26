@@ -104,6 +104,7 @@ describe("venue scope", () => {
     role: "venue_manager",
     venueIds: ["v1"],
     access: "full",
+    selling: true,
     ...over,
   });
 

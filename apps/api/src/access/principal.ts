@@ -28,6 +28,9 @@ export interface Principal {
    * in its scope. */
   venueIds: string[] | null;
   access: AccessLevel;
+  /** Whether its business may sell: false while it is read-only or suspended (ADR-0014, 2); always
+   * true on the platform. */
+  selling: boolean;
 }
 
 export const SETUP_DAYS = 7;

@@ -133,6 +133,7 @@ export class PaymentsService {
     const router = await this.guest.routerOf(input.router);
     enrichWideEvent({ "router.id": router.id, "venue.id": router.venueId });
     await this.guest.refuseBlocked(input.mac, router.venueId);
+    await this.guest.refuseWhilePaused(router.venueId);
 
     const sold = await this.packages.onSaleAt(router.venueId);
     const pkg = sold.find((p) => p.id === input.packageId) ?? null;

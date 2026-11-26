@@ -11,6 +11,7 @@ import type {
   Package,
   PortalSetting,
   Router,
+  ServiceAccess,
   Venue,
   Voucher,
   WifiSession,
@@ -104,7 +105,11 @@ export function portalSettingsRecord(row: PortalSetting): PortalSettingsRecord {
   };
 }
 
-export function venueRecord(row: Venue, routers: VenueRouter[]): VenueRecord {
+export function venueRecord(
+  row: Venue,
+  routers: VenueRouter[],
+  business: { access: ServiceAccess; accessSince: Date | null },
+): VenueRecord {
   return {
     id: row.id,
     name: row.name,
@@ -114,7 +119,11 @@ export function venueRecord(row: Venue, routers: VenueRouter[]): VenueRecord {
     area: row.area,
     status: row.status,
     routerCount: routers.length,
-    selling: sellingOf(routers),
+    // A business that can't sell sells nowhere, whatever its routers do.
+    selling:
+      business.access === "read_only" || business.access === "suspended"
+        ? { state: "paused", access: business.access, since: isoOrNull(business.accessSince) }
+        : sellingOf(routers),
     wifiName: wifiNameOf(row.name, routers),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),

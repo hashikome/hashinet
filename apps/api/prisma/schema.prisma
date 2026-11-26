@@ -323,14 +323,26 @@ model Business {
   feeLowerRateBp       Int            @default(250) @map("fee_lower_rate_bp")
   feeLowerRateAboveTsh Int            @default(2000000) @map("fee_lower_rate_above_tsh")
   feeMinimumTsh        Int            @default(5000) @map("fee_minimum_tsh")
+  /// What it may do (ADR-0014, 2), by its bills or held by hand; the API refuses selling while it is
+  /// read-only or suspended.
+  access               ServiceAccess  @default(enabled)
+  /// When `access` took effect.
+  accessSince          DateTime?      @map("access_since") @db.Timestamptz(3)
+  /// Set by hand: `access` holds until `accessHeldUntil` (a business day; null until changed), then
+  /// it follows its bills again. False: it follows its bills.
+  accessHeld           Boolean        @default(false) @map("access_held")
+  accessHeldUntil      DateTime?      @map("access_held_until") @db.Date
+  /// When its bills pause selling, while in a grace period that ends in read-only; null otherwise.
+  accessPausesOn       DateTime?      @map("access_pauses_on") @db.Date
   /// The way to pay its venues use unless they choose another; set whenever it has a way. The
   /// database refuses to remove it while it is the default.
   defaultPaymentWayId  String?        @map("default_payment_way_id") @db.Uuid
   createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  defaultPaymentWay PaymentWay?   @relation("BusinessDefaultWay", fields: [id, defaultPaymentWayId], references: [businessId, id], onDelete: NoAction, onUpdate: NoAction)
-  paymentWays       PaymentWay[]  @relation("BusinessWays")
+  defaultPaymentWay PaymentWay?           @relation("BusinessDefaultWay", fields: [id, defaultPaymentWayId], references: [businessId, id], onDelete: NoAction, onUpdate: NoAction)
+  paymentWays       PaymentWay[]          @relation("BusinessWays")
+  accessChanges     ServiceAccessChange[]
   venues            Venue[]
   memberships       Membership[]
   invitations       Invitation[]
@@ -360,20 +372,21 @@ model Membership {
   createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt  DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business         Business?         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business         Business?             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   venues           MembershipVenue[]
   sessions         Session[]
   invitationsSent  Invitation[]
-  issuesHeld       Issue[]           @relation("IssueHolder")
-  issueEvents      IssueEvent[]      @relation("IssueActor")
-  issueEventsTo    IssueEvent[]      @relation("IssueTo")
+  issuesHeld       Issue[]               @relation("IssueHolder")
+  issueEvents      IssueEvent[]          @relation("IssueActor")
+  issueEventsTo    IssueEvent[]          @relation("IssueTo")
   recordedPayments Payment[]
   auditLogs        AuditLog[]
   refunds          Refund[]
   deviceBlocks     DeviceBlock[]
   billPayments     BillPayment[]
   paymentWays      PaymentWay[]
+  accessChanges    ServiceAccessChange[]
 
   @@unique([userId, scope, businessId])
   @@index([businessId])
@@ -994,6 +1007,9 @@ enum IssueKind {
   venue_setup
   /// What a business owes HashiNet: its owner's alone, never claimed; it resolves once paid.
   bill_due
+  /// For its managers: selling pauses, or has paused, until the owner pays (ADR-0014, 2). Never
+  /// claimed; it resolves once the business sells again.
+  selling_paused
 
   @@map("issue_kind")
 }
@@ -1365,4 +1381,55 @@ model BillAllocation {
   @@unique([paymentId, invoiceId])
   @@index([invoiceId])
   @@map("bill_allocations")
+}
+
+/// What a business may do (ADR-0014, 2).
+enum ServiceAccess {
+  enabled
+  /// Overdue: everything works, and selling pauses at the end of it unless it is paid.
+  grace_period
+  /// Signs in and looks; sells nothing new, and its packages and prices stay as they are.
+  read_only
+  /// Only by the platform admin, by hand: the portal takes no new vouchers either.
+  suspended
+
+  @@map("service_access")
+}
+
+/// Why a business's access changed (ADR-0014, 4).
+enum ServiceAccessReason {
+  payment_overdue
+  payment_received
+  payment_arranged
+  policy_violation
+  customer_request
+  contract_ended
+  issue_resolved
+  other
+
+  @@map("service_access_reason")
+}
+
+/// Each change to a business's access, as its owners were told: by its bills (`byId` null) or by
+/// HashiNet's team by hand, with a note kept from the owners.
+model ServiceAccessChange {
+  id         String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId String              @map("business_id") @db.Uuid
+  access     ServiceAccess
+  /// Whether it was set by hand, to hold; false when its bills set it.
+  held       Boolean
+  heldUntil  DateTime?           @map("held_until") @db.Date
+  reason     ServiceAccessReason
+  /// For HashiNet's team only: never emailed.
+  note       String?             @db.VarChar(500)
+  /// Sent to its owners with the change.
+  message    String?             @db.VarChar(500)
+  byId       String?             @map("by_id") @db.Uuid
+  at         DateTime            @default(now()) @db.Timestamptz(3)
+
+  business Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  by       Membership? @relation(fields: [byId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, at])
+  @@map("service_access_changes")
 }

@@ -15,7 +15,7 @@ import { type Auth, BETTER_AUTH } from "../auth/create-auth.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
-import { type Action, allows, needsProtectedSession } from "./policy.js";
+import { type Action, allows, needsProtectedSession, pausedWhileReadOnly } from "./policy.js";
 import type { Principal } from "./principal.js";
 import { principalFromSession } from "./principal-from-session.js";
 
@@ -92,6 +92,14 @@ export class AccessGuard implements CanActivate {
     if (principal.access === "setup" && needsProtectedSession(action)) {
       throw new ForbiddenException(
         apiError("PROTECTION_REQUIRED", "Protect your sign-in before you sell or serve."),
+      );
+    }
+    if (!principal.selling && pausedWhileReadOnly(action)) {
+      throw new ForbiddenException(
+        apiError(
+          "SELLING_PAUSED",
+          "Selling is paused until the bill to HashiNet is paid. Vouchers already sold keep working.",
+        ),
       );
     }
     return true;

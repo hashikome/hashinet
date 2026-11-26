@@ -4,6 +4,7 @@ import type { BusinessDetail, IssueList } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect } from "react";
 import { BusinessMark } from "@/components/hearth/icons";
+import { AccessFact, ServiceAccessPanels } from "@/components/hearth/service-access";
 import { CopyText, Panel, Pill, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { longDate } from "@/lib/dates";
@@ -87,6 +88,7 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
               <dt>Venues</dt>
               <dd>{b.venues.length}</dd>
             </div>
+            <AccessFact access={b.serviceAccess} />
           </dl>
         </div>
       </aside>
@@ -146,6 +148,12 @@ export default function BusinessPage({ params }: { params: Promise<{ id: string 
           Guests are counts here; their devices, codes and sessions are {b.name}&apos;s own.
         </p>
       </Panel>
+      <ServiceAccessPanels
+        businessId={b.id}
+        name={b.name}
+        access={b.serviceAccess}
+        onChanged={data.reload}
+      />
       <Panel title="Owners and managers">
         <Table
           cols={[["Name"], ["Role"], ["Venues"]]}

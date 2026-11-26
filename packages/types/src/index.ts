@@ -291,6 +291,8 @@ export interface BillingAccount extends BillingProfile {
   owed: InvoiceRecord[];
   /** Every invoice, newest first. */
   invoices: InvoiceRecord[];
+  /** What it may do, as its bills or a hold set it (ADR-0014, 2). */
+  access: ServiceAccessState;
 }
 
 /**
@@ -431,9 +433,63 @@ export interface BusinessDetail {
     venues: string[];
   }[];
   venues: BusinessSummary["venues"];
+  serviceAccess: ServiceAccessDetail;
 }
 
-export type IssueKind = "router_offline" | "venue_package" | "venue_setup" | "bill_due";
+/** What a business may do (ADR-0014, 2). */
+export type ServiceAccess = "enabled" | "grace_period" | "read_only" | "suspended";
+export type ServiceAccessReason =
+  | "payment_overdue"
+  | "payment_received"
+  | "payment_arranged"
+  | "policy_violation"
+  | "customer_request"
+  | "contract_ended"
+  | "issue_resolved"
+  | "other";
+
+/**
+ * A business's access now: by its bills, or held by hand until a day (or until changed). The
+ * overdue facts are its bills', whether or not a hold overrides them.
+ */
+export interface ServiceAccessState {
+  access: ServiceAccess;
+  since: Timestamp | null;
+  held: boolean;
+  heldUntil: BusinessDay | null;
+  /** Its oldest overdue month of fees' due date; null when nothing is overdue. */
+  overdueSince: BusinessDay | null;
+  overdueTsh: number;
+  /** When its bills pause selling (14 days after the due date, for a business late before); null
+   * when they never will, or already have. */
+  pausesOn: BusinessDay | null;
+}
+
+/** One change to a business's access, as its owners were told; the note is HashiNet's team's. */
+export interface ServiceAccessChangeRecord {
+  id: string;
+  access: ServiceAccess;
+  held: boolean;
+  heldUntil: BusinessDay | null;
+  reason: ServiceAccessReason;
+  note: string | null;
+  message: string | null;
+  /** Who set it by hand; null when its bills did. */
+  by: string | null;
+  at: Timestamp;
+}
+
+export interface ServiceAccessDetail extends ServiceAccessState {
+  /** Newest first. */
+  changes: ServiceAccessChangeRecord[];
+}
+
+export type IssueKind =
+  | "router_offline"
+  | "venue_package"
+  | "venue_setup"
+  | "bill_due"
+  | "selling_paused";
 export type IssueStatus = "open" | "resolved";
 export type IssueAction =
   | "opened"
@@ -470,6 +526,9 @@ export interface IssueRecord {
   cause: RouterCondition | null;
   /** A bill issue: something owed is past its due date. */
   overdue: boolean;
+  /** A bill issue or a selling-paused one: its business's access, and when its bills pause
+   * selling; null for other kinds. */
+  access: { state: ServiceAccess; pausesOn: BusinessDay | null } | null;
   holder: IssuePerson | null;
   /** The reader holds it. */
   mine: boolean;
@@ -676,6 +735,8 @@ export type VenueStatus = "active" | "inactive" | "maintenance";
  */
 export type VenueSelling =
   | { state: "selling" }
+  /** Its business is read-only or suspended (ADR-0014, 2): nothing sells until it is restored. */
+  | { state: "paused"; access: "read_only" | "suspended"; since: Timestamp | null }
   | { state: "offline" | "no-internet" | "needs-attention"; since: Timestamp | null }
   | { state: "not-set-up" };
 
@@ -1180,6 +1241,7 @@ export const AUDIT_ACTIONS = [
   "invitation.revoke",
   "invitation.accept",
   "business.create",
+  "business.access",
   "onboarding.prefer",
   "onboarding.confirm",
   // Slice 3's payments by hand, before invoices; kept for the rows already in the log.
@@ -1269,6 +1331,11 @@ export interface GuestContext {
   internet: boolean;
   /** Whether guests can buy here; until then the portal is for vouchers. */
   mobileMoney: boolean;
+  /**
+   * Whether the business sells at all: not while it is read-only or suspended (ADR-0014, 2). The
+   * portal then shows no plans, and a voucher already sold still signs in.
+   */
+  selling: boolean;
   settings: Pick<
     BrandRecord,
     | "brandName"

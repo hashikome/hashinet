@@ -192,10 +192,19 @@ a serving venue from its first full month after setup, prorated by the days a ro
 when it is confirmed, due 7 days later. Each business keeps the terms it was added with; the
 platform admin sets those new businesses start with, and where businesses pay, on Fees. HashiNet's
 admin or a manager records what arrives, by mobile money, bank transfer or cash: on an invoice it
-settles that invoice, on the business the oldest first, never more than is owed. The owner sees
-their terms, what is due, how to pay and their invoices on Billing, and what they owe as an issue at
-the top of theirs; the owner is reminded on a due date left unpaid, and on request. HashiNet's team
-sees every business's bill on Payments.
+settles that invoice, on the business the oldest first or the invoice chosen, never more than is
+owed. The owner sees their terms, what is due and their invoices on Billing, each a PDF that says
+how to pay, and what they owe as an issue at the top of theirs; the owner is reminded on a due date
+left unpaid, and on request. HashiNet's team sees every business's bill on Payments.
+
+Overdue fees set a business's service access by themselves (ADR-0014, 2): a grace period from the
+day after a month's fees fall due, and read-only 14 days after the due date for a business late
+before (an earlier month paid after its due date); a first late bill stays in its grace period.
+Read-only sells nothing new, at the counter or on the portal, and changes no packages or prices;
+vouchers already sold keep working. The owner's bill issue says selling is paused; its managers get
+an issue of their own; the owner is emailed at each step, and paying restores it at once. HashiNet's
+team holds a business at a state by hand, for a time or until changed; only the platform admin
+suspends.
 
 Acceptance: a business's first monthly invoice is issued on the 1st; its payment is recorded; its
 owner sees it paid.

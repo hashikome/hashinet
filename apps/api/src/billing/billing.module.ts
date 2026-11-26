@@ -8,6 +8,7 @@ import { BillingController } from "./billing.controller.js";
 import { BillingSettings } from "./billing-settings.js";
 import { BILLING_STARTS, Invoices } from "./invoices.js";
 import { BillPayments } from "./payments.js";
+import { ServiceAccessService } from "./service-access.js";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -19,7 +20,11 @@ const HOUR = 60 * 60 * 1000;
 export class BillingJobs extends ScheduledJobs {
   protected readonly jobs: IntervalJob[];
 
-  constructor(@Inject(APP_CONFIG) config: AppConfig, invoices: Invoices) {
+  constructor(
+    @Inject(APP_CONFIG) config: AppConfig,
+    invoices: Invoices,
+    access: ServiceAccessService,
+  ) {
     super(config.jobsEnabled);
     this.jobs = [
       new IntervalJob("billing.invoices", HOUR, async () => {
@@ -30,6 +35,8 @@ export class BillingJobs extends ScheduledJobs {
         await invoices.remindDue();
         // What each owner owes, as an issue at the top of theirs.
         await invoices.syncBillIssues();
+        // Overdue bills move each business's access, up to read-only and back (ADR-0014, 2).
+        await access.sync();
       }),
     ];
   }
@@ -39,7 +46,7 @@ export class BillingJobs extends ScheduledJobs {
 @Module({
   imports: [IssuesModule],
   controllers: [BillingController],
-  providers: [BillingSettings, Invoices, BillPayments, BillingJobs],
-  exports: [BillingSettings, Invoices],
+  providers: [BillingSettings, Invoices, BillPayments, ServiceAccessService, BillingJobs],
+  exports: [BillingSettings, Invoices, ServiceAccessService],
 })
 export class BillingModule {}

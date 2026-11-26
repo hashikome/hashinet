@@ -1,10 +1,19 @@
-import type { BusinessDetail, BusinessList, BusinessSummary, Region } from "@hashinet/types";
-import { Controller, Get, NotFoundException, Param } from "@nestjs/common";
-import { Can } from "../access/access.guard.js";
+import type {
+  BusinessDetail,
+  BusinessList,
+  BusinessSummary,
+  Region,
+  ServiceAccessDetail,
+} from "@hashinet/types";
+import { Body, Controller, Get, NotFoundException, Param, Put } from "@nestjs/common";
+import { Can, CurrentPrincipal } from "../access/access.guard.js";
+import type { Principal } from "../access/principal.js";
+import { accessChangeInput, ServiceAccessService } from "../billing/service-access.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
 import { idParam } from "../http/id-param.js";
+import { parseInput } from "../http/validation.js";
 import { VENUE_FACTS, type VenueFacts, venueStage } from "../onboarding/onboarding-stage.js";
 import { routerCondition, worstCondition } from "../routers/router-journey.js";
 
@@ -21,7 +30,10 @@ type Counts = Map<string, { onlineNow: number; midSession: number }>;
  */
 @Controller("api/businesses")
 export class BusinessesController {
-  constructor(private readonly db: PrismaService) {}
+  constructor(
+    private readonly db: PrismaService,
+    private readonly access: ServiceAccessService,
+  ) {}
 
   @Get()
   @Can("business.read")
@@ -62,7 +74,7 @@ export class BusinessesController {
   @Get(":id")
   @Can("business.read")
   async get(@Param("id", idParam()) id: string): Promise<BusinessDetail> {
-    const [b, counts] = await Promise.all([
+    const [b, counts, serviceAccess] = await Promise.all([
       this.db.business.findUnique({
         where: { id },
         include: {
@@ -82,8 +94,11 @@ export class BusinessesController {
         },
       }),
       this.guestCounts({ venue: { businessId: id } }),
+      this.access.detail(id).catch(() => null),
     ]);
-    if (!b) throw new NotFoundException(apiError("NOT_FOUND", "That business does not exist."));
+    if (!b || !serviceAccess) {
+      throw new NotFoundException(apiError("NOT_FOUND", "That business does not exist."));
+    }
     const owner = b.memberships.find((m) => m.role === "owner");
     return {
       id: b.id,
@@ -100,7 +115,19 @@ export class BusinessesController {
         venues: m.venues.map((v) => v.venue.name),
       })),
       venues: b.venues.map((v) => venueOf(v, counts)),
+      serviceAccess,
     };
+  }
+
+  /** HashiNet's team holds a business's access by hand, or gives it back to its bills (ADR-0014, 4). */
+  @Put(":id/service-access")
+  @Can("business.access")
+  changeAccess(
+    @CurrentPrincipal() staff: Principal,
+    @Param("id", idParam()) id: string,
+    @Body() body: unknown,
+  ): Promise<ServiceAccessDetail> {
+    return this.access.change(staff, id, parseInput(accessChangeInput, body));
   }
 
   /**

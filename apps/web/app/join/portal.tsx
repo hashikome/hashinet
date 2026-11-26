@@ -402,7 +402,10 @@ export function GuestPortal() {
       return frame(
         <>
           <Say title="This voucher can't be used">
-            {stage.message} Use another voucher, or buy more time.
+            {stage.message}{" "}
+            {context.selling
+              ? "Use another voucher, or buy more time."
+              : "Vouchers aren't on sale here right now. If you have another, enter it."}
           </Say>
           <button
             className="g-btn"
@@ -414,9 +417,12 @@ export function GuestPortal() {
           >
             Enter another voucher
           </button>
-          <button className="g-btn alt" type="button" onClick={toPlans}>
-            {sells ? "Buy more time" : "See the plans"}
-          </button>
+          {/* A business that can't sell sells nowhere, the portal included (ADR-0014, 2). */}
+          {context.selling ? (
+            <button className="g-btn alt" type="button" onClick={toPlans}>
+              {sells ? "Buy more time" : "See the plans"}
+            </button>
+          ) : null}
         </>,
       );
     case "online":
@@ -609,14 +615,18 @@ export function GuestPortal() {
           </button>
           {terms("voucher")}
           <h2 className="g-sub">No voucher?</h2>
-          <p className="g-say">
-            <button className="g-link" type="button" onClick={toPlans}>
-              {sells
-                ? "See the plans and buy here with mobile money"
-                : "See the plans and where to buy"}
-            </button>
-            .
-          </p>
+          {context.selling ? (
+            <p className="g-say">
+              <button className="g-link" type="button" onClick={toPlans}>
+                {sells
+                  ? "See the plans and buy here with mobile money"
+                  : "See the plans and where to buy"}
+              </button>
+              .
+            </p>
+          ) : (
+            <p className="g-say">Vouchers aren&apos;t on sale here right now.</p>
+          )}
         </form>,
       );
   }

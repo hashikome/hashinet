@@ -489,7 +489,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     (`NO_PAYMENT_WAY`) and keeps the way read out (`payments.paid_through`, `paid_to_number`,
     `paid_to_name`), shown in Payments. Screens: Settings › Payments, the venue's Payments panel,
     the sell dialog. Test: `payment-ways.integration.test.ts`; integration 195/195.
-  - [ ] (g) Service access follows overdue bills, by itself up to read-only (owner, 26 November
+  - [x] (2026-11-27) (g) Service access follows overdue bills, by itself up to read-only (owner, 26 November
     2026). ADR-0014's steps run automatically on a business's oldest overdue invoice: a grace
     period from its due date, then read-only once it is 14 days overdue (no new vouchers, packages
     or prices; vouchers sold keep working). Suspension is a separate operation, never automatic:
@@ -509,6 +509,21 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     signs in. The business page's Service access says whether it is by its bills or set by hand,
     why, and each step with the owner's email; the team holds a state by hand for a time or until
     changed, then it follows its bills again. Widens ADR-0014.
+    Built: `billing/access-rule.ts` (the rule, unit-tested) and `billing/service-access.ts`, which the
+    hourly billing job and each recorded payment run: `businesses.access`, `access_since`,
+    `access_held`, `access_held_until`, `access_pauses_on` and `service_access_changes` (migration
+    `20261127140000_service_access`). Owners are emailed at each step (`access-emails.ts`, plain
+    text until the shared email standard is built). `PUT /api/businesses/:id/service-access`
+    (`business.access`, the platform's admin and managers; suspended by the admin alone) holds or
+    releases it. The guard refuses `sale.record`, `package.manage` and `package.venue.assign` while
+    the business can't sell (`SELLING_PAUSED`), the session drops the package actions, a venue's
+    `selling` is `paused`, and the guest portal sells nothing (`GuestContext.selling`). Issues: the
+    owner's `bill_due` reads "Selling is paused"; `selling_paused` for its managers. Screens: the
+    business page's Service access (fact, why, history, Change service access), Billing, the bill
+    issue, Sell's paused dialog and the portal. With it, an invoice is its PDF (the invoice page,
+    its lines and How to pay removed; Record payment's Settles). Not built: the fresh authenticator
+    code ADR-0014, 4 asks for on each change; platform sessions already need an authenticator.
+    Tests: `service-access.integration.test.ts`; integration 199/199.
   Accepted live: Paul's home's first monthly invoice is issued on 1 December (its router not yet
   serving, so 5% of its net sales and no minimum); Asha records its payment; the owner sees it paid.
   An onboarding charge can be confirmed, invoiced and paid live before then.
@@ -793,7 +808,7 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   rows are not links: each has Download PDF. Billing and the owner's bill issue drop How to pay,
   which every invoice carries. HashiNet's Record payment says which invoice it settles when more
   than one is open (the oldest first by default), which the invoice page's own Record payment did.
-  To build with (g): remove `/billing/invoices/[id]`, point invoice emails at Billing.
+  Built with (g); invoice emails already point at Billing.
   Date/Author: 2026-11-27 / owner.
 - Decision: HashiNet's payment details are a platform setting on Fees, edited by the platform admin
   (owner, 26 November 2026); until they are set, Billing says to contact HashiNet.
@@ -868,7 +883,7 @@ the router comes; Asha confirms the package and sets up its router; the venue se
 Backend: monthly invoices (5% of each venue's net sales, its vouchers sold less that month's refunds
 (ADR-0017, 9), at least TSh 5,000 a venue, 2.5% above TSh 2,000,000 a month), onboarding and router fees (ADR-0013), recording a payment (oldest invoice
 first), reminders, the fees the admin sets for new businesses.
-Screens: the platform's Payments, a business's invoices, the owner's Billing with How to pay and its
+Screens: the platform's Payments, a business's invoices, the owner's Billing with its
 invoices, Fees (the admin only).
 Accepted live: the test business's first invoice is issued; Asha records its payment; the owner sees
 it paid.

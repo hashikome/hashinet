@@ -1,7 +1,9 @@
 # ADR-0014: Service access, archiving, and the venue lifecycle
 
 Status: accepted, 5 November 2026, by the owner. The model follows Pigfarm's organization service
-access (`pigfarm/docs/designs/platform-administration.md`), adapted to WiFi.
+access (`pigfarm/docs/designs/platform-administration.md`), adapted to WiFi. Widened 26 and 27
+November 2026, by the owner: access follows overdue bills by itself, up to read-only and never
+further, and read-only stops the portal's sales too.
 
 ## Context
 
@@ -40,11 +42,22 @@ and what belongs to the business.
    Allowed changes: enabled to grace period, read-only or suspended; grace period to enabled,
    read-only or suspended; read-only to enabled or suspended; suspended to enabled. Anything else is an
    audited override. A business is never suspended on its first failed payment.
+
+   **By its bills.** A business's access follows its months' fees by itself (one-off charges never
+   count: each is paid before what it buys). Its oldest overdue month starts a grace period the day
+   after its due date, and read-only 14 days after it, but only for a business late before, one whose
+   earlier month was paid after its due date; a first late bill stays in its grace period until it is
+   paid. Paying what is overdue restores it at once. Nothing suspends a business by itself. Read-only
+   sells nothing new, at the counter or on the portal, and changes no packages or prices; vouchers
+   already sold keep working. The owner's bill issue says selling is paused; its managers get an
+   issue of their own, without the amount; operators find out from Sell. The owner is emailed at each
+   step.
 3. **Customers are not punished for the business's account.** They paid the business, so vouchers
    already sold keep working while the business is read-only, and sessions in progress run out
    rather than stop when it is suspended.
-4. **Who may change it.** The platform admin and platform managers start a grace period, restrict to
-   read-only, and restore. Only the platform admin suspends, applies an override, archives, or
+4. **Who may change it.** The platform admin and platform managers hold a business at a state by
+   hand, for a number of days or until changed, after which it follows its bills again, or give it
+   back to its bills: start a grace period, restrict to read-only, and restore. Only the platform admin suspends, applies an override, archives, or
    restores an archived business. Every change takes a reason (payment overdue, payment received,
    policy violation, customer request, contract ended, issue resolved, other), an internal note, and an
    optional message to the customer; it needs a fresh authenticator code, is written to the audit log

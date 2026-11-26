@@ -35,6 +35,7 @@ import { passedSetup } from "../routers/router-journey.js";
 import { BillingSettings, businessFeeTerms } from "./billing-settings.js";
 import { type Span, servedShare, venueFee } from "./fee.js";
 import { invoiceEmail, reminderEmail } from "./invoice-emails.js";
+import { ServiceAccessService } from "./service-access.js";
 
 /** HashiNet bills from November 2026, the first month its fees ran; no earlier month is invoiced. */
 export const BILLING_STARTS = "2026-11-01";
@@ -102,6 +103,7 @@ export class Invoices {
     private readonly audit: AuditLog,
     private readonly settings: BillingSettings,
     private readonly issues: IssuesService,
+    private readonly access: ServiceAccessService,
   ) {}
 
   /**
@@ -522,7 +524,7 @@ export class Invoices {
   async account(staff: Principal, businessId: string | null): Promise<BillingAccount> {
     const id = this.businessOf(staff, businessId);
     const now = new Date();
-    const [profile, rows, owed] = await Promise.all([
+    const [profile, rows, owed, access] = await Promise.all([
       this.profile(id),
       this.db.invoice.findMany({
         where: { businessId: id },
@@ -530,6 +532,7 @@ export class Invoices {
         orderBy: { issuedAt: "desc" },
       }),
       this.owing(id, now),
+      this.access.state(id, now),
     ]);
     const invoices = rows.map((row) => this.record(row, now));
     const sum = (list: InvoiceRecord[], f: (i: InvoiceRecord) => number) =>
@@ -544,6 +547,7 @@ export class Invoices {
       ),
       owed,
       invoices,
+      access,
     };
   }
 

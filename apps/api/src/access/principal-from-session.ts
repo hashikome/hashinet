@@ -1,4 +1,5 @@
 import type { Auth } from "../auth/create-auth.js";
+import { sellingStopped } from "../billing/access-rule.js";
 import type { PrismaClient } from "../database/client.js";
 import { accessLevel, type Principal, type SignInMethod } from "./principal.js";
 import { resolveMembership } from "./resolve-membership.js";
@@ -18,7 +19,12 @@ export async function principalFromSession(
   if (!session) return null;
   const membership = await resolveMembership(db, session);
   if (!membership) return null;
-  const passkeys = await db.passkey.count({ where: { userId: session.userId } });
+  const [passkeys, business] = await Promise.all([
+    db.passkey.count({ where: { userId: session.userId } }),
+    membership.businessId
+      ? db.business.findUnique({ where: { id: membership.businessId }, select: { access: true } })
+      : null,
+  ]);
   return {
     sessionId: session.id,
     userId: session.userId,
@@ -39,5 +45,6 @@ export async function principalFromSession(
       membershipStartedAt: membership.createdAt,
       now: new Date(),
     }),
+    selling: business === null || !sellingStopped(business.access),
   };
 }

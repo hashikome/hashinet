@@ -2969,45 +2969,6 @@ td {
 .audit-filters:has(#ab) .input {
   width: 100%;
 }
-/* An invoice reads top to bottom: what was charged, what came in, what is left. */
-.inv-lines {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-  font-size: 13.5px;
-}
-.inv-lines li {
-  display: grid;
-  grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto;
-  gap: 16px;
-  align-items: baseline;
-}
-.inv-lines .num {
-  text-align: right;
-}
-.inv-total,
-.inv-end {
-  font-weight: 600;
-}
-.inv-total {
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
-}
-.inv-end {
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
-}
-@media (max-width: 900px) {
-  .inv-lines li {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .inv-lines .sub {
-    grid-row: 2;
-    grid-column: 1 / -1;
-  }
-}
 /* Buying SMS credits: how many, then the button, on one line. */
 .stack-panels {
   display: flex;
@@ -4641,31 +4602,4 @@ body {
   font-size: 13px;
   line-height: 12px;
   top: 0.3em;
-}
-
-/* How to pay HashiNet: each way a column, each detail on its own labelled line, as an invoice. */
-.pay-ways {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 32px;
-  margin-bottom: 12px;
-}
-.pay-ways h3 {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-.pay-ways dl > div {
-  display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
-  gap: 12px;
-  padding: 3px 0;
-}
-.pay-ways dt {
-  color: var(--muted-fg);
-}
-@media (max-width: 700px) {
-  .pay-ways {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }

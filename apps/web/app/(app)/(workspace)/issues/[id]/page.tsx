@@ -4,7 +4,6 @@ import type { BillingAccount, IssueDetail, IssueMoved, VenueOnboarding } from "@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, use, useState } from "react";
-import { HowToPay } from "@/components/hearth/billing";
 import { Dialog } from "@/components/hearth/dialog";
 import {
   Attention,
@@ -17,9 +16,9 @@ import {
   useToast,
 } from "@/components/hearth/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
-import { owedList, owedTitle } from "@/lib/billing";
+import { owedText, owedTitle, pausedText, sellingPaused } from "@/lib/billing";
 import { when } from "@/lib/dates";
-import { actorOf, eventText, issueTitle, issueWhere, setupDay } from "@/lib/issues";
+import { actorOf, eventText, issueTitle, issueWhere, sellingText, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan, useSession } from "@/lib/session";
 import { Contact } from "./contact";
@@ -89,28 +88,48 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
   return (
     <>
       <Head
-        title={account ? owedTitle(account) : issueTitle(issue)}
-        sub={account ? owedList(account.owed) : sub}
+        title={account && !sellingPaused(account) ? owedTitle(account) : issueTitle(issue)}
+        sub={
+          account
+            ? sellingPaused(account)
+              ? pausedText(account)
+              : owedText(account)
+            : issue.kind === "selling_paused" && open
+              ? sellingText(issue)
+              : sub
+        }
         crumb={crumb}
         actions={open && workable(issue) ? <Holder detail={detail} reload={data.reload} /> : null}
       />
       {account ? (
-        <>
-          <Panel title="What to do">
-            <ul className="rows">
-              <li>
-                <div>
-                  <b>Pay what is due</b>
-                  <span className="sub">This closes once HashiNet records your payment.</span>
-                </div>
-                <Link className="btn primary" href="/billing">
-                  <span>Open Billing</span>
-                </Link>
-              </li>
-            </ul>
-          </Panel>
-          <HowToPay payTo={account.payTo} />
-        </>
+        <Panel title="What to do">
+          <ul className="rows">
+            <li>
+              <div>
+                <b>Pay what is due</b>
+                <span className="sub">This closes once HashiNet records your payment.</span>
+              </div>
+              <Link className="btn primary" href="/billing">
+                <span>Open Billing</span>
+              </Link>
+            </li>
+          </ul>
+        </Panel>
+      ) : null}
+      {issue.kind === "selling_paused" && open ? (
+        <Panel title="What to do">
+          <ul className="rows">
+            <li>
+              <div>
+                <b>The owner pays it</b>
+                <span className="sub">
+                  This closes once HashiNet records the payment. Until then, tell guests who ask
+                  that vouchers already sold keep working.
+                </span>
+              </div>
+            </li>
+          </ul>
+        </Panel>
       ) : null}
       {issue.kind === "router_offline" && open ? <RouterSteps detail={detail} lock={lock} /> : null}
       {issue.kind === "venue_package" && onboarding && open ? (

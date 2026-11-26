@@ -21,7 +21,7 @@ import {
 import { z } from "zod";
 import type { Principal } from "../access/principal.js";
 import { outranks } from "../access/rank.js";
-import { businessDayOf } from "../analytics/business-day.js";
+import { businessDayOf, dateOf } from "../analytics/business-day.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma, type PrismaClient } from "../generated/prisma/client.js";
 import type { IssueKind } from "../generated/prisma/enums.js";
@@ -36,15 +36,18 @@ export const PLATFORM_WORKSPACE = { scope: "platform", businessId: null } as con
 
 /**
  * Who sees each kind of issue, and whether people work it (claim, hand on, take over, note). A bill
- * is its business's owner's alone, and paying it is what closes it (ADR-0011, 3).
+ * is its business's owner's alone, and paying it is what closes it (ADR-0011, 3); selling paused by
+ * it is its managers' to know, the owner having the bill, and operators find out from Sell.
  */
-const KINDS: Record<IssueKind, { ownerOnly: boolean; worked: boolean }> = {
-  router_offline: { ownerOnly: false, worked: true },
-  venue_package: { ownerOnly: false, worked: true },
-  venue_setup: { ownerOnly: false, worked: true },
-  bill_due: { ownerOnly: true, worked: false },
+const KINDS: Record<IssueKind, { seenBy: "all" | "owner" | "managers"; worked: boolean }> = {
+  router_offline: { seenBy: "all", worked: true },
+  venue_package: { seenBy: "all", worked: true },
+  venue_setup: { seenBy: "all", worked: true },
+  bill_due: { seenBy: "owner", worked: false },
+  selling_paused: { seenBy: "managers", worked: false },
 };
-const OWNER_ONLY = (Object.keys(KINDS) as IssueKind[]).filter((k) => KINDS[k].ownerOnly);
+const kindsSeenBy = (seen: (seenBy: "all" | "owner" | "managers") => boolean) =>
+  (Object.keys(KINDS) as IssueKind[]).filter((k) => !seen(KINDS[k].seenBy));
 type Workspace = { scope: "platform" | "business"; businessId: string | null };
 
 /** The kinds an issue can be handed to a platform operator in: a venue's package is for the
@@ -69,7 +72,7 @@ const heldByOther = () =>
   );
 
 const include = {
-  business: { select: { id: true, name: true } },
+  business: { select: { id: true, name: true, access: true, accessPausesOn: true } },
   venue: {
     select: {
       id: true,
@@ -428,7 +431,15 @@ export class IssuesService {
       ...(staff.venueIds === null
         ? {}
         : { OR: [{ venueId: null }, { venueId: { in: staff.venueIds } }] }),
-      ...(staff.role === "owner" ? {} : { kind: { notIn: OWNER_ONLY } }),
+      kind: {
+        notIn: kindsSeenBy((seenBy) =>
+          seenBy === "all"
+            ? true
+            : seenBy === "owner"
+              ? staff.role === "owner"
+              : staff.role === "business_manager" || staff.role === "venue_manager",
+        ),
+      },
     };
   }
 
@@ -550,11 +561,20 @@ export class IssuesService {
       kind: row.kind,
       status: row.status,
       // A platform issue names the business through its venue.
-      business: row.business ?? row.venue?.business ?? null,
+      business: row.business
+        ? { id: row.business.id, name: row.business.name }
+        : (row.venue?.business ?? null),
       venue: row.venue ? { id: row.venue.id, name: row.venue.name } : null,
       router: row.router,
       cause: ROUTER_CONDITIONS.find((c) => c === row.cause) ?? null,
       overdue: row.kind === "bill_due" && row.cause === "overdue",
+      access:
+        (row.kind === "bill_due" || row.kind === "selling_paused") && row.business
+          ? {
+              state: row.business.access,
+              pausesOn: row.business.accessPausesOn ? dateOf(row.business.accessPausesOn) : null,
+            }
+          : null,
       holder: row.holder ? person(row.holder) : null,
       mine,
       canClaim: held && row.holderId === null,
@@ -575,7 +595,7 @@ export type IssueOpening = Workspace & {
   routerId: string | null;
   holderId: string | null;
   /** What took a router issue's router down, or a bill's "due" or "overdue"; null for other kinds. */
-  cause: RouterCondition | "due" | "overdue" | null;
+  cause: RouterCondition | "due" | "overdue" | "pauses" | "paused" | null;
 };
 
 /** Opens an issue unless one is open for its key in the workspace; idempotent. */

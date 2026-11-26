@@ -53,6 +53,7 @@ export const ACTION_NAME: Record<AuditAction, string> = {
   "invitation.revoke": "Revoked an invitation",
   "invitation.accept": "Accepted an invitation",
   "business.create": "Started a business",
+  "business.access": "Changed service access",
   "onboarding.prefer": "Chose how the router comes",
   "onboarding.confirm": "Confirmed a venue's package",
   // Before invoices: a package's payment recorded by hand.

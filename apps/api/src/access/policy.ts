@@ -77,6 +77,9 @@ export const POLICY = {
   // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.
   "business.read": PLATFORM_ALL,
   "business.invite": PLATFORM_STAFF,
+  // Service access by hand (ADR-0014, 4): the admin and managers; only the admin suspends, which
+  // the service checks.
+  "business.access": PLATFORM_STAFF,
   // A team's admin or owner and managers see and invite it; who may give which role is by rank
   // (access/rank.ts).
   "team.read": [...PLATFORM_STAFF, ...BUSINESS_MANAGERS],
@@ -101,6 +104,20 @@ export type Action = keyof typeof POLICY;
  * sign-in they may set up for 7 days, but not these (ADR-0011, 9).
  */
 const NEEDS_PROTECTION: ReadonlySet<Action> = new Set(["sale.record"]);
+
+/**
+ * Actions that sell or change what is sold: refused while the business is read-only or suspended
+ * (ADR-0014, 2). Refunds and everything else stay open.
+ */
+const PAUSED_WHILE_READ_ONLY: ReadonlySet<Action> = new Set([
+  "sale.record",
+  "package.manage",
+  "package.venue.assign",
+]);
+
+export function pausedWhileReadOnly(action: Action): boolean {
+  return PAUSED_WHILE_READ_ONLY.has(action);
+}
 
 export function allows(role: MembershipRole, action: Action): boolean {
   return (POLICY[action] as readonly MembershipRole[]).includes(role);

@@ -71,6 +71,7 @@ export default function BillPage({ params }: { params: Promise<{ businessId: str
             ownerName={a.owner?.name ?? null}
             owedTsh={a.dueTsh}
             says={owesLine(a.business.name, a.owed)}
+            owed={a.owed}
             onDone={load.reload}
           />
         </div>

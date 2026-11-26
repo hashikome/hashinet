@@ -8,7 +8,7 @@ import type {
   RouterCondition,
 } from "@hashinet/types";
 import { CONDITION, type PillKind } from "@/components/hearth/ui";
-import { calendarDay, dayName } from "./dates";
+import { calendarDay, dayName, longDate } from "./dates";
 import { formatDuration } from "./duration";
 import { tsh } from "./money";
 import { ROLE_NAME } from "./nav";
@@ -19,6 +19,7 @@ export const KIND_NAME: Record<IssueKind, string> = {
   venue_package: "Package",
   venue_setup: "Setting up",
   bill_due: "Billing",
+  selling_paused: "Selling",
 };
 
 /** The plans as an owner and the team read them (ADR-0013, 2): each one goes a step further. */
@@ -65,11 +66,31 @@ export function issueTitle(i: IssueRecord): string {
     case "venue_setup":
       return open ? `Set up ${venue}'s router` : `${venue} was set up`;
     case "bill_due":
-      return open
-        ? `HashiNet's bill is ${i.overdue ? "overdue" : "due"}`
-        : "HashiNet's bill was paid";
+      return !open
+        ? "HashiNet's bill was paid"
+        : paused(i)
+          ? "Selling is paused"
+          : `HashiNet's bill is ${i.overdue ? "overdue" : "due"}`;
+    case "selling_paused":
+      return !open
+        ? "Selling is back"
+        : paused(i)
+          ? "Selling is paused"
+          : `Selling pauses on ${i.access?.pausesOn ? longDate(calendarDay(i.access.pausesOn)) : "its date"}`;
   }
 }
+
+/** A manager's selling-paused issue, said plainly: why, and who pays (prototype `selling-paused`). */
+export function sellingText(i: IssueRecord): string {
+  const business = i.business?.name ?? "The business";
+  return paused(i)
+    ? `${business}'s bill to HashiNet is overdue, so nobody can sell until the owner pays it. Vouchers already sold keep working.`
+    : `${business}'s bill to HashiNet is overdue. Selling pauses then unless the owner pays it.`;
+}
+
+/** Its business sells nothing now: read-only or suspended (ADR-0014, 2). */
+const paused = (i: IssueRecord) =>
+  i.access?.state === "read_only" || i.access?.state === "suspended";
 
 /** Where it is: the venue, and its business when that names something else. */
 export function issueWhere(i: IssueRecord): string {
@@ -82,6 +103,7 @@ export function issuePill(i: IssueRecord): [string, PillKind] {
   if (i.status === "resolved") return ["Resolved", "ok"];
   if (i.stalled) return ["Stalled", "bad"];
   if (i.kind === "bill_due") return i.overdue ? ["Overdue", "bad"] : ["Due", "wait"];
+  if (i.kind === "selling_paused") return paused(i) ? ["Paused", "bad"] : ["Overdue", "wait"];
   return i.kind === "router_offline" ? ["Offline", "bad"] : ["Waiting", "wait"];
 }
 

@@ -43,13 +43,32 @@ export function owesLine(name: string, owed: InvoiceRecord[]): string {
   return `${name} owes ${tsh(total)}: ${owed.map((i) => `${invoiceWhat(i)} ${tsh(i.dueTsh)}`).join(", ")}. A payment settles the oldest bill first.`;
 }
 
+/** Its business sells nothing now: read-only or suspended (ADR-0014, 2). */
+export const sellingPaused = (a: BillingAccount) =>
+  a.access.access === "read_only" || a.access.access === "suspended";
+
 /** What an owner owes, as a title (prototype `bill-due`): what is overdue, or what is due by when. */
 export function owedTitle(a: BillingAccount): string {
   const first = a.owed[0];
-  if (a.overdueTsh > 0) return `${tsh(a.overdueTsh)} is overdue`;
+  if (a.overdueTsh > 0) {
+    return `${sellingPaused(a) ? "Selling is paused: " : ""}${tsh(a.overdueTsh)} is overdue`;
+  }
   return first ? `${tsh(a.dueTsh)} is due by ${fullDay(first.dueOn)}` : "Nothing is owed";
 }
 
-/** What is owed, invoice by invoice: "October 2026 fees: TSh 4,140 · …". */
-export const owedList = (owed: InvoiceRecord[]) =>
-  owed.map((i) => `${invoiceWhat(i)}: ${tsh(i.dueTsh)}`).join(" · ");
+/** What is owed, invoice by invoice, then what paying it keeps or brings back. */
+export function owedText(a: BillingAccount): string {
+  const list = a.owed.map((i) => `${invoiceWhat(i)}: ${tsh(i.dueTsh)}`).join(" · ");
+  const then = sellingPaused(a)
+    ? "Pay what is overdue to sell again."
+    : a.access.pausesOn
+      ? `Pay what is overdue by ${fullDay(a.access.pausesOn)} to keep selling.`
+      : "";
+  return then ? `${list}. ${then}` : list;
+}
+
+/** The owner's bill issue, once selling has paused (prototype `bill-due`): short, and what to do. */
+export function pausedText(a: BillingAccount): string {
+  const since = a.access.overdueSince ? ` since ${fullDay(a.access.overdueSince)}` : "";
+  return `Your bill of ${tsh(a.access.overdueTsh)} has been overdue${since}. Pay it to sell again. Vouchers already sold keep working.`;
+}

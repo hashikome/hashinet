@@ -1,9 +1,9 @@
 "use client";
 
-import { BILL_PAYMENT_METHODS, type BillPaymentMethod } from "@hashinet/types";
+import { BILL_PAYMENT_METHODS, type BillPaymentMethod, type InvoiceRecord } from "@hashinet/types";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { METHOD_NAME } from "@/lib/billing";
+import { invoiceWhat, METHOD_NAME } from "@/lib/billing";
 import { todayIso as today } from "@/lib/dates";
 import { tsh } from "@/lib/money";
 import { useSubmit } from "@/lib/submit";
@@ -13,11 +13,13 @@ import { Button, Field } from "./ui";
 /**
  * Record a payment (prototype `payForm`): the same dialog wherever it starts, a business's bill or
  * one invoice. It takes what actually arrived; a part payment leaves the rest due, and more than is
- * owed is refused. `invoiceId` settles that invoice; without it, the oldest first.
+ * owed is refused. `invoiceId` settles that invoice; without it, the oldest first, unless the
+ * dialog is given several open invoices and the payment names one (Settles).
  */
 export function RecordPayment({
   businessId,
   invoiceId,
+  owed = [],
   owedTsh,
   says,
   onClose,
@@ -25,6 +27,8 @@ export function RecordPayment({
 }: {
   businessId: string;
   invoiceId: string | null;
+  /** The business's open invoices, oldest first: with more than one, Settles offers each. */
+  owed?: InvoiceRecord[];
   owedTsh: number;
   /** What is owed, said once: one invoice names itself; several are listed. */
   says: string;
@@ -32,6 +36,10 @@ export function RecordPayment({
   onDone: () => void;
 }) {
   const { busy, errors, run } = useSubmit();
+  // Which invoice it settles: the oldest first, as usual, or the one the business paid for.
+  const [settles, setSettles] = useState<string | null>(invoiceId);
+  const chosen = owed.find((i) => i.id === settles) ?? null;
+  const owes = chosen ? chosen.dueTsh : owedTsh;
   const [amount, setAmount] = useState(String(owedTsh));
   const [receivedOn, setReceivedOn] = useState(today());
   const [method, setMethod] = useState<BillPaymentMethod>("mobile_money");
@@ -40,11 +48,13 @@ export function RecordPayment({
   const left =
     n <= 0
       ? "Enter the amount received"
-      : n > owedTsh
-        ? `That is ${tsh(n - owedTsh)} more than is owed`
-        : n === owedTsh
-          ? "Settles everything owed"
-          : `Leaves ${tsh(owedTsh - n)} still due`;
+      : n > owes
+        ? `That is ${tsh(n - owes)} more than ${chosen ? "it owes" : "is owed"}`
+        : n === owes
+          ? chosen
+            ? "Settles it"
+            : "Settles everything owed"
+          : `Leaves ${tsh(owes - n)} still due`;
   return (
     <Dialog label="Record a payment" onClose={onClose}>
       <h2>Record a payment</h2>
@@ -58,7 +68,7 @@ export function RecordPayment({
             () =>
               api.post("/api/billing/payments", {
                 businessId,
-                invoiceId,
+                invoiceId: settles,
                 amountTsh: n,
                 receivedOn,
                 method,
@@ -69,6 +79,27 @@ export function RecordPayment({
           if (sent) onDone();
         }}
       >
+        {invoiceId === null && owed.length > 1 ? (
+          <Field label="Settles" id="ps">
+            <select
+              id="ps"
+              className="input"
+              value={settles ?? ""}
+              onChange={(e) => {
+                const next = owed.find((i) => i.id === e.target.value) ?? null;
+                setSettles(next?.id ?? null);
+                setAmount(String(next ? next.dueTsh : owedTsh));
+              }}
+            >
+              <option value="">The oldest first</option>
+              {owed.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {`${i.number}, ${invoiceWhat(i)} · ${tsh(i.dueTsh)}`}
+                </option>
+              ))}
+            </select>
+          </Field>
+        ) : null}
         <Field
           label="Amount received (TSh)"
           id="pa"

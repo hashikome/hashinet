@@ -2,10 +2,10 @@
 
 import type { BillingAccount, BillingOverview, BillingRow, BillState } from "@hashinet/types";
 import { useState } from "react";
-import { BillActions, HowToPay, InvoicesPanel, percent } from "@/components/hearth/billing";
+import { BillActions, InvoicesPanel, percent } from "@/components/hearth/billing";
 import { Attention, Figs, Head, Panel, Pill, type PillKind, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
-import { fullDay, STATE as INVOICE_STATE, owedList, owedTitle } from "@/lib/billing";
+import { fullDay, STATE as INVOICE_STATE, owedText, owedTitle } from "@/lib/billing";
 import { monthName } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
@@ -18,15 +18,15 @@ export default function BillingPage() {
 }
 
 /**
- * Billing (prototype `ownerBilling`): how a business pays HashiNet. Its terms, what is due, how
- * to pay and its invoices. Only its owner sees it.
+ * Billing (prototype `ownerBilling`): what a business pays HashiNet. Its terms, what is due and
+ * its invoices, each a PDF that says how to pay. Only its owner sees it.
  */
 function OwnerBilling() {
   const { me } = useSession();
   const load = useLoad("billing-account", () => api.get<BillingAccount>("/api/billing/account"), [
     me.active.id,
   ]);
-  const head = <Head title="Billing" sub="How you pay for HashiNet" />;
+  const head = <Head title="Billing" sub="What you pay HashiNet, and your invoices" />;
   if (load.error) {
     return (
       <>
@@ -42,7 +42,7 @@ function OwnerBilling() {
       {head}
       {a.owed.length ? (
         <Attention bad={a.overdueTsh > 0} title={owedTitle(a)}>
-          {owedList(a.owed)}
+          {owedText(a)}
         </Attention>
       ) : null}
       <Panel title={`${percent(a.terms.rateBp)} of each venue's sales`}>
@@ -51,7 +51,6 @@ function OwnerBilling() {
           on sales above {tsh(a.terms.lowerRateAboveTsh)} a month.
         </p>
       </Panel>
-      <HowToPay payTo={a.payTo} />
       <InvoicesPanel invoices={a.invoices} />
     </>
   );

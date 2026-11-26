@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Overdue bills set a business's service access by themselves (slice 4, step g; ADR-0014 widened):
+  a grace period once a month's fees are overdue, then read-only 14 days after the due date for a
+  business late before. Read-only sells nothing new, at the counter or on the portal, and changes no
+  packages or prices; vouchers already sold keep working. The owner's bill issue says selling is
+  paused, its managers get an issue of their own, the owner is emailed at each step, and paying
+  restores it at once. HashiNet's team holds a business at a state by hand from its page, with its
+  history; only the platform admin suspends. An invoice is now its PDF: the invoice page and How to
+  pay are gone, and Record payment says which invoice it settles.
 - Invoices download as PDFs that the API makes (slice 4, step e): one A4 page with who issues it,
   the lines, payments and amount due, and how to pay, bank transfer first. Fees holds what they
   print: the Lipa namba's name, the bank's branch and SWIFT code, and the issuer's details.

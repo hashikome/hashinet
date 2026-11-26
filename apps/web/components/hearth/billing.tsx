@@ -1,11 +1,10 @@
 "use client";
 
-import type { BillingProfile, FeeTerms, HashiNetPayTo, InvoiceRecord } from "@hashinet/types";
+import type { BillingProfile, FeeTerms, InvoiceRecord } from "@hashinet/types";
 import { useState } from "react";
 import { api, messageOf } from "@/lib/api";
-import { fullDay, invoiceWhat, METHOD_NAME, STATE } from "@/lib/billing";
+import { fullDay, invoiceWhat, STATE } from "@/lib/billing";
 import { longDate } from "@/lib/dates";
-import { LINE_NAME } from "@/lib/issues";
 import { tsh } from "@/lib/money";
 import { useCan } from "@/lib/session";
 import { RecordPayment } from "./record-payment";
@@ -58,7 +57,10 @@ export function DownloadPdf({ invoice }: { invoice: InvoiceRecord }) {
   );
 }
 
-/** A business's invoices, newest first; a row opens its invoice (prototype `invoicesPanel`). */
+/**
+ * A business's invoices, newest first (prototype `invoicesPanel`). An invoice is its PDF: a row is
+ * not a link, and its one action downloads it.
+ */
 export function InvoicesPanel({ invoices }: { invoices: InvoiceRecord[] }) {
   return (
     <Panel title={`Invoices · ${invoices.length}`}>
@@ -67,10 +69,9 @@ export function InvoicesPanel({ invoices }: { invoices: InvoiceRecord[] }) {
           cols={[["Invoice"], ["Issued date"], ["Due date"], ["Total", true], ["Status"], [""]]}
           rows={invoices.map((i) => ({
             key: i.id,
-            href: `/billing/invoices/${i.id}`,
             cells: [
               <div key="n">
-                <div className="name">{i.number}</div>
+                <div className="name nowrap">{i.number}</div>
                 <div className="sub">{invoiceWhat(i)}</div>
               </div>,
               <span className="nowrap" key="i">
@@ -79,7 +80,9 @@ export function InvoicesPanel({ invoices }: { invoices: InvoiceRecord[] }) {
               <span className="nowrap" key="d">
                 {fullDay(i.dueOn)}
               </span>,
-              tsh(i.totalTsh),
+              <span className="nowrap" key="t">
+                {tsh(i.totalTsh)}
+              </span>,
               <InvoiceStatus invoice={i} key="s" />,
               <DownloadPdf invoice={i} key="pdf" />,
             ],
@@ -94,128 +97,16 @@ export function InvoicesPanel({ invoices }: { invoices: InvoiceRecord[] }) {
   );
 }
 
-/** What one line of an invoice charged for, read the way the owner reads it. */
-function lineDetail(i: InvoiceRecord["lines"][number], terms: FeeTerms): string {
-  if (i.onboardingKind) return i.label;
-  const sales = `${tsh(i.netSalesTsh ?? 0)} in sales`;
-  if (i.minimumTsh !== null) {
-    const served = i.servedBp !== null && i.servedBp < 10_000;
-    return `${sales}, ${tsh(i.minimumTsh)} monthly minimum${served ? `, for the ${Math.round((i.servedBp ?? 0) / 100)}% of the month it was served` : ""}`;
-  }
-  return (i.netSalesTsh ?? 0) > terms.lowerRateAboveTsh
-    ? `${sales} at ${percent(terms.rateBp)}, ${percent(terms.lowerRateBp)} above ${tsh(terms.lowerRateAboveTsh)}`
-    : `${sales} at ${percent(terms.rateBp)}`;
-}
-
 /**
- * An invoice read top to bottom (prototype `invoiceDetail`): what was charged, what came in, and
- * always last what is left to pay.
- */
-export function InvoiceLines({ invoice, terms }: { invoice: InvoiceRecord; terms: FeeTerms }) {
-  const row = (key: string, a: string, sub: string, amount: string, className = "") => (
-    <li className={className} key={key}>
-      <span>{a}</span>
-      <span className="sub">{sub}</span>
-      <span className="num nowrap">{amount}</span>
-    </li>
-  );
-  return (
-    <ul className="inv-lines">
-      {invoice.lines.map((l, n) =>
-        row(
-          `l${n}`,
-          l.onboardingKind ? LINE_NAME[l.onboardingKind] : l.label,
-          lineDetail(l, terms),
-          tsh(l.amountTsh),
-        ),
-      )}
-      {row("total", "Total", "", tsh(invoice.totalTsh), "inv-total")}
-      {invoice.payments.map((p, n) =>
-        row(
-          `p${n}`,
-          `Paid ${fullDay(p.receivedOn)}`,
-          [METHOD_NAME[p.method], p.reference].filter(Boolean).join(" · "),
-          `−${tsh(p.amountTsh)}`,
-        ),
-      )}
-      {row("end", "Amount due", "", tsh(invoice.dueTsh), "inv-end")}
-    </ul>
-  );
-}
-
-/** Where businesses pay HashiNet, from Fees, as the invoice lists it: bank first, each detail on its own line. */
-export function HowToPay({ payTo }: { payTo: HashiNetPayTo }) {
-  const ways: [string, [string, string | null][]][] = [
-    ...(payTo.bankAccount
-      ? [
-          [
-            "Bank transfer",
-            [
-              ["Account name", payTo.accountName],
-              ["Bank", payTo.bankName],
-              ["Branch", payTo.bankBranch],
-              ["Account number", payTo.bankAccount],
-              ["SWIFT code", payTo.bankSwift],
-            ],
-          ] as [string, [string, string | null][]],
-        ]
-      : []),
-    ...(payTo.mobileMoney
-      ? [
-          [
-            "Mobile money",
-            [
-              ["Lipa namba", payTo.mobileMoney],
-              ["Name", payTo.mobileMoneyName],
-            ],
-          ] as [string, [string, string | null][]],
-        ]
-      : []),
-  ];
-  return (
-    <Panel title="How to pay">
-      {ways.length ? (
-        <>
-          <div className="pay-ways">
-            {ways.map(([title, details]) => (
-              <div key={title}>
-                <h3>{title}</h3>
-                <dl>
-                  {details.map(([label, value]) =>
-                    value ? (
-                      <div key={label}>
-                        <dt>{label}</dt>
-                        <dd>
-                          <CopyText text={value} />
-                        </dd>
-                      </div>
-                    ) : null,
-                  )}
-                </dl>
-              </div>
-            ))}
-          </div>
-          <p className="muted small">
-            Use the invoice number as the reference. A payment settles the oldest invoice first.
-          </p>
-        </>
-      ) : (
-        <p className="muted">Contact HashiNet for how to pay: the details aren&apos;t set yet.</p>
-      )}
-    </Panel>
-  );
-}
-
-/**
- * Record payment and Remind, for HashiNet's admin and managers while something is owed. On an
- * invoice the payment settles it; on the business, the oldest first. `row` sits them in a table row.
+ * Record payment and Remind, for HashiNet's admin and managers while something is owed. The
+ * payment settles the oldest first, or the invoice chosen. `row` sits them in a table row.
  */
 export function BillActions({
   businessId,
   ownerName,
   owedTsh,
   says,
-  invoiceId = null,
+  owed = [],
   row = false,
   onDone,
 }: {
@@ -224,7 +115,8 @@ export function BillActions({
   owedTsh: number;
   /** What is owed, said once, at the top of the dialog. */
   says: string;
-  invoiceId?: string | null;
+  /** Its open invoices, oldest first: with more than one, the payment says which it settles. */
+  owed?: InvoiceRecord[];
   row?: boolean;
   onDone: () => void;
 }) {
@@ -264,7 +156,8 @@ export function BillActions({
       {paying ? (
         <RecordPayment
           businessId={businessId}
-          invoiceId={invoiceId}
+          invoiceId={null}
+          owed={owed}
           owedTsh={owedTsh}
           says={says}
           onClose={() => setPaying(false)}

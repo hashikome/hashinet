@@ -1,6 +1,7 @@
 import type { GuestContext, GuestSession, RedeemResult } from "@hashinet/types";
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -11,6 +12,7 @@ import {
 } from "@nestjs/common";
 import type { z } from "zod";
 import { ownerProtected } from "../access/owner-protected.js";
+import { sellingStopped } from "../billing/access-rule.js";
 import { BrandService } from "../brand/brand.service.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
@@ -71,12 +73,17 @@ export class GuestService {
     const [settings, sold, venue] = await Promise.all([
       this.brand.resolve(router.venueId),
       this.packages.onSaleAt(router.venueId),
-      this.db.venue.findUniqueOrThrow({ where: { id: router.venueId } }),
+      this.db.venue.findUniqueOrThrow({
+        where: { id: router.venueId },
+        include: { business: { select: { access: true } } },
+      }),
     ]);
+    const selling = !sellingStopped(venue.business.access);
     return {
       venueName: venue.name,
       internet: router.internetOk,
       mobileMoney: this.config.features.mobileMoney,
+      selling,
       settings: {
         brandName: settings.brandName,
         headline: settings.headline,
@@ -92,7 +99,8 @@ export class GuestService {
         logoUrl: settings.logoUrl,
         backgroundUrl: settings.backgroundUrl,
       },
-      packages: sold.map((p) => ({
+      // Nothing is on sale while its business can't sell.
+      packages: (selling ? sold : []).map((p) => ({
         id: p.id,
         name: p.name,
         durationMinutes: p.durationMinutes,
@@ -156,6 +164,19 @@ export class GuestService {
   }
 
   /** Refuses a device the venue's business has blocked; another business's block is not this one's. */
+  /** A guest buys nothing while the venue's business can't sell (ADR-0014, 2). */
+  async refuseWhilePaused(venueId: string): Promise<void> {
+    const venue = await this.db.venue.findUniqueOrThrow({
+      where: { id: venueId },
+      select: { business: { select: { access: true } } },
+    });
+    if (sellingStopped(venue.business.access)) {
+      throw new ConflictException(
+        apiError("SELLING_PAUSED", "Vouchers aren't on sale here right now."),
+      );
+    }
+  }
+
   async refuseBlocked(mac: string, venueId: string): Promise<void> {
     const block = await this.db.deviceBlock.findFirst({
       where: { device: { macAddress: mac }, business: { venues: { some: { id: venueId } } } },

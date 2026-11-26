@@ -45,10 +45,17 @@ interface Selling {
   can: boolean;
   /** No venue in reach has a router serving guests: Sell stays, quieter, and a tap says why. */
   paused: boolean;
+  /** Paused because the business's bill to HashiNet is overdue (ADR-0014, 2). */
+  billPaused: boolean;
   open: () => void;
 }
 
-const SellContext = createContext<Selling>({ can: false, paused: false, open: () => {} });
+const SellContext = createContext<Selling>({
+  can: false,
+  paused: false,
+  billPaused: false,
+  open: () => {},
+});
 export const useSell = () => useContext(SellContext);
 
 /**
@@ -76,6 +83,7 @@ export function SellProvider({ children }: { children: ReactNode }) {
   const value = {
     can: can("sale.record") && all.length > 0,
     paused: sellable.length === 0,
+    billPaused: all.some((v) => v.selling.state === "paused"),
     open: () => setOpen(true),
   };
   return (
@@ -107,7 +115,9 @@ export function SellButton() {
     >
       Sell a voucher
       <span className="sr" id="sell-paused">
-        Selling is paused: no router is serving guests.
+        {sell.billPaused
+          ? "Selling is paused: the bill to HashiNet is overdue."
+          : "Selling is paused: no router is serving guests."}
       </span>
     </Button>
   ) : (
@@ -117,7 +127,7 @@ export function SellButton() {
   );
 }
 
-type Paused = Exclude<VenueSelling["state"], "selling">;
+type Paused = Exclude<VenueSelling["state"], "selling" | "paused">;
 
 /** Each reason Sell can be paused, as the router's condition says it, and what to check. */
 const PAUSED: Record<
@@ -160,6 +170,33 @@ const PAUSED: Record<
 };
 
 /**
+ * Sell paused by the business's access (ADR-0014, 2): the owner pays to sell again; everyone else
+ * hears that the owner knows. Vouchers already sold keep working either way.
+ */
+function BillPausedDialog({ onClose }: { onClose: () => void }) {
+  const can = useCan();
+  const pays = can("billing.read");
+  return (
+    <Dialog label="Selling is paused" className="sell" onClose={onClose}>
+      <h2>Selling is paused</h2>
+      <p>The bill to HashiNet is overdue, so new vouchers can&apos;t be sold.</p>
+      <p className="note">
+        {pays ? "Pay what is overdue to sell again." : "The owner has been told."} Vouchers already
+        sold keep working.
+      </p>
+      <div className="dialog-actions">
+        {pays ? (
+          <ButtonLink kind="primary" href="/billing">
+            Open Billing
+          </ButtonLink>
+        ) : null}
+        <Button onClick={onClose}>Close</Button>
+      </div>
+    </Dialog>
+  );
+}
+
+/**
  * Why Sell is paused, and what to do: whoever runs the venue goes to its router or its setup; at the
  * counter the seller tells them. Selling comes back by itself once a router serves, and guests get
  * back the time an outage took.
@@ -171,6 +208,7 @@ function PausedDialog({ onClose }: { onClose: () => void }) {
   const venue = shown[0] ?? all[0];
   if (!venue || venue.selling.state === "selling") return null;
   const { selling } = venue;
+  if (selling.state === "paused") return <BillPausedDialog onClose={onClose} />;
   const words = PAUSED[selling.state];
   const down = selling.state !== "not-set-up";
   const runsIt = can("router.read") && me.active.role !== "venue_operator";

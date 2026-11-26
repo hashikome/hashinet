@@ -25,6 +25,7 @@ import { BillingSettings, billingSettingsInput } from "./billing-settings.js";
 import { invoicePdf } from "./invoice-pdf.js";
 import { Invoices } from "./invoices.js";
 import { BillPayments, recordPaymentInput } from "./payments.js";
+import { ServiceAccessService } from "./service-access.js";
 
 const accountQuery = z.object({ businessId: z.uuid().optional() });
 const remindInput = z.object({ businessId: z.uuid() });
@@ -45,6 +46,7 @@ export class BillingController {
     private readonly settings: BillingSettings,
     private readonly invoices: Invoices,
     private readonly payments: BillPayments,
+    private readonly access: ServiceAccessService,
   ) {}
 
   @Get("settings")
@@ -89,6 +91,8 @@ export class BillingController {
     const input = parseInput(recordPaymentInput, body);
     await this.payments.record(staff, input);
     await this.invoices.syncBillIssues(input.businessId);
+    // Paying what is overdue restores its access at once, not at the next hour.
+    await this.access.sync(input.businessId);
   }
 
   /** Emails the business's owners what they owe. */
