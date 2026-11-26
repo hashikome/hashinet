@@ -750,13 +750,13 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   26 November 2026). Rationale: the owner's common sense, that a business pays what is overdue to keep
   operating, without HashiNet's team chasing each one.
   Date/Author: 2026-11-26 / owner.
-- Decision: a business's payment details (the ways a seller reads out at the counter) are
-  business-wide, in Settings › Payments (a table: paid through, number, name; added and changed
-  in the shared dialog), used at every venue, with no per-venue exception
-  (owner, 26 November 2026). Replaces slice 2's per-venue details (ADR-0017, 4, to be narrowed):
-  a business takes money into one account, and HashiNet already tells its venues' sales apart. A
-  business that banks per branch can be met when one asks. To build with a migration that keeps
-  a business's details (its venues' ways, merged without duplicates).
+- Decision: a business keeps its ways to pay in Settings › Payments (a table: paid through,
+  number, name; added and changed in the shared dialog), and each venue chooses the one its counter
+  uses, on its page; until it chooses, it uses the business's first (owner, 26 November 2026).
+  Replaces slice 2's per-venue details (ADR-0017, 4, to be narrowed): the details are entered once,
+  and a business with a till per branch still gets each venue's right. The sale shows the venue's
+  way. To build with a migration that moves each business's venues' ways to the business, without
+  duplicates, and sets each venue's choice to the way it had.
   Date/Author: 2026-11-26 / owner.
 - Decision: HashiNet's payment details are a platform setting on Fees, edited by the platform admin
   (owner, 26 November 2026); until they are set, Billing says to contact HashiNet.
