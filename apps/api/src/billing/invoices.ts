@@ -5,10 +5,11 @@ import type {
   InvoiceState,
   OnboardingLineKind,
 } from "@hashinet/types";
-import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
 import { businessDayOf, businessDayStart } from "../analytics/business-day.js";
 import { REVENUE_EVENTS } from "../analytics/revenue-events.js";
+import { AuditLog } from "../audit/audit-log.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -19,7 +20,7 @@ import { captureFailure } from "../observability/telemetry.js";
 import { passedSetup } from "../routers/router-journey.js";
 import { businessFeeTerms } from "./billing-settings.js";
 import { type Span, servedShare, venueFee } from "./fee.js";
-import { invoiceEmail } from "./invoice-emails.js";
+import { invoiceEmail, reminderEmail } from "./invoice-emails.js";
 
 /** HashiNet bills from November 2026, the first month its fees ran; no earlier month is invoiced. */
 export const BILLING_STARTS = "2026-11-01";
@@ -60,6 +61,10 @@ const INVOICE_INCLUDE = {
   business: { select: { name: true } },
   venue: { select: { name: true } },
   lines: { orderBy: { position: "asc" } },
+  allocations: {
+    include: { payment: { select: { receivedOn: true, method: true, reference: true } } },
+    orderBy: { payment: { receivedOn: "asc" } },
+  },
 } as const satisfies Prisma.InvoiceInclude;
 type InvoiceRow = Prisma.InvoiceGetPayload<{ include: typeof INVOICE_INCLUDE }>;
 
@@ -74,6 +79,7 @@ export class Invoices {
     private readonly db: PrismaService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(EMAIL_SENDER) private readonly email: EmailSender,
+    private readonly audit: AuditLog,
   ) {}
 
   /**
@@ -215,6 +221,8 @@ export class Invoices {
     const existing = await this.db.invoice.findFirst({ where: { kind: "onboarding", venueId } });
     const dueOn = addDays(businessDayOf(onboarding.confirmedAt), CHARGE_DUE_DAYS);
     if (existing) {
+      // Anything paid on it, and it stays as it is: the package no longer changes.
+      if (await this.db.billAllocation.count({ where: { invoiceId: existing.id } })) return;
       if (total <= 0) {
         await this.db.invoice.delete({ where: { id: existing.id } });
         return;
@@ -312,10 +320,70 @@ export class Invoices {
       where: { businessId: invoice.businessId, role: "owner", status: "active" },
       select: { user: { select: { email: true } } },
     });
-    const record = this.record(invoice, 0, new Date());
+    const record = this.record(invoice, new Date());
     for (const o of owners) {
       void this.email
         .send(invoiceEmail(o.user.email, record, `${this.config.frontendOrigin}/billing`))
+        .catch(captureFailure);
+    }
+  }
+
+  /** What a business still owes, oldest first. */
+  private async owing(businessId: string, now: Date): Promise<InvoiceRecord[]> {
+    const rows = await this.db.invoice.findMany({
+      where: { businessId },
+      include: INVOICE_INCLUDE,
+      orderBy: [{ dueOn: "asc" }, { issuedAt: "asc" }],
+    });
+    return rows.map((row) => this.record(row, now)).filter((i) => i.dueTsh > 0);
+  }
+
+  /** Emails a business's owners what they owe, on request (ADR-0013, 6). */
+  async remind(staff: Principal, businessId: string): Promise<void> {
+    const now = new Date();
+    const owed = await this.owing(businessId, now);
+    if (owed.length === 0) {
+      throw new ConflictException(apiError("CONFLICT", "Nothing is owed."));
+    }
+    await this.sendReminder(businessId, owed);
+    await this.audit.record(staff, {
+      action: "billing.remind",
+      businessId,
+      venueId: null,
+      target: { type: "business", id: businessId },
+      change: {
+        before: {},
+        after: { owedTsh: owed.reduce((sum, i) => sum + i.dueTsh, 0) },
+      },
+    });
+  }
+
+  /** On its due date, an invoice left unpaid reminds its owners, once. */
+  async remindDue(now = new Date()): Promise<void> {
+    const today = new Date(`${businessDayOf(now)}T00:00:00Z`);
+    const rows = await this.db.invoice.findMany({
+      where: { dueRemindedAt: null, dueOn: { lte: today } },
+      include: INVOICE_INCLUDE,
+    });
+    for (const row of rows) {
+      const claimed = await this.db.invoice.updateMany({
+        where: { id: row.id, dueRemindedAt: null },
+        data: { dueRemindedAt: now },
+      });
+      if (claimed.count === 0) continue;
+      const invoice = this.record(row, now);
+      if (invoice.dueTsh > 0) await this.sendReminder(row.businessId, [invoice]);
+    }
+  }
+
+  private async sendReminder(businessId: string, owed: InvoiceRecord[]): Promise<void> {
+    const owners = await this.db.membership.findMany({
+      where: { businessId, role: "owner", status: "active" },
+      select: { user: { select: { email: true } } },
+    });
+    for (const o of owners) {
+      void this.email
+        .send(reminderEmail(o.user.email, owed, `${this.config.frontendOrigin}/billing`))
         .catch(captureFailure);
     }
   }
@@ -329,7 +397,7 @@ export class Invoices {
       orderBy: { issuedAt: "desc" },
     });
     const now = new Date();
-    return rows.map((row) => this.record(row, 0, now));
+    return rows.map((row) => this.record(row, now));
   }
 
   async get(staff: Principal, id: string): Promise<InvoiceRecord> {
@@ -337,7 +405,7 @@ export class Invoices {
     if (!row || (staff.scope === "business" && row.businessId !== staff.businessId)) {
       throw new NotFoundException(apiError("NOT_FOUND", "There is no such invoice."));
     }
-    return this.record(row, 0, new Date());
+    return this.record(row, new Date());
   }
 
   /** The business a reader asks about: an owner only ever their own. */
@@ -353,8 +421,9 @@ export class Invoices {
     return asked;
   }
 
-  private record(row: InvoiceRow, paidTsh: number, now: Date): InvoiceRecord {
+  private record(row: InvoiceRow, now: Date): InvoiceRecord {
     const dueOn = dayOf(row.dueOn);
+    const paidTsh = row.allocations.reduce((sum, a) => sum + a.amountTsh, 0);
     const lines: InvoiceLineRecord[] = row.lines.map((l) => ({
       label: l.label,
       venueId: l.venueId,
@@ -379,6 +448,12 @@ export class Invoices {
       dueTsh: row.totalTsh - paidTsh,
       state: invoiceState(row.totalTsh, paidTsh, dueOn, businessDayOf(now)),
       lines,
+      payments: row.allocations.map((a) => ({
+        receivedOn: dayOf(a.payment.receivedOn),
+        method: a.payment.method,
+        reference: a.payment.reference,
+        amountTsh: a.amountTsh,
+      })),
     };
   }
 }

@@ -3,7 +3,6 @@ import type {
   IssueKind,
   IssueRecord,
   OnboardingLineKind,
-  OnboardingPaidBy,
   OnboardingPlan,
   OnboardingStage,
   RouterCondition,
@@ -46,12 +45,6 @@ export const LINE_NAME: Record<OnboardingLineKind, string> = {
   isp_router: "ISP router",
   internet_line: "Internet line",
   other: "Other",
-};
-
-export const PAID_BY: Record<OnboardingPaidBy, string> = {
-  cash: "Cash",
-  mobile_money: "Mobile money",
-  bank_transfer: "Bank transfer",
 };
 
 /** An issue's title, open or resolved. */
@@ -127,7 +120,7 @@ function stepText(d: Record<string, string | number | boolean | null>): string {
     case "confirmed":
       return `Confirmed ${plan}: ${Number(d.totalTsh) > 0 ? tsh(Number(d.totalTsh)) : "nothing to charge"}`;
     case "paid":
-      return `Recorded ${tsh(Number(d.amountTsh))} paid by ${PAID_BY[d.by as OnboardingPaidBy]?.toLowerCase() ?? "hand"}`;
+      return `Paid in full: ${tsh(Number(d.amountTsh))}`;
     case "scheduled":
       return `Scheduled the setup for ${setupDay(String(d.date))}`;
     case "rescheduled":

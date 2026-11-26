@@ -1,8 +1,6 @@
 import {
-  ONBOARDING_DUE_DAYS,
   ONBOARDING_LINE_DESCRIBED,
   ONBOARDING_LINE_KINDS,
-  ONBOARDING_PAID_BY,
   ONBOARDING_PLANS,
   type OnboardingPlan,
   type VenueOnboarding,
@@ -15,7 +13,7 @@ import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { businessDayOf } from "../analytics/business-day.js";
 import { AuditLog } from "../audit/audit-log.js";
-import { Invoices } from "../billing/invoices.js";
+import { Invoices, invoiceState } from "../billing/invoices.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
@@ -24,9 +22,13 @@ import { IssuesService, PLATFORM_WORKSPACE } from "../issues/issues.service.js";
 import { onSaleWhere } from "../packages/on-sale.js";
 import { venueNotFound } from "../venues/venue-errors.js";
 import { beginOnboarding, packageKey, setupKey } from "./begin.js";
-import { totalOf, VENUE_FACTS, type VenueFacts, venueStage } from "./onboarding-stage.js";
-
-const DAY_MS = 86_400_000;
+import {
+  onboardingInvoice,
+  totalOf,
+  VENUE_FACTS,
+  type VenueFacts,
+  venueStage,
+} from "./onboarding-stage.js";
 
 export const preferInput = z.object({ plan: z.enum(ONBOARDING_PLANS).nullable() });
 const onboardingLine = z.object({
@@ -73,10 +75,6 @@ export const confirmInput = z
     });
   });
 
-export const paymentInput = z.object({
-  amountTsh: z.number().int().positive(),
-  by: z.enum(ONBOARDING_PAID_BY),
-});
 export const scheduleInput = z.object({
   date: z.iso.date(),
   goesId: z.uuid().nullable().default(null),
@@ -95,6 +93,9 @@ const withFacts = {
 
 type VenueRow = Prisma.VenueGetPayload<{ include: typeof withFacts }>;
 type Onboarding = NonNullable<VenueFacts["onboarding"]>;
+
+/** A DATE column as YYYY-MM-DD. */
+const dueOn = (date: Date) => date.toISOString().slice(0, 10);
 
 /**
  * A venue's way to serving guests (ADR-0013, 2), through two issues in turn: its package (the
@@ -147,7 +148,9 @@ export class OnboardingService {
     const venue = await this.venue(staff, venueId);
     const o = onboardingOf(venue);
     if (o.setupDate) throw notNow("The setup is scheduled; the package no longer changes.");
-    if (o.paidAt) throw notNow("It is paid; the package no longer changes.");
+    if ((onboardingInvoice(venue)?.paidTsh ?? 0) > 0) {
+      throw notNow("Payment has come in; the package no longer changes.");
+    }
     const total = totalOf(input.lines);
     await this.db.$transaction(async (tx) => {
       // The fee first, then the rest as agreed.
@@ -180,37 +183,6 @@ export class OnboardingService {
     });
     // Once it commits: its charge is invoiced and emailed, due 7 days later (ADR-0013, 6).
     await this.invoices.issueOnboarding(venueId);
-    return this.get(staff, venueId);
-  }
-
-  /** Recorded by the admin or a manager, whoever holds the issue; paid in full (ADR-0013, 6). */
-  async recordPayment(staff: Principal, venueId: string, input: z.infer<typeof paymentInput>) {
-    const venue = await this.venue(staff, venueId);
-    if (venueStage(venue) !== "pay") throw notNow("There is no payment to record.");
-    const total = totalOf(onboardingOf(venue).lines);
-    if (input.amountTsh < total) {
-      throw invalid("amountTsh", `must be the agreed total, TSh ${total}, paid in full`);
-    }
-    await this.db.$transaction(async (tx) => {
-      await tx.venueOnboarding.update({
-        where: { venueId },
-        data: { paidAt: new Date(), paidAmountTsh: input.amountTsh, paidBy: input.by },
-      });
-      await this.issues.step(
-        staff,
-        packageKey(venueId),
-        { step: "paid", amountTsh: input.amountTsh, by: input.by },
-        { anyone: true },
-        tx,
-      );
-      await this.audited(
-        staff,
-        "onboarding.pay",
-        venue,
-        { amountTsh: input.amountTsh, by: input.by },
-        tx,
-      );
-    });
     return this.get(staff, venueId);
   }
 
@@ -349,6 +321,7 @@ export class OnboardingService {
     // goes sees what to bring.
     const priced = !platform || manages;
     const total = totalOf(o.lines);
+    const invoice = onboardingInvoice(venue);
     const open = issue(packageKey(venue.id)) ?? issue(setupKey(venue.id));
     return {
       venue: { id: venue.id, name: venue.name },
@@ -367,15 +340,24 @@ export class OnboardingService {
               totalTsh: priced ? total : null,
               note: o.note,
               confirmedAt: o.confirmedAt.toISOString(),
-              dueOn:
-                priced && total > 0
-                  ? businessDayOf(new Date(o.confirmedAt.getTime() + ONBOARDING_DUE_DAYS * DAY_MS))
-                  : null,
             }
           : null,
-      paid:
-        priced && o.paidAt && o.paidAmountTsh !== null && o.paidBy
-          ? { amountTsh: o.paidAmountTsh, by: o.paidBy, at: o.paidAt.toISOString() }
+      invoice:
+        priced && invoice
+          ? {
+              id: invoice.id,
+              number: invoice.number,
+              totalTsh: invoice.totalTsh,
+              paidTsh: invoice.paidTsh,
+              dueTsh: invoice.totalTsh - invoice.paidTsh,
+              dueOn: dueOn(invoice.dueOn),
+              state: invoiceState(
+                invoice.totalTsh,
+                invoice.paidTsh,
+                dueOn(invoice.dueOn),
+                businessDayOf(new Date()),
+              ),
+            }
           : null,
       setupDate: o.setupDate?.toISOString().slice(0, 10) ?? null,
       completedAt: o.completedAt?.toISOString() ?? null,
@@ -383,8 +365,10 @@ export class OnboardingService {
       ready: { packagesOnSale },
       may: {
         prefer: allows(staff.role, "onboarding.prefer") && !o.confirmedAt,
-        confirm: manages && !o.setupDate && !o.paidAt && free(packageKey(venue.id)),
-        pay: manages && stage === "pay",
+        confirm:
+          manages && !o.setupDate && (invoice?.paidTsh ?? 0) === 0 && free(packageKey(venue.id)),
+        // Recorded on its invoice; whoever records payments may.
+        pay: allows(staff.role, "billing.record") && stage === "pay" && invoice !== null,
         schedule:
           manages &&
           ((stage === "schedule" && free(packageKey(venue.id))) ||
@@ -396,7 +380,7 @@ export class OnboardingService {
 
   private async audited(
     staff: Principal,
-    action: "onboarding.prefer" | "onboarding.confirm" | "onboarding.pay" | "onboarding.schedule",
+    action: "onboarding.prefer" | "onboarding.confirm" | "onboarding.schedule",
     venue: VenueRow,
     after: Record<string, string | number | null>,
     tx: Prisma.TransactionClient,

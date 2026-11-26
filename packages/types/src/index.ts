@@ -194,6 +194,16 @@ export interface InvoiceLineRecord {
   amountTsh: number;
 }
 
+/** Money that settled an invoice, or part of it. */
+export interface InvoicePaymentRecord {
+  /** The day it arrived, YYYY-MM-DD. */
+  receivedOn: string;
+  method: BillPaymentMethod;
+  reference: string | null;
+  /** The part of the payment that went to this invoice. */
+  amountTsh: number;
+}
+
 export interface InvoiceRecord {
   id: string;
   /** INV-2026-12-0001. */
@@ -213,6 +223,21 @@ export interface InvoiceRecord {
   dueTsh: number;
   state: InvoiceState;
   lines: InvoiceLineRecord[];
+  /** What settled it, oldest first. */
+  payments: InvoicePaymentRecord[];
+}
+
+/**
+ * `POST /api/billing/payments`: money a business paid, as it arrived. On an invoice it settles that
+ * invoice; on the business, the oldest invoice first. Never more than is owed.
+ */
+export interface RecordBillPayment {
+  businessId: string;
+  invoiceId: string | null;
+  amountTsh: number;
+  receivedOn: string;
+  method: BillPaymentMethod;
+  reference: string;
 }
 
 /** `GET /api/billing/invoices`: a business's invoices, newest first. */
@@ -389,9 +414,9 @@ export interface IssueDetail {
 /** How a venue's router comes (ADR-0013, 2): connect its own, install one, launch with a line. */
 export const ONBOARDING_PLANS = ["connect", "install", "launch"] as const;
 export type OnboardingPlan = (typeof ONBOARDING_PLANS)[number];
-/** How a by-hand payment for a venue's package arrived (until slice 4's invoices). */
-export const ONBOARDING_PAID_BY = ["cash", "mobile_money", "bank_transfer"] as const;
-export type OnboardingPaidBy = (typeof ONBOARDING_PAID_BY)[number];
+/** How money reached HashiNet, as whoever records it says. */
+export const BILL_PAYMENT_METHODS = ["mobile_money", "bank_transfer", "cash"] as const;
+export type BillPaymentMethod = (typeof BILL_PAYMENT_METHODS)[number];
 /** What a venue's onboarding is charged for, all on HashiNet's bill (ADR-0013, 2). */
 export const ONBOARDING_LINE_KINDS = [
   "onboarding_fee",
@@ -419,8 +444,6 @@ export interface OnboardingLine {
   /** Null for a reader who doesn't see what it costs: HashiNet's operators. */
   amountTsh: number | null;
 }
-/** A package's charge is due this many days after it is confirmed (ADR-0013, 2). */
-export const ONBOARDING_DUE_DAYS = 7;
 
 /**
  * Where a venue is on its way to serving guests, decided by the API: the owner chooses how the
@@ -454,10 +477,20 @@ export interface VenueOnboarding {
     totalTsh: number | null;
     note: string | null;
     confirmedAt: Timestamp;
-    /** The business day the charge is due; null when there is nothing to charge. */
-    dueOn: string | null;
   } | null;
-  paid: { amountTsh: number; by: OnboardingPaidBy; at: Timestamp } | null;
+  /**
+   * The package's invoice, for a reader who sees what it costs: null when there is nothing to
+   * charge. The setup is scheduled once it is paid.
+   */
+  invoice: {
+    id: string;
+    number: string;
+    totalTsh: number;
+    paidTsh: number;
+    dueTsh: number;
+    dueOn: string;
+    state: InvoiceState;
+  } | null;
   /** The agreed setup day, YYYY-MM-DD. */
   setupDate: string | null;
   completedAt: Timestamp | null;
@@ -1008,6 +1041,8 @@ export const AUDIT_ACTIONS = [
   "sale.record",
   "portal.defaults.update",
   "fees.update",
+  "billing.payment",
+  "billing.remind",
   "brand.update",
   "brand.reset",
   "brand.image.upload",
@@ -1019,6 +1054,7 @@ export const AUDIT_ACTIONS = [
   "business.create",
   "onboarding.prefer",
   "onboarding.confirm",
+  // Slice 3's payments by hand, before invoices; kept for the rows already in the log.
   "onboarding.pay",
   "onboarding.schedule",
 ] as const;

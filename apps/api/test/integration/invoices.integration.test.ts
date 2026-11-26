@@ -274,3 +274,154 @@ describe("an onboarding charge", () => {
     expect(await read()).toEqual([]);
   });
 });
+
+describe("payments", () => {
+  /** Two monthly invoices and an onboarding charge for the test business, oldest first. */
+  async function owing() {
+    const businessId = await testBusinessId(t.db);
+    const invoice = (
+      number: string,
+      kind: "monthly_fees" | "onboarding",
+      dueOn: string,
+      total: number,
+    ) =>
+      t.db.invoice.create({
+        data: {
+          number,
+          businessId,
+          kind,
+          period: kind === "monthly_fees" ? new Date(`${dueOn.slice(0, 8)}01T00:00:00Z`) : null,
+          issuedAt: new Date(`${dueOn}T06:00:00Z`),
+          dueOn: new Date(`${dueOn}T00:00:00Z`),
+          totalTsh: total,
+          lines: { create: [{ position: 0, label: "Home", amountTsh: total }] },
+        },
+      });
+    return {
+      businessId,
+      october: await invoice("INV-2026-11-0901", "monthly_fees", "2026-10-07", 10_000),
+      november: await invoice("INV-2026-12-0902", "monthly_fees", "2026-11-07", 20_000),
+      charge: await invoice("INV-2026-11-0903", "onboarding", "2026-11-20", 50_000),
+    };
+  }
+  const today = () => new Date().toISOString().slice(0, 10);
+  async function staffClient(role: "admin" | "manager" | "operator") {
+    await platformMember(t.db, { email: `${role}@example.com`, name: role, role });
+    const c = browser(api);
+    await enrollAuthenticatorFor(api, c, `${role}@example.com`);
+    return c;
+  }
+  const paidOf = async (id: string) =>
+    (await t.db.billAllocation.aggregate({ where: { invoiceId: id }, _sum: { amountTsh: true } }))
+      ._sum.amountTsh ?? 0;
+
+  test("on the business it settles the oldest first; a part leaves the rest due", async () => {
+    const { businessId, october, november, charge } = await owing();
+    const asha = await staffClient("manager");
+    const pay = (amountTsh: number) =>
+      asha.request("POST", "/api/billing/payments", {
+        businessId,
+        invoiceId: null,
+        amountTsh,
+        receivedOn: today(),
+        method: "bank_transfer",
+        reference: "FT26330XK12",
+      });
+    // Everything owed is TSh 80,000; more is refused, and nothing is recorded.
+    expect((await pay(80_001)).status).toBe(400);
+    expect((await pay(25_000)).status).toBe(204);
+    expect(await paidOf(october.id)).toBe(10_000);
+    expect(await paidOf(november.id)).toBe(15_000);
+    expect(await paidOf(charge.id)).toBe(0);
+    const audit = await t.db.auditLog.findFirstOrThrow({ where: { action: "billing.payment" } });
+    expect(audit).toMatchObject({ businessId });
+    expect(audit.change).toMatchObject({
+      after: { amountTsh: 25_000, settles: "INV-2026-11-0901, INV-2026-12-0902" },
+    });
+  });
+
+  test("on an invoice it settles that invoice, whatever is older", async () => {
+    const { businessId, october, charge } = await owing();
+    const admin = await staffClient("admin");
+    const pay = (amountTsh: number) =>
+      admin.request("POST", "/api/billing/payments", {
+        businessId,
+        invoiceId: charge.id,
+        amountTsh,
+        receivedOn: today(),
+        method: "mobile_money",
+        reference: "",
+      });
+    expect((await pay(50_001)).status).toBe(400);
+    expect((await pay(50_000)).status).toBe(204);
+    expect(await paidOf(charge.id)).toBe(50_000);
+    expect(await paidOf(october.id)).toBe(0);
+    // Paid: nothing more is taken on it.
+    expect((await pay(1)).status).toBe(409);
+    const tomorrow = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+    expect(
+      (
+        await admin.request("POST", "/api/billing/payments", {
+          businessId,
+          invoiceId: null,
+          amountTsh: 1_000,
+          receivedOn: tomorrow,
+          method: "cash",
+          reference: "",
+        })
+      ).status,
+    ).toBe(400);
+  });
+
+  test("only HashiNet's admin and managers record payments and remind", async () => {
+    const { businessId } = await owing();
+    const body = {
+      businessId,
+      invoiceId: null,
+      amountTsh: 1_000,
+      receivedOn: today(),
+      method: "cash",
+      reference: "",
+    };
+    const hamisi = await staffClient("operator");
+    expect((await hamisi.request("POST", "/api/billing/payments", body)).status).toBe(403);
+    expect((await hamisi.request("POST", "/api/billing/reminders", { businessId })).status).toBe(
+      403,
+    );
+    const c = await owner();
+    expect((await c.request("POST", "/api/billing/payments", body)).status).toBe(403);
+  });
+});
+
+describe("reminders", () => {
+  test("Remind emails the owner what is owed, and a due date left unpaid reminds once", async () => {
+    const c = await owner();
+    const home = await venue("Home", new Date(Date.UTC(2026, 9, 10)));
+    await sale(home.id, 200_000, dar(3));
+    const invoices = api.app.get(Invoices);
+    await invoices.issueMonth(NOV, AFTER);
+    const [invoice] = ((await c.request("GET", "/api/billing/invoices")).body as InvoiceList)
+      .invoices;
+
+    await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
+    const asha = browser(api);
+    await enrollAuthenticatorFor(api, asha, "asha@example.com");
+    const before = api.email.sent.length;
+    const businessId = await testBusinessId(t.db);
+    expect((await asha.request("POST", "/api/billing/reminders", { businessId })).status).toBe(204);
+    const sent = api.email.sent.slice(before).filter((m) => m.to === "owner@example.com");
+    expect(sent.at(-1)?.subject).toBe("Test Business owes HashiNet TSh 10,000");
+    expect(sent.at(-1)?.text).toContain(`${invoice?.number}, HashiNet's fees for November 2026`);
+    expect(await t.db.auditLog.count({ where: { action: "billing.remind", businessId } })).toBe(1);
+
+    // On 7 December, still unpaid: one reminder, however often the job runs.
+    const dueDay = new Date(Date.UTC(2026, 11, 7, 6));
+    const mark = api.email.sent.length;
+    await invoices.remindDue(new Date(Date.UTC(2026, 11, 6, 6)));
+    expect(api.email.sent.length).toBe(mark);
+    await invoices.remindDue(dueDay);
+    await invoices.remindDue(dueDay);
+    await Bun.sleep(50);
+    expect(api.email.sent.slice(mark).filter((m) => m.to === "owner@example.com")).toHaveLength(1);
+  });
+});

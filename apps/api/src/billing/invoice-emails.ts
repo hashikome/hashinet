@@ -50,3 +50,25 @@ export function invoiceEmail(to: string, invoice: InvoiceRecord, billing: string
     ].join("\n"),
   };
 }
+
+/** What a business owes, invoice by invoice, to its owner: on request, or on a due date left unpaid. */
+export function reminderEmail(to: string, owed: InvoiceRecord[], billing: string): EmailMessage {
+  const total = owed.reduce((sum, i) => sum + i.dueTsh, 0);
+  const name = owed[0]?.businessName ?? "Your business";
+  return {
+    to,
+    subject: `${name} owes HashiNet ${tsh(total)}`,
+    text: [
+      `${name} owes HashiNet ${tsh(total)}:`,
+      "",
+      ...owed.map(
+        (i) =>
+          `- ${i.number}, ${invoiceSubject(i)}: ${tsh(i.dueTsh)}, ${i.state === "overdue" ? "overdue since" : "due by"} ${longDay(i.dueOn)}`,
+      ),
+      "",
+      `See your invoices, and how to pay, on Billing: ${billing}`,
+      "",
+      "Use the invoice number as the reference when you pay. If you have paid already, thank you: it shows once HashiNet records it.",
+    ].join("\n"),
+  };
+}

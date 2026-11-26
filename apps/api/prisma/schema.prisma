@@ -334,6 +334,7 @@ model Business {
   issues       Issue[]
   deviceBlocks DeviceBlock[]
   invoices     Invoice[]
+  billPayments BillPayment[]
 
   @@map("businesses")
 }
@@ -366,6 +367,7 @@ model Membership {
   auditLogs        AuditLog[]
   refunds          Refund[]
   deviceBlocks     DeviceBlock[]
+  billPayments     BillPayment[]
 
   @@unique([userId, scope, businessId])
   @@index([businessId])
@@ -1055,35 +1057,23 @@ enum OnboardingPlan {
   @@map("onboarding_plan")
 }
 
-/// How a by-hand payment for a venue's package arrived, until slice 4's invoices replace it.
-enum OnboardingPaidBy {
-  cash
-  mobile_money
-  bank_transfer
-
-  @@map("onboarding_paid_by")
-}
-
 /// A venue's way to serving guests (ADR-0013, 2): the owner's preference, the package the team
 /// agreed on the call, its payment, the setup date, and when the first guest got online. The
 /// issues it moves through keep who did each step.
 model VenueOnboarding {
-  venueId       String            @id @map("venue_id") @db.Uuid
+  venueId     String          @id @map("venue_id") @db.Uuid
   /// When the owner chose; with no plan, they asked to talk first. Null: not asked yet.
-  preferredAt   DateTime?         @map("preferred_at") @db.Timestamptz(3)
-  preference    OnboardingPlan?
+  preferredAt DateTime?       @map("preferred_at") @db.Timestamptz(3)
+  preference  OnboardingPlan?
   /// What the team agreed on the call; its price is its lines.
-  plan          OnboardingPlan?
-  note          String?           @db.VarChar(1000)
-  confirmedAt   DateTime?         @map("confirmed_at") @db.Timestamptz(3)
-  paidAt        DateTime?         @map("paid_at") @db.Timestamptz(3)
-  paidAmountTsh Int?              @map("paid_amount_tsh")
-  paidBy        OnboardingPaidBy? @map("paid_by")
-  setupDate     DateTime?         @map("setup_date") @db.Date
+  plan        OnboardingPlan?
+  note        String?         @db.VarChar(1000)
+  confirmedAt DateTime?       @map("confirmed_at") @db.Timestamptz(3)
+  setupDate   DateTime?       @map("setup_date") @db.Date
   /// The first guest got online: the venue is set up.
-  completedAt   DateTime?         @map("completed_at") @db.Timestamptz(3)
-  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  completedAt DateTime?       @map("completed_at") @db.Timestamptz(3)
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   venue Venue                 @relation(fields: [venueId], references: [id], onDelete: Cascade)
   lines VenueOnboardingLine[]
@@ -1230,24 +1220,27 @@ enum InvoiceKind {
 /// An invoice, kept as issued: its lines are what was charged and are never recomputed. At most
 /// one a business a month (`period`), and one a venue for its onboarding (a partial index).
 model Invoice {
-  id         String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
   /// INV-2026-11-0001: the month it was issued in, then a number from `invoice_number_seq`.
-  number     String      @unique @db.VarChar(20)
-  businessId String      @map("business_id") @db.Uuid
-  kind       InvoiceKind
+  number        String      @unique @db.VarChar(20)
+  businessId    String      @map("business_id") @db.Uuid
+  kind          InvoiceKind
   /// The month billed, as its first day in Dar es Salaam: monthly fees only.
-  period     DateTime?   @db.Date
+  period        DateTime?   @db.Date
   /// The venue onboarded: an onboarding charge only. Kept if the venue goes; its line keeps the name.
-  venueId    String?     @map("venue_id") @db.Uuid
-  issuedAt   DateTime    @map("issued_at") @db.Timestamptz(3)
-  dueOn      DateTime    @map("due_on") @db.Date
-  totalTsh   Int         @map("total_tsh")
-  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  venueId       String?     @map("venue_id") @db.Uuid
+  issuedAt      DateTime    @map("issued_at") @db.Timestamptz(3)
+  dueOn         DateTime    @map("due_on") @db.Date
+  totalTsh      Int         @map("total_tsh")
+  /// When the owner was reminded on its due date, left unpaid: once.
+  dueRemindedAt DateTime?   @map("due_reminded_at") @db.Timestamptz(3)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  business Business      @relation(fields: [businessId], references: [id], onDelete: Restrict)
-  venue    Venue?        @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  lines    InvoiceLine[]
+  business    Business         @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  venue       Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  lines       InvoiceLine[]
+  allocations BillAllocation[]
 
   @@unique([businessId, period])
   @@index([businessId, issuedAt])
@@ -1276,4 +1269,50 @@ model InvoiceLine {
 
   @@unique([invoiceId, position])
   @@map("invoice_lines")
+}
+
+/// How money reached HashiNet.
+enum BillPaymentMethod {
+  mobile_money
+  bank_transfer
+  cash
+
+  @@map("bill_payment_method")
+}
+
+/// Money a business paid HashiNet, recorded by HashiNet's admin or a manager as it arrived
+/// (ADR-0013, 6), and what it settled: the invoice it was recorded on, or the oldest first.
+model BillPayment {
+  id           String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId   String            @map("business_id") @db.Uuid
+  amountTsh    Int               @map("amount_tsh")
+  /// The day it arrived, in Dar es Salaam.
+  receivedOn   DateTime          @map("received_on") @db.Date
+  method       BillPaymentMethod
+  reference    String?           @db.VarChar(80)
+  /// Who recorded it; null for a payment carried over from before invoices.
+  recordedById String?           @map("recorded_by_id") @db.Uuid
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  business    Business         @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  recordedBy  Membership?      @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+  allocations BillAllocation[]
+
+  @@index([businessId, receivedOn])
+  @@map("bill_payments")
+}
+
+/// The part of a payment that settled one invoice.
+model BillAllocation {
+  id        String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  paymentId String @map("payment_id") @db.Uuid
+  invoiceId String @map("invoice_id") @db.Uuid
+  amountTsh Int    @map("amount_tsh")
+
+  payment BillPayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@unique([paymentId, invoiceId])
+  @@index([invoiceId])
+  @@map("bill_allocations")
 }

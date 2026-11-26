@@ -6,7 +6,7 @@ const none: OnboardingFacts = {
   preferredAt: null,
   confirmedAt: null,
   totalTsh: null,
-  paidAt: null,
+  paid: false,
   setupDate: null,
   completedAt: null,
   routerReached: false,
@@ -20,7 +20,7 @@ describe("onboardingStage", () => {
     expect(onboardingStage(chosen)).toBe("confirm");
     const agreed = { ...chosen, confirmedAt: at, totalTsh: 270_000 };
     expect(onboardingStage(agreed)).toBe("pay");
-    const paid = { ...agreed, paidAt: at };
+    const paid = { ...agreed, paid: true };
     expect(onboardingStage(paid)).toBe("schedule");
     const scheduled = { ...paid, setupDate: at };
     expect(onboardingStage(scheduled)).toBe("add-router");

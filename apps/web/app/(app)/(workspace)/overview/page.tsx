@@ -30,7 +30,8 @@ import {
   Table,
 } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
-import { calendarDay, clock, dayName, longDate, weekday } from "@/lib/dates";
+import { fullDay } from "@/lib/billing";
+import { clock, dayName, weekday } from "@/lib/dates";
 import { timeLeft } from "@/lib/duration";
 import { PLAN, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
@@ -381,7 +382,7 @@ function GettingStarted({ o, reload }: { o: VenueOnboarding; reload: () => Promi
       title: "HashiNet's team calls you",
       todo: "Within a working day",
       done: agreed
-        ? `${PLAN[agreed.plan].name}${agreed.totalTsh ? ` · ${tsh(agreed.totalTsh)}${o.paid ? " paid" : " due"}` : ""}`
+        ? `${PLAN[agreed.plan].name}${agreed.totalTsh ? ` · ${tsh(agreed.totalTsh)}${o.invoice?.state === "paid" ? " paid" : " due"}` : ""}`
         : "",
       body: (
         <>
@@ -394,11 +395,13 @@ function GettingStarted({ o, reload }: { o: VenueOnboarding; reload: () => Promi
             <>
               <Breakdown agreed={agreed} />
               <p>
-                {o.paid
-                  ? `Paid ${tsh(o.paid.amountTsh)}. We agree the setup day with you next.`
-                  : agreed.totalTsh && agreed.dueOn
-                    ? `${tsh(agreed.totalTsh)} is due by ${longDate(calendarDay(agreed.dueOn))}, all on one bill from HashiNet. The setup is scheduled once it is paid.`
-                    : "Nothing to charge. We agree the setup day with you next."}
+                {o.invoice?.state === "paid"
+                  ? `Paid ${tsh(o.invoice.totalTsh)}. We agree the setup day with you next.`
+                  : o.invoice
+                    ? `${tsh(o.invoice.dueTsh)} is due by ${fullDay(o.invoice.dueOn)}, on invoice ${o.invoice.number}, all on one bill from HashiNet. The setup is scheduled once it is paid.`
+                    : agreed.totalTsh
+                      ? "Its invoice is on its way by email."
+                      : "Nothing to charge. We agree the setup day with you next."}
               </p>
             </>
           ) : (

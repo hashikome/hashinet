@@ -409,7 +409,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     and managers naming a business, the owner their own). Integration 182/182, including a sale at
     00:30 on 1 December in Dar es Salaam falling in December, and a refund counted in the month it
     was made.
-  - [ ] (c) Payments. Recording a payment (amount received, date, mobile money, bank transfer or
+  - [x] (2026-11-26) (c) Payments. Recording a payment (amount received, date, mobile money, bank transfer or
     cash, an optional reference) by the platform admin or a manager, never above what is owed:
     recorded on a business it settles the oldest invoice first; recorded on an invoice, or on the
     setup issue for its onboarding charge, it settles that invoice. Allocations per invoice, so a
@@ -418,6 +418,17 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     by email on a due date left unpaid. The setup issue's pay step reads its invoice, and slice 3's
     by-hand payment (`venue_onboardings.paid_*`, `POST …/onboarding/payment`) goes: a package paid by
     hand becomes its invoice and the payment that settled it, as it was recorded.
+    Built: `bill_payments` and `bill_allocations` (positive amounts, checked); `POST
+    /api/billing/payments` (`billing.record`, the platform's admin and managers), which locks the
+    business row so two payments can't settle the same amount, refuses more than is owed and a date
+    in the future, and is audited with the invoices it settled; `POST /api/billing/reminders`
+    (`billing.remind`), audited; the hourly job reminds on a due date left unpaid, once
+    (`invoices.due_reminded_at`). A venue's stage reads its onboarding invoice; the package changes
+    only while nothing is paid on it; the package issue logs "Paid in full" when the last of it
+    comes. The migration carries each package paid by hand into its invoice and payment, then drops
+    `venue_onboardings.paid_*` and `onboarding_paid_by`; `onboarding.pay` stays in the audit
+    actions for the rows already logged. The shared Record payment dialog (prototype `payForm`)
+    is on the setup issue. Integration 186/186.
   - [ ] (d) Screens. The platform's Payments (every business for a month, a quarter, a year or a
     range: sales, rate, billed, paid, due, status; Record payment and Remind on each), a business's
     bill and an invoice, the owner's Billing (their terms, what is due, how to pay, their invoices)

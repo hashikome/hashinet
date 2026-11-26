@@ -125,7 +125,14 @@ describe("Onboarding a venue", () => {
       stage: "pay",
       agreed: { plan: "install", lines: [FEE, MIKROTIK], totalTsh: 270_000 },
     });
-    expect(agreed.agreed?.dueOn).toBe(businessDayOf(new Date(Date.now() + 7 * 86_400_000)));
+    // Its invoice, due 7 days later (ADR-0013, 6).
+    expect(agreed.invoice).toMatchObject({
+      totalTsh: 270_000,
+      paidTsh: 0,
+      dueOn: businessDayOf(new Date(Date.now() + 7 * 86_400_000)),
+      state: "due",
+    });
+    const invoiceId = agreed.invoice?.id ?? "";
     // Someone else's issue: the admin takes it over to change it.
     expect(
       (await admin.request("POST", `${base}/confirm`, { plan: "connect", lines: [FEE] })).status,
@@ -137,16 +144,33 @@ describe("Onboarding a venue", () => {
       (await asha.request("POST", `${base}/schedule`, { date: businessDayOf(new Date()) })).status,
     ).toBe(409);
 
-    // The admin records the payment, whoever holds the issue; paid in full.
+    // The admin records what came in on its invoice, whoever holds the issue: a part first,
+    // which leaves the rest due, then the rest. Never more than is owed.
+    const pay = (amountTsh: number) =>
+      admin.request("POST", "/api/billing/payments", {
+        businessId: agreed.business.id,
+        invoiceId,
+        amountTsh,
+        receivedOn: businessDayOf(new Date()),
+        method: "mobile_money",
+        reference: "",
+      });
+    expect((await pay(300_000)).status).toBe(400);
+    expect((await pay(100_000)).status).toBe(204);
+    expect((await onboarding(asha, venueId)).invoice).toMatchObject({
+      paidTsh: 100_000,
+      dueTsh: 170_000,
+      state: "part_paid",
+    });
+    // Something paid: the package no longer changes.
     expect(
-      (await admin.request("POST", `${base}/payment`, { amountTsh: 100_000, by: "cash" })).status,
-    ).toBe(400);
-    const paid = (
-      await admin.request("POST", `${base}/payment`, { amountTsh: 270_000, by: "mobile_money" })
-    ).body as VenueOnboarding;
+      (await asha.request("POST", `${base}/confirm`, { plan: "connect", lines: [FEE] })).status,
+    ).toBe(409);
+    expect((await pay(170_000)).status).toBe(204);
+    const paid = await onboarding(admin, venueId);
     expect(paid).toMatchObject({
       stage: "schedule",
-      paid: { amountTsh: 270_000, by: "mobile_money" },
+      invoice: { paidTsh: 270_000, dueTsh: 0, state: "paid" },
       // Asha holds it: the admin recorded the payment, the rest is hers.
       may: { confirm: false, pay: false, schedule: false },
     });
@@ -173,7 +197,7 @@ describe("Onboarding a venue", () => {
       ["step", "Baraka", { step: "preferred", plan: "install" }],
       ["claimed", "Asha", null],
       ["step", "Asha", { step: "confirmed", plan: "install", totalTsh: 270_000 }],
-      ["step", "Admin", { step: "paid", amountTsh: 270_000, by: "mobile_money" }],
+      ["step", "Admin", { step: "paid", amountTsh: 270_000 }],
       ["step", "Asha", { step: "scheduled", date: businessDayOf(new Date()) }],
       ["resolved", null, { reason: "scheduled" }],
     ]);
@@ -192,9 +216,8 @@ describe("Onboarding a venue", () => {
           { kind: "mikrotik_router", description: "hAP ax2", amountTsh: null },
         ],
         totalTsh: null,
-        dueOn: null,
       },
-      paid: null,
+      invoice: null,
     });
     expect(manager.membershipId).not.toBe(operator.membershipId);
 
@@ -263,12 +286,17 @@ describe("Onboarding a venue", () => {
         lines: [{ kind: "onboarding_fee", description: "In town", amountTsh: 0 }],
       })
     ).body as VenueOnboarding;
-    expect(agreed).toMatchObject({ stage: "schedule", agreed: { dueOn: null } });
+    expect(agreed).toMatchObject({ stage: "schedule", invoice: null });
+    // Nothing to pay: no invoice, and nothing a payment could settle.
     expect(
       (
-        await admin.request("POST", `/api/venues/${venueId}/onboarding/payment`, {
+        await admin.request("POST", "/api/billing/payments", {
+          businessId: agreed.business.id,
+          invoiceId: null,
           amountTsh: 1,
-          by: "cash",
+          receivedOn: businessDayOf(new Date()),
+          method: "cash",
+          reference: "",
         })
       ).status,
     ).toBe(409);

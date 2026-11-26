@@ -4,11 +4,9 @@ import {
   type IssueDetail,
   ONBOARDING_LINE_DESCRIBED,
   ONBOARDING_LINE_KINDS,
-  ONBOARDING_PAID_BY,
   ONBOARDING_PLANS,
   ONBOARDING_STARTING_LINES,
   type OnboardingLineKind,
-  type OnboardingPaidBy,
   type OnboardingPlan,
   type OnboardingStage,
   type VenueOnboarding,
@@ -16,10 +14,12 @@ import {
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
 import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/hearth/onboarding";
+import { RecordPayment } from "@/components/hearth/record-payment";
 import { Button, Field, Panel } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
-import { calendarDay, longDate, todayIso } from "@/lib/dates";
-import { LINE_NAME, PAID_BY, PLAN, setupDay } from "@/lib/issues";
+import { fullDay, STATE } from "@/lib/billing";
+import { todayIso } from "@/lib/dates";
+import { LINE_NAME, PLAN, setupDay } from "@/lib/issues";
 import { tsh } from "@/lib/money";
 import { ROLE_NAME } from "@/lib/nav";
 import { useSubmit } from "@/lib/submit";
@@ -103,17 +103,19 @@ export function PackageSteps({
     },
     {
       title: "Get it paid",
-      todo: o.agreed?.totalTsh ? `${tsh(o.agreed.totalTsh)} due` : "If there is a charge",
-      done: o.paid ? `${tsh(o.paid.amountTsh)} paid` : "Nothing to charge",
+      todo: o.invoice ? `${tsh(o.invoice.dueTsh)} due` : "If there is a charge",
+      done: o.invoice ? `${tsh(o.invoice.totalTsh)} paid` : "Nothing to charge",
       body: (
         <>
           {o.agreed ? <Breakdown agreed={o.agreed} /> : null}
           <p>
-            {o.agreed?.dueOn ? `Due by ${longDate(calendarDay(o.agreed.dueOn))}, in full. ` : ""}
+            {o.invoice
+              ? `Invoice ${o.invoice.number}, due by ${fullDay(o.invoice.dueOn)}${o.invoice.paidTsh ? `: ${tsh(o.invoice.paidTsh)} paid, ${tsh(o.invoice.dueTsh)} left` : ""}. `
+              : ""}
             The setup is scheduled once it is paid.
           </p>
-          {o.may.pay ? (
-            <PaymentForm o={o} reload={reload} />
+          {o.may.pay && o.invoice ? (
+            <PayButton o={o} reload={reload} />
           ) : (
             <p className="muted">The admin or a manager records it once it arrives.</p>
           )}
@@ -247,10 +249,10 @@ export function Agreed({ onboarding: o }: { onboarding: VenueOnboarding }) {
         {[
           o.agreed.totalTsh === null
             ? ""
-            : o.paid
-              ? `${tsh(o.paid.amountTsh)} paid by ${PAID_BY[o.paid.by].toLowerCase()}`
+            : o.invoice
+              ? `${o.invoice.number}: ${STATE[o.invoice.state][0].toLowerCase()}${o.invoice.state === "paid" ? "" : `, ${tsh(o.invoice.dueTsh)} left`}`
               : o.agreed.totalTsh
-                ? "Not paid yet"
+                ? "Not invoiced yet"
                 : "Nothing to charge",
           o.setupDate ? `setup ${setupDay(o.setupDate)}` : "",
           o.agreed.note ?? "",
@@ -452,62 +454,32 @@ function ConfirmForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<
   );
 }
 
-function PaymentForm({ o, reload }: { o: VenueOnboarding; reload: () => Promise<void> }) {
-  const { busy, errors, run } = useSubmit();
-  const [by, setBy] = useState<OnboardingPaidBy>("mobile_money");
-  const [amount, setAmount] = useState(String(o.agreed?.totalTsh ?? ""));
+/** Records what came in on the package's invoice, in the shared dialog. */
+function PayButton({ o, reload }: { o: VenueOnboarding; reload: () => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const invoice = o.invoice;
+  if (!invoice) return null;
   return (
-    <form
-      className="form"
-      noValidate
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const sent = await run(
-          () =>
-            api.post(`/api/venues/${o.venue.id}/onboarding/payment`, {
-              amountTsh: Number(amount),
-              by,
-            }),
-          `${tsh(Number(amount))} recorded. Schedule the setup next.`,
-        );
-        if (sent) await reload();
-      }}
-    >
-      <div className="row-fields">
-        <Field
-          label="Amount received (TSh)"
-          id="pa"
-          error={errors.amountTsh ? `The amount ${errors.amountTsh}.` : undefined}
-        >
-          <input
-            id="pa"
-            className="input num"
-            inputMode="numeric"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-          />
-        </Field>
-        <Field label="How it came" id="pb">
-          <select
-            id="pb"
-            className="input"
-            value={by}
-            onChange={(e) => setBy(e.target.value as OnboardingPaidBy)}
-          >
-            {ONBOARDING_PAID_BY.map((p) => (
-              <option key={p} value={p}>
-                {PAID_BY[p]}
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
+    <>
       <div className="actions">
-        <Button kind="primary" type="submit" busy={busy}>
+        <Button kind="primary" onClick={() => setOpen(true)}>
           Record payment
         </Button>
       </div>
-    </form>
+      {open ? (
+        <RecordPayment
+          businessId={o.business.id}
+          invoiceId={invoice.id}
+          owedTsh={invoice.dueTsh}
+          says={`${o.business.name} owes ${tsh(invoice.dueTsh)} for ${o.business.name === o.venue.name ? "its" : `${o.venue.name}'s`} onboarding, invoice ${invoice.number}. The setup is scheduled once it is paid.`}
+          onClose={() => setOpen(false)}
+          onDone={() => {
+            setOpen(false);
+            void reload();
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 

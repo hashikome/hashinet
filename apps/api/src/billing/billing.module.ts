@@ -2,10 +2,12 @@ import { Inject, Injectable, Module } from "@nestjs/common";
 import { businessDayOf } from "../analytics/business-day.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
+import { IssuesModule } from "../issues/issues.module.js";
 import { IntervalJob, ScheduledJobs } from "../jobs/interval-job.js";
 import { BillingController } from "./billing.controller.js";
 import { BillingSettings } from "./billing-settings.js";
 import { BILLING_STARTS, Invoices } from "./invoices.js";
+import { BillPayments } from "./payments.js";
 
 const HOUR = 60 * 60 * 1000;
 
@@ -30,6 +32,8 @@ export class BillingJobs extends ScheduledJobs {
         const period = monthBefore(businessDayOf(new Date()));
         if (period >= BILLING_STARTS) await invoices.issueMonth(period);
         await invoices.issueMissingOnboarding();
+        // Due today and unpaid: its owners hear, once.
+        await invoices.remindDue();
       }),
     ];
   }
@@ -37,8 +41,9 @@ export class BillingJobs extends ScheduledJobs {
 
 /** What businesses pay HashiNet (ADR-0013): the terms, invoices and payments. */
 @Module({
+  imports: [IssuesModule],
   controllers: [BillingController],
-  providers: [BillingSettings, Invoices, BillingJobs],
+  providers: [BillingSettings, Invoices, BillPayments, BillingJobs],
   exports: [BillingSettings, Invoices],
 })
 export class BillingModule {}

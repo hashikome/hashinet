@@ -38,6 +38,8 @@ export const ACTION_NAME: Record<AuditAction, string> = {
   "sale.record": "Sold a voucher",
   "portal.defaults.update": "Changed the portal's defaults",
   "fees.update": "Changed the fees or where businesses pay",
+  "billing.payment": "Recorded a payment to HashiNet",
+  "billing.remind": "Reminded an owner what is owed",
   "brand.update": "Changed a venue's branding",
   "brand.reset": "Restored a venue's default branding",
   "brand.image.upload": "Uploaded a logo or picture",
@@ -49,6 +51,7 @@ export const ACTION_NAME: Record<AuditAction, string> = {
   "business.create": "Started a business",
   "onboarding.prefer": "Chose how the router comes",
   "onboarding.confirm": "Confirmed a venue's package",
+  // Before invoices: a package's payment recorded by hand.
   "onboarding.pay": "Recorded a package's payment",
   "onboarding.schedule": "Scheduled a setup",
 };

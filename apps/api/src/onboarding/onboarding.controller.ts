@@ -7,7 +7,6 @@ import { parseInput } from "../http/validation.js";
 import {
   confirmInput,
   OnboardingService,
-  paymentInput,
   preferInput,
   scheduleInput,
 } from "./onboarding.service.js";
@@ -45,17 +44,6 @@ export class OnboardingController {
     @Body() body: unknown,
   ): Promise<VenueOnboarding> {
     return this.onboarding.confirm(staff, id, parseInput(confirmInput, body));
-  }
-
-  @Post("payment")
-  @HttpCode(200)
-  @Can("onboarding.manage")
-  recordPayment(
-    @CurrentPrincipal() staff: Principal,
-    @Param("id", idParam()) id: string,
-    @Body() body: unknown,
-  ): Promise<VenueOnboarding> {
-    return this.onboarding.recordPayment(staff, id, parseInput(paymentInput, body));
   }
 
   @Post("schedule")
