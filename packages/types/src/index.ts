@@ -169,6 +169,62 @@ export interface BillingSettingsResponse {
   settings: BillingSettingsRecord;
 }
 
+/** What a business owes HashiNet for: a month's fees, or a venue's onboarding. */
+export type InvoiceKind = "monthly_fees" | "onboarding";
+
+/**
+ * Where an invoice stands: `overdue` once its due date has passed with anything left to pay,
+ * whatever came in; `part_paid` before then with some paid.
+ */
+export type InvoiceState = "due" | "part_paid" | "paid" | "overdue";
+
+/** One line of an invoice, as it was issued. */
+export interface InvoiceLineRecord {
+  /** A venue's name for its month's fee; what an onboarding line is. */
+  label: string;
+  venueId: string | null;
+  /** An onboarding line's kind; null for a month's fee. */
+  onboardingKind: OnboardingLineKind | null;
+  /** A month's fee: the venue's net sales that month. */
+  netSalesTsh: number | null;
+  /** A month's fee: the share of the month a router served it (basis points), where a minimum applied. */
+  servedBp: number | null;
+  /** A month's fee: the prorated minimum, when that is what the venue owed. */
+  minimumTsh: number | null;
+  amountTsh: number;
+}
+
+export interface InvoiceRecord {
+  id: string;
+  /** INV-2026-12-0001. */
+  number: string;
+  businessId: string;
+  businessName: string;
+  kind: InvoiceKind;
+  /** The month billed (YYYY-MM), for a month's fees. */
+  period: string | null;
+  /** The venue onboarded, for an onboarding charge. */
+  venueName: string | null;
+  issuedAt: Timestamp;
+  /** The last day to pay, YYYY-MM-DD. */
+  dueOn: string;
+  totalTsh: number;
+  paidTsh: number;
+  dueTsh: number;
+  state: InvoiceState;
+  lines: InvoiceLineRecord[];
+}
+
+/** `GET /api/billing/invoices`: a business's invoices, newest first. */
+export interface InvoiceList {
+  invoices: InvoiceRecord[];
+}
+
+/** `GET /api/billing/invoices/:id`. */
+export interface InvoiceResponse {
+  invoice: InvoiceRecord;
+}
+
 /** One of the person's memberships, for the account menu's workspaces. */
 export interface MembershipSummary {
   id: string;

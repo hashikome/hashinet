@@ -389,7 +389,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     (`fees.read` admin and managers, `fees.update` the admin), audited with only what changed.
     Accepting a business invitation copies the platform's terms. Fees in the platform's Settings,
     with "Where businesses pay" added to the prototype first. Integration 178/178.
-  - [ ] (b) Invoices. One definition of a venue's net sales in a Dar es Salaam month (vouchers sold,
+  - [x] (2026-11-26) (b) Invoices. One definition of a venue's net sales in a Dar es Salaam month (vouchers sold,
     less refunds made that month, as Payments counts them). The fee per venue: marginal bands, never
     below zero; the minimum from the first full month after the venue's setup, prorated by the share
     of the month a router served it (outages, `router_outages`; before outages were recorded a router
@@ -399,6 +399,16 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     numbered from a sequence (`INV-2026-11-0001`); due on the 7th; emailed to the owner. Confirming a
     venue's package with a charge issues its onboarding invoice, one line per package line, due 7
     days later, and emails it. A month with no fee issues nothing.
+    Built: `billing/fee.ts` (the bands, the prorated minimum, the share of a month a venue was served,
+    with unit tests from ADR-0013's figures); `invoices` and `invoice_lines` (unique business and
+    month, one onboarding invoice a venue, numbers from `invoice_number_seq`); net sales from
+    `REVENUE_EVENTS`, the one revenue definition; an hourly job issuing last month's invoices from
+    November 2026 (`BILLING_STARTS`), and any onboarding invoice a crash left behind; the onboarding
+    invoice issued once a confirmation commits, updated while unpaid if the package changes, removed
+    if it becomes free; `GET /api/billing/invoices` and `/:id` (`billing.read`: the platform's admin
+    and managers naming a business, the owner their own). Integration 182/182, including a sale at
+    00:30 on 1 December in Dar es Salaam falling in December, and a refund counted in the month it
+    was made.
   - [ ] (c) Payments. Recording a payment (amount received, date, mobile money, bank transfer or
     cash, an optional reference) by the platform admin or a manager, never above what is owed:
     recorded on a business it settles the oldest invoice first; recorded on an invoice, or on the

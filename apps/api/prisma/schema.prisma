@@ -333,6 +333,7 @@ model Business {
   auditLogs    AuditLog[]
   issues       Issue[]
   deviceBlocks DeviceBlock[]
+  invoices     Invoice[]
 
   @@map("businesses")
 }
@@ -474,19 +475,21 @@ model Venue {
   createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  business    Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  members     MembershipVenue[]
-  routers     Router[]
-  issues      Issue[]
-  packages    VenuePackage[]
-  paymentWays VenuePaymentWay[]
-  onboarding  VenueOnboarding?
-  brand       VenueBrand?
-  vouchers    Voucher[]
-  payments    Payment[]
-  sessions    WifiSession[]
-  dailyStats  DailyUsageStat[]
-  refunds     Refund[]
+  business     Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  members      MembershipVenue[]
+  routers      Router[]
+  issues       Issue[]
+  packages     VenuePackage[]
+  paymentWays  VenuePaymentWay[]
+  onboarding   VenueOnboarding?
+  brand        VenueBrand?
+  vouchers     Voucher[]
+  payments     Payment[]
+  sessions     WifiSession[]
+  dailyStats   DailyUsageStat[]
+  refunds      Refund[]
+  invoices     Invoice[]
+  invoiceLines InvoiceLine[]
 
   @@index([businessId])
   @@index([status])
@@ -1214,4 +1217,63 @@ model RouterOutage {
 
   @@index([routerId, startedAt])
   @@map("router_outages")
+}
+
+/// What a business owes HashiNet (ADR-0013): a month's fees, or a venue's onboarding.
+enum InvoiceKind {
+  monthly_fees
+  onboarding
+
+  @@map("invoice_kind")
+}
+
+/// An invoice, kept as issued: its lines are what was charged and are never recomputed. At most
+/// one a business a month (`period`), and one a venue for its onboarding (a partial index).
+model Invoice {
+  id         String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  /// INV-2026-11-0001: the month it was issued in, then a number from `invoice_number_seq`.
+  number     String      @unique @db.VarChar(20)
+  businessId String      @map("business_id") @db.Uuid
+  kind       InvoiceKind
+  /// The month billed, as its first day in Dar es Salaam: monthly fees only.
+  period     DateTime?   @db.Date
+  /// The venue onboarded: an onboarding charge only. Kept if the venue goes; its line keeps the name.
+  venueId    String?     @map("venue_id") @db.Uuid
+  issuedAt   DateTime    @map("issued_at") @db.Timestamptz(3)
+  dueOn      DateTime    @map("due_on") @db.Date
+  totalTsh   Int         @map("total_tsh")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  business Business      @relation(fields: [businessId], references: [id], onDelete: Restrict)
+  venue    Venue?        @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  lines    InvoiceLine[]
+
+  @@unique([businessId, period])
+  @@index([businessId, issuedAt])
+  @@map("invoices")
+}
+
+/// One line of an invoice: a venue's month (its net sales, the share a router served it, and the
+/// minimum when that set the fee), or one line of a venue's onboarding package.
+model InvoiceLine {
+  id             String              @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  invoiceId      String              @map("invoice_id") @db.Uuid
+  position       Int
+  venueId        String?             @map("venue_id") @db.Uuid
+  /// The venue's name for a month's fee, as it was; what an onboarding line is.
+  label          String              @db.VarChar(160)
+  onboardingKind OnboardingLineKind? @map("onboarding_kind")
+  netSalesTsh    Int?                @map("net_sales_tsh")
+  /// The share of the month a router served the venue, in basis points; null where no minimum applied.
+  servedBp       Int?                @map("served_bp")
+  /// The prorated minimum, when it was what the venue owed.
+  minimumTsh     Int?                @map("minimum_tsh")
+  amountTsh      Int                 @map("amount_tsh")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  venue   Venue?  @relation(fields: [venueId], references: [id], onDelete: SetNull)
+
+  @@unique([invoiceId, position])
+  @@map("invoice_lines")
 }

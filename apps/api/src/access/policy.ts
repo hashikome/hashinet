@@ -62,6 +62,9 @@ export const POLICY = {
   // admin changes them, and a change reaches only businesses added after it (ADR-0013, 3).
   "fees.read": PLATFORM_STAFF,
   "fees.update": ["admin"],
+  // A business's invoices: HashiNet's admin and managers, and the business's owner alone, who
+  // pays them (ADR-0011, 3).
+  "billing.read": [...PLATFORM_STAFF, "owner"],
   // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.
   "business.read": PLATFORM_ALL,
   "business.invite": PLATFORM_STAFF,

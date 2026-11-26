@@ -1,4 +1,5 @@
 import { Inject, Injectable, Module } from "@nestjs/common";
+import { BillingModule } from "../billing/billing.module.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { IssuesModule } from "../issues/issues.module.js";
@@ -21,7 +22,7 @@ class OnboardingJobs extends ScheduledJobs {
 
 /** A venue's way to serving guests (ADR-0013, 2). */
 @Module({
-  imports: [IssuesModule],
+  imports: [IssuesModule, BillingModule],
   controllers: [OnboardingController],
   providers: [OnboardingService, OnboardingJobs],
   exports: [OnboardingService],

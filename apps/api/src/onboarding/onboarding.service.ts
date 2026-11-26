@@ -15,6 +15,7 @@ import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { businessDayOf } from "../analytics/business-day.js";
 import { AuditLog } from "../audit/audit-log.js";
+import { Invoices } from "../billing/invoices.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
@@ -106,6 +107,7 @@ export class OnboardingService {
     private readonly db: PrismaService,
     private readonly issues: IssuesService,
     private readonly audit: AuditLog,
+    private readonly invoices: Invoices,
   ) {}
 
   /** A new venue starts at its package, in the transaction that creates it. */
@@ -176,6 +178,8 @@ export class OnboardingService {
         tx,
       );
     });
+    // Once it commits: its charge is invoiced and emailed, due 7 days later (ADR-0013, 6).
+    await this.invoices.issueOnboarding(venueId);
     return this.get(staff, venueId);
   }
 

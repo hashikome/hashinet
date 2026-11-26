@@ -51,7 +51,7 @@ export function sellingOf(routers: Omit<VenueRouter, "ssid">[]): VenueSelling {
   return { state, since: heard.length ? new Date(Math.max(...heard)).toISOString() : null };
 }
 
-const passedSetup = (last: unknown) =>
+export const passedSetup = (last: unknown) =>
   typeof last === "object" && last !== null && "ok" in last && last.ok === true;
 
 /**
