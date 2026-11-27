@@ -625,6 +625,7 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (g) Each role's screens reviewed at 390px first; finish-work; release; acceptance.
 - [ ] Slice 6: online (held until the providers' credentials exist).
 - [ ] Slice 7: one voucher, devices online at once, through RADIUS (ADR-0015), with its switch PIN.
+  Steps (a) to (j) under Plan Of Work.
 
 Each slice records, separately: implemented and `bun run verify` passing locally; published (pushed,
 CI green); deployed (Dokploy running the new image); accepted live (the slice's acceptance, done on
@@ -1018,6 +1019,44 @@ sign-in, shown once and limited; release clears it too; the time left from Hashi
 asks RADIUS (ADR-0015). Proved on the router sim first, then on real phones.
 Accepted live: one code online on one device at a time across two routers; a second phone moves it
 only with the PIN; a release at the counter frees it.
+
+Its shape (27 November 2026, after mapping the code): the tunnel service (`apps/tunnel`, host network,
+the only place that sees a router's tunnel address) listens for RADIUS on the platform's tunnel
+address and relays each raw packet, with the peer's address, to an internal API route under the
+tunnel-peers bearer secret; the API checks it with that router's secret, decides and encodes the
+reply. An Access-Request is answered from the database alone, inside the router's RADIUS timeout:
+the slow work (the PIN, its limits, arp-pinging whoever holds the place, the device-on-network check)
+happens at the HTTPS redeem, which leaves a short-lived admission the next Access-Request consumes. A
+device coming back by MAC address is accepted only when it holds the place or a place is plainly free;
+otherwise it lands on the portal. Retransmits get the same reply; accounting is idempotent per
+`Acct-Session-Id`, and the live monitor reconciles lost Stops.
+
+  - [ ] (a) Spike on the sim, one router: the relay, a minimal handler and `guest-test` through RADIUS.
+    Settles from the router or MikroTik's documentation, not memory: what `/ip/hotspot/active` shows
+    as `user` for a MAC login (LiveMonitor, `disconnectDevice` and `kickVoucher` match on the code);
+    `/radius` defaults in 7.25 (timeout, Message-Authenticator); the MikroTik vendor attributes;
+    `/radius monitor` for the self-test; Bun's UDP socket; a maintained codec or our own.
+  - [ ] (b) Schema: a router's RADIUS secret (encrypted); the voucher's PIN HMAC (a new Docker secret
+    key) and its attempts (wrong tries, wait-until, locked); the accounting session id on
+    `wifi_sessions`; admissions.
+  - [ ] (c) The codec, the relay and the internal route, with unit tests.
+  - [ ] (d) The API's decisions: the PIN made, shown once, checked and limited at redeem; the
+    Access-Accept's Session-Timeout, rate limit and interim interval; accounting into sessions.
+  - [ ] (e) Router setup: a `/radius` step, `use-radius=yes`, `login-by=mac,mac-cookie`, cleanup of
+    the old local users and `wbs-pkg-*` profiles, and verify's login-mode and round-trip checks
+    rewritten.
+  - [ ] (f) Removal, no shim: `ensureVoucher`, `pushVouchers`, the voucher push in `syncRouter`,
+    `voucher-reconciler`, `removeVouchers`, the local-user path in `extendVoucher`,
+    `hotspotUserParams` and `shared-users`, and their test stubs.
+  - [ ] (g) Release clears the PIN and its attempts; a block is on the voucher too.
+  - [ ] (h) The portal's PIN screens and Release against the prototype, audited at 390px first.
+  - [ ] (i) Two routers on the sim (the sim runs one today), proving the acceptance there.
+  - [ ] (j) finish-work, docs (ADR-0015 widened), push on the owner's go, real phones.
+
+Before the release, outside the code: the host firewall allows UDP 1812-1813 from `wg0` to the
+platform's tunnel address (deploy runbook); the PIN key secret exists in the secrets repository and
+the stack; and every router is set up again in the same release, since without local users a router
+that hasn't been set up again admits no one.
 
 Within each slice the order is: schema, then the API with its tests, then the screens against the
 prototype, each built with design-build and audited with design-audit at 1280 and 375 pixels in light
