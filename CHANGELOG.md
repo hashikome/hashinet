@@ -2,10 +2,10 @@
 
 ## Unreleased
 
-- Account › Sign-in: every change opens a dialog over a wider, flat page, as Sell's do, with an × in the
-  corner: adding or removing a passkey, setting up or replacing the authenticator, new recovery codes.
-  A replacement's scan and the new codes can't be closed by a stray click once the old app or codes
-  have stopped working.
+- Account › Sign-in: every change opens a dialog over a wider, flat page. Its flows use one shared dialog
+  with steps, `StepDialog`: one size and place through every step, where you are in a quiet line, an ×
+  at every step, and a question first where closing costs something (the new recovery codes, a
+  replacement whose old app has stopped). The scan step's button says "Confirm code".
 - A row that opens a page holds no buttons: the prototype's Issues, Payments and SMS credits lists and
   the app's Payments lose their row buttons, and Record payment and Remind stay on the business's
   bill. HashiNet's billing overview counts extra-site invoices among one-off charges. Packages, the

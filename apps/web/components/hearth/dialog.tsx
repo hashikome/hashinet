@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Icon } from "./icons";
 
 /**
@@ -100,5 +100,75 @@ export function DialogClose({ onClose }: { onClose: () => void }) {
     <button className="dialog-close" type="button" aria-label="Close" onClick={onClose}>
       <Icon name="close" size={16} />
     </button>
+  );
+}
+
+/** What closing a step costs, asked before it closes: "Stop replacing your authenticator app?" */
+export interface LeaveQuestion {
+  question: string;
+  why: string;
+  /** The button that closes anyway: "Stop", "Close". */
+  stop: string;
+}
+
+/**
+ * A dialog with steps (prototype `flowCard`): one size through every step and one place on the screen,
+ * so moving on never resizes or moves it; its name with one quiet line for where you are ("Scan and
+ * verify · 2 of 3"); the step below; and the × in its corner. Where closing costs something (`leave`),
+ * the ×, Escape and a click outside ask first, in the same dialog, and the step is kept for Keep going.
+ */
+export function StepDialog({
+  title,
+  step,
+  leave = null,
+  onClose,
+  className = "",
+  children,
+}: {
+  title: string;
+  /** Where this step is: its name, its place and how many; null for a flow of one step. */
+  step: { name: string; at: number; of: number } | null;
+  leave?: LeaveQuestion | null;
+  onClose: () => void;
+  /** The flow's own look inside, such as Account's (`acct-flow`). */
+  className?: string;
+  children: ReactNode;
+}) {
+  const [leaving, setLeaving] = useState(false);
+  const stay = () => setLeaving(false);
+  const close = leaving ? stay : leave ? () => setLeaving(true) : onClose;
+  return (
+    <Dialog label={title} className={`step-dialog ${className}`.trim()} onClose={close}>
+      <DialogClose onClose={close} />
+      {leaving && leave ? (
+        <>
+          <div className="step-head">
+            <h2>{leave.question}</h2>
+          </div>
+          <p className="muted">{leave.why}</p>
+          <div className="dialog-actions">
+            <button className="btn primary" type="button" onClick={stay}>
+              Keep going
+            </button>
+            <button className="btn danger" type="button" onClick={onClose}>
+              {leave.stop}
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="step-head">
+          <h2>{title}</h2>
+          {step && step.of > 1 ? (
+            <p className="step-where">
+              {step.name} · {step.at} of {step.of}
+            </p>
+          ) : null}
+        </div>
+      )}
+      {/* Kept while the question shows, so Keep going returns to the step as it was. */}
+      <div className="step-body" hidden={leaving}>
+        {children}
+      </div>
+    </Dialog>
   );
 }

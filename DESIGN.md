@@ -260,10 +260,15 @@ respects `prefers-reduced-motion`.
   under HashiNet's mark with a Help tag for every reader, since Help is the platform's, with a way back to the dashboard and one guide per shareable page; Account and security is a
   page on the same frame with an Account tag. Its page stays flat (a settings list), and every change opens a
   dialog over it: adding or removing a passkey, setting up or replacing the authenticator, new recovery
-  codes. A flow's dialog has the usual width, its name with one quiet line for where you are ("Scan and
-  verify · 2 of 3"), the step stacked below, and an × in the corner, as Sell's dialogs have. Past the
-  point of no return (the new recovery codes, a replacement's scan once the old app has stopped) it has no
-  × and a click outside or Escape doesn't close it: only finishing does.
+  codes.
+- A dialog with steps is the shared `StepDialog` (`components/hearth/dialog.tsx`; the prototype's
+  `flowDialog`): one size through every step (480 by 600, the tallest step's) at one place on the screen,
+  so moving on never resizes or moves it; its name with one quiet line for where you are ("Scan and
+  verify · 2 of 3"); the step below; and the × in its corner, as Sell's dialogs have. Every step closes
+  from the ×, Escape or a click outside; where closing costs something (the new recovery codes, a
+  replacement's scan once the old app has stopped) it asks first in the same dialog, with Keep going
+  first, and Keep going returns to the step as it was. A step's button names what it does ("Confirm
+  code").
 - Do write Help for the reader's role only: a guide or question someone can't act on is left out,
   not greyed or labelled. Steps are numbered and short, name the button in bold, and end with what to
   do if it goes wrong.

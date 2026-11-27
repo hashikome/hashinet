@@ -4071,19 +4071,41 @@ td .btn.paused {
   width: 100%;
   max-width: 56rem;
 }
-.dialog.acct-flow {
+/* A dialog with steps (StepDialog): one size through every step (the tallest, a QR code's), at one
+   place, so moving on never resizes or moves it; its name with a quiet line for where you are, clear
+   of the × in the corner. */
+.dialog.step-dialog {
+  display: grid;
+  gap: 18px;
+  align-content: start;
   width: min(480px, 100%);
+  height: min(600px, calc(100dvh - 32px));
   padding: 22px 24px 24px;
 }
-/* Its name, and one quiet line for where you are in it; clear of the × in the corner. */
-.dialog.acct-flow .flow-head {
+.dialog-wrap:has(> .dialog.step-dialog) {
+  place-items: start center;
+  padding-top: max(16px, calc((100dvh - 600px) / 2));
+}
+.step-head {
   display: grid;
   gap: 2px;
   padding-right: 36px;
 }
-.flow-where {
+.step-head h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.step-where {
   font-size: 13.5px;
   color: var(--muted-fg);
+}
+.step-body {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+.step-body[hidden] {
+  display: none;
 }
 /* Stacked in the dialog: the QR code above its form, the code boxes above their button. */
 .dialog.acct-flow .tfa-setup {
@@ -4097,28 +4119,7 @@ td .btn.paused {
   gap: 14px;
   justify-items: start;
 }
-.acct-flow {
-  display: grid;
-  gap: 18px;
-  padding: 20px 22px 22px;
-}
-.flow-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.flow-head h2 {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.flow-body {
-  display: grid;
-  gap: 14px;
-  align-content: start;
-}
-.flow-body > h3 {
+.step-body > h3 {
   font-size: 15px;
   font-weight: 600;
 }
@@ -4200,11 +4201,6 @@ td .btn.paused {
   opacity: 0.45;
   cursor: not-allowed;
 }
-.acct-flow .flow-head .btn {
-  height: 36px;
-  padding-inline: 14px;
-  font-size: 13.5px;
-}
 .acct-flow .tfa-verify .btn {
   height: 48px;
 }
@@ -4248,7 +4244,7 @@ td .btn.paused {
   .acct-page .acct-flow .as-keybox[hidden] {
     display: grid !important;
   }
-  .acct-flow {
+  .dialog.step-dialog {
     padding: 18px 16px 20px;
   }
   .tfa-setup {

@@ -4,7 +4,7 @@ import { type Me, PROOF_HOURS } from "@hashinet/types";
 import { useSearchParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { type FormEvent, type ReactNode, Suspense, useEffect, useState } from "react";
-import { Dialog, DialogClose } from "@/components/hearth/dialog";
+import { Dialog, StepDialog } from "@/components/hearth/dialog";
 import { PasskeyAgain } from "@/components/hearth/protect";
 import {
   Attention,
@@ -338,7 +338,7 @@ function SignInSettings() {
 /**
  * A change to how you sign in, as a dialog over the page (owner, 28 November 2026): its name, one
  * quiet line for where you are in it, then the step. The × in its corner, a click outside or Escape
- * cancels, until the old app or codes have stopped working: then only finishing closes it.
+ * closes it at any step; once the old app or codes have stopped working, it asks first.
  */
 function FlowCard({
   flow,
@@ -349,25 +349,36 @@ function FlowCard({
   onCancel: () => void;
   children: ReactNode;
 }) {
-  const at = flow.steps.indexOf(flow.step);
-  // Past the point of no return, only finishing closes it: the new codes (the old have stopped), and a
-  // replacement's scan (the old app has stopped), so a stray click never leaves the person without one.
-  const locked = flow.step === "codes" || (flow.step === "scan" && flow.kind === "replace");
-  const title = TITLE[flow.kind];
+  // Where closing costs something it asks first: the new codes are shown once (the earlier ones have
+  // stopped), and a replacement's old app has already stopped working.
+  const leave =
+    flow.step === "codes"
+      ? {
+          question: "Close without saving these codes?",
+          why: "They aren't shown again, and your earlier codes have already stopped working. You can make new ones any time.",
+          stop: "Close",
+        }
+      : flow.step === "scan" && flow.kind === "replace"
+        ? {
+            question: "Stop replacing your authenticator app?",
+            why: "Your old app has already stopped working. Until you set up a new one, HashiNet asks you to protect your sign-in again.",
+            stop: "Stop",
+          }
+        : null;
   return (
-    <Dialog label={title} className="acct-flow" onClose={locked ? () => {} : onCancel}>
-      {/* On the last step the old codes have already stopped working, so only Done closes it. */}
-      {locked ? null : <DialogClose onClose={onCancel} />}
-      <div className="flow-head">
-        <h2>{title}</h2>
-        {flow.steps.length > 1 ? (
-          <p className="flow-where">
-            {STEP_NAME[flow.step]} · {at + 1} of {flow.steps.length}
-          </p>
-        ) : null}
-      </div>
-      <div className="flow-body">{children}</div>
-    </Dialog>
+    <StepDialog
+      title={TITLE[flow.kind]}
+      step={{
+        name: STEP_NAME[flow.step],
+        at: flow.steps.indexOf(flow.step) + 1,
+        of: flow.steps.length,
+      }}
+      leave={leave}
+      onClose={onCancel}
+      className="acct-flow"
+    >
+      {children}
+    </StepDialog>
   );
 }
 
@@ -581,7 +592,7 @@ function Scan({
             error={error}
           />
           <Button kind="primary" type="submit" busy={busy}>
-            {replacing ? "Replace it" : "Turn it on"}
+            Confirm code
           </Button>
         </div>
       </form>
