@@ -1072,7 +1072,12 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
 Before the release, outside the code: the host firewall allows UDP 1812-1813 from `wg0` to the
 platform's tunnel address (deploy runbook); the PIN key secret exists in the secrets repository and
 the stack; and every router is set up again in the same release, since without local users a router
-that hasn't been set up again admits no one.
+that hasn't been set up again admits no one. Decided by the owner (27 November 2026): after the release
+starts, the API sets up again every router whose setup is older than it, and a router that fails
+raises an issue; this session adds the PIN key to the secrets repository and the stack and the
+firewall rule to the deploy runbook and infra, each shown to the owner before it is pushed or applied.
+The two portal states for the PIN's limits (#guest-pinwait, #guest-pinlocked) wait for the owner's
+look in the prototype before the slice goes on.
 
 Within each slice the order is: schema, then the API with its tests, then the screens against the
 prototype, each built with design-build and audited with design-audit at 1280 and 375 pixels in light
