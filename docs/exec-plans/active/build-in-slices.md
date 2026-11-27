@@ -514,9 +514,13 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     `access_held`, `access_held_until`, `access_pauses_on` and `service_access_changes` (migration
     `20261127140000_service_access`). Owners are emailed at each step (`access-emails.ts`, plain
     text until the shared email standard is built). `PUT /api/businesses/:id/service-access`
-    (`business.access`, the platform's admin and managers; suspended by the admin alone) holds or
-    releases it. The guard refuses `sale.record`, `package.manage` and `package.venue.assign` while
-    the business can't sell (`SELLING_PAUSED`), the session says the business can't sell (`me.active.selling`), so Sell and the package actions
+    (`business.access`, the platform's admin and managers) holds it for 7, 14 or 30 days, today
+    included, or until changed, or gives it back to its bills; managers move only along ADR-0014's
+    steps, anything else and suspending are the admin's (`business.access.override`,
+    `business.suspend`). Each change runs under the business's row lock, so a hold set during the
+    hourly run wins. The guard refuses `sale.record`, `package.manage` and `package.venue.assign` while
+    the business can't sell (`SELLING_PAUSED`), the session says why the business can't sell (`me.active.pause`: an overdue bill, or held
+    by HashiNet's team, whose wording never asks to pay), so Sell and the package actions
     stay in view, quieter, and a tap says why (as Sell does with no router serving), a venue's
     `selling` is `paused`, and the guest portal sells nothing (`GuestContext.selling`). Issues: the
     owner's `bill_due` reads "Selling is paused"; `selling_paused` for its managers. Screens: the
