@@ -1052,18 +1052,26 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
       self-test reads it instead of the local-user round trip.
     - Bun's `Bun.udpSocket` serves both ports; a small codec of our own (RFC 2865/2866 with
       Message-Authenticator) was accepted by the router, so no package is needed.
-  - [ ] (b) Schema: a router's RADIUS secret (encrypted); the voucher's PIN HMAC (a new Docker secret
+  - [x] (b) Schema: a router's RADIUS secret (encrypted); the voucher's PIN HMAC (a new Docker secret
     key) and its attempts (wrong tries, wait-until, locked); the accounting session id on
     `wifi_sessions`; admissions.
-  - [ ] (c) The codec, the relay and the internal route, with unit tests.
-  - [ ] (d) The API's decisions: the PIN made, shown once, checked and limited at redeem; the
+  - [x] (c) The codec, the relay and the internal route, with unit tests.
+  - [x] (d) The API's decisions: the PIN made, shown once, checked and limited at redeem; the
     Access-Accept's Session-Timeout, rate limit and interim interval; accounting into sessions.
-  - [ ] (e) Router setup: a `/radius` step, `use-radius=yes`, `login-by=mac,mac-cookie`, cleanup of
+  - [x] (e) Router setup: a `/radius` step, `use-radius=yes`, `login-by=mac,mac-cookie`, cleanup of
     the old local users and `wbs-pkg-*` profiles, and verify's login-mode and round-trip checks
     rewritten.
-  - [ ] (f) Removal, no shim: `ensureVoucher`, `pushVouchers`, the voucher push in `syncRouter`,
+  - [x] (f) Removal, no shim: `ensureVoucher`, `pushVouchers`, the voucher push in `syncRouter`,
     `voucher-reconciler`, `removeVouchers`, the local-user path in `extendVoucher`,
-    `hotspotUserParams` and `shared-users`, and their test stubs.
+    `hotspotUserParams` and `shared-users`, and their test stubs. Done 28 November 2026, with more
+    that only served local users: the voucher reconciler and its `provisioning-backlog` route, the
+    probe's per-user capability flags and their latch (`mergeCapabilities`, `probeRouterMerged`),
+    the self-test's write and capability discovery, the `voucher.provision_*` and
+    `router.push_failed` audit actions. A sold or paid voucher needs nothing on a router. The live
+    monitor no longer opens sessions (accounting does); it updates and closes them by MAC, and
+    throttles by ending a session whose speed no longer holds (`throttledNow`, one rule with
+    RADIUS, which marks a throttled session in its Class). A voucher's data used is its sessions'
+    bytes. The sim's `guest-test` still walks the local-user path until step (i).
   - [ ] (g) Release clears the PIN and its attempts; a block is on the voucher too.
   - [ ] (h) The portal's PIN screens and Release against the prototype, audited at 390px first.
   - [ ] (i) Two routers on the sim (the sim runs one today), proving the acceptance there.

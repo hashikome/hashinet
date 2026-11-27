@@ -1,9 +1,5 @@
-import { getLogger } from "@logtape/logtape";
 import { RouterOSAPI } from "routeros";
-import { minutesToRosUptime } from "../utils/duration.js";
 import { pingTotals, toRows } from "./router-provision/ros-client.js";
-
-const logger = getLogger(["hashinet", "router"]);
 
 export type MikroTikConn = RouterOSAPI;
 
@@ -18,121 +14,6 @@ export interface RouterCredentials {
   password: string;
   /** How long to wait for the router to answer a connection (`MIKROTIK_CONNECT_TIMEOUT`). */
   timeoutSeconds: number;
-}
-
-export interface CreateHotspotUserOptions {
-  code: string;
-  deviceLimit: number;
-  downloadSpeedMbps: number;
-  uploadSpeedMbps: number | null;
-  /** null or -1 = unlimited */
-  dataLimitGb: number | null;
-  /** Whole minutes. null or 0 = unlimited */
-  durationMinutes: number | null;
-  /**
-   * Hotspot **user profile** to put the voucher on, or null for the router's `default`.
-   *
-   * Set this on a board that rejects per-user `rate-limit`/`shared-users` — the limits ride on the
-   * profile instead. `ensureHotspotUserProfile` must have created it first.
-   */
-  profileName?: string | null;
-}
-
-/**
- * The per-package user profile name.
- *
- * Derived from the package **id**, never its name, so renaming a package does not orphan the profile
- * it is already using. `/ip hotspot user profile` has no `comment` field — measured, it rejects the
- * parameter outright — so the `wbs-` prefix is the only idempotency tag available here, which is the
- * documented exception in CLAUDE.md.
- *
- * The full UUID makes the name 44 characters. Verified accepted and read back unchanged on an hAP
- * lite (7.23.2), and it keeps the name greppable against the `packages` table, which matters because
- * there is no comment field to annotate.
- */
-export function userProfileNameForPackage(packageId: string): string {
-  return `wbs-pkg-${packageId}`;
-}
-
-/**
- * The throttled twin of the per-package profile.
- *
- * Throttling swaps a voucher between these two profiles rather than writing `rate-limit` onto the
- * user, because the hAP lite (smips, 7.23.2) rejects `rate-limit` on `/ip hotspot user` outright —
- * `unknown parameter` — while accepting it on a profile (§13.7). The old throttle path used the
- * rejected form, so on that board it could never take effect and retried forever.
- *
- * It must be a *second* profile, not an edit of the first: `wbs-pkg-<id>` is shared by every
- * voucher on the package, so throttling one customer by editing it would throttle all of them.
- *
- * Prefixed rather than suffixed so it is exactly as long as `wbs-pkg-<uuid>` — 44 characters, the
- * length already verified as accepted and read back unchanged on the hAP lite. A `-thr` suffix
- * would have been 48 and untested, and this is not a thing worth discovering on a live router at a
- * peak-hour boundary.
- */
-export function throttledProfileNameForPackage(packageId: string): string {
-  return `wbs-thr-${packageId}`;
-}
-
-/**
- * Create or update the per-package user profile that carries the limits a board will not accept on
- * the user itself.
- *
- * **Why per package and not per router.** Provisioning used to create a single router-level
- * `wbs-hs-users` profile carrying `shared-users=1` and no rate-limit at all — and nothing was ever
- * assigned to it, because `createHotspotUser` never sent `=profile=`. So on a board that rejects
- * per-user `rate-limit` every voucher sat on `default` with no speed cap from either mechanism. One
- * profile per router could not have fixed it either: two packages on the same router need different
- * speeds.
- *
- * Idempotent, and updates in place — a package whose speed is edited should change the cap for
- * vouchers already issued against it, which is what a `set` on the existing profile does.
- */
-const COOKIE_MINUTES_WITHOUT_DURATION = 365 * 24 * 60;
-
-export async function ensureHotspotUserProfile(
-  conn: MikroTikConn,
-  opts: {
-    name: string;
-    /** RouterOS `rate-limit`, e.g. "2M/10M" (up/down). null leaves the profile uncapped. */
-    rateLimit: string | null;
-    /** Simultaneous devices per voucher. */
-    sharedUsers: number;
-    /** The package's duration; null when it has none. */
-    durationMinutes: number | null;
-  },
-): Promise<void> {
-  // A device comes back by its cookie (ADR-0008), and the router's default is only 3 days.
-  const cookieMinutes = opts.durationMinutes ?? COOKIE_MINUTES_WITHOUT_DURATION;
-  const params = [
-    `=shared-users=${Math.max(1, opts.sharedUsers)}`,
-    `=mac-cookie-timeout=${minutesToRosUptime(cookieMinutes)}`,
-  ];
-  if (opts.rateLimit) params.push(`=rate-limit=${opts.rateLimit}`);
-
-  const existing = toRows(
-    await conn.write("/ip/hotspot/user/profile/print", [`?name=${opts.name}`]),
-  );
-  const existingId = existing[0]?.get(".id") ?? null;
-
-  if (existingId !== null) {
-    await conn.write("/ip/hotspot/user/profile/set", [`=.id=${existingId}`, ...params]);
-  } else {
-    await conn.write("/ip/hotspot/user/profile/add", [`=name=${opts.name}`, ...params]);
-  }
-
-  // Read back. `add`/`set` returning without error is not proof, and a voucher pointing at a
-  // profile that does not exist is rejected by the router — so this failing loudly here is much
-  // better than every voucher push failing afterwards.
-  const readBack = toRows(
-    await conn.write("/ip/hotspot/user/profile/print", [`?name=${opts.name}`]),
-  );
-  if (!readBack[0]) {
-    throw new Error(
-      `Hotspot user profile "${opts.name}" was accepted by the router but is not present in ` +
-        `/ip/hotspot/user/profile — vouchers on it would have no speed limit.`,
-    );
-  }
 }
 
 /** RouterOS `rate-limit` for a package, or null when it has no speed cap. */
@@ -219,151 +100,9 @@ export async function closeConnection(conn: MikroTikConn): Promise<void> {
 }
 
 /**
- * Sets how long a voucher's user may be logged in, in whole minutes: RouterOS counts a logged-in
- * user's time, which runs on while the internet is down, so time given back raises it. False when
- * the router doesn't have the user.
- */
-export async function setHotspotUserMinutes(
-  conn: MikroTikConn,
-  code: string,
-  minutes: number,
-): Promise<boolean> {
-  const [row] = toRows(await conn.write("/ip/hotspot/user/print", [`?name=${code}`]));
-  const id = row?.get(".id") ?? null;
-  if (id === null) return false;
-  await conn.write("/ip/hotspot/user/set", [
-    `=.id=${id}`,
-    `=limit-uptime=${minutesToRosUptime(minutes)}`,
-  ]);
-  return true;
-}
-
-export async function hotspotUserExists(conn: MikroTikConn, code: string): Promise<boolean> {
-  const result = await conn.write("/ip/hotspot/user/print", [`?name=${code}`]);
-  return Array.isArray(result) && result.length > 0;
-}
-
-/**
- * What this board accepts on `/ip/hotspot/user/add`.
- *
- * When known (cached by the capability probe) we send exactly the supported params.
- * When null — an un-probed router — we stay optimistic and strip params on rejection,
- * which is the pre-probe behaviour and still correct, just a round-trip slower.
- */
-export interface HotspotUserCapabilities {
-  userRateLimit: boolean;
-  userSharedUsers: boolean;
-}
-
-const OPTIONAL_PARAM_PREFIXES = ["=rate-limit=", "=shared-users="];
-
-export async function createHotspotUser(
-  conn: MikroTikConn,
-  opts: CreateHotspotUserOptions,
-  caps: HotspotUserCapabilities | null = null,
-): Promise<void> {
-  const params: string[] = [`=name=${opts.code}`, `=password=${opts.code}`];
-
-  if (opts.dataLimitGb !== null && opts.dataLimitGb > 0) {
-    params.push(`=limit-bytes-total=${opts.dataLimitGb * 1_073_741_824}`);
-  }
-  if (opts.durationMinutes !== null && opts.durationMinutes > 0) {
-    // Minutes, not hours: a 30-minute voucher must not be enforced as an hour. limit-uptime is
-    // [Nd]HH:MM:SS, so the router can express it exactly.
-    params.push(`=limit-uptime=${minutesToRosUptime(opts.durationMinutes)}`);
-  }
-  /*
-   * The profile carries the limits this board will not accept on the user.
-   *
-   * Sent BEFORE the optional params, because the retry-without-optionals fallback below strips
-   * those and must not strip this — the profile is the only thing capping speed on such a board.
-   */
-  if (opts.profileName) params.push(`=profile=${opts.profileName}`);
-
-  const rateLimit = rateLimitFor(opts);
-  if ((caps?.userRateLimit ?? true) && rateLimit) {
-    params.push(`=rate-limit=${rateLimit}`);
-  }
-  if ((caps?.userSharedUsers ?? true) && opts.deviceLimit > 0) {
-    params.push(`=shared-users=${opts.deviceLimit}`);
-  }
-
-  try {
-    await conn.write("/ip/hotspot/user/add", params);
-  } catch (err) {
-    const msg = String(err);
-    const optional = params.filter((p) => OPTIONAL_PARAM_PREFIXES.some((x) => p.startsWith(x)));
-
-    if (msg.includes("unknown parameter") && optional.length > 0) {
-      logger.warn("Router rejected {fields}; retrying without them", {
-        fields: optional.map((p) => p.split("=")[1]).join(", "),
-      });
-      await conn.write(
-        "/ip/hotspot/user/add",
-        params.filter((p) => !OPTIONAL_PARAM_PREFIXES.some((x) => p.startsWith(x))),
-      );
-    } else {
-      throw err;
-    }
-  }
-
-  // Read back: `add` returning without error is not proof the user exists.
-  if (!(await hotspotUserExists(conn, opts.code))) {
-    throw new Error(
-      `Hotspot user "${opts.code}" was accepted by the router but is not present in ` +
-        `/ip/hotspot/user — the router did not actually grant access.`,
-    );
-  }
-}
-
-/**
- * Move an existing hotspot user onto `profileName` if it is not already there.
- *
- * Needed because the push paths skip a voucher that already exists, so without this the fix would
- * only ever apply to *new* vouchers — every code already on a router would keep sitting on
- * `default` with no speed cap, forever. Returns true when it actually changed something, so the
- * caller can log a repair rather than silently mutating live config.
- */
-export async function ensureHotspotUserProfileAssigned(
-  conn: MikroTikConn,
-  code: string,
-  profileName: string,
-  /**
-   * Profiles that are also correct and must be left alone — in practice the package's throttled
-   * twin. Without this, a voucher that the live monitor has throttled would be yanked back to full
-   * speed by the next voucher push, because a repair pass cannot tell "wrong profile" from
-   * "deliberately throttled right now".
-   */
-  alsoAcceptable: readonly string[] = [],
-): Promise<boolean> {
-  const [row] = toRows(await conn.write("/ip/hotspot/user/print", [`?name=${code}`]));
-  const id = row?.get(".id") ?? null;
-  if (!row || id === null) return false;
-  const profile = row.get("profile");
-  if (profile === profileName || alsoAcceptable.includes(profile ?? "")) return false;
-  await conn.write("/ip/hotspot/user/set", [`=.id=${id}`, `=profile=${profileName}`]);
-  return true;
-}
-
-/*
- * Throttling swaps the voucher between `wbs-pkg-<id>` and `wbs-pkg-<id>-thr` via
- * `ensureHotspotUserProfileAssigned`, never a per-user `=rate-limit=` write: the hAP lite (smips,
- * 7.23.2) rejects that with `unknown parameter` (§13.7), and a poller that records success only
- * after the write returns re-sends it every 5s forever.
- */
-
-export async function kickHotspotSession(conn: MikroTikConn, code: string): Promise<void> {
-  const [row] = toRows(await conn.write("/ip/hotspot/active/print", [`?user=${code}`]));
-  const id = row?.get(".id") ?? null;
-  if (id === null) return;
-  await conn.write("/ip/hotspot/active/remove", [`=.id=${id}`]);
-}
-
-/**
- * Signs a client in from the API: the only way in, since the hotspot accepts no login over the
- * network (ADR-0008), so a voucher code never crosses the WiFi to the router. It also follows a
- * kick to apply a new speed, because removing a session deletes its MAC cookie (RouterOS 7.25).
- * Rejects if the router refuses.
+ * Signs a client in from the API: the only way in with a code, since the hotspot accepts no login
+ * over the network (ADR-0008), so a voucher code never crosses the WiFi to the router. The router
+ * asks RADIUS, which takes the sign-in's admission. Rejects if the router refuses.
  */
 export async function loginHotspotClient(
   conn: MikroTikConn,
@@ -390,25 +129,6 @@ export async function hotspotClientAddress(
 export async function hotspotSessionUser(conn: MikroTikConn, mac: string): Promise<string | null> {
   const rows = await conn.write("/ip/hotspot/active/print", [`?mac-address=${mac}`]);
   return toRows(rows)[0]?.get("user") ?? null;
-}
-
-/**
- * Takes one device off a voucher and forgets it, so it must sign in again; the voucher's other
- * devices stay on. Null `mac` means every device on the voucher.
- */
-export async function disconnectHotspotDevice(
-  conn: MikroTikConn,
-  code: string,
-  mac: string | null,
-): Promise<void> {
-  const ofDevice = mac === null ? [] : [`?mac-address=${mac}`];
-  for (const menu of ["/ip/hotspot/active", "/ip/hotspot/cookie"]) {
-    const rows = await conn.write(`${menu}/print`, [`?user=${code}`, ...ofDevice]);
-    for (const row of toRows(rows)) {
-      const id = row.get(".id");
-      if (id !== null) await conn.write(`${menu}/remove`, [`=.id=${id}`]);
-    }
-  }
 }
 
 /**
@@ -465,13 +185,6 @@ export async function setDeviceBlocked(
       if (id !== null) await conn.write("/ip/hotspot/ip-binding/remove", [`=.id=${id}`]);
     }
   }
-}
-
-export async function removeHotspotUser(conn: MikroTikConn, code: string): Promise<void> {
-  const [row] = toRows(await conn.write("/ip/hotspot/user/print", [`?name=${code}`]));
-  const rosId = row?.get(".id") ?? null;
-  if (rosId === null) return;
-  await conn.write("/ip/hotspot/user/remove", [`=.id=${rosId}`]);
 }
 
 /**

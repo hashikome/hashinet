@@ -4,7 +4,6 @@ import { PrismaService } from "../database/prisma.service.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { IssuesService } from "../issues/issues.service.js";
 import { captureFailure } from "../observability/telemetry.js";
-import { RouterSync } from "../services/router-sync.js";
 
 const MINUTE_MS = 60_000;
 
@@ -19,7 +18,6 @@ const MINUTE_MS = 60_000;
 export class RouterOutages {
   constructor(
     private readonly db: PrismaService,
-    private readonly sync: RouterSync,
     private readonly audit: AuditLog,
     private readonly issues: IssuesService,
   ) {}
@@ -112,22 +110,17 @@ export class RouterOutages {
       // lost minutes after the outage, not before it ended.
       const resumes = Math.max(v.expiresAt.getTime(), ended.getTime());
       const expiresAt = new Date(resumes + minutes * MINUTE_MS);
-      const updated = await this.db.voucher.update({
+      await this.db.voucher.update({
         where: { id: v.id },
         data: {
           expiresAt,
           givenBackMinutes: { increment: minutes },
           ...(v.status === "expired" && expiresAt > now ? { status: "active" } : {}),
         },
-        include: { package: { select: { durationMinutes: true } } },
       });
+      // A device online keeps its old Session-Timeout; when it ends, the device comes back by its
+      // address and RADIUS gives it the time to the new end.
       given.push(minutes);
-      const base = updated.durationMinutes ?? updated.package?.durationMinutes ?? null;
-      if (base !== null) {
-        void this.sync
-          .extendVoucher(outage.router.venueId, v.code, base + updated.givenBackMinutes)
-          .catch(captureFailure);
-      }
     }
     if (given.length === 0) return;
     await this.audit.system({

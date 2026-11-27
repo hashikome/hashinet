@@ -1,5 +1,6 @@
 import type { SecretBox } from "../crypto/secret-box.js";
 import type { PrismaService } from "../database/prisma.service.js";
+import type { Prisma } from "../generated/prisma/client.js";
 import {
   type Answer,
   askOf,
@@ -32,53 +33,61 @@ export const INTERIM_SECONDS = 60;
 const REPEAT_MS = 10_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+const SPEED_SELECT = {
+  deviceLimit: true,
+  downloadSpeedMbps: true,
+  uploadSpeedMbps: true,
+  throttledDownloadMbps: true,
+  throttledUploadMbps: true,
+  peakStartHour: true,
+  peakEndHour: true,
+  throttleAfterGb: true,
+} as const;
+
 const VOUCHER_SELECT = {
   id: true,
   expiresAt: true,
   dataLimitGb: true,
-  dataUsedBytes: true,
   pinLockedAt: true,
-  package: {
-    select: {
-      deviceLimit: true,
-      downloadSpeedMbps: true,
-      uploadSpeedMbps: true,
-      throttledDownloadMbps: true,
-      throttledUploadMbps: true,
-    },
-  },
+  package: { select: SPEED_SELECT },
 } as const;
 
-type VoucherRow = {
-  id: string;
-  expiresAt: Date | null;
-  dataLimitGb: number | null;
-  dataUsedBytes: bigint;
-  pinLockedAt: Date | null;
-  package: {
-    deviceLimit: number;
-    downloadSpeedMbps: number;
-    uploadSpeedMbps: number | null;
-    throttledDownloadMbps: number | null;
-    throttledUploadMbps: number | null;
-  } | null;
-};
+type VoucherRow = Prisma.VoucherGetPayload<{ select: typeof VOUCHER_SELECT }>;
 
-function factsOf(v: VoucherRow): VoucherFacts {
+/** A throttled session is marked in the Class its accounting brings back. */
+const THROTTLED = ":t";
+
+function factsOf(v: VoucherRow, usedBytes: bigint): VoucherFacts {
+  const p = v.package;
   return {
     id: v.id,
     expiresAt: v.expiresAt,
-    deviceLimit: v.package?.deviceLimit ?? 1,
+    deviceLimit: p?.deviceLimit ?? 1,
     dataLimitGb: v.dataLimitGb,
-    dataUsedBytes: v.dataUsedBytes,
+    usedBytes,
     pinLocked: v.pinLockedAt !== null,
     speed: {
-      downloadSpeedMbps: v.package?.downloadSpeedMbps ?? 0,
-      uploadSpeedMbps: v.package?.uploadSpeedMbps ?? null,
-      throttledDownloadMbps: v.package?.throttledDownloadMbps ?? null,
-      throttledUploadMbps: v.package?.throttledUploadMbps ?? null,
+      downloadSpeedMbps: p?.downloadSpeedMbps ?? 0,
+      uploadSpeedMbps: p?.uploadSpeedMbps ?? null,
+      throttledDownloadMbps: p?.throttledDownloadMbps ?? null,
+      throttledUploadMbps: p?.throttledUploadMbps ?? null,
+      peakStartHour: p?.peakStartHour ?? null,
+      peakEndHour: p?.peakEndHour ?? null,
+      throttleAfterGb: p?.throttleAfterGb ?? null,
     },
   };
+}
+
+/** What a voucher's sessions have used, up and down. */
+export async function usedBytesOf(
+  db: Pick<PrismaService, "wifiSession">,
+  voucherId: string,
+): Promise<bigint> {
+  const sum = await db.wifiSession.aggregate({
+    where: { voucherId },
+    _sum: { uploadBytes: true, downloadBytes: true },
+  });
+  return (sum._sum.uploadBytes ?? 0n) + (sum._sum.downloadBytes ?? 0n);
 }
 
 /** What a session ended for, from the router's Acct-Terminate-Cause (RFC 2866, 5.10). */
@@ -167,7 +176,7 @@ export class RadiusService {
       [ATTR.sessionTimeout, u32(a.sessionSeconds)],
       [ATTR.acctInterimInterval, u32(INTERIM_SECONDS)],
       // Comes back in its accounting, naming the voucher whatever the router shows as its user.
-      [ATTR.class, Buffer.from(a.voucherId)],
+      [ATTR.class, Buffer.from(`${a.voucherId}${a.throttled ? THROTTLED : ""}`)],
       ...(a.rateLimit ? [mikrotik(MIKROTIK.rateLimit, Buffer.from(a.rateLimit))] : []),
     ];
   }
@@ -209,7 +218,7 @@ export class RadiusService {
         },
       });
       if (taken.count === 0) return { accept: false, reason: "not_admitted" };
-      return terms(factsOf(voucher), now);
+      return terms(factsOf(voucher, await usedBytesOf(this.db, voucher.id)), now);
     }
 
     if (!device) return { accept: false, reason: "unknown_device" };
@@ -227,7 +236,7 @@ export class RadiusService {
       select: { macAddress: true },
     });
     return comesBack(
-      factsOf(used.voucher),
+      factsOf(used.voucher, await usedBytesOf(this.db, used.voucher.id)),
       online.map((s) => ({ mac: s.macAddress })),
       ask.mac,
       now,
@@ -260,10 +269,12 @@ export class RadiusService {
       return;
     }
     const named = text(packet, ATTR.class);
+    const throttled = named?.endsWith(THROTTLED) ?? false;
+    const voucherId = named === null ? null : throttled ? named.slice(0, -THROTTLED.length) : named;
     const voucher =
-      named !== null && UUID.test(named)
+      voucherId !== null && UUID.test(voucherId)
         ? await this.db.voucher.findFirst({
-            where: { id: named, venueId: router.venueId },
+            where: { id: voucherId, venueId: router.venueId },
             select: { id: true, packageId: true },
           })
         : null;
@@ -295,6 +306,7 @@ export class RadiusService {
         deviceId: device.id,
         macAddress: mac,
         ipAddress,
+        isThrottled: throttled,
         startedAt:
           status === ACCT_STATUS.start
             ? now

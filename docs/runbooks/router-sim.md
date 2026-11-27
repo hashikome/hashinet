@@ -59,8 +59,9 @@ the management URL, the earlier LAN design.
 
 `reset`, then `bootstrap` and `setup`, is the full onboarding of a new router. It takes about
 a minute and must end with `Setup succeeded.`; a second `setup` must report 0 changes.
-`verify` then passes with two expected warnings: no client activity, and the voucher speed
-cap applied through a profile (CHR rejects a per-user `rate-limit`).
+`verify` then passes with one expected warning: no client activity. Its RADIUS check reads
+the `/radius` entry Set up made; nothing answers it until the sim has a RADIUS relay (slice 7,
+step i).
 
 ## Using it in a browser
 
@@ -106,6 +107,11 @@ refused, and accepted again within 90 seconds of unblocking; and the guest cut o
 after `setup`, with or without `PORTAL_ORIGIN`; port 4006 must be free. The API reaches the
 router through `MIKROTIK_TARGET_OVERRIDE`, which production configuration refuses. The page
 itself is not driven, since the guest has no browser. `bun run router-sim voucher [minutes]` creates a voucher on its own.
+
+Since logins go through RADIUS (ADR-0015), a sign-in on the sim needs HashiNet's RADIUS reachable
+from the router, which the sim does not provide yet: until slice 7's step (i) gives it a relay
+and a second router, `guest-test`'s sign-in steps fail, and its kick and MAC-cookie steps describe
+the earlier local-user path.
 
 The guest's checks look at what really answered, not at whether a connection opened: the
 hotspot redirects unauthenticated port 80 and 443 connections to the router itself, so a bare

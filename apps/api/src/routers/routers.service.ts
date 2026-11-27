@@ -1,7 +1,6 @@
 import type {
   AuditAction,
   BootstrapScriptResponse,
-  ProvisioningBacklog,
   RouterJourney,
   RouterRecord,
 } from "@hashinet/types";
@@ -41,12 +40,11 @@ import {
 import { dialectFor } from "../services/router-provision/dialect.js";
 import { type ProvisionReport, provisionRouter } from "../services/router-provision/index.js";
 import { PrismaRouterStore } from "../services/router-provision/prisma-store.js";
-import { probeRouterMerged, type RouterProfile } from "../services/router-provision/probe.js";
+import { probeRouter, type RouterProfile } from "../services/router-provision/probe.js";
 import { probeReadiness, type ReadinessReport } from "../services/router-provision/readiness.js";
 import { setupRouter } from "../services/router-provision/setup.js";
 import { probeVerify, type VerifyReport } from "../services/router-provision/verify.js";
 import { RouterSync } from "../services/router-sync.js";
-import { VoucherReconciler } from "../vouchers/voucher-reconciler.js";
 import { backendSettings } from "./backend-settings.js";
 import type {
   bootstrapInput,
@@ -87,7 +85,6 @@ export class RoutersService {
     private readonly access: RouterAccess,
     private readonly sync: RouterSync,
     private readonly store: PrismaRouterStore,
-    private readonly reconciler: VoucherReconciler,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(TUNNEL_ALLOCATOR) private readonly tunnels: TunnelAllocator | null,
     private readonly issues: IssuesService,
@@ -104,10 +101,6 @@ export class RoutersService {
 
   async get(staff: Principal, id: string): Promise<RouterRecord> {
     return routerRecord(await this.row(staff, id), allows(staff.role, "router.manage"));
-  }
-
-  backlog(staff: Principal): Promise<ProvisioningBacklog> {
-    return this.reconciler.backlog(venueScope(staff));
   }
 
   async create(staff: Principal, input: RouterInput): Promise<RouterRecord> {
@@ -134,8 +127,8 @@ export class RoutersService {
     });
     await this.record(staff, "router.create", row);
     // Nobody waits on this: a router that is not reachable yet is the normal case before its
-    // bootstrap script is pasted. `syncRouter` records its own failures.
-    void this.sync.syncRouter(row.id).catch(captureFailure);
+    // bootstrap script is pasted. `syncBlocks` records its own failures.
+    void this.sync.syncBlocks(row.id).catch(captureFailure);
     return routerRecord(row, allows(staff.role, "router.manage"));
   }
 
@@ -200,10 +193,10 @@ export class RoutersService {
     return this.get(staff, id);
   }
 
-  /** Pushes the venue's live vouchers to the router now. */
+  /** Puts its business's device blocks on the router now. */
   async syncNow(staff: Principal, id: string): Promise<RouterRecord> {
     await this.installRow(staff, id);
-    await this.sync.syncRouter(id);
+    await this.sync.syncBlocks(id);
     return this.get(staff, id);
   }
 
@@ -270,7 +263,7 @@ export class RoutersService {
     const logger = new RouterLogger("probe");
     let profile: RouterProfile;
     try {
-      profile = await probeRouterMerged(creds, logger, null);
+      profile = await probeRouter(creds, logger);
     } catch (err) {
       if (err instanceof RouterError) {
         // A failed test is a result the form shows, not an error.
@@ -321,7 +314,7 @@ export class RoutersService {
     const router = await this.row(staff, id);
     const creds = this.credentialsOf(router);
     const logger = new RouterLogger("probe");
-    const profile = await this.reach(() => probeRouterMerged(creds, logger, router.capabilities));
+    const profile = await this.reach(() => probeRouter(creds, logger));
     await this.db.router.update({
       where: { id },
       data: {
@@ -352,15 +345,12 @@ export class RoutersService {
     };
   }
 
-  /**
-   * Proves the router is serving. Changes no configuration; the write test creates and
-   * removes one throwaway hotspot user unless skipped.
-   */
-  async verify(staff: Principal, id: string, writeTest: boolean): Promise<VerifyReport> {
+  /** Proves the router is serving. Reads only: it changes nothing on the router. */
+  async verify(staff: Principal, id: string): Promise<VerifyReport> {
     const router = await this.row(staff, id);
     const creds = this.credentialsOf(router);
     const logger = new RouterLogger("probe");
-    const profile = await this.reach(() => probeRouterMerged(creds, logger, router.capabilities));
+    const profile = await this.reach(() => probeRouter(creds, logger));
     const { plan, planError } = planFor(router, profile);
     if (plan === null) {
       throw new BadRequestException(apiError("ROUTER_PLAN_INVALID", planError ?? "No plan."));
@@ -371,12 +361,8 @@ export class RoutersService {
         dialect: dialectFor(profile),
         plan,
         endpoints: resolveBackendEndpoints(router.ipAddress, backendSettings(this.config)),
-        includeWriteTest: writeTest,
       }),
     );
-    if (report.discovered) {
-      await this.store.recordCapabilities(id, { ...profile.capabilities, ...report.discovered });
-    }
     return report;
   }
 

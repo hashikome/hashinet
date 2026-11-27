@@ -7,9 +7,7 @@ import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { VoucherWhereInput } from "../generated/prisma/models.js";
 import { apiError } from "../http/error-envelope.js";
-import { captureFailure } from "../observability/telemetry.js";
 import { voucherRecord } from "../serializers/records.js";
-import { RouterSync } from "../services/router-sync.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 import type { listQuery, refundInput } from "./voucher-input.js";
 
@@ -48,7 +46,6 @@ export class VouchersService {
   constructor(
     private readonly db: PrismaService,
     private readonly audit: AuditLog,
-    private readonly sync: RouterSync,
     private readonly sessions: SessionsService,
   ) {}
 
@@ -131,18 +128,16 @@ export class VouchersService {
         tx,
       );
     });
-    if (voucher.venueId !== null) {
-      void this.sync.removeVouchers(voucher.venueId, [voucher.code]).catch(captureFailure);
-    }
     return listItem(
       await this.db.voucher.findUniqueOrThrow({ where: { id }, include: LIST_INCLUDE }),
     );
   }
 
   /**
-   * Frees a voucher in use for the guest who shows it at the counter, when their phone changed
-   * (ADR-0015, 6): its devices and their sessions are cleared, so the next device signs in with the
-   * code alone; its time keeps running. The switch PIN comes with RADIUS (slice 7).
+   * Frees a voucher in use for the guest who shows it at the counter, when their phone changed or
+   * its PIN was lost or locked (ADR-0015, 6): its devices, their sessions and its switch PIN are
+   * cleared, so the next device signs in with the code alone and gets a new PIN; its time keeps
+   * running.
    */
   async release(staff: Principal, id: string): Promise<VoucherListItem> {
     const voucher = await this.db.voucher.findFirst({ where: { id, ...inScope(staff) } });
@@ -159,6 +154,10 @@ export class VouchersService {
       "voucher_released",
     );
     const freed = await this.db.voucherDevice.deleteMany({ where: { voucherId: id } });
+    await this.db.voucher.update({
+      where: { id },
+      data: { pinHmac: null, pinWrongTries: 0, pinWaitUntil: null, pinLockedAt: null },
+    });
     await this.audit.record(staff, {
       ...(await this.audit.atVenue(voucher.venueId)),
       action: "voucher.release",

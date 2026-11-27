@@ -6,7 +6,6 @@ import {
   HOUR,
   MONTH,
   minutesToMs,
-  minutesToRosUptime,
   splitDuration,
   toMinutes,
   WEEK,
@@ -88,37 +87,6 @@ describe("durationShort rounds rather than requiring an exact division", () => {
     [43200, "1mo"],
   ] as const)("%s → %s", (minutes, expected) => {
     expect(durationShort(minutes)).toBe(expected);
-  });
-});
-
-describe("minutesToRosUptime", () => {
-  /**
-   * This is hardware-level enforcement — the router cuts the user off itself (§13.6) — so a
-   * 30-minute voucher must not be emitted as an hour. The hours-only predecessor could only ever
-   * produce `HH:00:00`.
-   */
-  test.each([
-    [30, "00:30:00"],
-    [45, "00:45:00"],
-    [60, "01:00:00"],
-    [90, "01:30:00"],
-    [1439, "23:59:00"],
-    [1440, "1d00:00:00"],
-    [1470, "1d00:30:00"],
-    [10080, "7d00:00:00"],
-  ] as const)("%s minutes → %s", (minutes, expected) => {
-    expect(minutesToRosUptime(minutes)).toBe(expected);
-  });
-
-  test("always matches RouterOS's [Nd]HH:MM:SS shape", () => {
-    for (const m of [1, 30, 59, 60, 61, 1439, 1440, 43200]) {
-      expect(minutesToRosUptime(m)).toMatch(/^(\d+d)?\d{2}:\d{2}:\d{2}$/);
-    }
-  });
-
-  test("never emits a negative or malformed value", () => {
-    expect(minutesToRosUptime(0)).toBe("00:00:00");
-    expect(minutesToRosUptime(-5)).toBe("00:00:00");
   });
 });
 

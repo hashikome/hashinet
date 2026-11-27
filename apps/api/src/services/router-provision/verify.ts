@@ -4,34 +4,24 @@
  * Every provisioning step verifies its own write, so a green run only proves the configuration
  * reads back as asked, not that a device can associate, get an address, and be let online.
  *
- * Most of that is machine-checkable, and this checks it. What is left needs a real
- * radio and a real browser, so it is returned as `manual` rather than quietly omitted.
- *
- * The important one is the **voucher round-trip**: creating a hotspot user, reading it back and
- * removing it exercises the exact path every sale depends on, including the per-board parameter
- * differences `dialect.ts` exists to absorb. It is the only check here that writes, it is
- * short-lived and harmless (a 1-second uptime limit and a random password), and if the cleanup
- * ever fails it says so loudly with the name to remove by hand.
+ * Most of that is machine-checkable, and this checks it, without writing anything. What is left
+ * needs a real radio and a real browser, so it is returned as `manual` rather than quietly omitted.
  */
 
-import { randomBytes } from "node:crypto";
 import {
   closeConnection,
   connectToRouter,
   type MikroTikConn,
   type RouterCredentials,
 } from "../mikrotik.js";
-import { RouterUnsupportedError } from "../mikrotik-errors.js";
 import type { RouterLogger } from "../router-log.js";
 import type { BackendEndpoints, HotspotPlan } from "./context.js";
 import type { Dialect } from "./dialect.js";
-import { hotspotUserParams } from "./dialect.js";
 import { PORTAL_FILES, portalMark, renderPortalFile, routerPathFor } from "./portal-files.js";
-import type { RouterCapabilities } from "./probe.js";
 // Same check/report shape as readiness.ts on purpose: one frontend component renders both.
 import type { ReadinessCheck, ReadinessStatus } from "./readiness.js";
 import { RosClient, rowId } from "./ros-client.js";
-import { radioIsOpen } from "./steps.js";
+import { RADIUS_LOGIN_BY, RADIUS_STEP, radioIsOpen } from "./steps.js";
 
 export interface VerifyReport {
   /** False when something proves the hotspot is not serving. */
@@ -39,11 +29,6 @@ export interface VerifyReport {
   checks: ReadinessCheck[];
   /** What a machine cannot prove — still needs a phone. */
   manual: string[];
-  /**
-   * Capabilities the write test proved wrong, for the caller to persist. `deriveCapabilities`
-   * can only guess these from the RouterOS version; this is the board actually answering.
-   */
-  discovered: Partial<RouterCapabilities> | null;
   summary: { pass: number; warn: number; fail: number; skipped: number };
 }
 
@@ -52,8 +37,6 @@ export interface VerifyInput {
   dialect: Dialect;
   plan: HotspotPlan;
   endpoints: BackendEndpoints;
-  /** Create-and-remove a throwaway hotspot user. On by default. */
-  includeWriteTest?: boolean;
 }
 
 const yes = (v: string | null) => v === "true" || v === "yes";
@@ -280,17 +263,19 @@ async function loginModeCheck(ros: RosClient, plan: HotspotPlan): Promise<Readin
     return { ...base, status: "fail", detail: `Hotspot profile "${plan.profileName}" is missing.` };
   }
   const loginBy = row.get("login-by") ?? "";
-  if (loginBy !== "mac-cookie") {
+  const radius = yes(row.get("use-radius"));
+  if (loginBy !== RADIUS_LOGIN_BY || !radius) {
     return {
       ...base,
       status: "fail",
-      detail: `login-by is "${loginBy}", not mac-cookie alone.`,
+      detail: `login-by is "${loginBy}"${radius ? "" : " without RADIUS"}, not ${RADIUS_LOGIN_BY} through RADIUS.`,
       fix:
-        "Any http method lets the network post and guess voucher codes at the router, and " +
-        "without mac-cookie a device cannot come back. Run Set up again.",
+        "Any http method lets the network post and guess voucher codes at the router; without " +
+        "RADIUS HashiNet can't count a voucher's devices across the venue, and without mac and " +
+        "mac-cookie a device can't come back. Run Set up again.",
     };
   }
-  return { ...base, status: "pass", detail: `login-by is "${loginBy}".` };
+  return { ...base, status: "pass", detail: `login-by is "${loginBy}", answered by HashiNet.` };
 }
 
 async function portalFilesCheck(
@@ -393,255 +378,37 @@ async function activityCheck(ros: RosClient): Promise<ReadinessCheck> {
   };
 }
 
-/** Params a board may reject, in the same order `createHotspotUser` drops them. */
-const OPTIONAL_USER_PARAMS = ["=rate-limit=", "=shared-users="];
-
 /**
- * The one that proves sales will work: create a hotspot user, read it back, remove it.
- *
- * `hotspotUserParams` is used rather than a bare add, so the per-board parameter differences are
- * exercised exactly as a real voucher exercises them — and it mirrors `createHotspotUser`'s
- * fallback, retrying without the optional params when the board rejects them. Without that
- * mirroring this check would report a failure on a router where sales actually succeed.
- *
- * When the fallback fires, the board has just told us something the read-only probe cannot know:
- * `deriveCapabilities` guesses user-level `rate-limit`/`shared-users` purely from the RouterOS
- * major version, and that guess is wrong on at least one real board (an hAP lite on 7.23.2
- * rejects `rate-limit` outright). The discovered truth is returned so the caller can correct the
- * cached capabilities — otherwise every voucher sold on that router pays for a failed round-trip
- * first.
+ * Every login is answered by HashiNet over RADIUS (ADR-0015), so the router must name HashiNet as
+ * its hotspot RADIUS server. Read-only: the first guest's sign-in is what proves the round trip, and
+ * `/radius/monitor` says how the server has answered so far.
  */
-async function voucherRoundTripCheck(
-  ros: RosClient,
-  dialect: Dialect,
-): Promise<{ check: ReadinessCheck; discovered: Partial<RouterCapabilities> | null }> {
-  const base = { id: "voucher-round-trip", title: "A voucher can be created and read back" };
-  const code = `wbs-selftest-${randomBytes(4).toString("hex")}`;
-  const params = hotspotUserParams(dialect, {
-    code,
-    deviceLimit: 1,
-    downloadSpeedMbps: 1,
-    uploadSpeedMbps: 1,
-    limitBytesTotal: null,
-    // Useless to anyone even in the instant it exists.
-    limitUptime: "00:00:01",
-  });
-
-  let rejected: string[] = [];
-  let discovered: Partial<RouterCapabilities> | null = null;
-  let created = false;
-
-  /**
-   * The profile the throwaway voucher rides when the board will not take limits on the user.
-   *
-   * This is the part that was missing. Every check here verified *configuration* — that a command
-   * was accepted and read back — and none verified *enforcement*. So a run reported `ok: true` on a
-   * router where `createHotspotUser` never sent `=profile=`, every voucher sat on `default`, and
-   * customers got uncapped speed. Reading a command back is not the same as a limit being in force.
-   *
-   * Creating our own profile rather than inspecting a real package's keeps the check self-contained
-   * and removable, while still exercising the whole mechanism: create profile → assign it to a user
-   * → read the user back → confirm the profile it points at actually carries a cap.
-   */
-  const testProfile = `wbs-selftest-p-${randomBytes(3).toString("hex")}`;
-  let profileCreated = false;
-
-  const ensureTestProfile = async (): Promise<void> => {
-    if (profileCreated) return;
-    await ros.add("/ip/hotspot/user/profile", [
-      `=name=${testProfile}`,
-      "=rate-limit=1M/1M",
-      "=shared-users=1",
-    ]);
-    profileCreated = true;
-  };
-
-  /**
-   * What we are actually about to send — NOT what the board turns out to accept.
-   *
-   * Once the capabilities are latched to false, `hotspotUserParams` stops emitting these, so the
-   * add succeeds first try and `rejected` stays empty. Reporting "pass" from that alone told the
-   * admin the throwaway voucher carried "speed and device limits" when the command demonstrably
-   * had neither — a false reassurance, and worse than the false alarm it replaced, because the
-   * first run's amber warning was the only place the shared-limit consequence was ever stated.
-   */
-  const optionalSent = params.filter((p) => OPTIONAL_USER_PARAMS.some((x) => p.startsWith(x)));
-
-  try {
-    // Already known to need the profile route (capabilities latched false on an earlier run).
-    if (optionalSent.length === 0) {
-      await ensureTestProfile();
-      params.push(`=profile=${testProfile}`);
-    }
-
-    try {
-      await ros.add("/ip/hotspot/user", params);
-    } catch (err) {
-      const optional = params.filter((p) => OPTIONAL_USER_PARAMS.some((x) => p.startsWith(x)));
-      if (!(err instanceof RouterUnsupportedError) || optional.length === 0) throw err;
-
-      rejected = optional.map((p) => p.split("=")[1] ?? p);
-      discovered = {
-        ...(rejected.includes("rate-limit") ? { userRateLimit: false } : {}),
-        ...(rejected.includes("shared-users") ? { userSharedUsers: false } : {}),
-      };
-      // Learned it only now — so put the cap on a profile before retrying, exactly as
-      // `router-sync.ts` does for a real voucher.
-      await ensureTestProfile();
-      await ros.add("/ip/hotspot/user", [
-        ...params.filter((p) => !OPTIONAL_USER_PARAMS.some((x) => p.startsWith(x))),
-        `=profile=${testProfile}`,
-      ]);
-    }
-    created = true;
-
-    const readBack = await ros.findByName("/ip/hotspot/user", code);
-    if (!readBack) {
-      return {
-        discovered,
-        check: {
-          ...base,
-          status: "fail",
-          detail: "The user was accepted but reading it back found nothing.",
-          fix:
-            "`add` returning without error is not proof the user exists. Vouchers sold on this " +
-            "router would take payment and never grant access. Check /ip hotspot user print.",
-        },
-      };
-    }
-
-    /*
-     * Is a speed cap actually IN FORCE on that user? Two ways it can be, and it must be one of
-     * them — otherwise the voucher works and the customer gets the whole uplink.
-     */
-    const userRateLimit = readBack.get("rate-limit")?.trim() || null;
-    const onProfile = readBack.get("profile")?.trim() || null;
-    const profileRow = onProfile
-      ? await ros.findByName("/ip/hotspot/user/profile", onProfile)
-      : null;
-    const profileRateLimit = profileRow?.get("rate-limit")?.trim() || null;
-    const capInForce = userRateLimit ?? profileRateLimit;
-
-    // Clean up before reporting, so a failure verdict does not also leave litter behind.
-    await ros.remove("/ip/hotspot/user", rowId(readBack));
-    created = false;
-    const leftBehind = (await ros.findByName("/ip/hotspot/user", code)) !== null;
-
-    if (leftBehind) {
-      return {
-        discovered,
-        check: {
-          ...base,
-          status: "warn",
-          detail: `Created and read back, but the test user "${code}" could not be removed.`,
-          fix: `Remove it by hand: /ip hotspot user remove [find name=${code}]`,
-        },
-      };
-    }
-
-    /*
-     * The check this whole function existed without.
-     *
-     * A voucher with no cap from either mechanism is not a warning — it is the router handing a
-     * paying customer unlimited bandwidth, and it reported `ok: true` for a whole day.
-     */
-    if (!capInForce) {
-      return {
-        discovered,
-        check: {
-          ...base,
-          status: "fail",
-          detail:
-            `The voucher was created and read back, but it has NO speed limit — neither on the ` +
-            `user nor on its profile ("${onProfile ?? "default"}").`,
-          fix:
-            `Every voucher sold on this router would get the full uplink. This board does not ` +
-            `accept rate-limit on a hotspot user, so the cap has to ride a per-package user ` +
-            `profile — check that router-sync is sending =profile= and that ` +
-            `/ip hotspot user profile print shows a wbs-pkg-* entry with a rate-limit.`,
-        },
-      };
-    }
-
-    if (rejected.length > 0) {
-      return {
-        discovered,
-        check: {
-          ...base,
-          status: "warn",
-          detail:
-            `Vouchers work and are capped at ${capInForce} via the profile, but this board ` +
-            `rejects ${rejected.join(" and ")} on a hotspot user.`,
-          fix:
-            `Limits ride a per-package user profile instead (§13.7), so every voucher on one ` +
-            `package shares its cap. The cached capabilities have been corrected, so future ` +
-            `vouchers skip the rejected attempt.`,
-        },
-      };
-    }
-
-    if (optionalSent.length === 0) {
-      return {
-        discovered,
-        check: {
-          ...base,
-          status: "warn",
-          detail:
-            `Vouchers work and are capped at ${capInForce} via the profile ` +
-            `"${onProfile}", not on the voucher itself.`,
-          fix:
-            `Expected on this board — it takes no per-user rate-limit, so the cap lives on a ` +
-            `per-package profile (§13.7) and is shared by every voucher on that package. ` +
-            `Nothing to fix.`,
-        },
-      };
-    }
-
+async function radiusCheck(ros: RosClient, endpoints: BackendEndpoints): Promise<ReadinessCheck> {
+  const base = { id: "radius", title: "HashiNet answers this router's logins" };
+  const row = await ros.findByTag("/radius", RADIUS_STEP);
+  const address = endpoints.management.ip;
+  if (!row || row.get("address") !== address || row.get("service") !== "hotspot") {
     return {
-      discovered,
-      check: {
-        ...base,
-        status: "pass",
-        detail: `Created a throwaway voucher capped at ${capInForce} on the user itself, read it back, removed it.`,
-      },
+      ...base,
+      status: "fail",
+      detail: row
+        ? `The RADIUS entry points at ${row.get("address") ?? "nothing"}, not ${address}.`
+        : "The router has no RADIUS entry for HashiNet.",
+      fix: "Without it no guest can sign in. Run Set up again.",
     };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      discovered,
-      check: {
-        ...base,
-        status: "fail",
-        detail: `Voucher creation failed: ${message}`,
-        fix: created
-          ? `Every sale on this router would fail. A test user "${code}" may be left behind — ` +
-            `remove it with /ip hotspot user remove [find name=${code}]`
-          : "Every sale on this router would fail the moment a customer pays.",
-      },
-    };
-  } finally {
-    /*
-     * Remove the throwaway profile on every path, including the failure ones above.
-     *
-     * It has to go after the user, since RouterOS refuses to remove a profile a user still points
-     * at. Best-effort: a leftover `wbs-selftest-p-*` is cosmetic, and letting a cleanup error mask
-     * the real verdict would be much worse — that verdict is the whole point of the check.
-     */
-    if (profileCreated) {
-      const row = await ros.findByName("/ip/hotspot/user/profile", testProfile);
-      if (row) {
-        try {
-          await ros.remove("/ip/hotspot/user/profile", rowId(row));
-        } catch {
-          /* leave it; the verdict matters more */
-        }
-      }
-    }
   }
+  const monitor = await ros
+    .tryExec("/radius/monitor", [`=numbers=${rowId(row)}`, "=once="])
+    .catch(() => null);
+  const counters = monitor?.[0];
+  const detail = counters
+    ? `Asks ${address}: ${counters.get("requests") ?? "0"} requests, ${counters.get("accepts") ?? "0"} accepted, ${counters.get("timeouts") ?? "0"} unanswered.`
+    : `Asks ${address}.`;
+  return { ...base, status: "pass", detail };
 }
 
 export async function verifyRouter(ros: RosClient, input: VerifyInput): Promise<VerifyReport> {
-  const { routerId, dialect, plan, endpoints, includeWriteTest = true } = input;
+  const { routerId, dialect, plan, endpoints } = input;
 
   const checks: ReadinessCheck[] = [];
 
@@ -651,25 +418,10 @@ export async function verifyRouter(ros: RosClient, input: VerifyInput): Promise<
   checks.push(await radioBroadcastingCheck(ros, dialect, plan));
   checks.push(await guestWifiOpenCheck(ros, dialect, plan));
   checks.push(await loginModeCheck(ros, plan));
+  checks.push(await radiusCheck(ros, endpoints));
   checks.push(await portalFilesCheck(ros, endpoints.portal.origin, routerId));
   checks.push(await walledGardenCheck(ros, endpoints.portal));
   checks.push(await activityCheck(ros));
-
-  let discovered: Partial<RouterCapabilities> | null = null;
-
-  if (includeWriteTest) {
-    const result = await voucherRoundTripCheck(ros, dialect);
-    checks.push(result.check);
-    discovered = result.discovered;
-  } else {
-    checks.push({
-      id: "voucher-round-trip",
-      title: "A voucher can be created and read back",
-      status: "skipped",
-      detail: "Skipped — this is the only check that writes to the router.",
-      fix: "Run it to prove that selling a voucher on this router actually grants access.",
-    });
-  }
 
   const count = (s: ReadinessStatus) => checks.filter((c) => c.status === s).length;
   const summary = {
@@ -679,7 +431,7 @@ export async function verifyRouter(ros: RosClient, input: VerifyInput): Promise<
     skipped: count("skipped"),
   };
 
-  return { ok: summary.fail === 0, checks, manual: MANUAL_CHECKS, discovered, summary };
+  return { ok: summary.fail === 0, checks, manual: MANUAL_CHECKS, summary };
 }
 
 /** Connect, verify, disconnect — for callers that don't already hold a `RosClient`. */

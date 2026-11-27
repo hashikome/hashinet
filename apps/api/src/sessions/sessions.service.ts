@@ -124,7 +124,6 @@ export class SessionsService {
     const now = new Date();
     const connected = await this.db.wifiSession.findMany({
       where: { id: { in: ids }, status: "connected" },
-      include: { voucher: { select: { code: true } } },
     });
     let ended = 0;
     for (const session of connected) {
@@ -141,11 +140,8 @@ export class SessionsService {
         },
       });
       ended += updated.count;
-      const code = session.voucher?.code ?? null;
-      if (updated.count === 1 && code !== null && session.venueId !== null) {
-        void this.sync
-          .disconnectDevice(session.venueId, code, session.macAddress)
-          .catch(captureFailure);
+      if (updated.count === 1 && session.venueId !== null) {
+        void this.sync.endDevice(session.venueId, session.macAddress).catch(captureFailure);
       }
     }
     return ended;

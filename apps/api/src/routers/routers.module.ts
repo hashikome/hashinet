@@ -17,7 +17,6 @@ import { RouterAccess } from "../services/router-credentials.js";
 import { PrismaRouterStore } from "../services/router-provision/prisma-store.js";
 import { RouterSync } from "../services/router-sync.js";
 import { VoucherExpiry } from "../vouchers/voucher-expiry.js";
-import { VoucherReconciler } from "../vouchers/voucher-reconciler.js";
 import { backendSettings } from "./backend-settings.js";
 import { RouterOutages } from "./router-outages.js";
 import { RoutersController } from "./routers.controller.js";
@@ -37,7 +36,6 @@ export class BackgroundJobs extends ScheduledJobs {
     @Inject(APP_CONFIG) config: AppConfig,
     monitor: LiveMonitor,
     expiry: VoucherExpiry,
-    reconciler: VoucherReconciler,
     outages: RouterOutages,
     live: LiveHub,
   ) {
@@ -60,9 +58,6 @@ export class BackgroundJobs extends ScheduledJobs {
       }),
       new IntervalJob("voucher.expiry", MINUTE, async () => {
         await expiry.runOnce();
-      }),
-      new IntervalJob("voucher.reconcile", MINUTE, async () => {
-        await reconciler.runOnce();
       }),
     ];
   }
@@ -90,9 +85,14 @@ export class BackgroundJobs extends ScheduledJobs {
     },
     {
       provide: PrismaRouterStore,
-      inject: [PrismaService, RouterAccess, RouterSync, APP_CONFIG],
-      useFactory: (db: PrismaService, access: RouterAccess, sync: RouterSync, config: AppConfig) =>
-        new PrismaRouterStore(db, access, sync, backendSettings(config)),
+      inject: [PrismaService, RouterAccess, APP_CONFIG],
+      useFactory: (db: PrismaService, access: RouterAccess, config: AppConfig) =>
+        new PrismaRouterStore(
+          db,
+          access,
+          new SecretBox(config.encryptionKey),
+          backendSettings(config),
+        ),
     },
     {
       provide: LiveMonitor,
@@ -103,12 +103,6 @@ export class BackgroundJobs extends ScheduledJobs {
       provide: VoucherExpiry,
       inject: [PrismaService, RouterSync],
       useFactory: (db: PrismaService, sync: RouterSync) => new VoucherExpiry(db, sync),
-    },
-    {
-      provide: VoucherReconciler,
-      inject: [PrismaService, RouterSync, AuditLog],
-      useFactory: (db: PrismaService, sync: RouterSync, audit: AuditLog) =>
-        new VoucherReconciler(db, sync, audit),
     },
     {
       provide: TUNNEL_ALLOCATOR,
@@ -134,7 +128,6 @@ export class BackgroundJobs extends ScheduledJobs {
     PrismaRouterStore,
     LiveMonitor,
     VoucherExpiry,
-    VoucherReconciler,
   ],
 })
 export class RoutersModule {}

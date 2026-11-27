@@ -24,9 +24,7 @@ import { storedSetup } from "../apps/api/src/routers/router-journey.js";
 import {
   closeConnection,
   connectToRouter,
-  disconnectHotspotDevice,
-  hotspotUserExists,
-  kickHotspotSession,
+  endHotspotSession,
   loginHotspotClient,
   type MikroTikConn,
   setDeviceBlocked,
@@ -47,7 +45,7 @@ import {
   renderPortalFile,
 } from "../apps/api/src/services/router-provision/portal-files.js";
 import { PrismaRouterStore } from "../apps/api/src/services/router-provision/prisma-store.js";
-import { probeRouterMerged } from "../apps/api/src/services/router-provision/probe.js";
+import { probeRouter } from "../apps/api/src/services/router-provision/probe.js";
 import { toRows } from "../apps/api/src/services/router-provision/ros-client.js";
 import { setupRouter } from "../apps/api/src/services/router-provision/setup.js";
 import {
@@ -55,7 +53,7 @@ import {
   type WireguardKeyPair,
 } from "../apps/api/src/services/router-provision/tunnel.js";
 import { probeVerify } from "../apps/api/src/services/router-provision/verify.js";
-import { describeFailures, outcomeOk, RouterSync } from "../apps/api/src/services/router-sync.js";
+import { RouterSync } from "../apps/api/src/services/router-sync.js";
 
 const ROOT = resolve(import.meta.dir, "..");
 const SIM = join(ROOT, "data", "router-sim");
@@ -576,7 +574,7 @@ async function simServices(state: SimState): Promise<SimServices> {
     db,
     access,
     sync,
-    store: new PrismaRouterStore(db, access, sync, simBackend(state)),
+    store: new PrismaRouterStore(db, access, box, simBackend(state)),
     router,
   };
 }
@@ -648,7 +646,7 @@ async function verify(): Promise<void> {
     const creds = access.credentials(router);
     if (!creds) throw new Error("The sim router has no usable credentials");
     const logger = new RouterLogger("probe");
-    const profile = await probeRouterMerged(creds, logger, router.capabilities);
+    const profile = await probeRouter(creds, logger);
     const report = await probeVerify(creds, logger, {
       routerId: router.id,
       dialect: dialectFor(profile),
@@ -767,15 +765,15 @@ function guest(): void {
 }
 
 /**
- * Sells a voucher the way the API will: a package and voucher rows in the sim database, pushed to
- * the venue's routers by RouterSync and confirmed by the router. Prints `VOUCHER=<code>`.
+ * Sells a voucher the way the API will: a package and voucher rows in the sim database. Nothing
+ * goes to the router: RADIUS answers from the voucher (ADR-0015). Prints `VOUCHER=<code>`.
  */
 async function voucher(): Promise<void> {
   const state = readState();
   ensureSimDatabase();
   if (delegateToHub(state, "voucher", args)) return;
   const minutes = Number(args[0] ?? 1);
-  const { db, access, sync, router } = await simServices(state);
+  const { db, router } = await simServices(state);
   try {
     const pkg = await db.package.create({
       data: {
@@ -797,18 +795,6 @@ async function voucher(): Promise<void> {
         durationMinutes: minutes,
       },
     });
-    const outcome = await sync.pushVouchers(router.venueId, [code], pkg, null);
-    if (!outcomeOk(outcome))
-      throw new Error(`The router did not take it: ${describeFailures(outcome)}`);
-    const creds = access.credentials(router);
-    if (!creds) throw new Error("The sim router has no usable credentials");
-    const conn = await connectToRouter(creds);
-    try {
-      if (!(await hotspotUserExists(conn, code)))
-        throw new Error("The router did not confirm the voucher");
-    } finally {
-      await closeConnection(conn);
-    }
     console.log(`VOUCHER=${code}`);
   } finally {
     await db.$disconnect();
@@ -1193,7 +1179,7 @@ async function guestTest(): Promise<void> {
     );
 
     await onRouter(async (conn) => {
-      await kickHotspotSession(conn, code);
+      await endHotspotSession(conn, mac);
       await loginHotspotClient(conn, { user: code, ip, mac });
     });
     const throttled = await fetchPage("http://example.com/");
@@ -1219,7 +1205,7 @@ async function guestTest(): Promise<void> {
       `${describe(returned)}; mac-cookie in the log: ${byCookie}`,
     );
 
-    await onRouter((conn) => disconnectHotspotDevice(conn, code, mac));
+    await onRouter((conn) => endHotspotSession(conn, mac));
     await Bun.sleep(2_000);
     const forgotten = await fetchPage("http://example.com/");
     record(
@@ -1251,7 +1237,7 @@ async function guestTest(): Promise<void> {
       again.internet,
       `after ${Math.round((Date.now() - unblockedAt) / 1000)} s; ${describe(again)}`,
     );
-    await onRouter((conn) => disconnectHotspotDevice(conn, code, mac));
+    await onRouter((conn) => endHotspotSession(conn, mac));
 
     const short = Bun.spawnSync(["bun", "tooling/router-sim.ts", "voucher", "1"], {
       stdout: "pipe",

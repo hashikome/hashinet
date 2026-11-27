@@ -67,12 +67,10 @@ beforeEach(() => {
   const sync = api.app.get(RouterSync);
   sync.deviceOnNetwork = async () => onNetwork;
   sync.deviceAddress = async () => deviceIp;
-  sync.ensureVoucher = async () => ({
-    attempted: 1,
-    succeeded: routerUp ? 1 : 0,
-    failures: routerUp ? [] : [{ router: "Lobby", error: "unreachable" }],
-  });
+  sync.stillThere = async () => false;
+  sync.endSession = async () => {};
   sync.signInDevice = async (_router, client) => {
+    if (!routerUp) return false;
     signedIn += 1;
     signedInAt = client.ip;
     return true;
@@ -309,16 +307,15 @@ describe("buying on the portal", () => {
     expect(signedIn).toBe(1);
   });
 
-  test("paid with the router down is access owed, and recovers", async () => {
+  test("paid with the router down, the code is on the screen, and the device gets on once it is up", async () => {
     routerUp = false;
     const { paymentId, secret } = await started();
     await report(completed(paymentId));
     await settled();
     await t.db.payment.update({ where: { id: paymentId }, data: { lastCheckedAt: new Date() } });
-    const owed = (await status(paymentId, secret)).body as Record<string, unknown>;
-    expect(owed).toMatchObject({ state: "paid", owed: true, online: false });
-    expect(owed.code).toMatch(/^\d{12}$/);
-    expect((await t.db.payment.findFirstOrThrow()).provisionError).toContain("unreachable");
+    const waiting = (await status(paymentId, secret)).body as Record<string, unknown>;
+    expect(waiting).toMatchObject({ state: "paid", owed: false, online: false });
+    expect(waiting.code).toMatch(/^\d{12}$/);
 
     routerUp = true;
     await api.app.get(PaymentsService).reconcile();

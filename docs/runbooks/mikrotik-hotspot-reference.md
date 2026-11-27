@@ -7,9 +7,12 @@
 > hand in this document is now automated, and following the manual steps here instead will
 > produce duplicate rules and untagged config the system cannot manage.
 >
-> **Sign-in changed:** the hotspot has `login-by=mac-cookie` alone and the API signs devices in
-> ([ADR-0008](../engineering-decisions/0008-captive-portal.md)). Older flows described below,
-> where a browser posted a code to the router, no longer apply.
+> **Sign-in:** the hotspot has `login-by=mac,mac-cookie` with `use-radius=yes`. The API signs a
+> device in with its code ([ADR-0008](../engineering-decisions/0008-captive-portal.md)), and
+> HashiNet answers every login over RADIUS through the management tunnel
+> ([ADR-0015](../engineering-decisions/0015-voucher-online-limit-through-radius.md)). No voucher
+> is a hotspot user on a router. Flows below where a browser posted a code to the router, or a
+> voucher was added as `/ip hotspot user`, no longer apply.
 >
 > **This document is the reference**, not the procedure: why each setting exists, every
 > error we hit and its fix, and the manual equivalent of each automated step. Read it when
@@ -42,19 +45,19 @@ Phone (WiFi client, gets 10.5.50.x)
     │  login.html redirects → http://192.168.0.15:4006/join
     ▼
 Express backend (192.168.0.15:4006)
-    │ /join renders captive portal page
-    │ /portal/validate-voucher validates voucher in MySQL
-    │ Backend calls RouterOS API → creates hotspot user on MikroTik
+    │ /join renders the captive portal; the guest enters a code (and, for a voucher in use,
+    │ its switch PIN); the API checks it and leaves an admission
+    │ The API signs the device in: /ip hotspot active login with the code
     ▼
-Phone browser POSTs credentials to MikroTik login URL
-    │ MikroTik checks /ip hotspot user list
+MikroTik asks HashiNet over RADIUS (through the tunnel service), which takes the admission
+    │ and answers with the time left, the speed and the voucher's id (Class)
     ▼
 Internet access granted  →  portal says "You're online"  →  goes on to the destination
 ```
 
-**No FreeRADIUS.** MikroTik manages its own user list (`/ip hotspot user`). The backend
-validates voucher codes against MySQL, creates the hotspot user via RouterOS API,
-and returns the credentials. MikroTik does the final authentication check itself.
+**HashiNet is the RADIUS server.** No voucher lives on a router: a device signed in by the API, or
+coming back by its address or cookie, is answered by HashiNet, which counts a voucher's devices
+online across the venue's routers. Accounting reports open, count and end each session.
 
 > **CRITICAL DISTINCTION:** MikroTik (192.168.0.161) is NOT the internet gateway —
 > the ISP router (192.168.0.1) is. MikroTik sits between the ISP router and WiFi clients.
@@ -540,34 +543,15 @@ OPTIONS preflight the same way it does for GET/POST.
 
 ---
 
-## 8. Creating Hotspot Users (Manual — Pre-Automation)
+## 8. Vouchers are not hotspot users
 
-MikroTik authenticates against its own internal user database. The backend validates
-vouchers against MySQL, but MikroTik doesn't know about them — you must create matching
-users in MikroTik for each voucher you want to test.
+A voucher is never added to a router. Selling one writes it to HashiNet's database, and HashiNet
+answers the router's RADIUS request when a guest signs in with it. `/ip hotspot user print` on a
+router set up by HashiNet lists nothing of HashiNet's; Set up removes the 12-digit users and
+`wbs-pkg-*` profiles an earlier setup left behind.
 
-### 8.1 Check what users exist
-
-```routeros
-/ip hotspot user print
-```
-
-### 8.2 Add a user matching a voucher code
-
-The backend uses the voucher code as both `username` and `password`:
-
-```routeros
-/ip hotspot user add name=482716936518 password=482716936518
-```
-
-Replace `482716936518` with an active voucher code (12 digits, no spaces) from your database.
-
-### 8.3 Sell a voucher
-
-1. Open `http://localhost:3006/overview`, signed in as anyone at the venue, and tap **Sell**
-2. Choose the package, cash or mobile money, and confirm
-3. HashiNet pushes the code to the venue's routers after the sale answers; a router that missed
-   the push gets the code when a guest redeems it (§11)
+To sell a test voucher: open `http://localhost:3006/overview`, signed in as anyone at the venue,
+tap **Sell**, choose the package and confirm.
 
 ---
 
@@ -722,8 +706,9 @@ All three passing = network layer solid; remaining issues are backend/portal-sid
 
 ## 11. Login methods
 
-`login-by=mac-cookie` alone. Every http method is off, so the router accepts no code from the
-network, and the API signs devices in with `/ip hotspot active login`. Provisioning sets this and
+`login-by=mac,mac-cookie` with `use-radius=yes`. Every http method is off, so the router accepts no
+code from the network: the API signs devices in with `/ip hotspot active login`, and a device comes
+back by its address or cookie, each answered by HashiNet over RADIUS. Provisioning sets this and
 verification fails on anything else. Do not add `http-pap` or `http-chap`, even to debug: either
 one lets the network post and guess codes at the router.
 
@@ -732,8 +717,8 @@ one lets the network post and guess codes at the router.
 Run these in order on a fresh or reset MikroTik hotspot:
 
 ```routeros
-# 1. Switch hotspot to PAP authentication
-/ip hotspot profile set hsprof3 login-by=mac-cookie
+# 1. Sign devices in through HashiNet only
+/ip hotspot profile set hsprof3 login-by=mac,mac-cookie use-radius=yes
 
 # 2. Add walled garden entry for backend
 /ip hotspot walled-garden ip add dst-address=192.168.0.15 action=accept
@@ -754,16 +739,17 @@ Run these in order on a fresh or reset MikroTik hotspot:
 
 # 5. Upload login.html (see §3)
 
-# 6. Add test user matching a real voucher code
-/ip hotspot user add name=<VOUCHER_CODE> password=<VOUCHER_CODE>
+# 6. Ask HashiNet over RADIUS (Set up makes the secret and this entry)
+/radius add service=hotspot address=<PLATFORM_TUNNEL_IP> secret=<SECRET> timeout=3s
 ```
 
 ---
 
 ## 13. RouterOS API Integration — COMPLETED
 
-**Status: DONE.** The system automatically creates, syncs, and removes MikroTik hotspot
-users via the RouterOS binary API. No manual `/ip hotspot user add` ever needed.
+The API reaches each router's RouterOS API through the management tunnel: to set it up, sign
+devices in, end sessions, block devices and read who is online. Logins are answered over RADIUS
+(§13.6), never by a hotspot user.
 
 ### 13.1 Enable API service on MikroTik
 
@@ -791,95 +777,45 @@ credentials from the `routers` table.
 
 ### 13.4 Key service files
 
-| File                                    | Purpose                                                                        |
-| --------------------------------------- | ------------------------------------------------------------------------------ |
-| `backend/src/services/mikrotik.ts`      | Low-level RouterOS API — connect, create user, remove user, kick session       |
-| `backend/src/services/router-sync.ts`   | High-level orchestration — push vouchers to venue routers, kick, remove        |
-| `backend/src/services/live-monitor.ts`  | Background daemon — polls active sessions, marks disconnected clients          |
-| `backend/src/services/expiry-daemon.ts` | Background daemon — finds expired vouchers, marks expired, removes from router |
+| File                                         | Purpose                                                                 |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| `apps/api/src/services/mikrotik.ts`          | Low-level RouterOS API: sign a device in, end a session, block, read    |
+| `apps/api/src/services/router-sync.ts`       | A venue's routers outside setup: sessions, blocks, sites open           |
+| `apps/api/src/radius/`                       | The RADIUS codec and HashiNet's answer to every login and session report |
+| `apps/tunnel/src/radius-relay.ts`            | Relays the routers' RADIUS from the tunnel address to the API           |
+| `apps/api/src/services/live-monitor.ts`      | Polls routers: counters, sessions a router no longer lists, throttling  |
+| `apps/api/src/vouchers/voucher-expiry.ts`    | Ends expired vouchers, their sessions and switch PINs                    |
 
 ### 13.5 Automatic triggers
 
-| Event                           | Action                                                                             |
-| ------------------------------- | ---------------------------------------------------------------------------------- |
-| Voucher sold                    | `pushVouchers` — pushes the new code to every router in the venue                  |
-| New router added via admin      | `syncNewRouter` — pushes all existing venue vouchers to the new router             |
-| Admin clicks "Sync" on a router | `syncNewRouter` called manually                                                    |
-| Admin terminates a session      | `kickVoucherFromVenueRouters` — kicks the active session from MikroTik immediately |
-| Voucher deleted                 | `removeVoucherFromVenueRouters` — kicks then removes the user from MikroTik        |
-| Voucher expires (cron)          | Expiry daemon calls `removeHotspotUser` to clear the user from MikroTik            |
+| Event                           | Action                                                                        |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| Voucher sold                    | Nothing on a router: RADIUS answers from the voucher                          |
+| New router added, or "Sync"     | `syncBlocks` puts the business's device blocks on it                          |
+| Staff end a session             | `endDevice` ends that device's session on the venue's routers                 |
+| Voucher expires                 | The router ends the session at its Session-Timeout; the expiry job records it |
 
-### 13.6 `limit-uptime` — Hardware-level time enforcement
+### 13.6 Every login goes through RADIUS
 
-When a package has `durationHours`, the backend sets `limit-uptime` on the MikroTik
-hotspot user. MikroTik disconnects the user automatically when the limit is reached —
-no polling needed.
+Set up adds one `/radius` entry (tag `wbs:radius-client`): `service=hotspot`, the platform's tunnel
+address, the router's own secret and `timeout=3s` (RouterOS defaults to 1.1 s, too short for the
+relay). The hotspot profile has `use-radius=yes` and `radius-interim-update=received`.
 
-**Format:** `DdHH:MM:SS` — e.g. `1d00:00:00` (24h), `02:00:00` (2h), `0d30:00:00` (30 min)
+HashiNet's Access-Accept carries:
 
-```typescript
-function hoursToRosUptime(hours: number): string {
-  const totalSeconds = Math.round(hours * 3600);
-  const days = Math.floor(totalSeconds / 86400);
-  const hh = String(Math.floor((totalSeconds % 86400) / 3600)).padStart(2, "0");
-  return days > 0 ? `${days}d${hh}:00:00` : `${hh}:00:00`;
-}
-// Applied as:  '=limit-uptime=' + hoursToRosUptime(durationHours)
-```
+- `Session-Timeout`: the voucher's time left, so the router ends the session itself.
+- `Mikrotik-Rate-Limit` (vendor 14988, attribute 8): the package's speed, or its throttled speed
+  in its peak hours or past its data. This works on boards that refuse a `rate-limit` on a user.
+- `Acct-Interim-Interval`: 60 s of accounting.
+- `Class`: the voucher's id, which comes back in accounting, as a device back by its address shows
+  that address, not the code, as its user.
 
-### 13.7 RouterOS API — firmware-specific parameter limitations
+A code is accepted only with the admission the API left when it checked it at the portal; a device
+back by its address only to a free place or the one it holds. Throttling ends a session whose
+speed no longer holds; the device comes back by its address and RADIUS gives it the new speed.
+`/radius monitor 0` shows how HashiNet has answered; Set up's self-test reports it.
 
-These per-user parameters are **not accepted on every board**, and passing them anyway makes
-`/ip/hotspot/user/add` fail with `unknown parameter`:
-
-- `=shared-users=` — device limit
-- `=rate-limit=` — speed cap
-
-**Accepted on every board tested:**
-
-- `=name=` — username
-- `=password=`
-- `=limit-bytes-total=` — data cap in bytes
-- `=limit-uptime=` — time cap
-
-> #### ⚠️ It is NOT simply "RouterOS 6 rejects them, RouterOS 7 accepts them"
->
-> This section used to say the limitation was a 6.x thing and that on 7.x per-user
-> `=rate-limit=` "is generally accepted", with a note to re-test before assuming otherwise.
->
-> **Measured on 2026-08-11 — that is wrong.** On the hAP lite (`smips`) running
-> **RouterOS 7.23.2**, `/ip/hotspot/user/add` rejects **both** `=rate-limit=` and
-> `=shared-users=`:
->
-> ```
-> ✗ /ip/hotspot/user/add =name=… =password=… =limit-uptime=00:00:01 =rate-limit=1M/1M =shared-users=1
->   → unknown parameter rate-limit
-> ```
->
-> So the constraint tracks the **board/build**, not the major version. Do not infer it from
-> `/system resource print`.
-
-**What the code does about it.** `deriveCapabilities` in `probe.ts` can only *guess* from the
-version, so it guesses optimistically (`v7 ⇒ supported`) — and on a board like the above that
-guess is wrong. Two mechanisms cover it:
-
-1. `createHotspotUser` catches `unknown parameter`, drops the optional params and retries, so a
-   sale never fails because of this. It costs an extra round-trip and logs a warning.
-2. The **self-test** (`verify.ts`, phase 6 of Set up, or "Check it's serving") creates a
-   throwaway voucher *with* those params. When the board rejects them it records the measured
-   truth into `routers.capabilities`, so subsequent vouchers skip the doomed attempt and speed
-   limits move to hotspot-**profile** level instead.
-
-`mergeCapabilities` then makes that measurement stick: a capability measured `false` is never
-overwritten by a later probe's optimistic `true`. Without that latch every re-provision would
-undo the discovery.
-
-**Consequence worth knowing:** on a board that rejects `=rate-limit=`, per-voucher speed caps do
-not exist. Until the self-test has run and the profile-level limits step has been applied, those
-users are uncapped — different packages behave identically. Run Set up (or "Check it's serving")
-on any board where speed tiers matter.
-
-### 13.8 RouterOS API connection timeout caveat
+### 13.7 RouterOS API connection timeout caveat
 
 The `routeros` npm library's `timeout` option applies to the **keepalive interval**,
 not the TCP connect timeout. If MikroTik is unreachable, the library hangs indefinitely.
@@ -895,7 +831,7 @@ const conn = (await Promise.race([
 ])) as RouterConn;
 ```
 
-### 13.9 `running=false` on an idle AP — and the DHCP server that believes it
+### 13.8 `running=false` on an idle AP — and the DHCP server that believes it
 
 **Measured on an hAP lite, RouterOS 7.23.2, immediately after a clean provision.** The hotspot
 worked — a phone associated, got a lease and loaded the portal — but every read of the router said
@@ -931,88 +867,6 @@ broken until the first device connects, then silently fixes itself.
 
 The cost of not doing this is not a broken hotspot; it is an admin opening WinBox, seeing a red
 `invalid` flag on a working router, and "fixing" it.
-
-### 13.10 Where the speed cap lives when the user cannot hold it
-
-Measured on the hAP lite (7.23.2): `/ip hotspot user` rejects **both** `rate-limit` and
-`shared-users`, but `/ip hotspot user profile` accepts both:
-
-```
-/ip hotspot user add name=X rate-limit=2M/2M          →  unknown parameter
-/ip hotspot user profile add name=Y rate-limit=2M/2M shared-users=3   →  OK
-/ip hotspot user profile add name=Y comment=wbs:x     →  unknown parameter comment
-```
-
-So on such a board the cap has to ride a profile, and the profile has no comment field — the `wbs-`
-name prefix is the only tag available.
-
-**One profile per package, not per router.** Two packages on one router need different speeds, so a
-single router-level profile cannot express them. The name is `wbs-pkg-<packageId>`, from the id and
-not the package name, so a rename cannot orphan the profile its vouchers point at. 44 characters for
-a UUID; verified accepted and read back unchanged.
-
-`router-sync.ts` creates it at voucher-push time (provisioning does not know a venue's packages), and
-`createHotspotUser` sends `=profile=` — ordered before `rate-limit`/`shared-users` so the
-retry-without-optional-params fallback cannot strip it.
-
-To read the state of a router:
-
-```routeros
-/ip hotspot user print detail where name~"^[0-9]{12}\$" # which profile each voucher is on
-/ip hotspot user profile print                        # what each profile actually caps
-```
-
-A voucher showing `profile=default` on a board that rejects per-user `rate-limit` has **no cap at
-all** — that was the bug in §15, and it is what the self-test now fails on.
-
-> **The general lesson.** Every check in `verify.ts` used to read a command back and call that
-> success. Reading configuration back is not the same as a limit being enforced, and the difference
-> was a paying customer getting the entire uplink while the dashboard showed green.
-
-### 13.11 Throttling is a profile *swap*, never a rate-limit write
-
-Peak-hour and after-N-GB throttling used to call `/ip hotspot user set =rate-limit=…` on the live
-user. That is the exact command §13.10 measures as rejected on this hardware, so on the hAP lite it
-could never take effect — and because the caller only recorded the new state *after* the write
-returned, the rejected command went back out on every 5-second poll, indefinitely. On a 32MB smips
-board that is a real CPU cost for a feature that was doing nothing.
-
-Each throttleable package therefore gets **two** profiles:
-
-```
-wbs-pkg-<packageId>    full speed      (rateLimitFor)
-wbs-thr-<packageId>    throttled speed (throttledRateLimitFor)
-```
-
-Both 44 characters — the length already verified accepted here. Throttling moves the voucher between
-them with `/ip hotspot user set =profile=…`, which every board tested accepts.
-
-Three things that follow, each of which was a bug waiting to happen:
-
-- **The throttled state needs its own profile, not an edit of the shared one.** `wbs-pkg-<id>` is
-  shared by every voucher on the package; throttling one customer by editing it throttles all of
-  them.
-- **Both profiles exist even on a board that accepts per-user `rate-limit`.** Otherwise
-  un-throttling would have to send the user back to `default`, which has no cap at all — the
-  customer would leave the throttle window *faster* than their package allows.
-- **A voucher push must treat the throttled profile as correct.** `repairProfile` passes it as an
-  acceptable current profile, or the next sync would yank a throttled customer back to full speed
-  mid-window.
-
-**The swap alone only governs the next login.** RouterOS builds a hotspot session's dynamic queue
-when the user authenticates, so a running session keeps the limit it started with. The live monitor
-therefore kicks the session after a successful swap — and only when the profile actually changed,
-because kicking someone to re-apply a limit they already have is pure harm. The portal's
-auto-reconnect path logs a device with a live voucher straight back in, so the customer sees a blip
-rather than a login screen.
-
-> **Not yet verified on hardware.** The board was unreachable when this was written, so the profile
-> swap, the 44-character `wbs-thr-` name and the kick-to-apply behaviour are reasoned from §13.10's
-> measurements rather than measured themselves. `ensureHotspotUserProfile` reads the profile back and
-> throws if the router did not keep it, so a rejected name fails loudly rather than silently
-> uncapping anyone — but confirm on a live board before relying on throttling in production.
-
----
 
 ## 14. Quick Reference — Useful MikroTik Commands
 

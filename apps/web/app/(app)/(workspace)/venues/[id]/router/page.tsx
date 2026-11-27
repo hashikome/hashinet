@@ -536,11 +536,7 @@ function RouterView({
                 busy={busy === "checks"}
                 onClick={() =>
                   run("checks", async () => {
-                    setChecks(
-                      await api.post<RouterChecks>(
-                        `/api/routers/${router.id}/verify?skipWriteTest=1`,
-                      ),
-                    );
+                    setChecks(await api.post<RouterChecks>(`/api/routers/${router.id}/verify`));
                   })
                 }
               >

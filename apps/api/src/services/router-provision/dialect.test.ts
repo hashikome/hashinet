@@ -18,7 +18,7 @@ const profile = (over: Partial<RouterProfile> = {}): RouterProfile =>
     wirelessStack: "wireless",
     interfaces: [],
     addresses: [],
-    capabilities: { hotspot: true, toolFetch: true, userRateLimit: true, userSharedUsers: true },
+    capabilities: { hotspot: true, toolFetch: true, hotspotLogin: true },
     warnings: [],
     compatibility: "compatible",
     ...over,
@@ -75,35 +75,5 @@ describe("disable-running-check", () => {
       "disable-running-check",
     );
     expect(dialectFor(profile({ wirelessStack: "wifi" })).radio?.runningCheckField).toBeNull();
-  });
-});
-
-describe("user-level limits come from measured capabilities, not the version", () => {
-  /**
-   * `deriveCapabilities` guesses these from the RouterOS major version and that guess is wrong on
-   * real hardware — an hAP lite on 7.23.2 rejects BOTH. `dialectFor` must read the capabilities,
-   * never re-derive from the version, or the measured truth is discarded here.
-   */
-  test("a v7 board that rejects both is respected", () => {
-    const d = dialectFor(
-      profile({
-        capabilities: {
-          hotspot: true,
-          toolFetch: true,
-          userRateLimit: false,
-          userSharedUsers: false,
-        },
-      } as Partial<RouterProfile>),
-    );
-    expect(d.userRateLimit).toBe(false);
-    expect(d.userSharedUsers).toBe(false);
-    expect(d.limitsAtProfileLevel).toBe(true);
-  });
-
-  test("a board that accepts both applies limits per user", () => {
-    const d = dialectFor(profile());
-    expect(d.userRateLimit).toBe(true);
-    expect(d.userSharedUsers).toBe(true);
-    expect(d.limitsAtProfileLevel).toBe(false);
   });
 });

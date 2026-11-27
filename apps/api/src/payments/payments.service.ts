@@ -36,7 +36,7 @@ import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { PaymentWaysService } from "../payment-ways/payment-ways.service.js";
 import { SERVING } from "../routers/router-journey.js";
-import { describeFailures, outcomeOk, RouterSync } from "../services/router-sync.js";
+import { RouterSync } from "../services/router-sync.js";
 import { generateCodes } from "../vouchers/voucher-codes.js";
 import { type ChargeState, MOBILE_MONEY, type MobileMoneyGateway } from "./mobile-money.js";
 import type {
@@ -348,15 +348,8 @@ export class PaymentsService {
       if (row === null || row.status !== "paid" || row.voucher === null) return;
       await this.sendCode(row);
       if (row.venueId === null) return;
+      // Nothing goes to a router: RADIUS answers from the voucher itself (ADR-0015).
       if (row.routerProvisionedAt === null) {
-        const outcome = await this.sync.ensureVoucher(row.venueId, row.voucher.code, row.routerId);
-        if (!outcomeOk(outcome)) {
-          await this.db.payment.update({
-            where: { id: paymentId },
-            data: { provisionError: describeFailures(outcome).slice(0, 500) },
-          });
-          return;
-        }
         await this.db.payment.update({
           where: { id: paymentId },
           data: { routerProvisionedAt: new Date(), provisionError: null },

@@ -14,7 +14,7 @@ import { RouterError } from "../mikrotik-errors.js";
 import { type RouterLogEvent, RouterLogger } from "../router-log.js";
 import { buildContext, type ProvisionContext } from "./context.js";
 import { dialectFor } from "./dialect.js";
-import { probeRouterMerged, type RouterProfile } from "./probe.js";
+import { probeRouter, type RouterProfile } from "./probe.js";
 import { RosClient } from "./ros-client.js";
 import { PROVISION_STEPS, type ProvisionStep } from "./steps.js";
 import type { RouterStore } from "./store.js";
@@ -169,7 +169,7 @@ export async function provisionRouter(
   // Probe before touching anything.
   // A capability the self-test measured as unsupported must survive re-probing, or the dialect
   // reverts to the version guess and this run would apply per-user limits the board rejects.
-  const profile: RouterProfile = await probeRouterMerged(creds, logger, router.capabilities);
+  const profile: RouterProfile = await probeRouter(creds, logger);
 
   if (!profile.compatibility.ok) {
     logger.error("Aborting before any changes — this board cannot run the hotspot");
@@ -185,7 +185,14 @@ export async function provisionRouter(
 
   let ctx: ProvisionContext;
   try {
-    ctx = buildContext(router, profile, dialectFor(profile), dryRun, store.backend);
+    ctx = buildContext(
+      router,
+      profile,
+      dialectFor(profile),
+      dryRun,
+      store.backend,
+      await store.radiusSecret(router),
+    );
   } catch (err) {
     // Backend address could not be resolved — a config problem, not a router problem.
     const message = err instanceof Error ? err.message : String(err);

@@ -30,8 +30,6 @@ const profileWith = (
     capabilities: {
       hotspot: true,
       toolFetch: true,
-      userRateLimit: true,
-      userSharedUsers: true,
     },
     warnings: [],
     compatibility: "compatible",

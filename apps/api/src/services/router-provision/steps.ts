@@ -517,37 +517,70 @@ const dhcpNetwork: ProvisionStep = {
   },
 };
 
+/** The `/radius` entry's tag: verify finds HashiNet's entry by it. */
+export const RADIUS_STEP = "radius-client";
+
 /**
- * `mac-cookie` is how a device comes back: the router remembers it after a login and signs it in
- * again without a code, so nothing ever hands a voucher code to a request keyed by a MAC. The
- * live monitor relies on it too, dropping a session so a new speed takes effect.
+ * Every hotspot login is answered by HashiNet over RADIUS, through the management tunnel (ADR-0015):
+ * it alone knows how many of a voucher's devices are online across the venue's routers. Three
+ * seconds, as the answer comes through the tunnel service and the API; RouterOS defaults to 1.1.
  */
+const radiusClient: ProvisionStep = {
+  id: RADIUS_STEP,
+  title: "Ask HashiNet over RADIUS who may sign in",
+  critical: true,
+  appliesTo: (ctx) => ctx.profile.capabilities.hotspot,
+  async check({ ros, ctx }) {
+    const row = await ros.findByTag("/radius", RADIUS_STEP);
+    return matches(row, {
+      service: "hotspot",
+      address: ctx.endpoints.management.ip,
+      timeout: "3s",
+    });
+  },
+  async apply({ ros, ctx }) {
+    // The secret doesn't read back, so it is written every time the entry is.
+    await ensureTaggedRule(ros, "/radius", RADIUS_STEP, [
+      "=service=hotspot",
+      `=address=${ctx.endpoints.management.ip}`,
+      `=secret=${ctx.radius.secret}`,
+      "=timeout=3s",
+      ...(ctx.router.tunnelAddress ? [`=src-address=${ctx.router.tunnelAddress}`] : []),
+    ]);
+  },
+};
+
 /**
- * No http method: a device is signed in only by the API, or by its MAC cookie, so nothing on the
- * network can post or guess a code at the router (ADR-0008).
+ * A device is signed in by the API (its code, through RADIUS), or comes back on its own by its
+ * address or its cookie, which RADIUS answers too. No http method: nothing on the network can post
+ * or guess a code at the router (ADR-0008).
  */
-const LOGIN_BY = "mac-cookie";
+export const RADIUS_LOGIN_BY = "mac,mac-cookie";
 
 const hotspotProfile: ProvisionStep = {
   id: "hotspot-profile",
-  title: "Create hotspot profile that signs devices in by MAC cookie only (§2.2)",
+  title: "Create the hotspot profile, signing devices in through HashiNet only",
   critical: true,
   appliesTo: (ctx) => ctx.profile.capabilities.hotspot,
   async check({ ros, ctx }) {
     const row = await ros.findByName("/ip/hotspot/profile", ctx.hotspot.profileName);
     // login-by is the one that silently breaks auth if wrong — see §11.
-    return matches(row, {
-      "hotspot-address": ctx.hotspot.gatewayIp,
-      "login-by": LOGIN_BY,
-      "html-directory": "hotspot",
-    });
+    return (
+      matches(row, {
+        "hotspot-address": ctx.hotspot.gatewayIp,
+        "login-by": RADIUS_LOGIN_BY,
+        "html-directory": "hotspot",
+      }) && yes(row?.get("use-radius") ?? null)
+    );
   },
   async apply({ ros, ctx }) {
     const params = [
       `=hotspot-address=${ctx.hotspot.gatewayIp}`,
-      `=login-by=${LOGIN_BY}`,
+      `=login-by=${RADIUS_LOGIN_BY}`,
       "=html-directory=hotspot",
-      "=use-radius=no",
+      "=use-radius=yes",
+      // HashiNet's Accept sets how often a session reports its bytes.
+      "=radius-interim-update=received",
     ];
     const row = await ros.findByName("/ip/hotspot/profile", ctx.hotspot.profileName);
     if (row?.get(".id")) {
@@ -558,22 +591,46 @@ const hotspotProfile: ProvisionStep = {
   },
 };
 
-/*
- * There is deliberately NO step creating a hotspot user profile here.
- *
- * There used to be — `hotspot-user-profile` created one router-level `wbs-hs-users` carrying
- * `shared-users=1` and no rate-limit, and nothing was ever assigned to it, because
- * `createHotspotUser` did not send `=profile=`. On a board that rejects per-user `rate-limit` that
- * meant every voucher sat on `default` with no cap from either mechanism, while a Set up run
- * reported `ok: true`.
- *
- * A router-level profile could not have fixed it either: two packages on one router need different
- * speeds. Limits now ride a per-package profile (`wbs-pkg-<packageId>`) created by
- * `router-sync.ts` at voucher-push time, because provisioning does not know which packages a venue
- * sells and packages change independently of routers.
- *
- * A `wbs-hs-users` left over from an earlier provision is inert and safe to delete by hand.
+/** HashiNet's own local users from before RADIUS: a voucher's code, a self-test, or a package's. */
+async function oldVoucherUsers(ros: RosClient): Promise<RosRow[]> {
+  const users = (await ros.tryPrint("/ip/hotspot/user")) ?? [];
+  return users.filter((u) => {
+    const name = u.get("name") ?? "";
+    return (
+      /^\d{12}$/.test(name) ||
+      name.startsWith("wbs-selftest-") ||
+      (u.get("profile") ?? "").startsWith("wbs-pkg-")
+    );
+  });
+}
+
+async function oldPackageProfiles(ros: RosClient): Promise<RosRow[]> {
+  const profiles = (await ros.tryPrint("/ip/hotspot/user/profile")) ?? [];
+  return profiles.filter((p) => (p.get("name") ?? "").startsWith("wbs-pkg-"));
+}
+
+/**
+ * No voucher lives on a router: RADIUS answers every login. The local users and per-package
+ * profiles HashiNet once made go, users first, since RouterOS keeps a profile a user points at.
  */
+const oldVoucherUsersRemoved: ProvisionStep = {
+  id: "old-voucher-users",
+  title: "Remove the local voucher users RADIUS replaced",
+  critical: false,
+  appliesTo: (ctx) => ctx.profile.capabilities.hotspot,
+  async check({ ros }) {
+    return (
+      (await oldVoucherUsers(ros)).length === 0 && (await oldPackageProfiles(ros)).length === 0
+    );
+  },
+  async apply({ ros }) {
+    for (const user of await oldVoucherUsers(ros))
+      await ros.remove("/ip/hotspot/user", rowId(user));
+    for (const profile of await oldPackageProfiles(ros)) {
+      await ros.remove("/ip/hotspot/user/profile", rowId(profile));
+    }
+  },
+};
 
 const hotspotServer: ProvisionStep = {
   id: "hotspot-server",
@@ -899,6 +956,7 @@ export const PROVISION_STEPS: ProvisionStep[] = [
   hotspotGatewayAddress,
   dhcpServer,
   dhcpNetwork,
+  radiusClient,
   hotspotProfile,
   hotspotServer,
   walledGarden,
@@ -908,6 +966,7 @@ export const PROVISION_STEPS: ProvisionStep[] = [
   natMasquerade,
   ipBinding,
   portalFiles,
+  oldVoucherUsersRemoved,
   customCommands,
 ];
 

@@ -29,42 +29,81 @@ export function normalMac(value: string | null): string | null {
   return hex.match(/.{2}/g)?.join(":") ?? null;
 }
 
+/** A package's speeds and when it is throttled: in its peak hours, or past its data. */
+export interface PackageSpeed {
+  downloadSpeedMbps: number;
+  uploadSpeedMbps: number | null;
+  throttledDownloadMbps: number | null;
+  throttledUploadMbps: number | null;
+  peakStartHour: number | null;
+  peakEndHour: number | null;
+  throttleAfterGb: number | null;
+}
+
 /** A voucher as an answer needs it. */
 export interface VoucherFacts {
   id: string;
   expiresAt: Date | null;
   deviceLimit: number;
+  /** Its data cap: no place once it is used. */
   dataLimitGb: number | null;
-  dataUsedBytes: bigint;
+  /** What its sessions have used, up and down. */
+  usedBytes: bigint;
   pinLocked: boolean;
-  speed: {
-    downloadSpeedMbps: number;
-    uploadSpeedMbps: number | null;
-    throttledDownloadMbps: number | null;
-    throttledUploadMbps: number | null;
-  };
+  speed: PackageSpeed;
 }
 
 export type Answer =
-  | { accept: true; voucherId: string; sessionSeconds: number; rateLimit: string | null }
+  | {
+      accept: true;
+      voucherId: string;
+      sessionSeconds: number;
+      rateLimit: string | null;
+      throttled: boolean;
+    }
   | { accept: false; reason: string };
 
 const GB = 1024n ** 3n;
 
+export function isPeakHour(start: number | null, end: number | null, eatHour: number): boolean {
+  if (start === null || end === null) return false;
+  if (start <= end) return eatHour >= start && eatHour < end;
+  // Wraps past midnight (e.g. 22 to 06).
+  return eatHour >= start || eatHour < end;
+}
+
+/** Tanzania is UTC+3 all year (no daylight saving). */
+export function eatHourOf(date: Date): number {
+  return (date.getUTCHours() + 3) % 24;
+}
+
+/**
+ * Whether a voucher's devices go at its throttled speed now: in its package's peak hours, or once
+ * it has used the data the package throttles after. One rule for RADIUS, which sets the speed, and
+ * the live monitor, which ends a session whose speed no longer holds.
+ */
+export function throttledNow(speed: PackageSpeed, usedBytes: bigint, now: Date): boolean {
+  if (speed.throttledDownloadMbps === null || speed.throttledDownloadMbps <= 0) return false;
+  const overData =
+    speed.throttleAfterGb !== null && usedBytes >= BigInt(speed.throttleAfterGb) * GB;
+  return overData || isPeakHour(speed.peakStartHour, speed.peakEndHour, eatHourOf(now));
+}
+
 /**
  * Whether a device may be online on `voucher` now, and on what terms (ADR-0015): time left from
- * HashiNet, and its speed, throttled once its data is used.
+ * HashiNet, and its speed, throttled while its package says so.
  */
 export function terms(voucher: VoucherFacts, now: Date): Answer {
   if (voucher.pinLocked) return { accept: false, reason: "voucher_locked" };
   if (voucher.expiresAt === null) return { accept: false, reason: "not_started" };
   const sessionSeconds = Math.floor((voucher.expiresAt.getTime() - now.getTime()) / 1000);
   if (sessionSeconds <= 0) return { accept: false, reason: "expired" };
-  const usedUp =
-    voucher.dataLimitGb !== null && voucher.dataUsedBytes >= BigInt(voucher.dataLimitGb) * GB;
-  const rateLimit = usedUp ? throttledRateLimitFor(voucher.speed) : rateLimitFor(voucher.speed);
-  if (usedUp && rateLimit === null) return { accept: false, reason: "data_used" };
-  return { accept: true, voucherId: voucher.id, sessionSeconds, rateLimit };
+  if (voucher.dataLimitGb !== null && voucher.usedBytes >= BigInt(voucher.dataLimitGb) * GB) {
+    return { accept: false, reason: "data_used" };
+  }
+  const throttled = throttledNow(voucher.speed, voucher.usedBytes, now);
+  const rateLimit = throttled ? throttledRateLimitFor(voucher.speed) : rateLimitFor(voucher.speed);
+  return { accept: true, voucherId: voucher.id, sessionSeconds, rateLimit, throttled };
 }
 
 /**

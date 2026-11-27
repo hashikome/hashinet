@@ -1,6 +1,5 @@
 import type {
   BootstrapScriptResponse,
-  ProvisioningBacklog,
   RouterChecks,
   RouterList,
   RouterResponse,
@@ -44,13 +43,6 @@ export class RoutersController {
   async list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<RouterList> {
     const { venueId } = parseInput(listQuery, query);
     return { routers: await this.routers.list(staff, venueId) };
-  }
-
-  /** Guests waiting on a router in the caller's venues. */
-  @Get("provisioning-backlog")
-  @Can("router.read")
-  backlog(@CurrentPrincipal() staff: Principal): Promise<ProvisioningBacklog> {
-    return this.routers.backlog(staff);
   }
 
   @Post("test-connection")
@@ -148,9 +140,8 @@ export class RoutersController {
   verify(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-    @Query("skipWriteTest") skipWriteTest: unknown,
   ): Promise<RouterChecks> {
-    return this.routers.verify(staff, id, !flagOf(skipWriteTest));
+    return this.routers.verify(staff, id);
   }
 
   @Post(":id/setup")

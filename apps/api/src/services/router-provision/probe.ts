@@ -3,7 +3,6 @@
  * boards differ:
  *   - RouterOS 7 on smips (hAP lite) ships no hotspot at all, which otherwise shows only as a
  *     flood of "no such command or directory (hotspot)" errors from the sync daemons.
- *   - `=shared-users=` / `=rate-limit=` are rejected on RouterOS 6 hAP Lite class boards.
  *
  * Probing is strictly read-only. It never writes to the router.
  */
@@ -53,10 +52,6 @@ export type WirelessStack = "wireless" | "wifi" | "none";
 export interface RouterCapabilities {
   /** `/ip hotspot` menu exists — without this the product cannot work on this board */
   hotspot: boolean;
-  /** `=shared-users=` accepted on `/ip/hotspot/user/add` (device limit) */
-  userSharedUsers: boolean;
-  /** `=rate-limit=` accepted at user level (vs profile level only) */
-  userRateLimit: boolean;
   /** `/tool fetch` available — how we upload login.html without FTP */
   toolFetch: boolean;
   /** `/ip/hotspot/active/login` exists — the only way a device is signed in (ADR-0008) */
@@ -132,15 +127,7 @@ export function parseRosVersion(raw: string | null): RosVersion {
   };
 }
 
-/**
- * Derive what the board supports.
- *
- * RouterOS 6 is treated as NOT supporting user-level `shared-users` / `rate-limit`.
- * That is deliberately conservative: it matches the hAP Lite behaviour documented in
- * §13.7 of the MikroTik guide, and being wrong in this direction is harmless — the
- * provisioner applies those limits at profile level instead. Being wrong in the other
- * direction breaks user creation outright.
- */
+/** Derive what the board supports. */
 function deriveCapabilities(
   rosVersion: RosVersion,
   packages: RouterPackage[],
@@ -152,8 +139,6 @@ function deriveCapabilities(
 
   return {
     hotspot: hotspotMenuExists,
-    userSharedUsers: v7,
-    userRateLimit: v7,
     // fetch lives in the main bundle on v7, and on v6 unless advanced-tools is disabled
     toolFetch: v7 || !advancedTools || !advancedTools.disabled,
     hotspotLogin,
@@ -171,49 +156,6 @@ async function answersLogin(conn: MikroTikConn): Promise<boolean> {
   } catch (err) {
     return !(err instanceof Error && /no such command/i.test(err.message));
   }
-}
-
-/**
- * Merge a fresh probe's capabilities with what is already cached, so a *measured* `false` is
- * never overwritten by a *guessed* `true`.
- *
- * `deriveCapabilities` can only infer user-level `rate-limit`/`shared-users` from the RouterOS
- * major version, and that inference is wrong on real boards — an hAP lite on 7.23.2 rejects both.
- * Only the self-test (`verify.ts`) can establish the truth, by trying. Without this latch every
- * re-provision would re-probe, guess `true` again, and throw that discovery away.
- *
- * One-way on purpose: false wins, because nothing but a real rejection ever sets it.
- */
-export function mergeCapabilities(stored: unknown, probed: RouterCapabilities): RouterCapabilities {
-  if (!stored || typeof stored !== "object") return probed;
-  const prev = stored as Partial<RouterCapabilities>;
-  return {
-    ...probed,
-    userRateLimit: prev.userRateLimit === false ? false : probed.userRateLimit,
-    userSharedUsers: prev.userSharedUsers === false ? false : probed.userSharedUsers,
-  };
-}
-
-/**
- * Probe a board and apply the latch in one step. **Use this, not `probeRouter`, wherever a stored
- * row exists** — building a dialect from a raw probe is how a measured capability gets forgotten.
- *
- * Every call site was open-coding `{ ...probed, capabilities: mergeCapabilities(...) }`, and on
- * 2026-08-12 one of them (`setup.ts`'s phase 1) was found not to. The consequence was subtle rather
- * than loud: phases 3-5 used merged capabilities and phase 6 used raw ones, so a single run held two
- * different views of the same board — the self-test sent parameters the board had already rejected,
- * retried, and re-"discovered" what was already in the database, on every run, forever.
- *
- * The rule was written down in CLAUDE.md before that happened. It was still missed, which is the
- * argument for a function rather than a longer comment.
- */
-export async function probeRouterMerged(
-  creds: Parameters<typeof probeRouter>[0],
-  logger: Parameters<typeof probeRouter>[1],
-  storedCapabilities: unknown,
-): Promise<RouterProfile> {
-  const probed = await probeRouter(creds, logger);
-  return { ...probed, capabilities: mergeCapabilities(storedCapabilities, probed.capabilities) };
 }
 
 function assessCompatibility(profile: Omit<RouterProfile, "compatibility">): RouterCompatibility {
@@ -273,13 +215,6 @@ function assessCompatibility(profile: Omit<RouterProfile, "compatibility">): Rou
     warnings.push(
       "/tool fetch is unavailable, so login.html cannot be pushed automatically. " +
         "Upload it manually via Files (§3.2).",
-    );
-  }
-
-  if (rosVersion.major > 0 && rosVersion.major < 7) {
-    warnings.push(
-      "RouterOS 6 — device limit and speed caps will be applied at hotspot-profile level " +
-        "rather than per user (§13.7).",
     );
   }
 

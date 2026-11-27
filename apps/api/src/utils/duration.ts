@@ -69,21 +69,6 @@ export function durationShort(minutes: number): string {
   return `${minutes}m`;
 }
 
-/**
- * RouterOS `limit-uptime`, which is `[Nd]HH:MM:SS`.
- *
- * This is the hardware-level enforcement (§13.6) — the router disconnects the user itself when it
- * expires, so it must not round a 30-minute voucher up to an hour. The old hours-only version
- * emitted `HH:00:00` and could not express minutes at all.
- */
-export function minutesToRosUptime(minutes: number): string {
-  const total = Math.max(0, Math.round(minutes));
-  const days = Math.floor(total / DAY);
-  const hh = String(Math.floor((total % DAY) / HOUR)).padStart(2, "0");
-  const mm = String(total % HOUR).padStart(2, "0");
-  return days > 0 ? `${days}d${hh}:${mm}:00` : `${hh}:${mm}:00`;
-}
-
 export function minutesToMs(minutes: number): number {
   return minutes * 60_000;
 }

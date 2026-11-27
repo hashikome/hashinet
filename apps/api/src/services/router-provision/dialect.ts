@@ -55,15 +55,6 @@ export interface Dialect {
   radio: RadioDialect | null;
   /** How to get login.html onto the device */
   fileWrite: FileWriteStrategy;
-  /** `=shared-users=` accepted on /ip/hotspot/user/add */
-  userSharedUsers: boolean;
-  /** `=rate-limit=` accepted on /ip/hotspot/user/add */
-  userRateLimit: boolean;
-  /**
-   * When per-user limits are unsupported, the same caps are applied to the hotspot
-   * *user profile* instead — coarser, but it's what RouterOS 6 offers (§13.7).
-   */
-  limitsAtProfileLevel: boolean;
 }
 
 export function dialectFor(profile: RouterProfile): Dialect {
@@ -116,37 +107,5 @@ export function dialectFor(profile: RouterProfile): Dialect {
     wirelessMenu,
     radio,
     fileWrite,
-    userSharedUsers: capabilities.userSharedUsers,
-    userRateLimit: capabilities.userRateLimit,
-    limitsAtProfileLevel: !capabilities.userRateLimit,
   };
-}
-
-/** Build the params for `/ip/hotspot/user/add`, omitting whatever this board rejects. */
-export function hotspotUserParams(
-  dialect: Dialect,
-  opts: {
-    code: string;
-    deviceLimit: number;
-    downloadSpeedMbps: number;
-    uploadSpeedMbps: number | null;
-    limitBytesTotal: number | null;
-    limitUptime: string | null;
-  },
-): string[] {
-  const params = [`=name=${opts.code}`, `=password=${opts.code}`];
-
-  if (opts.limitBytesTotal !== null) params.push(`=limit-bytes-total=${opts.limitBytesTotal}`);
-  if (opts.limitUptime !== null) params.push(`=limit-uptime=${opts.limitUptime}`);
-
-  if (dialect.userRateLimit && opts.downloadSpeedMbps > 0) {
-    const up = opts.uploadSpeedMbps ?? opts.downloadSpeedMbps;
-    params.push(`=rate-limit=${up}M/${opts.downloadSpeedMbps}M`);
-  }
-
-  if (dialect.userSharedUsers && opts.deviceLimit > 0) {
-    params.push(`=shared-users=${opts.deviceLimit}`);
-  }
-
-  return params;
 }

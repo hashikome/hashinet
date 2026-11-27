@@ -1,18 +1,16 @@
 import { getLogger } from "@logtape/logtape";
 import type { PrismaClient, Router } from "../generated/prisma/client.js";
+import { throttledNow } from "../radius/access-decision.js";
+import { usedBytesOf } from "../radius/radius.service.js";
 import {
   closeConnection,
   connectToRouter,
-  ensureHotspotUserProfileAssigned,
+  endHotspotSession,
   getActiveClients,
   getSystemUptimeSeconds,
-  kickHotspotSession,
-  loginHotspotClient,
   type MikroTikActiveClient,
   type MikroTikConn,
   reachesInternet,
-  throttledProfileNameForPackage,
-  userProfileNameForPackage,
 } from "./mikrotik.js";
 import type { RouterAccess } from "./router-credentials.js";
 
@@ -40,23 +38,6 @@ export interface HotspotUpdate {
   venueName: string;
   timestamp: string;
   clients: MikroTikActiveClient[];
-}
-
-export function isPeakHour(start: number | null, end: number | null, eatHour: number): boolean {
-  if (start === null || end === null) return false;
-  if (start <= end) return eatHour >= start && eatHour < end;
-  // Wraps past midnight (e.g. 22 to 06).
-  return eatHour >= start || eatHour < end;
-}
-
-/** A session is one voucher on one device: a voucher can have several online at once. */
-function sessionKey(code: string, mac: string): string {
-  return `${code}|${mac}`;
-}
-
-/** Tanzania is UTC+3 all year (no daylight saving). */
-function eatHourOf(date: Date): number {
-  return (date.getUTCHours() + 3) % 24;
 }
 
 /**
@@ -87,10 +68,6 @@ export class LiveMonitor {
     });
     if (onlineRouters.length === 0) return;
 
-    const activeByVenue = new Map<string, Set<string>>();
-    for (const router of onlineRouters) activeByVenue.set(router.venueId, new Set());
-    const eatHour = eatHourOf(new Date());
-
     await Promise.allSettled(
       onlineRouters.map(async (router) => {
         const creds = this.access.credentials(router);
@@ -103,11 +80,6 @@ export class LiveMonitor {
             getSystemUptimeSeconds(conn),
             reachesInternet(conn),
           ]);
-          const venueSet = activeByVenue.get(router.venueId) ?? new Set<string>();
-          activeByVenue.set(router.venueId, venueSet);
-          for (const client of clients)
-            if (client.user) venueSet.add(sessionKey(client.user, client.mac));
-
           onUpdate({
             type: "hotspot_update",
             routerId: router.id,
@@ -125,7 +97,7 @@ export class LiveMonitor {
           await recordInternet(this.db, router.id, internet);
 
           await this.recordClients(router, clients);
-          await this.applyThrottle(conn, router.id, clients, eatHour);
+          await this.applyThrottle(conn, router.id, clients);
         } catch (err) {
           logger.error("Poll failed for router {router}", {
             router: router.name,
@@ -141,83 +113,36 @@ export class LiveMonitor {
         }
       }),
     );
-
-    // Sessions the routers no longer report have ended.
-    const now = new Date();
-    for (const [venueId, activeKeys] of activeByVenue) {
-      const connected = await this.db.wifiSession.findMany({
-        where: { venueId, status: "connected" },
-        select: { id: true, macAddress: true, voucher: { select: { code: true } } },
-      });
-      const gone = connected
-        .filter((s) => !s.voucher || !activeKeys.has(sessionKey(s.voucher.code, s.macAddress)))
-        .map((s) => s.id);
-      if (gone.length > 0) {
-        await this.db.wifiSession.updateMany({
-          where: { id: { in: gone } },
-          data: { status: "disconnected", endedAt: now },
-        });
-      }
-    }
   }
 
   /**
-   * Brings the sessions in line with what the router reports. A session opens here, not at the
-   * portal: the router is what knows a device is online, and a device it signs back in by its
-   * MAC cookie never passes the portal at all.
+   * Brings this router's sessions in line with what it reports: the counters of those online, and
+   * an end for those it no longer lists (a lost accounting Stop). Sessions open from accounting, by
+   * device address, since a device back by its address shows that as its user (ADR-0015).
    */
   private async recordClients(router: Router, clients: MikroTikActiveClient[]): Promise<void> {
-    const codes = clients.map((c) => c.user).filter((code) => code !== "");
-    if (codes.length === 0) return;
-    const [sessions, vouchers] = await Promise.all([
-      this.db.wifiSession.findMany({
-        where: { venueId: router.venueId, status: "connected", voucher: { code: { in: codes } } },
-        select: { id: true, macAddress: true, voucher: { select: { code: true } } },
-      }),
-      this.db.voucher.findMany({
-        where: { code: { in: codes } },
-        select: { id: true, code: true, packageId: true },
-      }),
-    ]);
-    const open = new Map(
-      sessions.flatMap((s) =>
-        s.voucher ? [[sessionKey(s.voucher.code, s.macAddress), s.id] as const] : [],
-      ),
-    );
-    const voucherByCode = new Map(vouchers.map((v) => [v.code, v]));
-    const counters = (client: MikroTikActiveClient) => ({
-      uploadBytes: BigInt(client.bytesIn),
-      downloadBytes: BigInt(client.bytesOut),
+    const sessions = await this.db.wifiSession.findMany({
+      where: { routerId: router.id, status: "connected" },
+      select: { id: true, macAddress: true },
     });
-
+    const byMac = new Map(clients.map((c) => [c.mac, c]));
+    const gone = sessions.filter((s) => !byMac.has(s.macAddress)).map((s) => s.id);
+    if (gone.length > 0) {
+      await this.db.wifiSession.updateMany({
+        where: { id: { in: gone } },
+        data: { status: "disconnected", endedAt: new Date() },
+      });
+    }
     await Promise.allSettled(
-      clients.map(async (client) => {
-        const sessionId = open.get(sessionKey(client.user, client.mac));
-        if (sessionId !== undefined) {
-          await this.db.wifiSession.update({ where: { id: sessionId }, data: counters(client) });
-          return;
-        }
-        const voucher = voucherByCode.get(client.user);
-        if (voucher === undefined) return;
-        const device = await this.db.device.upsert({
-          where: { macAddress: client.mac },
-          create: { macAddress: client.mac, lastIpAddress: client.ip, lastActiveAt: new Date() },
-          update: { lastIpAddress: client.ip, lastActiveAt: new Date() },
-        });
-        await this.db.wifiSession.create({
-          data: {
-            venueId: router.venueId,
-            routerId: router.id,
-            voucherId: voucher.id,
-            packageId: voucher.packageId,
-            deviceId: device.id,
-            macAddress: client.mac,
-            ipAddress: client.ip,
-            deviceName: device.deviceName,
-            deviceType: device.deviceType,
-            ...counters(client),
-          },
-        });
+      sessions.flatMap((s) => {
+        const client = byMac.get(s.macAddress);
+        if (!client) return [];
+        return [
+          this.db.wifiSession.update({
+            where: { id: s.id },
+            data: { uploadBytes: BigInt(client.bytesIn), downloadBytes: BigInt(client.bytesOut) },
+          }),
+        ];
       }),
     );
   }
@@ -249,35 +174,30 @@ export class LiveMonitor {
   }
 
   /**
-   * For each active MikroTik client on this router, evaluate whether throttling should apply (peak
-   * hours or data threshold) and move the voucher between its normal and throttled profile when the
-   * state changes.
-   *
-   * **Why a profile swap and not `rate-limit` on the user.** The hAP lite (smips, 7.23.2) rejects
-   * `rate-limit` on `/ip hotspot user` — `unknown parameter` — which is exactly what this used to
-   * send, so on that board throttling could never take effect and simply retried forever. Profiles
-   * accept `rate-limit` on every board measured, so the swap is the one mechanism that works
-   * everywhere. `router-sync` creates both profiles for any package that can be throttled.
+   * Ends a session whose speed no longer holds: its package's peak hours began or ended, or its
+   * voucher passed the data it throttles after. RADIUS sets a session's speed when it starts, so
+   * the device comes back by its address and RADIUS gives it the speed that holds now, by the same
+   * rule (`throttledNow`); its new session carries that, so it isn't ended again.
    */
   private async applyThrottle(
     conn: MikroTikConn,
     routerId: string,
     clients: MikroTikActiveClient[],
-    eatHour: number,
   ): Promise<void> {
-    const codes = clients.map((c) => c.user).filter((code) => code !== "");
-    if (codes.length === 0) return;
-
+    if (clients.length === 0) return;
     const sessions = await this.db.wifiSession.findMany({
-      where: { status: "connected", routerId, voucher: { code: { in: codes } } },
+      where: { status: "connected", routerId, macAddress: { in: clients.map((c) => c.mac) } },
       select: {
         id: true,
+        macAddress: true,
+        voucherId: true,
         isThrottled: true,
-        voucher: { select: { code: true } },
         package: {
           select: {
-            id: true,
+            downloadSpeedMbps: true,
+            uploadSpeedMbps: true,
             throttledDownloadMbps: true,
+            throttledUploadMbps: true,
             peakStartHour: true,
             peakEndHour: true,
             throttleAfterGb: true,
@@ -285,81 +205,36 @@ export class LiveMonitor {
         },
       },
     });
-    if (sessions.length === 0) return;
-    const sessionByCode = new Map(
-      sessions.flatMap((s) => (s.voucher ? [[s.voucher.code, s] as const] : [])),
-    );
-
-    const now = Date.now();
+    const now = new Date();
     // A session that fails and then disconnects never clears its own entry, and this process
     // runs for weeks, so expired entries are dropped each pass.
     for (const [sessionId, retryAt] of this.throttleBackoff) {
-      if (retryAt <= now) this.throttleBackoff.delete(sessionId);
+      if (retryAt <= now.getTime()) this.throttleBackoff.delete(sessionId);
     }
-
-    for (const client of clients) {
-      const session = sessionByCode.get(client.user);
-      const pkg = session?.package ?? null;
-      if (!session || !pkg || pkg.throttledDownloadMbps === null) continue;
-
-      const bytesUsed = client.bytesIn + client.bytesOut;
-      const isPeak = isPeakHour(pkg.peakStartHour, pkg.peakEndHour, eatHour);
-      const isOverData =
-        pkg.throttleAfterGb !== null && bytesUsed >= pkg.throttleAfterGb * 1_073_741_824;
-      const shouldThrottle = isPeak || isOverData;
-
-      if (shouldThrottle === session.isThrottled) {
+    for (const session of sessions) {
+      if (!session.package || session.voucherId === null) continue;
+      const used = await usedBytesOf(this.db, session.voucherId);
+      if (throttledNow(session.package, used, now) === session.isThrottled) {
         this.throttleBackoff.delete(session.id);
         continue;
       }
       const retryAt = this.throttleBackoff.get(session.id);
-      if (retryAt !== undefined && now < retryAt) continue;
-
-      const profileName = shouldThrottle
-        ? throttledProfileNameForPackage(pkg.id)
-        : userProfileNameForPackage(pkg.id);
-
+      if (retryAt !== undefined && now.getTime() < retryAt) continue;
       try {
-        const moved = await ensureHotspotUserProfileAssigned(conn, client.user, profileName);
-        /*
-         * The swap alone governs the *next* login: RouterOS builds a hotspot session's dynamic
-         * queue when the user authenticates, so a running session keeps the limit it started
-         * with. Dropping the session puts the new speed in force now, and signing the device
-         * straight back in from here keeps it online: the drop also deletes its MAC cookie.
-         *
-         * `moved` stops this becoming a kick loop, and it is load-bearing: the reconnect opens a
-         * new session row with isThrottled at its false default, so the next poll sees a mismatch
-         * again; the router is already on the target profile, so `moved` is false, nothing is
-         * kicked, and the flag is corrected. Kick unconditionally and the guest is dropped every
-         * five seconds for as long as the throttle window lasts.
-         */
-        if (moved) {
-          await kickHotspotSession(conn, client.user);
-          await loginHotspotClient(conn, client);
-        }
-        this.throttleBackoff.delete(session.id);
-        logger.info("{change} session {sessionId} onto profile {profileName}", {
-          change: shouldThrottle ? "Throttled" : "Unthrottled",
-          sessionId: session.id,
-          profileName,
+        await endHotspotSession(conn, session.macAddress);
+        await this.db.wifiSession.update({
+          where: { id: session.id },
+          data: { status: "terminated", endedAt: now, terminationReason: "speed_changed" },
         });
+        this.throttleBackoff.delete(session.id);
       } catch (err) {
         // Latch the failure: retrying a rejected command every 5 s pinned the CPU on an hAP lite.
-        // The database stays honest, because the flag is written only after the router agreed.
-        this.throttleBackoff.set(session.id, now + THROTTLE_RETRY_MS);
-        logger.error("Could not move session {sessionId} onto {profileName}; retrying later", {
+        this.throttleBackoff.set(session.id, now.getTime() + THROTTLE_RETRY_MS);
+        logger.error("Could not end session {sessionId} for its new speed; retrying later", {
           sessionId: session.id,
-          profileName,
           error: err instanceof Error ? err.message : String(err),
         });
-        continue;
       }
-
-      // Outside the try on purpose: the flag records what the router did, not what we intended.
-      await this.db.wifiSession.update({
-        where: { id: session.id },
-        data: { isThrottled: shouldThrottle },
-      });
     }
   }
 }

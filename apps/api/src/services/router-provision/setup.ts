@@ -23,7 +23,7 @@ import { type RouterLogEvent, RouterLogger } from "../router-log.js";
 import { buildHotspotPlan, type HotspotPlan, resolveBackendEndpoints } from "./context.js";
 import { dialectFor } from "./dialect.js";
 import { type ProvisionReport, provisionRouter } from "./index.js";
-import { probeRouterMerged, type RouterProfile } from "./probe.js";
+import { probeRouter, type RouterProfile } from "./probe.js";
 import { probeReadiness, type ReadinessReport } from "./readiness.js";
 import type { RouterStore } from "./store.js";
 import { probeVerify, type VerifyReport } from "./verify.js";
@@ -195,10 +195,7 @@ export async function setupRouter(
     await opts.onPhase?.("probe");
     logger.info("▶ 1/6 · Identifying the board");
     try {
-      // Merged, never raw: this profile is what phase 6's dialect is built from, and taking the
-      // raw probe here meant one run held two different views of the same board. See
-      // `probeRouterMerged`.
-      profile = await probeRouterMerged(creds, logger, router.capabilities);
+      profile = await probeRouter(creds, logger);
     } catch (err) {
       const message = err instanceof RouterError ? err.message : String(err);
       blockers.push({
@@ -423,46 +420,6 @@ export async function setupRouter(
         const message = err instanceof Error ? err.message : String(err);
         logger.warn(`Self-test could not run: ${message}`);
         record("self-test", "warn", `Could not be completed: ${message}`, t);
-      }
-
-      // The self-test can prove the probe's version-based capability guess wrong. Persist it, or
-      // every voucher sold on this router pays for a rejected attempt first.
-      if (selfTest?.discovered) {
-        await store.recordCapabilities(routerId, {
-          ...profile.capabilities,
-          ...selfTest.discovered,
-        });
-        logger.warn(
-          `Corrected cached capabilities from the self-test: ${JSON.stringify(selfTest.discovered)}`,
-        );
-
-        /*
-         * Re-sync the venue's vouchers now that the board's real capabilities are known.
-         *
-         * Saving the router pushes its venue's vouchers immediately — before anything has ever
-         * probed the board. `needsProfileLimits(null)` is deliberately false there (creating
-         * profiles a board does not need is permanent clutter), so those vouchers go up with no
-         * `=profile=` and no cap. Set up then measures `userRateLimit: false` a minute later, and
-         * nothing re-pushes: on a freshly onboarded router every voucher sold so far stays
-         * uncapped until some unrelated push happens to repair it.
-         *
-         * Measured on a clean board: 10 vouchers, all on `default`, no `wbs-pkg-*` profile in
-         * sight, on a run that reported ok: true.
-         *
-         * `syncNewRouter` is exactly the repair — it creates the per-package profiles and moves
-         * existing users onto them — and it is idempotent, so running it here costs one pass over
-         * vouchers that are already correct. Only when the capabilities actually changed, since
-         * that is the only case where what was pushed earlier could be wrong.
-         */
-        try {
-          await store.resyncVouchers(routerId);
-        } catch (err) {
-          const message = err instanceof Error ? err.message : String(err);
-          logger.warn(
-            `Vouchers could not be re-synced after the capability correction: ${message}. ` +
-              `They may be missing their speed cap — push again from the venue's vouchers.`,
-          );
-        }
       }
 
       if (selfTest) {

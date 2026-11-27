@@ -5,7 +5,6 @@ import { SecretBox } from "../../src/crypto/secret-box.js";
 import { RouterAccess } from "../../src/services/router-credentials.js";
 import { RouterSync } from "../../src/services/router-sync.js";
 import { VoucherExpiry } from "../../src/vouchers/voucher-expiry.js";
-import { VoucherReconciler } from "../../src/vouchers/voucher-reconciler.js";
 import { useTestDatabase } from "./harness.js";
 import { testBusinessId } from "./people.js";
 
@@ -15,10 +14,7 @@ function services() {
   const access = new RouterAccess(new SecretBox(randomBytes(32)), 8728, 5);
   const audit = new AuditLog(t.db);
   const sync = new RouterSync(t.db, access, audit);
-  return {
-    expiry: new VoucherExpiry(t.db, sync),
-    reconciler: new VoucherReconciler(t.db, sync, audit),
-  };
+  return { expiry: new VoucherExpiry(t.db, sync) };
 }
 
 const HOUR = 3_600_000;
@@ -102,23 +98,14 @@ describe("voucher expiry", () => {
     expect(closed.status).toBe("expired");
     expect(closed.endedAt).not.toBeNull();
   });
-});
 
-describe("voucher reconciliation", () => {
-  test("a stuck voucher with no router to confirm it stays pending and is audited", async () => {
-    await venueWithVouchers([
-      { code: "WIFI-STUCK", status: "pending_activation", expiresIn: HOUR },
-    ]);
-    const { reconciler } = services();
-    expect((await reconciler.backlog({})).stuckVouchers).toBe(1);
-    const result = await reconciler.runOnce();
-    expect(result).toEqual({ retried: 1, recovered: 0 });
-    expect(await statusOf("WIFI-STUCK")).toBe("pending_activation");
-    const audit = await t.db.auditLog.findFirstOrThrow({
-      where: { action: "voucher.provision_failed" },
-    });
-    // The audit trail names the voucher by id: its code is a credential.
-    expect(JSON.stringify(audit)).not.toContain("WIFI-STUCK");
+  test("forgets an expired voucher's switch PIN", async () => {
+    await venueWithVouchers([{ code: "WIFI-PIN", status: "active", expiresIn: -60_000 }]);
+    await t.db.voucher.update({ where: { code: "WIFI-PIN" }, data: { pinHmac: "a".repeat(64) } });
+    await services().expiry.runOnce();
+    expect(
+      (await t.db.voucher.findUniqueOrThrow({ where: { code: "WIFI-PIN" } })).pinHmac,
+    ).toBeNull();
   });
 });
 
@@ -140,34 +127,11 @@ describe("a router that stays unreachable", () => {
       },
     });
 
-    for (let i = 0; i < 3; i++) await sync.syncRouter(router.id);
+    for (let i = 0; i < 3; i++) await sync.syncBlocks(router.id);
 
     expect(
       await t.db.auditLog.count({ where: { action: "router.sync_failed", targetId: router.id } }),
     ).toBe(1);
     expect((await t.db.router.findUniqueOrThrow({ where: { id: router.id } })).failedSyncs).toBe(3);
   }, 15_000);
-});
-
-describe("pushing one voucher", () => {
-  test("a refunded voucher is never put back on a router", async () => {
-    const access = new RouterAccess(new SecretBox(randomBytes(32)), 1, 1);
-    const sync = new RouterSync(t.db, access, new AuditLog(t.db));
-    const { venue } = await venueWithVouchers([
-      { code: "300000000002", status: "unused", expiresIn: HOUR },
-    ]);
-    await t.db.router.create({
-      data: {
-        venueId: venue.id,
-        name: "Lobby",
-        ipAddress: "127.0.0.1",
-        apiUsername: "hashinet",
-        apiPasswordEncrypted: access.sealPassword("secret"),
-      },
-    });
-    await t.db.voucher.update({ where: { code: "300000000002" }, data: { status: "refunded" } });
-
-    const outcome = await sync.ensureVoucher(venue.id, "300000000002", null);
-    expect(outcome).toMatchObject({ attempted: 0, succeeded: 0 });
-  });
 });

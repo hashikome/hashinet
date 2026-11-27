@@ -3,8 +3,9 @@ import { enrichWideEvent } from "../observability/wide-event.js";
 import type { RouterSync } from "../services/router-sync.js";
 
 /**
- * Ends vouchers whose time is up, and the sessions they hold, then removes them from the
- * venue's routers. The router enforces the limit live; this keeps the records truthful.
+ * Ends vouchers whose time is up, and the sessions they hold, and forgets their switch PINs. The
+ * router ends a session at its Session-Timeout itself; this keeps the records truthful, and takes
+ * off any device still online on one.
  */
 export class VoucherExpiry {
   constructor(
@@ -27,7 +28,7 @@ export class VoucherExpiry {
         // deadline, and without it the voucher would wait in that state forever.
         status: { in: ["unused", "pending_activation", "active"] },
       },
-      select: { id: true, code: true, venueId: true, status: true },
+      select: { id: true, status: true },
     });
     if (expired.length === 0) {
       enrichWideEvent({ "vouchers.expired": 0, "sessions.expired": stale.count });
@@ -35,6 +36,11 @@ export class VoucherExpiry {
     }
 
     const ids = expired.map((v) => v.id);
+    // Who is still online on them, read before their sessions are closed here.
+    const online = await this.db.wifiSession.findMany({
+      where: { voucherId: { in: ids }, status: "connected" },
+      select: { macAddress: true, router: true },
+    });
     const closed = await this.db.wifiSession.updateMany({
       where: { voucherId: { in: ids }, status: "connected" },
       data: { status: "expired", endedAt: now },
@@ -45,16 +51,16 @@ export class VoucherExpiry {
     const usedIds = expired.filter((v) => v.status === "active").map((v) => v.id);
     const lapsedIds = expired.filter((v) => v.status !== "active").map((v) => v.id);
     await this.db.$transaction([
-      this.db.voucher.updateMany({ where: { id: { in: usedIds } }, data: { status: "used" } }),
-      this.db.voucher.updateMany({ where: { id: { in: lapsedIds } }, data: { status: "expired" } }),
+      this.db.voucher.updateMany({
+        where: { id: { in: usedIds } },
+        data: { status: "used", pinHmac: null },
+      }),
+      this.db.voucher.updateMany({
+        where: { id: { in: lapsedIds } },
+        data: { status: "expired", pinHmac: null },
+      }),
     ]);
-
-    const byVenue = new Map<string, string[]>();
-    for (const voucher of expired) {
-      if (!voucher.venueId) continue;
-      byVenue.set(voucher.venueId, [...(byVenue.get(voucher.venueId) ?? []), voucher.code]);
-    }
-    for (const [venueId, codes] of byVenue) await this.sync.removeVouchers(venueId, codes);
+    for (const s of online) if (s.router) await this.sync.endSession(s.router, s.macAddress);
 
     const sessions = stale.count + closed.count;
     enrichWideEvent({ "vouchers.expired": expired.length, "sessions.expired": sessions });

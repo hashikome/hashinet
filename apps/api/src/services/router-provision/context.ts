@@ -54,6 +54,8 @@ export interface ProvisionContext {
   dialect: Dialect;
   endpoints: BackendEndpoints;
   hotspot: HotspotPlan;
+  /** What the router signs its RADIUS requests to HashiNet with (ADR-0015). */
+  radius: { secret: string };
   dryRun: boolean;
 }
 
@@ -348,6 +350,7 @@ export function buildContext(
   dialect: Dialect,
   dryRun: boolean,
   settings: BackendSettings,
+  radiusSecret: string,
 ): ProvisionContext {
   return {
     router,
@@ -355,6 +358,7 @@ export function buildContext(
     dialect,
     endpoints: resolveBackendEndpoints(router.ipAddress, settings),
     hotspot: buildHotspotPlan(router, profile),
+    radius: { secret: radiusSecret },
     dryRun,
   };
 }

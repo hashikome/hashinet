@@ -326,7 +326,7 @@ describe("an open guest WiFi", () => {
       profile: { capabilities: { hotspot: true }, wirelessStack: stack },
       hotspot: { interface: "wifi2", interfaceIsRadio: true },
       dialect: dialectFor({
-        capabilities: { toolFetch: true, userSharedUsers: true, userRateLimit: true },
+        capabilities: { toolFetch: true },
         wirelessStack: stack,
       } as unknown as RouterProfile),
     }) as unknown as ProvisionContext;

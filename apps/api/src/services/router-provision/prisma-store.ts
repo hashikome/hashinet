@@ -1,8 +1,9 @@
+import { randomBytes } from "node:crypto";
+import type { SecretBox } from "../../crypto/secret-box.js";
 import { toJsonValue } from "../../database/json.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
 import { openHosts } from "../../sites/open-sites.js";
 import type { RouterAccess } from "../router-credentials.js";
-import type { RouterSync } from "../router-sync.js";
 import type { BackendSettings } from "./context.js";
 import type { RouterStore } from "./store.js";
 
@@ -10,7 +11,7 @@ export class PrismaRouterStore implements RouterStore {
   constructor(
     private readonly db: PrismaClient,
     private readonly access: RouterAccess,
-    private readonly sync: RouterSync,
+    private readonly box: SecretBox,
     readonly backend: BackendSettings,
   ) {}
 
@@ -48,17 +49,22 @@ export class PrismaRouterStore implements RouterStore {
     });
   }
 
-  async recordCapabilities(
-    routerId: string,
-    capabilities: Parameters<RouterStore["recordCapabilities"]>[1],
-  ): Promise<void> {
-    await this.db.router.update({
-      where: { id: routerId },
-      data: { capabilities: toJsonValue(capabilities) },
+  /**
+   * The router's RADIUS secret, made on its first setup. Written only while none is set, then read
+   * back, so two setups at once agree on one.
+   */
+  async radiusSecret(router: Parameters<RouterStore["radiusSecret"]>[0]): Promise<string> {
+    if (router.radiusSecretEncrypted === null) {
+      await this.db.router.updateMany({
+        where: { id: router.id, radiusSecretEncrypted: null },
+        data: { radiusSecretEncrypted: this.box.seal(randomBytes(24).toString("base64url")) },
+      });
+    }
+    const { radiusSecretEncrypted } = await this.db.router.findUniqueOrThrow({
+      where: { id: router.id },
+      select: { radiusSecretEncrypted: true },
     });
-  }
-
-  resyncVouchers(routerId: string): Promise<void> {
-    return this.sync.syncRouter(routerId);
+    if (radiusSecretEncrypted === null) throw new Error("The router's RADIUS secret was not kept");
+    return this.box.open(radiusSecretEncrypted);
   }
 }

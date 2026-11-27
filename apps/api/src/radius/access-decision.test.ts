@@ -9,13 +9,16 @@ const voucher = (over: Partial<VoucherFacts> = {}): VoucherFacts => ({
   expiresAt: new Date(NOW.getTime() + 3_600_000),
   deviceLimit: 1,
   dataLimitGb: null,
-  dataUsedBytes: 0n,
+  usedBytes: 0n,
   pinLocked: false,
   speed: {
     downloadSpeedMbps: 5,
     uploadSpeedMbps: 2,
     throttledDownloadMbps: 1,
     throttledUploadMbps: null,
+    peakStartHour: null,
+    peakEndHour: null,
+    throttleAfterGb: 2,
   },
   ...over,
 });
@@ -49,22 +52,24 @@ describe("the terms of a place", () => {
       voucherId: "v1",
       sessionSeconds: 3600,
       rateLimit: "2M/5M",
+      throttled: false,
     });
   });
 
-  test("its data used: throttled where the package says to, refused where it doesn't", () => {
-    const used = { dataLimitGb: 1, dataUsedBytes: 1024n ** 3n };
-    expect(terms(voucher(used), NOW)).toMatchObject({ accept: true, rateLimit: "1M/1M" });
-    const noThrottle = voucher({
-      ...used,
-      speed: {
-        downloadSpeedMbps: 5,
-        uploadSpeedMbps: 2,
-        throttledDownloadMbps: null,
-        throttledUploadMbps: null,
-      },
+  test("throttled past the package's data or in its peak hours; refused past its cap", () => {
+    expect(terms(voucher({ usedBytes: 2n * 1024n ** 3n }), NOW)).toMatchObject({
+      accept: true,
+      rateLimit: "1M/1M",
+      throttled: true,
     });
-    expect(terms(noThrottle, NOW)).toEqual({ accept: false, reason: "data_used" });
+    const v = voucher();
+    // 10:00 UTC is 13:00 in Dar es Salaam.
+    const peak = voucher({ speed: { ...v.speed, peakStartHour: 12, peakEndHour: 14 } });
+    expect(terms(peak, NOW)).toMatchObject({ throttled: true });
+    expect(terms(voucher({ dataLimitGb: 1, usedBytes: 1024n ** 3n }), NOW)).toEqual({
+      accept: false,
+      reason: "data_used",
+    });
   });
 
   test("expired, not started or locked is refused", () => {

@@ -195,29 +195,6 @@ describe("routers", () => {
     }
   });
 
-  test("the backlog counts only the caller's venues", async () => {
-    const own = await manager("own@example.com");
-    const mine = await venue(own.id);
-    const theirs = await venue();
-    const now = new Date();
-    for (const venueId of [mine.id, theirs.id, theirs.id]) {
-      await t.db.voucher.create({
-        data: {
-          venueId,
-          code: `CODE${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
-          status: "pending_activation",
-          activatedAt: now,
-          durationMinutes: 60,
-          priceTsh: "1000",
-        },
-      });
-    }
-    const backlog = await own.client.request("GET", "/api/routers/provisioning-backlog");
-    expect(backlog.body).toEqual({ stuckVouchers: 1, unprovisionedPayments: 0 });
-    const all = await (await admin()).request("GET", "/api/routers/provisioning-backlog");
-    expect(all.body).toEqual({ stuckVouchers: 3, unprovisionedPayments: 0 });
-  });
-
   test("the bootstrap script keeps one API password, and has no tunnel without one configured", async () => {
     const c = await admin();
     const v = await venue();
@@ -311,7 +288,7 @@ describe("routers", () => {
     await platformMember(t.db, { email: "op@example.com", name: "Op", role: "operator" });
     const operator = browser(api);
     await enrollAuthenticatorFor(api, operator, "op@example.com");
-    expect((await operator.request("GET", "/api/routers/provisioning-backlog")).status).toBe(200);
+    expect((await operator.request("GET", `/api/routers/${router.id}`)).status).toBe(200);
     expect((await operator.request("POST", `/api/routers/${router.id}/setup`, {})).status).toBe(
       403,
     );

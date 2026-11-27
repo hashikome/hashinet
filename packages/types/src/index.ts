@@ -1000,12 +1000,6 @@ export interface RouterResponse {
   router: RouterRecord;
 }
 
-/** `GET /api/routers/provisioning-backlog`: guests waiting on a router, in the caller's venues. */
-export interface ProvisioningBacklog {
-  stuckVouchers: number;
-  unprovisionedPayments: number;
-}
-
 /**
  * `POST /api/routers/:id/bootstrap-script`. Carries the router's API password, the one response
  * that does: it has to be typed into the router.
@@ -1400,7 +1394,6 @@ export const AUDIT_ACTIONS = [
   "router.delete",
   "router.bootstrap",
   "router.unreachable",
-  "router.push_failed",
   "router.sync_failed",
   "router.time_given_back",
   "package.create",
@@ -1416,8 +1409,6 @@ export const AUDIT_ACTIONS = [
   // Kept for rows recorded before vouchers existed only by their sale (ADR-0017); nothing records them now.
   "voucher.print",
   "voucher.revoke",
-  "voucher.provision_failed",
-  "voucher.provision_recovered",
   "session.terminate",
   "device.block",
   "device.unblock",
