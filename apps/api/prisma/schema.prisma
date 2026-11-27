@@ -529,6 +529,7 @@ model Venue {
   venueSites   VenueSite[]
   siteSlots    SiteSlot[]
 
+  @@unique([id, businessId])
   @@index([businessId])
   @@index([status])
   @@map("venues")
@@ -628,7 +629,8 @@ model Package {
   updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   business   Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  ownVenue   Venue?           @relation("VenueOwnPackages", fields: [venueId], references: [id], onDelete: Cascade)
+  /// A venue's own package is of that venue's business: the key holds both.
+  ownVenue   Venue?           @relation("VenueOwnPackages", fields: [venueId, businessId], references: [id, businessId], onDelete: Cascade)
   venues     VenuePackage[]
   vouchers   Voucher[]
   payments   Payment[]

@@ -1,5 +1,5 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { dirname, join, relative } from "node:path";
 
 /**
  * Where brand images live. Files never enter PostgreSQL, which holds only their keys. A key is
@@ -10,6 +10,8 @@ export interface BrandStore {
   /** Null when the key holds nothing. */
   get(key: string): Promise<Uint8Array | null>;
   remove(key: string): Promise<void>;
+  /** Every file held, with when it was written, for sweeping what nothing references. */
+  list(): Promise<{ key: string; at: Date }[]>;
 }
 
 export const BRAND_STORE = Symbol("BRAND_STORE");
@@ -39,6 +41,19 @@ export class R2BrandStore implements BrandStore {
   async remove(key: string): Promise<void> {
     await this.client.delete(key);
   }
+
+  async list(): Promise<{ key: string; at: Date }[]> {
+    const found: { key: string; at: Date }[] = [];
+    let token: string | null = null;
+    do {
+      const page = await this.client.list(token === null ? {} : { continuationToken: token });
+      for (const o of page.contents ?? []) {
+        found.push({ key: o.key, at: new Date(o.lastModified ?? 0) });
+      }
+      token = page.isTruncated ? (page.nextContinuationToken ?? null) : null;
+    } while (token !== null);
+    return found;
+  }
 }
 
 /** Development and tests: a folder under `data/`, so nobody needs a bucket to run HashiNet. */
@@ -57,5 +72,16 @@ export class DiskBrandStore implements BrandStore {
 
   async remove(key: string): Promise<void> {
     await rm(join(this.dir, key), { force: true });
+  }
+
+  async list(): Promise<{ key: string; at: Date }[]> {
+    const names = await readdir(this.dir, { recursive: true }).catch(() => []);
+    const found: { key: string; at: Date }[] = [];
+    for (const name of names) {
+      const path = join(this.dir, name);
+      const info = await stat(path);
+      if (info.isFile()) found.push({ key: relative(this.dir, path), at: info.mtime });
+    }
+    return found;
   }
 }

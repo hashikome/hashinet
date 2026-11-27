@@ -29,7 +29,8 @@ another address.
    Restore defaults copies from one level up. A portal keeps its colours, not a theme, so removing
    a theme changes nobody's. While a business has one venue, saving the venue's portal saves the
    business's too, so its second venue starts the same. The logo is not copied: a guest sees the
-   venue's own, else the business's (the business profile), else none.
+   venue's own, else the business's (the business profile), else none. A daily sweep removes
+   stored files nothing references once they are an hour old (`BrandService.sweep`).
 2. **The admin stays HashiFi's.** A business changes no colours or layout in the admin, so every
    business gets the same readable screens and support can describe them; the portal's foot and
    the admin sidebar's foot keep a small HashiFi credit.

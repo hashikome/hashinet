@@ -109,6 +109,24 @@ describe("the schema on PostgreSQL 18", () => {
     expect(read.priceTsh.toFixed(2)).toBe("1000.00");
   });
 
+  test("a venue's own package is of that venue's business", async () => {
+    const { venue } = await venueAndPackage();
+    const other = await testBusinessId(t.db, "Other Business");
+    const theirs = await failure(
+      t.db.package.create({
+        data: {
+          businessId: other,
+          venueId: venue.id,
+          name: "Theirs",
+          durationMinutes: 60,
+          downloadSpeedMbps: 5,
+          priceTsh: 1000,
+        },
+      }),
+    );
+    expect(theirs).toMatch(/foreign key/i);
+  });
+
   test("a venue offers a package once", async () => {
     const { venue, pkg } = await venueAndPackage();
     await t.db.venuePackage.create({ data: { venueId: venue.id, packageId: pkg.id } });

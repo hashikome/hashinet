@@ -3,13 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { GuestContext, PortalEditor, PortalLook } from "@hashinet/types";
 import sharp from "sharp";
+import { BrandService } from "../../src/brand/brand.service.js";
 import { HASHINET_COLOURS, HASHINET_PORTAL } from "../../src/portal/portal-input.js";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, sellingVenue, testBusinessId } from "./people.js";
 
 const t = useTestDatabase();
-const api = useApi({ BRAND_STORE_DIR: join(tmpdir(), `hashinet-brand-${Date.now()}`) });
+const BRAND_DIR = join(tmpdir(), `hashinet-brand-${Date.now()}`);
+const api = useApi({ BRAND_STORE_DIR: BRAND_DIR });
 
 const LOOK: PortalLook = { ...HASHINET_PORTAL, ...HASHINET_COLOURS };
 
@@ -258,5 +260,20 @@ describe("a business's and its venues' portals", () => {
     const { internet: _a, ...preview } = hidden.preview;
     const { internet: _b, ...guest } = await context(router.id);
     expect(preview).toEqual(guest);
+  });
+
+  test("the sweep removes stored files nothing references, once they are an hour old", async () => {
+    const c = await owner();
+    const cafe = await addVenue(c, "Cafe");
+    const kept = editor(await upload(c, cafe, await png())).logo.url ?? "";
+    const store = join(BRAND_DIR, cafe);
+    await Bun.write(join(store, "background-0123456789abcdef.webp"), "old");
+    const sweep = (at: Date) => api.app.get(BrandService).sweep(at);
+    // Too new to remove yet: its row may still be on its way.
+    expect(await sweep(new Date())).toBe(0);
+    // Other tests' logos, whose rows are gone, go too.
+    expect(await sweep(new Date(Date.now() + 2 * 60 * 60_000))).toBeGreaterThanOrEqual(1);
+    expect(await Bun.file(join(store, "background-0123456789abcdef.webp")).exists()).toBe(false);
+    expect((await fetch(`${api.url}${kept}`)).status).toBe(200);
   });
 });

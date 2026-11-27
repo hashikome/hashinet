@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The brand store is swept on start and once a day: a stored image nothing references, an hour
+  old, is removed, which clears the portals' old background pictures from R2. A venue's own
+  package can only be of that venue's business, in the database too. On the guest portal, a link
+  that wraps keeps its full stop on its last line.
 - Settings › Captive portal (slice 5): a business's owner and managers set what guests see at each
   venue, its theme or own two colours, the page it opens on, its logo, wording and terms, beside a
   phone showing the real portal page by page, and what new venues start with. HashiNet's team keeps

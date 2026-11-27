@@ -1642,11 +1642,15 @@ pre.csv {
   line-height: 1.6;
 }
 /* A link inside a sentence sits in it like a word, with no gap before its full stop. */
+/* A link's full stop is inside it, not underlined, so a link that wraps keeps it on its last line. */
 .g-link {
+  text-align: inherit;
   padding: 0;
   font: inherit;
   color: var(--g-ink);
   font-weight: 500;
+}
+.g-link u {
   text-decoration: underline;
   text-underline-offset: 3px;
 }

@@ -373,9 +373,8 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
       <p className="g-note">
         By connecting, you accept{" "}
         <button className="g-link" type="button" onClick={() => setStage({ kind: "terms", back })}>
-          the venue&apos;s terms
+          <u>the venue&apos;s terms</u>.
         </button>
-        .
       </p>
     ) : null;
   const frame = (body: ReactNode) => (
@@ -408,9 +407,8 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
           <p className="g-say g-gap">
             Nothing came?{" "}
             <button className="g-link" type="button" onClick={startOver}>
-              Start again
+              <u>Start again</u>.
             </button>
-            .
           </p>
         </>,
       );
@@ -590,9 +588,8 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
                 type="button"
                 onClick={() => setStage({ kind: "voucher" })}
               >
-                Enter its code
+                <u>Enter its code</u>.
               </button>
-              .
             </p>
           </>,
         );
@@ -653,9 +650,8 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
           <h2 className="g-sub">Have a voucher?</h2>
           <p className="g-say">
             <button className="g-link" type="button" onClick={() => setStage({ kind: "voucher" })}>
-              Enter its code
+              <u>Enter its code</u>.
             </button>
-            .
           </p>
         </>,
       );
@@ -708,11 +704,13 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
           {context.selling ? (
             <p className="g-say">
               <button className="g-link" type="button" onClick={toPlans}>
-                {sells
-                  ? "See the plans and buy here with mobile money"
-                  : "See the plans and where to buy"}
+                <u>
+                  {sells
+                    ? "See the plans and buy here with mobile money"
+                    : "See the plans and where to buy"}
+                </u>
+                .
               </button>
-              .
             </p>
           ) : (
             <p className="g-say">Vouchers aren&apos;t on sale here right now.</p>

@@ -22,6 +22,8 @@ import { NotAnImageError, processLogo } from "./brand-images.js";
 import { BRAND_STORE, type BrandStore } from "./brand-store.js";
 
 const FILE = /^logo-[0-9a-f]{16}\.webp$/;
+/** How old an unreferenced file must be before the sweep removes it. */
+const SWEEP_AFTER_MS = 60 * 60_000;
 
 /** Where a guest's phone loads an image: the portal's own origin, the one host it can reach. */
 function urlOf(key: string | null): string | null {
@@ -143,6 +145,30 @@ export class BrandService {
   /** A logo, for the public route. Only a name this service makes is ever looked up. */
   async image(venueId: string, file: string): Promise<Uint8Array | null> {
     return FILE.test(file) ? this.store.get(`${venueId}/${file}`) : null;
+  }
+
+  /**
+   * Removes stored files nothing references: a logo whose delete failed, files of a venue that is
+   * gone, and kinds of image no longer kept. A file written in the last hour is left, as its row may
+   * not be saved yet. Returns how many went.
+   */
+  async sweep(now = new Date()): Promise<number> {
+    const kept = new Set(
+      (
+        await this.db.venuePortal.findMany({
+          where: { logoKey: { not: null } },
+          select: { logoKey: true },
+        })
+      )
+        .map((r) => r.logoKey)
+        .filter((key) => key !== null),
+    );
+    const settled = now.getTime() - SWEEP_AFTER_MS;
+    const stale = (await this.store.list()).filter(
+      (file) => !kept.has(file.key) && file.at.getTime() < settled,
+    );
+    for (const file of stale) await this.store.remove(file.key);
+    return stale.length;
   }
 
   /** A deleted venue's logo goes too; its portal row goes with the venue. */
