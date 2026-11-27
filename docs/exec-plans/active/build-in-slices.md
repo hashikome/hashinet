@@ -536,8 +536,10 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   acceptance (1 December) and slice 2's router checks still pending; neither blocks it. The
   prototype's slice-5 screens were walked again as Neema (owner), Grace (business manager), Daudi
   (venue manager) and Musa (operator): no script errors; a venue manager's menu has no way to their
-  venue's page, and the prototype offers them Edit venue while the policy keeps `venue.update` to
-  the whole business (asked of the owner). Steps, each a journey:
+  venue's page, and the prototype offered them Edit venue while the policy keeps `venue.update` to
+  the whole business. Settled with the owner (Decision Log): only the owner and business managers
+  change a venue; venue managers get Venues in their menu, listing their venues. Prototype updated.
+  Steps, each a journey:
   - [ ] (a) Venues: the business's Venues list and each venue's page (its day, its way to pay, Edit
     venue), the owner's Add a venue with how its router should come (onboarding, slice 3), and every
     role's way to their venues.
@@ -790,6 +792,11 @@ CI green); deployed (Dokploy running the new image); accepted live (the slice's 
   unlink their history. Found building the Devices screen in (g); test in
   `devices-sessions.integration.test.ts`.
   Date/Author: 2026-11-18 / Claude.
+- Decision: only a business's owner and business managers change a venue (name, location, status);
+  a venue manager reads their venues' pages, with Venues in their menu listing their venues, and
+  works them (way to pay, sites) without editing them (owner, 27 November 2026). Rationale: a
+  venue's identity is the business's; its day-to-day running is its managers'.
+  Date/Author: 2026-11-27 / owner.
 - Decision: extra-site slots move from slice 4 to slice 5 (owner, 27 November 2026). Rationale: they
   need the venue's Sites, which the app does not have yet: sites stored one per row with their
   slots, a slot invoice, and site changes pushed to the routers, which only Set up does today; slice
