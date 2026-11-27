@@ -7,6 +7,7 @@ import { IntervalJob, ScheduledJobs } from "../jobs/interval-job.js";
 import { BillingController } from "./billing.controller.js";
 import { BillingSettings } from "./billing-settings.js";
 import { BILLING_STARTS, Invoices } from "./invoices.js";
+import { OwnerMail } from "./owner-mail.js";
 import { BillPayments } from "./payments.js";
 import { ServiceAccessService } from "./service-access.js";
 
@@ -46,7 +47,14 @@ export class BillingJobs extends ScheduledJobs {
 @Module({
   imports: [IssuesModule],
   controllers: [BillingController],
-  providers: [BillingSettings, Invoices, BillPayments, ServiceAccessService, BillingJobs],
+  providers: [
+    BillingSettings,
+    Invoices,
+    BillPayments,
+    OwnerMail,
+    ServiceAccessService,
+    BillingJobs,
+  ],
   exports: [BillingSettings, Invoices, ServiceAccessService],
 })
 export class BillingModule {}

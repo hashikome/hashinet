@@ -39,9 +39,7 @@ export function DownloadPdf({ invoice }: { invoice: InvoiceRecord }) {
     <Button
       icon="download"
       busy={busy}
-      onClick={async (e) => {
-        // In a row, it downloads rather than opening the invoice.
-        e.stopPropagation();
+      onClick={async () => {
         setBusy(true);
         try {
           await api.download(`/api/billing/invoices/${invoice.id}/pdf`, `${invoice.number}.pdf`);

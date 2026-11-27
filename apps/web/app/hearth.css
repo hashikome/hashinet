@@ -2976,7 +2976,6 @@ td {
   gap: 16px;
   min-width: 0;
 }
-/* Fees' second form says what it is for before its fields. */
 /* A line under a panel's heading that says how its contents work. */
 .panel-lead {
   margin-bottom: 14px;

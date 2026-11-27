@@ -8,14 +8,15 @@ import type {
 } from "@hashinet/types";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { calendarDay, longDate, shortDate, todayIso, when } from "@/lib/dates";
+import { fullDay as day } from "@/lib/billing";
+import { calendarDay, shortDate, when } from "@/lib/dates";
 import { tsh } from "@/lib/money";
-import { useSession } from "@/lib/session";
+import { useCan } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
 import { Dialog } from "./dialog";
 import { Attention, Button, Field, Panel, Pill, type PillKind, Table } from "./ui";
 
-export const ACCESS: Record<ServiceAccess, [string, PillKind]> = {
+const ACCESS: Record<ServiceAccess, [string, PillKind]> = {
   enabled: ["Enabled", "ok"],
   grace_period: ["Grace period", "wait"],
   read_only: ["Read-only", "bad"],
@@ -31,7 +32,7 @@ const MEANS: Record<ServiceAccess, string> = {
   suspended: "Its portal takes no new vouchers; devices online keep their time until it ends.",
 };
 
-export const REASON: Record<ServiceAccessReason, string> = {
+const REASON: Record<ServiceAccessReason, string> = {
   payment_overdue: "Payment overdue",
   payment_received: "Payment received",
   payment_arranged: "Payment arranged",
@@ -42,21 +43,20 @@ export const REASON: Record<ServiceAccessReason, string> = {
   other: "Other",
 };
 
-const day = (d: string) => longDate(calendarDay(d));
-
 /** How its access came to be: by its bills, with the figures, or set by hand and why. */
-export function accessWhy(a: ServiceAccessDetail): string {
+function accessWhy(a: ServiceAccessDetail): string {
   if (a.held) {
     const last = a.changes.find((c) => c.held);
     const until = a.heldUntil ? `, until ${day(a.heldUntil)}` : "";
     return `Set by hand${last ? `: ${REASON[last.reason].toLowerCase()}` : ""}${until}. ${MEANS[a.access]}`.trim();
   }
   if (a.access === "enabled" || a.overdueSince === null) return "By its bills: nothing is overdue.";
-  const owed = `${tsh(a.overdueTsh)} overdue since ${day(a.overdueSince)}`;
+  // A reader who doesn't see money (a platform operator) reads the date alone.
+  const owed = `${a.overdueTsh === null ? "Overdue" : `${tsh(a.overdueTsh)} overdue`} since ${day(a.overdueSince)}`;
   if (a.access === "read_only") {
     return `By its bills: ${owed}, and it was late before. Paying restores it. ${MEANS.read_only}`;
   }
-  return a.pausesOn
+  return a.lateBefore && a.pausesOn
     ? `By its bills: ${owed}. It goes read-only on ${day(a.pausesOn)}, as it was late before.`
     : `By its bills: ${owed}. Its first late bill, so it stays in its grace period until it pays. Call the owner.`;
 }
@@ -94,10 +94,9 @@ export function ServiceAccessPanels({
   access: ServiceAccessDetail;
   onChanged: () => void;
 }) {
-  const { me } = useSession();
+  const can = useCan();
   const [changing, setChanging] = useState(false);
-  const can = me.active.capabilities.includes("business.access");
-  const change = can ? (
+  const change = can("business.access") ? (
     <Button onClick={() => setChanging(true)}>Change service access</Button>
   ) : null;
   return (
@@ -105,7 +104,7 @@ export function ServiceAccessPanels({
       {access.access !== "enabled" || access.held ? (
         <Attention
           title={`Service access: ${ACCESS[access.access][0].toLowerCase()}`}
-          bad={access.access === "read_only" || access.access === "suspended"}
+          bad={!access.selling}
           action={change}
         >
           {accessWhy(access)}
@@ -150,7 +149,7 @@ export function ServiceAccessPanels({
           businessId={businessId}
           name={name}
           access={access}
-          admin={me.active.role === "admin"}
+          suspends={can("business.suspend")}
           onClose={() => setChanging(false)}
           onDone={() => {
             setChanging(false);
@@ -175,14 +174,14 @@ function ChangeDialog({
   businessId,
   name,
   access,
-  admin,
+  suspends,
   onClose,
   onDone,
 }: {
   businessId: string;
   name: string;
   access: ServiceAccessDetail;
-  admin: boolean;
+  suspends: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -193,19 +192,13 @@ function ChangeDialog({
     ["grace_period", "Grace period"],
     ["read_only", "Read-only"],
     // Only the platform admin suspends; nothing suspends a business by itself.
-    ...(admin ? ([["suspended", "Suspended"]] as [SetBy, string][]) : []),
+    ...(suspends ? ([["suspended", "Suspended"]] as [SetBy, string][]) : []),
   ];
   const [setBy, setSetBy] = useState<SetBy>(access.held ? "bills" : "enabled");
   const [days, setDays] = useState<string>("");
   const [reason, setReason] = useState<ServiceAccessReason>("payment_arranged");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
-  const until = (() => {
-    if (!days) return null;
-    const d = new Date(`${todayIso()}T12:00:00Z`);
-    d.setUTCDate(d.getUTCDate() + Number(days));
-    return d.toISOString().slice(0, 10);
-  })();
   return (
     <Dialog label="Change service access" onClose={onClose}>
       <form
@@ -219,7 +212,14 @@ function ChangeDialog({
                 `/api/businesses/${businessId}/service-access`,
                 setBy === "bills"
                   ? { mode: "bills", reason, note, message }
-                  : { mode: "hold", access: setBy, until, reason, note, message },
+                  : {
+                      mode: "hold",
+                      access: setBy,
+                      days: days ? Number(days) : null,
+                      reason,
+                      note,
+                      message,
+                    },
               ),
             `${name}'s service access changed. Its owners have been emailed.`,
           );
@@ -247,7 +247,7 @@ function ChangeDialog({
           </select>
         </Field>
         {setBy === "bills" ? null : (
-          <Field label="For" id="ag" hint="Then it follows its bills again." error={errors.until}>
+          <Field label="For" id="ag" hint="Then it follows its bills again." error={errors.days}>
             <select
               id="ag"
               className="input"

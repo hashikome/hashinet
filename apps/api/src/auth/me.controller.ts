@@ -190,7 +190,7 @@ export class MeController {
                 (action) => principal.access === "full" || !needsProtectedSession(action),
               ),
         // While its business can't sell, its selling and package actions stay, paused, saying why.
-        selling: principal.selling,
+        pause: principal.pause,
       },
       protection: {
         required: mustProtect(principal.role),

@@ -163,7 +163,6 @@ export class GuestService {
     };
   }
 
-  /** Refuses a device the venue's business has blocked; another business's block is not this one's. */
   /** A guest buys nothing while the venue's business can't sell (ADR-0014, 2). */
   async refuseWhilePaused(venueId: string): Promise<void> {
     const venue = await this.db.venue.findUniqueOrThrow({
@@ -177,6 +176,7 @@ export class GuestService {
     }
   }
 
+  /** Refuses a device the venue's business has blocked; another business's block is not this one's. */
   async refuseBlocked(mac: string, venueId: string): Promise<void> {
     const block = await this.db.deviceBlock.findFirst({
       where: { device: { macAddress: mac }, business: { venues: { some: { id: venueId } } } },

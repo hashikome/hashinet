@@ -142,10 +142,7 @@ export class PaymentWaysService {
       });
       // A business's first way is its default: there is always one while it has any.
       if (input.makeDefault || business.defaultPaymentWayId === null) {
-        await tx.business.update({
-          where: { id: businessId },
-          data: { defaultPaymentWayId: way.id },
-        });
+        await this.makeDefault(tx, businessId, way.id);
       }
       await this.audit.record(
         staff,
@@ -169,9 +166,7 @@ export class PaymentWaysService {
       const before = await tx.paymentWay.findFirst({ where: { id, businessId } });
       if (!before) throw notFound();
       const way = await tx.paymentWay.update({ where: { id }, data: columnsOf(input) });
-      if (input.makeDefault) {
-        await tx.business.update({ where: { id: businessId }, data: { defaultPaymentWayId: id } });
-      }
+      if (input.makeDefault) await this.makeDefault(tx, businessId, id);
       await this.audit.record(
         staff,
         {
@@ -241,22 +236,26 @@ export class PaymentWaysService {
   ): Promise<VenuePaymentWay> {
     const venue = await this.venues.get(staff, venueId);
     const { wayId } = input;
-    if (
-      wayId !== null &&
-      (await this.db.paymentWay.count({ where: { id: wayId, businessId: venue.businessId } })) === 0
-    ) {
-      throw new BadRequestException(
-        apiError("VALIDATION_FAILED", "Check the highlighted fields.", {
-          wayId: "is not one of your business's ways to pay",
-        }),
-      );
-    }
-    const before = await this.db.venue.findUniqueOrThrow({
-      where: { id: venueId },
-      select: { paymentWayId: true },
-    });
+    // Under the business's lock, as the list's changes are, so a way removed meanwhile is refused.
     await this.db.$transaction(async (tx) => {
-      await tx.venue.update({ where: { id: venueId }, data: { paymentWayId: wayId } });
+      const business = await this.lock(tx, venue.businessId);
+      if (
+        wayId !== null &&
+        (await tx.paymentWay.count({ where: { id: wayId, businessId: venue.businessId } })) === 0
+      ) {
+        throw new BadRequestException(
+          apiError("VALIDATION_FAILED", "Check the highlighted fields.", {
+            wayId: "is not one of your business's ways to pay",
+          }),
+        );
+      }
+      const before = await tx.venue.findUniqueOrThrow({
+        where: { id: venueId },
+        select: { paymentWayId: true },
+      });
+      // Choosing the default is following it, so a later change of default reaches the venue.
+      const chosen = wayId === business.defaultPaymentWayId ? null : wayId;
+      await tx.venue.update({ where: { id: venueId }, data: { paymentWayId: chosen } });
       await this.audit.record(
         staff,
         {
@@ -264,7 +263,7 @@ export class PaymentWaysService {
           businessId: venue.businessId,
           venueId,
           target: { type: "venue", id: venueId },
-          change: { before: { wayId: before.paymentWayId }, after: { wayId } },
+          change: { before: { wayId: before.paymentWayId }, after: { wayId: chosen } },
         },
         tx,
       );
@@ -289,6 +288,15 @@ export class PaymentWaysService {
   private businessOf(staff: Principal): string {
     if (staff.businessId === null) throw notFound();
     return staff.businessId;
+  }
+
+  /** The default from now; venues that had chosen it follow it, so a later change reaches them. */
+  private async makeDefault(tx: Prisma.TransactionClient, businessId: string, wayId: string) {
+    await tx.business.update({ where: { id: businessId }, data: { defaultPaymentWayId: wayId } });
+    await tx.venue.updateMany({
+      where: { businessId, paymentWayId: wayId },
+      data: { paymentWayId: null },
+    });
   }
 
   /** One change at a time to a business's ways, so its default is never lost between two. */

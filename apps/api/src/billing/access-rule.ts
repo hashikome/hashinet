@@ -1,9 +1,14 @@
-import type { ServiceAccess } from "@hashinet/types";
+import type { SellingPause, ServiceAccess } from "@hashinet/types";
 import { addDays } from "../analytics/business-day.js";
+import { invoiceState } from "./invoice-state.js";
 
 /** A business can't sell while it is read-only or suspended (ADR-0014, 2). */
 export const sellingStopped = (access: ServiceAccess) =>
   access === "read_only" || access === "suspended";
+
+/** Why a business can't sell: its overdue bill, or a hold by HashiNet's team; null while it sells. */
+export const pauseOf = (b: { access: ServiceAccess; accessHeld: boolean }): SellingPause | null =>
+  sellingStopped(b.access) ? (b.accessHeld ? "held" : "overdue") : null;
 
 /** Days from a bill's due date to read-only, for a business that was late before (ADR-0014, 2). */
 export const READ_ONLY_AFTER_DAYS = 14;
@@ -25,6 +30,8 @@ export type AccessByBills =
       /** The oldest overdue bill's due date. */
       overdueSince: string;
       overdueTsh: number;
+      /** An earlier month was paid after its due date. */
+      lateBefore: boolean;
       /** When selling pauses: 14 days after the due date for a business late before, else never. */
       pausesOn: string | null;
     };
@@ -49,7 +56,7 @@ function paidInFullOn(b: FeesBill): string | null {
  */
 export function accessByBills(bills: FeesBill[], today: string): AccessByBills {
   const overdue = bills
-    .filter((b) => b.dueOn < today && paidOf(b) < b.totalTsh)
+    .filter((b) => invoiceState(b.totalTsh, paidOf(b), b.dueOn, today) === "overdue")
     .sort((a, b) => a.dueOn.localeCompare(b.dueOn));
   const oldest = overdue[0];
   if (!oldest) return { access: "enabled" };
@@ -62,6 +69,7 @@ export function accessByBills(bills: FeesBill[], today: string): AccessByBills {
   const facts = {
     overdueSince: oldest.dueOn,
     overdueTsh: overdue.reduce((sum, b) => sum + b.totalTsh - paidOf(b), 0),
+    lateBefore,
     pausesOn,
   };
   return pausesOn !== null && today >= pausesOn

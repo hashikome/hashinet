@@ -8,7 +8,8 @@ import type {
   RouterCondition,
 } from "@hashinet/types";
 import { CONDITION, type PillKind } from "@/components/hearth/ui";
-import { calendarDay, dayName, longDate } from "./dates";
+import { fullDay } from "./billing";
+import { calendarDay, dayName } from "./dates";
 import { formatDuration } from "./duration";
 import { tsh } from "./money";
 import { ROLE_NAME } from "./nav";
@@ -68,7 +69,7 @@ export function issueTitle(i: IssueRecord): string {
     case "bill_due":
       return !open
         ? "HashiNet's bill was paid"
-        : paused(i)
+        : pausedByBill(i)
           ? "Selling is paused"
           : `HashiNet's bill is ${i.overdue ? "overdue" : "due"}`;
     case "selling_paused":
@@ -76,21 +77,25 @@ export function issueTitle(i: IssueRecord): string {
         ? "Selling is back"
         : paused(i)
           ? "Selling is paused"
-          : `Selling pauses on ${i.access?.pausesOn ? longDate(calendarDay(i.access.pausesOn)) : "its date"}`;
+          : `Selling pauses on ${i.access?.pausesOn ? fullDay(i.access.pausesOn) : "its date"}`;
   }
 }
 
 /** A manager's selling-paused issue, said plainly: why, and who pays (prototype `selling-paused`). */
 export function sellingText(i: IssueRecord): string {
   const business = i.business?.name ?? "The business";
+  if (paused(i) && i.access?.held) {
+    return `HashiNet's team has paused selling at ${business}. The owner has been told. Vouchers already sold keep working.`;
+  }
   return paused(i)
     ? `${business}'s bill to HashiNet is overdue, so nobody can sell until the owner pays it. Vouchers already sold keep working.`
     : `${business}'s bill to HashiNet is overdue. Selling pauses then unless the owner pays it.`;
 }
 
-/** Its business sells nothing now: read-only or suspended (ADR-0014, 2). */
-const paused = (i: IssueRecord) =>
-  i.access?.state === "read_only" || i.access?.state === "suspended";
+/** Its business sells nothing now, as the API says (ADR-0014, 2). */
+const paused = (i: IssueRecord) => i.access !== null && !i.access.selling;
+/** Paused by its overdue bill, not by HashiNet's team. */
+const pausedByBill = (i: IssueRecord) => paused(i) && !i.access?.held;
 
 /** Where it is: the venue, and its business when that names something else. */
 export function issueWhere(i: IssueRecord): string {

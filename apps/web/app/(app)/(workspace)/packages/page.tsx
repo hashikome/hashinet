@@ -7,7 +7,7 @@ import {
   type PackageResponse,
 } from "@hashinet/types";
 import { type FormEvent, useState } from "react";
-import { BillPausedDialog } from "@/components/hearth/bill-paused";
+import { PausedDialog } from "@/components/hearth/bill-paused";
 import { Dialog } from "@/components/hearth/dialog";
 import { Button, Field, Head, Panel, Table, useToast } from "@/components/hearth/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
@@ -36,7 +36,7 @@ export default function PackagesPage() {
   const [open, setOpen] = useState<Open | null>(null);
   // While the business can't sell, its package actions stay in view, quieter, and a tap says why,
   // as Sell does when no router serves (ADR-0014, 2).
-  const paused = !me.active.selling;
+  const paused = me.active.pause !== null;
   const act = (next: Open) => () => setOpen(paused ? { kind: "paused" } : next);
   const quiet = paused
     ? ({ className: "paused", "aria-disabled": true, "aria-describedby": "pkg-paused" } as const)
@@ -81,7 +81,7 @@ export default function PackagesPage() {
       />
       {paused ? (
         <span className="sr" id="pkg-paused">
-          Paused: the bill to HashiNet is overdue.
+          Paused while the business can't sell.
         </span>
       ) : null}
       {list.error ? <LoadFailed error={list.error} retry={list.reload} /> : null}
@@ -140,7 +140,7 @@ export default function PackagesPage() {
           onSaved={list.reload}
         />
       ) : open?.kind === "paused" ? (
-        <BillPausedDialog what="packages" onClose={() => setOpen(null)} />
+        <PausedDialog what="packages" onClose={() => setOpen(null)} />
       ) : open?.kind === "add" ? (
         <AddDialog onClose={() => setOpen(null)} onSaved={list.reload} />
       ) : null}

@@ -77,9 +77,15 @@ export const POLICY = {
   // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.
   "business.read": PLATFORM_ALL,
   "business.invite": PLATFORM_STAFF,
-  // Service access by hand (ADR-0014, 4): the admin and managers; only the admin suspends, which
-  // the service checks.
+  // Service access by hand (ADR-0014, 4): the admin and managers hold and restore along the allowed
+  // transitions; only the admin suspends, or makes any other change, as an audited override.
   "business.access": PLATFORM_STAFF,
+  "business.suspend": ["admin"],
+  "business.access.override": ["admin"],
+  // Who sees a business's bill issues: the bill is the owner's; selling paused by it is its
+  // managers' to know (operators find out from Sell).
+  "issue.bill.read": ["owner"],
+  "issue.selling.read": ["business_manager", "venue_manager"],
   // A team's admin or owner and managers see and invite it; who may give which role is by rank
   // (access/rank.ts).
   "team.read": [...PLATFORM_STAFF, ...BUSINESS_MANAGERS],

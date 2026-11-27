@@ -16,7 +16,7 @@ import {
   useToast,
 } from "@/components/hearth/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
-import { owedText, owedTitle, pausedText, sellingPaused } from "@/lib/billing";
+import { owedText, owedTitle, pausedByBill, pausedText } from "@/lib/billing";
 import { when } from "@/lib/dates";
 import { actorOf, eventText, issueTitle, issueWhere, sellingText, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
@@ -88,10 +88,10 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
   return (
     <>
       <Head
-        title={account && !sellingPaused(account) ? owedTitle(account) : issueTitle(issue)}
+        title={account && !pausedByBill(account) ? owedTitle(account) : issueTitle(issue)}
         sub={
           account
-            ? sellingPaused(account)
+            ? pausedByBill(account)
               ? pausedText(account)
               : owedText(account)
             : issue.kind === "selling_paused" && open

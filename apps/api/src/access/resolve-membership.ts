@@ -23,7 +23,11 @@ export async function resolveMembership(
 ) {
   const memberships = await db.membership.findMany({
     where: { userId: session.userId, status: "active" },
-    include: { venues: { select: { venueId: true } } },
+    // Its business's access too: whether it may sell is read on every request (ADR-0014, 2).
+    include: {
+      venues: { select: { venueId: true } },
+      business: { select: { access: true, accessHeld: true } },
+    },
   });
   const current = memberships.find((m) => m.id === session.activeMembershipId);
   if (current) return current;

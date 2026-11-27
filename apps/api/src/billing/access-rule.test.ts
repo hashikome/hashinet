@@ -27,6 +27,7 @@ describe("service access by a business's bills", () => {
       since: "2026-10-08",
       overdueSince: "2026-10-07",
       overdueTsh: 6_140,
+      lateBefore: false,
       pausesOn: null,
     });
   });
@@ -41,6 +42,7 @@ describe("service access by a business's bills", () => {
       since: "2026-10-21",
       overdueSince: "2026-10-07",
       overdueTsh: 6_140,
+      lateBefore: true,
       pausesOn: "2026-10-21",
     });
   });

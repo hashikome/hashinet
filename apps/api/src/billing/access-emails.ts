@@ -1,5 +1,6 @@
 import type { ServiceAccess, ServiceAccessReason } from "@hashinet/types";
 import type { EmailMessage } from "../email/email-sender.js";
+import { type AccessByBills, sellingStopped } from "./access-rule.js";
 import { longDay, tsh } from "./invoice-emails.js";
 
 /** What each state means for the business, in its owner's words. */
@@ -23,33 +24,57 @@ const REASON: Record<ServiceAccessReason, string> = {
   other: "HashiNet's team changed it",
 };
 
-/** By its bills: overdue, selling paused, or back to normal. Plain text, as every email here is. */
+/**
+ * By its bills: overdue, selling paused, or back to normal; or its hold by HashiNet's team ended,
+ * and it follows its bills again. Plain text, as every email here is, until the shared email
+ * standard is built.
+ */
 export function accessByBillsEmail(
   to: string,
   business: string,
-  step:
-    | { access: "grace_period"; overdueTsh: number; overdueSince: string; pausesOn: string | null }
-    | { access: "read_only"; overdueTsh: number; overdueSince: string }
-    | { access: "enabled" },
+  step: { from: ServiceAccess; holdEnded: boolean; byBills: AccessByBills },
   billing: string,
 ): EmailMessage {
-  if (step.access === "enabled") {
-    return {
-      to,
-      subject: `${business} can sell again`,
-      text: [
-        `HashiNet recorded your payment, so ${business} is back to normal: selling, packages and prices work as usual.`,
-        "",
-        `Your invoices are on Billing: ${billing}`,
-      ].join("\n"),
-    };
+  const { byBills } = step;
+  const ended = step.holdEnded
+    ? [`HashiNet's hold on ${business}'s service has ended, so it follows its bills again.`, ""]
+    : [];
+  if (byBills.access === "enabled") {
+    if (step.holdEnded) {
+      return {
+        to,
+        subject: `${business}'s service is back to normal`,
+        text: [...ended, MEANS.enabled].join("\n"),
+      };
+    }
+    // Paid: selling comes back if it had paused; otherwise the bill is simply settled.
+    return sellingStopped(step.from)
+      ? {
+          to,
+          subject: `${business} can sell again`,
+          text: [
+            `HashiNet recorded your payment, so ${business} is back to normal: selling, packages and prices work as usual.`,
+            "",
+            `Your invoices are on Billing: ${billing}`,
+          ].join("\n"),
+        }
+      : {
+          to,
+          subject: "Your bill to HashiNet is paid",
+          text: [
+            `Thank you: HashiNet recorded your payment, and nothing is overdue for ${business}.`,
+            "",
+            `Your invoices are on Billing: ${billing}`,
+          ].join("\n"),
+        };
   }
-  const owed = `${business}'s bill of ${tsh(step.overdueTsh)} has been overdue since ${longDay(step.overdueSince)}.`;
-  if (step.access === "read_only") {
+  const owed = `${business}'s bill of ${tsh(byBills.overdueTsh)} has been overdue since ${longDay(byBills.overdueSince)}.`;
+  if (byBills.access === "read_only") {
     return {
       to,
       subject: `Selling is paused at ${business}`,
       text: [
+        ...ended,
         `${owed} Selling is paused until it is paid.`,
         "",
         MEANS.read_only,
@@ -60,12 +85,13 @@ export function accessByBillsEmail(
   }
   return {
     to,
-    subject: `Your bill to HashiNet is overdue`,
+    subject: "Your bill to HashiNet is overdue",
     text: [
+      ...ended,
       owed,
       "",
-      step.pausesOn
-        ? `Pay it by ${longDay(step.pausesOn)} to keep selling. After that, selling pauses until it is paid; vouchers already sold keep working.`
+      byBills.pausesOn
+        ? `Pay it by ${longDay(byBills.pausesOn)} to keep selling. After that, selling pauses until it is paid; vouchers already sold keep working.`
         : "Please pay it soon. Everything works as usual for now.",
       "",
       `Your invoices, with how to pay, are on Billing: ${billing}`,

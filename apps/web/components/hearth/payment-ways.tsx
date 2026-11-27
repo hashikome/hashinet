@@ -22,7 +22,7 @@ const KINDS: [PaymentWayKind, string][] = [
   ["bank_account", "Bank account"],
 ];
 const KIND_NAME = Object.fromEntries(KINDS) as Record<PaymentWayKind, string>;
-export const SETTINGS_PAYMENTS = "/settings/payments";
+const SETTINGS_PAYMENTS = "/settings/payments";
 
 /** One way to pay, as whoever sells reads it out at the counter. */
 export function PayCard({ way }: { way: Pick<PaymentWay, "through" | "number" | "name"> }) {
@@ -41,8 +41,17 @@ const nameOf = (w: PaymentWay) => w.label ?? `${w.through} ${w.number}`;
 const choiceOf = (w: PaymentWay) =>
   `${w.label ? `${w.label}: ` : ""}${w.through} ${w.number} · ${w.name}`;
 
-const useWays = () =>
-  useLoad("payment-ways", () => api.get<PaymentWayList>("/api/payment-ways"), []);
+/** A business's ways to pay; `enabled` false reads none, for a reader who only sees their venue's. */
+const useWays = (enabled = true) =>
+  useLoad(
+    "payment-ways",
+    () => (enabled ? api.get<PaymentWayList>("/api/payment-ways") : Promise.resolve({ ways: [] })),
+    [enabled],
+  );
+
+/** The way whoever sells at a venue reads out: the one loader for the venue page and Sell. */
+export const paymentWayAt = (venueId: string) =>
+  api.get<VenuePaymentWay>(`/api/venues/${venueId}/payment-way`);
 
 /**
  * Settings › Payments (prototype `paydetails`): the business's ways to pay, a table with where each is
@@ -371,17 +380,9 @@ function RemoveDialog({
  */
 export function VenueWay({ venueId, choose }: { venueId: string; choose: boolean }) {
   const toast = useToast();
-  const here = useLoad(
-    "venue-payment-way",
-    () => api.get<VenuePaymentWay>(`/api/venues/${venueId}/payment-way`),
-    [venueId],
-  );
+  const here = useLoad("venue-payment-way", () => paymentWayAt(venueId), [venueId]);
   // Only those who choose read the business's list.
-  const ways = useLoad(
-    "payment-ways",
-    () => (choose ? api.get<PaymentWayList>("/api/payment-ways") : Promise.resolve({ ways: [] })),
-    [choose],
-  );
+  const ways = useWays(choose);
   const [busy, setBusy] = useState(false);
   const error = here.error ?? ways.error;
   const settings = (
@@ -408,8 +409,7 @@ export function VenueWay({ venueId, choose }: { venueId: string; choose: boolean
               setBusy(true);
               try {
                 await api.put(`/api/venues/${venueId}/payment-way`, { wayId });
-                await here.reload();
-                await ways.reload();
+                await Promise.all([here.reload(), ways.reload()]);
                 toast("Saved. Whoever sells here sees it from their next sale.");
               } catch (err) {
                 toast(messageOf(err));

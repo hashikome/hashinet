@@ -94,11 +94,13 @@ export class AccessGuard implements CanActivate {
         apiError("PROTECTION_REQUIRED", "Protect your sign-in before you sell or serve."),
       );
     }
-    if (!principal.selling && pausedWhileReadOnly(action)) {
+    if (principal.pause !== null && pausedWhileReadOnly(action)) {
       throw new ForbiddenException(
         apiError(
           "SELLING_PAUSED",
-          "Selling is paused until the bill to HashiNet is paid. Vouchers already sold keep working.",
+          principal.pause === "overdue"
+            ? "Selling is paused until the bill to HashiNet is paid. Vouchers already sold keep working."
+            : "HashiNet's team has paused selling for this business. Vouchers already sold keep working.",
         ),
       );
     }

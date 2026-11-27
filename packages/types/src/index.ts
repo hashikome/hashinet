@@ -134,6 +134,9 @@ export interface PaymentWayRecord extends PaymentWay {
   venues: { id: string; name: string }[];
 }
 
+/** Where a guest paid at the counter: what it is paid through, its number and its name. */
+export type PaidTo = Pick<PaymentWay, "through" | "number" | "name">;
+
 /** `GET /api/payment-ways`: a business's ways to pay, the default first, then oldest first. */
 export interface PaymentWayList {
   ways: PaymentWayRecord[];
@@ -436,6 +439,9 @@ export interface BusinessDetail {
   serviceAccess: ServiceAccessDetail;
 }
 
+/** Why a business can't sell: its overdue bill, or a hold by HashiNet's team. */
+export type SellingPause = "overdue" | "held";
+
 /** What a business may do (ADR-0014, 2). */
 export type ServiceAccess = "enabled" | "grace_period" | "read_only" | "suspended";
 export type ServiceAccessReason =
@@ -454,12 +460,17 @@ export type ServiceAccessReason =
  */
 export interface ServiceAccessState {
   access: ServiceAccess;
+  /** Whether it sells: not while read-only or suspended. The API decides; the web reads it. */
+  selling: boolean;
   since: Timestamp | null;
   held: boolean;
   heldUntil: BusinessDay | null;
   /** Its oldest overdue month of fees' due date; null when nothing is overdue. */
   overdueSince: BusinessDay | null;
-  overdueTsh: number;
+  /** What is overdue; null for a reader who doesn't see money (a platform operator). */
+  overdueTsh: number | null;
+  /** An earlier month was paid after its due date, so overdue fees end in read-only. */
+  lateBefore: boolean;
   /** When its bills pause selling (14 days after the due date, for a business late before); null
    * when they never will, or already have. */
   pausesOn: BusinessDay | null;
@@ -528,7 +539,13 @@ export interface IssueRecord {
   overdue: boolean;
   /** A bill issue or a selling-paused one: its business's access, and when its bills pause
    * selling; null for other kinds. */
-  access: { state: ServiceAccess; pausesOn: BusinessDay | null } | null;
+  access: {
+    state: ServiceAccess;
+    selling: boolean;
+    /** Set by HashiNet's team by hand, rather than by its bills. */
+    held: boolean;
+    pausesOn: BusinessDay | null;
+  } | null;
   holder: IssuePerson | null;
   /** The reader holds it. */
   mine: boolean;
@@ -699,9 +716,10 @@ export interface Me {
     venueIds: string[] | null;
     access: AccessLevel;
     capabilities: string[];
-    /** Whether its business may sell: false while it is read-only or suspended (ADR-0014, 2).
-     * Selling and package actions then stay in view, paused, and say why. */
-    selling: boolean;
+    /** Why its business can't sell, while it is read-only or suspended (ADR-0014, 2): an overdue
+     * bill, or held so by HashiNet's team; null while it sells. Selling and package actions then
+     * stay in view, paused, and say why. */
+    pause: SellingPause | null;
   };
   protection: {
     /** Platform staff, owners and managers must protect their sign-in. */
@@ -739,7 +757,7 @@ export type VenueStatus = "active" | "inactive" | "maintenance";
 export type VenueSelling =
   | { state: "selling" }
   /** Its business is read-only or suspended (ADR-0014, 2): nothing sells until it is restored. */
-  | { state: "paused"; access: "read_only" | "suspended"; since: Timestamp | null }
+  | { state: "paused" }
   | { state: "offline" | "no-internet" | "needs-attention"; since: Timestamp | null }
   | { state: "not-set-up" };
 
@@ -1138,13 +1156,6 @@ export interface RevenueByVenue {
  * definition of revenue: every sale recorded or paid online, and every printed voucher once a
  * guest used it. Newest first, a page at a time.
  */
-/** Where a guest paid at the counter: what it is paid through, its number and its name. */
-export interface PaidTo {
-  through: string;
-  number: string;
-  name: string;
-}
-
 export interface PaymentsReceived {
   month: BusinessMonth;
   /** Whether `month` is this month, so its figures are "so far". */

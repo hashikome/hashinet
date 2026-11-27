@@ -14,7 +14,7 @@ import type { VenueInput } from "./venue-input.js";
 /** What its routers say about it: how many, whether it sells, and the WiFi it broadcasts. */
 const VENUE_COUNTS = {
   // Whether its business may sell at all (ADR-0014, 2).
-  business: { select: { access: true, accessSince: true } },
+  business: { select: { access: true } },
   routers: {
     select: {
       status: true,
@@ -44,7 +44,7 @@ export class VenuesService {
       include: VENUE_COUNTS,
       orderBy: { createdAt: "desc" },
     });
-    return rows.map((row) => venueRecord(row, row.routers, row.business));
+    return rows.map((row) => venueRecord(row, row.routers, row.business.access));
   }
 
   async get(staff: Principal, id: string): Promise<VenueRecord> {
@@ -53,7 +53,7 @@ export class VenuesService {
       include: VENUE_COUNTS,
     });
     if (!row) throw venueNotFound();
-    return venueRecord(row, row.routers, row.business);
+    return venueRecord(row, row.routers, row.business.access);
   }
 
   async create(staff: Principal, input: VenueInput): Promise<VenueRecord> {
@@ -84,7 +84,7 @@ export class VenuesService {
       );
       return created;
     });
-    return venueRecord(row, [], business);
+    return venueRecord(row, [], business.access);
   }
 
   async update(staff: Principal, id: string, input: VenueInput): Promise<VenueRecord> {
@@ -97,7 +97,7 @@ export class VenuesService {
       include: VENUE_COUNTS,
     });
     await this.record(staff, "venue.update", row);
-    return venueRecord(row, row.routers, row.business);
+    return venueRecord(row, row.routers, row.business.access);
   }
 
   /**

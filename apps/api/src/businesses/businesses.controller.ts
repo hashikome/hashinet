@@ -78,7 +78,7 @@ export class BusinessesController {
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
   ): Promise<BusinessDetail> {
-    const [b, counts, serviceAccess] = await Promise.all([
+    const [b, counts] = await Promise.all([
       this.db.business.findUnique({
         where: { id },
         include: {
@@ -98,11 +98,10 @@ export class BusinessesController {
         },
       }),
       this.guestCounts({ venue: { businessId: id } }),
-      this.access.detail(id).catch(() => null),
     ]);
-    if (!b || !serviceAccess) {
-      throw new NotFoundException(apiError("NOT_FOUND", "That business does not exist."));
-    }
+    if (!b) throw new NotFoundException(apiError("NOT_FOUND", "That business does not exist."));
+    // Money is the admin's and managers' (billing is theirs): an operator sees the state, not sums.
+    const serviceAccess = await this.access.detail(id, allows(staff.role, "billing.overview"));
     const owner = b.memberships.find((m) => m.role === "owner");
     return {
       id: b.id,
@@ -119,10 +118,7 @@ export class BusinessesController {
         venues: m.venues.map((v) => v.venue.name),
       })),
       venues: b.venues.map((v) => venueOf(v, counts)),
-      // Money is the admin's and managers' (billing is theirs): an operator sees the state, not the sums.
-      serviceAccess: allows(staff.role, "billing.overview")
-        ? serviceAccess
-        : { ...serviceAccess, overdueTsh: 0 },
+      serviceAccess,
     };
   }
 

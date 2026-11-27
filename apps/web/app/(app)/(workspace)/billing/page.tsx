@@ -200,29 +200,27 @@ function Payments() {
             </select>
           </div>
           {by === "Custom" && o ? (
-            <>
-              {(["From", "To"] as const).map((which, n) => (
-                <div className="field date-pair" key={which}>
-                  <label htmlFor={`b${which}`}>{which}</label>
-                  <select
-                    id={`b${which}`}
-                    className="input"
-                    value={n === 0 ? o.from : o.to}
-                    onChange={(e) => {
-                      const next: [string, string] =
-                        n === 0 ? [e.target.value, o.to] : [o.from, e.target.value];
-                      setRange(next.toSorted() as [string, string]);
-                    }}
-                  >
-                    {months.map((m) => (
-                      <option key={m} value={m}>
-                        {monthName(m)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </>
+            (["From", "To"] as const).map((which, n) => (
+              <div className="field date-pair" key={which}>
+                <label htmlFor={`b${which}`}>{which}</label>
+                <select
+                  id={`b${which}`}
+                  className="input"
+                  value={n === 0 ? o.from : o.to}
+                  onChange={(e) => {
+                    const next: [string, string] =
+                      n === 0 ? [e.target.value, o.to] : [o.from, e.target.value];
+                    setRange(next.toSorted() as [string, string]);
+                  }}
+                >
+                  {months.map((m) => (
+                    <option key={m} value={m}>
+                      {monthName(m)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))
           ) : (
             <div className="field">
               <label htmlFor="bp">{by}</label>

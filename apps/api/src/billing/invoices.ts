@@ -8,10 +8,9 @@ import type {
   InvoiceLineRecord,
   InvoiceRecord,
   InvoiceResponse,
-  InvoiceState,
   OnboardingLineKind,
 } from "@hashinet/types";
-import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
 import {
   addDays,
@@ -23,18 +22,16 @@ import {
 } from "../analytics/business-day.js";
 import { REVENUE_EVENTS } from "../analytics/revenue-events.js";
 import { AuditLog } from "../audit/audit-log.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
-import { EMAIL_SENDER, type EmailMessage, type EmailSender } from "../email/email-sender.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
 import { IssuesService } from "../issues/issues.service.js";
-import { captureFailure } from "../observability/telemetry.js";
 import { passedSetup } from "../routers/router-journey.js";
 import { BillingSettings, businessFeeTerms } from "./billing-settings.js";
 import { type Span, servedShare, venueFee } from "./fee.js";
 import { invoiceEmail, reminderEmail } from "./invoice-emails.js";
+import { invoiceSummary } from "./invoice-state.js";
+import { OWNERS, OwnerMail } from "./owner-mail.js";
 import { ServiceAccessService } from "./service-access.js";
 
 /** HashiNet bills from November 2026, the first month its fees ran; no earlier month is invoiced. */
@@ -43,40 +40,11 @@ export const BILLING_STARTS = "2026-11-01";
 const MONTH_DUE_DAY = 7;
 const CHARGE_DUE_DAYS = 7;
 
-/**
- * Where an invoice stands on `today`: paid in full, or overdue once its due date has passed with
- * anything left, whatever came in (ADR-0013, 6).
- */
-export function invoiceState(
-  totalTsh: number,
-  paidTsh: number,
-  dueOn: string,
-  today: string,
-): InvoiceState {
-  if (paidTsh >= totalTsh) return "paid";
-  if (today > dueOn) return "overdue";
-  return paidTsh > 0 ? "part_paid" : "due";
-}
-
-/** An invoice's money as of `now`: what was paid, what is left, and where it stands. */
-export function invoiceSummary(totalTsh: number, paidTsh: number, dueOn: Date, now: Date) {
-  const due = dateOf(dueOn);
-  return {
-    paidTsh,
-    dueTsh: totalTsh - paidTsh,
-    dueOn: due,
-    state: invoiceState(totalTsh, paidTsh, due, businessDayOf(now)),
-  };
-}
-
 /** The order a payment on a business settles its invoices in: the oldest due first. */
 export const OLDEST_FIRST = [
   { dueOn: "asc" },
   { issuedAt: "asc" },
 ] as const satisfies Prisma.InvoiceOrderByWithRelationInput[];
-
-/** A business's active owners: who is billed, and who hears of it. */
-const OWNERS = { role: "owner", status: "active" } as const satisfies Prisma.MembershipWhereInput;
 
 const INVOICE_INCLUDE = {
   business: { select: { name: true } },
@@ -98,12 +66,11 @@ type InvoiceRow = Prisma.InvoiceGetPayload<{ include: typeof INVOICE_INCLUDE }>;
 export class Invoices {
   constructor(
     private readonly db: PrismaService,
-    @Inject(APP_CONFIG) private readonly config: AppConfig,
-    @Inject(EMAIL_SENDER) private readonly email: EmailSender,
     private readonly audit: AuditLog,
     private readonly settings: BillingSettings,
     private readonly issues: IssuesService,
     private readonly access: ServiceAccessService,
+    private readonly ownerMail: OwnerMail,
   ) {}
 
   /**
@@ -366,21 +333,9 @@ export class Invoices {
   /** An invoice as issued, emailed to its owners. */
   private emailOwners(invoice: InvoiceRow): Promise<void> {
     const record = this.record(invoice, new Date());
-    return this.mailOwners(invoice.businessId, (to, billing) => invoiceEmail(to, record, billing));
-  }
-
-  /** A business's owners hear by email; a failure to send is reported, not fatal. */
-  private async mailOwners(
-    businessId: string,
-    build: (to: string, billing: string) => EmailMessage,
-  ): Promise<void> {
-    const owners = await this.db.membership.findMany({
-      where: { businessId, ...OWNERS },
-      select: { user: { select: { email: true } } },
-    });
-    const billing = `${this.config.frontendOrigin}/billing`;
-    for (const o of owners)
-      void this.email.send(build(o.user.email, billing)).catch(captureFailure);
+    return this.ownerMail.send(invoice.businessId, (to, billing) =>
+      invoiceEmail(to, record, billing),
+    );
   }
 
   /**
@@ -415,31 +370,18 @@ export class Invoices {
       where: { kind: "bill_due", status: "open", ...(businessId ? { businessId } : {}) },
       select: { id: true, businessId: true, cause: true },
     });
-    for (const [id, state] of owing) {
-      const issue = open.find((i) => i.businessId === id);
-      if (!issue) {
-        await this.issues.open({
-          scope: "business",
-          businessId: id,
-          kind: "bill_due",
-          key: `bill:${id}`,
-          venueId: null,
-          routerId: null,
-          holderId: null,
-          cause: state,
-        });
-      } else if (issue.cause !== state) {
-        await this.db.issue.update({ where: { id: issue.id }, data: { cause: state } });
-      }
-    }
-    for (const issue of open) {
-      if (issue.businessId && !owing.has(issue.businessId)) {
-        await this.issues.resolve(
-          { scope: "business", businessId: issue.businessId },
-          `bill:${issue.businessId}`,
-          { reason: "paid" },
-        );
-      }
+    const businesses = new Set([...owing.keys(), ...open.flatMap((i) => i.businessId ?? [])]);
+    for (const id of businesses) {
+      const state = owing.get(id);
+      await this.issues.keep(
+        { scope: "business", businessId: id },
+        `bill:${id}`,
+        open.find((i) => i.businessId === id) ?? null,
+        state
+          ? { kind: "bill_due", venueId: null, routerId: null, holderId: null, cause: state }
+          : null,
+        { reason: "paid" },
+      );
     }
   }
 
@@ -492,7 +434,7 @@ export class Invoices {
   }
 
   private sendReminder(businessId: string, owed: InvoiceRecord[]): Promise<void> {
-    return this.mailOwners(businessId, (to, billing) => reminderEmail(to, owed, billing));
+    return this.ownerMail.send(businessId, (to, billing) => reminderEmail(to, owed, billing));
   }
 
   /** Who a business is, who is billed, its terms, and where it pays: a bill's and an invoice's header. */
@@ -532,7 +474,7 @@ export class Invoices {
         orderBy: { issuedAt: "desc" },
       }),
       this.owing(id, now),
-      this.access.state(id, now),
+      this.access.state(id, true, now),
     ]);
     const invoices = rows.map((row) => this.record(row, now));
     const sum = (list: InvoiceRecord[], f: (i: InvoiceRecord) => number) =>

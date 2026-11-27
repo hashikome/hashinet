@@ -5,7 +5,6 @@ import {
   type PackageRecord,
   type SaleResult,
   type VenuePackages,
-  type VenuePaymentWay,
   type VenueRecord,
   type VenueSelling,
   wifiQrCode,
@@ -20,10 +19,10 @@ import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
-import { BillPausedDialog } from "./bill-paused";
+import { PausedDialog as AccessPausedDialog } from "./bill-paused";
 import { Dialog } from "./dialog";
 import { Icon } from "./icons";
-import { PayCard } from "./payment-ways";
+import { PayCard, paymentWayAt } from "./payment-ways";
 import { Button, ButtonLink, Field, Pill, type PillKind, useToast } from "./ui";
 import { VoucherCard } from "./voucher-card";
 
@@ -46,7 +45,7 @@ interface Selling {
   can: boolean;
   /** No venue in reach has a router serving guests: Sell stays, quieter, and a tap says why. */
   paused: boolean;
-  /** Paused because the business's bill to HashiNet is overdue (ADR-0014, 2). */
+  /** Paused because the business can't sell: its overdue bill, or HashiNet's team (ADR-0014, 2). */
   billPaused: boolean;
   open: () => void;
 }
@@ -65,6 +64,7 @@ export const useSell = () => useContext(SellContext);
  */
 export function SellProvider({ children }: { children: ReactNode }) {
   const can = useCan();
+  const { me } = useSession();
   const { all } = useVenues();
   const [open, setOpen] = useState(false);
   // A sale changes Today, Vouchers and Payments: whatever is on screen asks again behind it.
@@ -84,7 +84,7 @@ export function SellProvider({ children }: { children: ReactNode }) {
   const value = {
     can: can("sale.record") && all.length > 0,
     paused: sellable.length === 0,
-    billPaused: all.some((v) => v.selling.state === "paused"),
+    billPaused: me.active.pause !== null,
     open: () => setOpen(true),
   };
   return (
@@ -117,7 +117,7 @@ export function SellButton() {
       Sell a voucher
       <span className="sr" id="sell-paused">
         {sell.billPaused
-          ? "Selling is paused: the bill to HashiNet is overdue."
+          ? "Selling is paused: the business can't sell right now."
           : "Selling is paused: no router is serving guests."}
       </span>
     </Button>
@@ -182,7 +182,7 @@ function PausedDialog({ onClose }: { onClose: () => void }) {
   const venue = shown[0] ?? all[0];
   if (!venue || venue.selling.state === "selling") return null;
   const { selling } = venue;
-  if (selling.state === "paused") return <BillPausedDialog what="sell" onClose={onClose} />;
+  if (selling.state === "paused") return <AccessPausedDialog what="sell" onClose={onClose} />;
   const words = PAUSED[selling.state];
   const down = selling.state !== "not-set-up";
   const runsIt = can("router.read") && me.active.role !== "venue_operator";
@@ -351,8 +351,6 @@ function PickStep({
 }
 
 const packagesAt = (venueId: string) => api.get<VenuePackages>(`/api/venues/${venueId}/packages`);
-const paymentWayAt = (venueId: string) =>
-  api.get<VenuePaymentWay>(`/api/venues/${venueId}/payment-way`);
 
 /**
  * Step 2: the check, centred like the voucher, with the price large. For mobile money it shows where

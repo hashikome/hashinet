@@ -7,6 +7,7 @@ import type {
   VenueRecord,
   VoucherRecord,
 } from "@hashinet/types";
+import { sellingStopped } from "../billing/access-rule.js";
 import type {
   Package,
   PortalSetting,
@@ -108,7 +109,7 @@ export function portalSettingsRecord(row: PortalSetting): PortalSettingsRecord {
 export function venueRecord(
   row: Venue,
   routers: VenueRouter[],
-  business: { access: ServiceAccess; accessSince: Date | null },
+  access: ServiceAccess,
 ): VenueRecord {
   return {
     id: row.id,
@@ -120,10 +121,7 @@ export function venueRecord(
     status: row.status,
     routerCount: routers.length,
     // A business that can't sell sells nowhere, whatever its routers do.
-    selling:
-      business.access === "read_only" || business.access === "suspended"
-        ? { state: "paused", access: business.access, since: isoOrNull(business.accessSince) }
-        : sellingOf(routers),
+    selling: sellingStopped(access) ? { state: "paused" } : sellingOf(routers),
     wifiName: wifiNameOf(row.name, routers),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),

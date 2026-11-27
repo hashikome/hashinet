@@ -1,4 +1,4 @@
-import type { MembershipRole, MembershipScope } from "@hashinet/types";
+import type { MembershipRole, MembershipScope, SellingPause } from "@hashinet/types";
 
 /** How far a session may act (ADR-0011, 9). */
 export type AccessLevel =
@@ -28,9 +28,9 @@ export interface Principal {
    * in its scope. */
   venueIds: string[] | null;
   access: AccessLevel;
-  /** Whether its business may sell: false while it is read-only or suspended (ADR-0014, 2); always
-   * true on the platform. */
-  selling: boolean;
+  /** Why its business can't sell, while it is read-only or suspended (ADR-0014, 2); null while it
+   * sells, and always on the platform. */
+  pause: SellingPause | null;
 }
 
 export const SETUP_DAYS = 7;

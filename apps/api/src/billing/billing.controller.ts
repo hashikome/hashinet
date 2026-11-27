@@ -90,9 +90,11 @@ export class BillingController {
   async record(@CurrentPrincipal() staff: Principal, @Body() body: unknown): Promise<void> {
     const input = parseInput(recordPaymentInput, body);
     await this.payments.record(staff, input);
-    await this.invoices.syncBillIssues(input.businessId);
-    // Paying what is overdue restores its access at once, not at the next hour.
-    await this.access.sync(input.businessId);
+    // Its bill issue, and its access restored at once rather than at the next hour.
+    await Promise.all([
+      this.invoices.syncBillIssues(input.businessId),
+      this.access.sync(input.businessId),
+    ]);
   }
 
   /** Emails the business's owners what they owe. */

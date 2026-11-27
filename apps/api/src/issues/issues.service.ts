@@ -19,9 +19,11 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { z } from "zod";
+import { type Action, allows } from "../access/policy.js";
 import type { Principal } from "../access/principal.js";
 import { outranks } from "../access/rank.js";
 import { businessDayOf, dateOf } from "../analytics/business-day.js";
+import { sellingStopped } from "../billing/access-rule.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma, type PrismaClient } from "../generated/prisma/client.js";
 import type { IssueKind } from "../generated/prisma/enums.js";
@@ -39,15 +41,19 @@ export const PLATFORM_WORKSPACE = { scope: "platform", businessId: null } as con
  * is its business's owner's alone, and paying it is what closes it (ADR-0011, 3); selling paused by
  * it is its managers' to know, the owner having the bill, and operators find out from Sell.
  */
-const KINDS: Record<IssueKind, { seenBy: "all" | "owner" | "managers"; worked: boolean }> = {
-  router_offline: { seenBy: "all", worked: true },
-  venue_package: { seenBy: "all", worked: true },
-  venue_setup: { seenBy: "all", worked: true },
-  bill_due: { seenBy: "owner", worked: false },
-  selling_paused: { seenBy: "managers", worked: false },
+const KINDS: Record<IssueKind, { seenBy: Action | null; worked: boolean }> = {
+  router_offline: { seenBy: null, worked: true },
+  venue_package: { seenBy: null, worked: true },
+  venue_setup: { seenBy: null, worked: true },
+  bill_due: { seenBy: "issue.bill.read", worked: false },
+  selling_paused: { seenBy: "issue.selling.read", worked: false },
 };
-const kindsSeenBy = (seen: (seenBy: "all" | "owner" | "managers") => boolean) =>
-  (Object.keys(KINDS) as IssueKind[]).filter((k) => !seen(KINDS[k].seenBy));
+/** The kinds a role doesn't see, by the policy's own actions. */
+const hiddenFrom = (role: MembershipRole) =>
+  (Object.keys(KINDS) as IssueKind[]).filter((k) => {
+    const action = KINDS[k].seenBy;
+    return action !== null && !allows(role, action);
+  });
 type Workspace = { scope: "platform" | "business"; businessId: string | null };
 
 /** The kinds an issue can be handed to a platform operator in: a venue's package is for the
@@ -72,7 +78,9 @@ const heldByOther = () =>
   );
 
 const include = {
-  business: { select: { id: true, name: true, access: true, accessPausesOn: true } },
+  business: {
+    select: { id: true, name: true, access: true, accessHeld: true, accessPausesOn: true },
+  },
   venue: {
     select: {
       id: true,
@@ -348,6 +356,28 @@ export class IssuesService {
     return openIssue(db, input);
   }
 
+  /**
+   * Keeps an issue that follows a state in step with it: opens it, updates its cause, or resolves
+   * it with `why` when `wanted` is null. `open` is the open issue for its key, read by the caller
+   * (once for many businesses, as the billing runs do).
+   */
+  async keep(
+    workspace: Workspace,
+    key: string,
+    open: { id: string; cause: string | null } | null,
+    wanted: Omit<IssueOpening, keyof Workspace | "key"> | null,
+    why: IssueEventData,
+  ): Promise<void> {
+    if (wanted === null) {
+      if (open) await this.resolve(workspace, key, why);
+      return;
+    }
+    if (!open) await this.open({ ...workspace, key, ...wanted });
+    else if (open.cause !== wanted.cause) {
+      await this.db.issue.update({ where: { id: open.id }, data: { cause: wanted.cause } });
+    }
+  }
+
   /** Resolves the open issue for a key in a workspace, if there is one, with why it ended. */
   async resolve(
     workspace: Workspace,
@@ -431,15 +461,7 @@ export class IssuesService {
       ...(staff.venueIds === null
         ? {}
         : { OR: [{ venueId: null }, { venueId: { in: staff.venueIds } }] }),
-      kind: {
-        notIn: kindsSeenBy((seenBy) =>
-          seenBy === "all"
-            ? true
-            : seenBy === "owner"
-              ? staff.role === "owner"
-              : staff.role === "business_manager" || staff.role === "venue_manager",
-        ),
-      },
+      kind: { notIn: hiddenFrom(staff.role) },
     };
   }
 
@@ -572,6 +594,8 @@ export class IssuesService {
         (row.kind === "bill_due" || row.kind === "selling_paused") && row.business
           ? {
               state: row.business.access,
+              selling: !sellingStopped(row.business.access),
+              held: row.business.accessHeld,
               pausesOn: row.business.accessPausesOn ? dateOf(row.business.accessPausesOn) : null,
             }
           : null,
@@ -595,7 +619,7 @@ export type IssueOpening = Workspace & {
   routerId: string | null;
   holderId: string | null;
   /** What took a router issue's router down, or a bill's "due" or "overdue"; null for other kinds. */
-  cause: RouterCondition | "due" | "overdue" | "pauses" | "paused" | null;
+  cause: RouterCondition | "due" | "overdue" | null;
 };
 
 /** Opens an issue unless one is open for its key in the workspace; idempotent. */
