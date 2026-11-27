@@ -566,6 +566,8 @@ model Router {
   tunnelPublicKey           String?      @unique @map("tunnel_public_key") @db.VarChar(64)
   /// Kept so the bootstrap script can be regenerated without orphaning the pasted key.
   tunnelPrivateKeyEncrypted String?      @map("tunnel_private_key_encrypted")
+  /// The secret its RADIUS requests are signed with (ADR-0015), made at setup; encrypted.
+  radiusSecretEncrypted     String?      @map("radius_secret_encrypted")
   /// Cached capability probe (services/router-provision/probe.ts).
   rosVersion                String?      @map("ros_version") @db.VarChar(32)
   architecture              String?      @db.VarChar(32)
@@ -594,11 +596,12 @@ model Router {
   createdAt                 DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt                 DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  issues   Issue[]
-  venue    Venue          @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  sessions WifiSession[]
-  payments Payment[]
-  outages  RouterOutage[]
+  issues     Issue[]
+  venue      Venue             @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  sessions   WifiSession[]
+  payments   Payment[]
+  outages    RouterOutage[]
+  admissions RadiusAdmission[]
 
   @@index([venueId])
   @@index([status])
@@ -688,7 +691,8 @@ model Device {
   payments         Payment[]
   sessions         WifiSession[]
 
-  blocks DeviceBlock[]
+  blocks     DeviceBlock[]
+  admissions RadiusAdmission[]
 
   @@map("devices")
 }
@@ -717,16 +721,25 @@ model Voucher {
   expiresAt          DateTime?     @map("expires_at") @db.Timestamptz(3)
   /// When it was refunded, while not used yet (ADR-0017, 7).
   refundedAt         DateTime?     @map("refunded_at") @db.Timestamptz(3)
+  /// The switch PIN (ADR-0015, 4): an HMAC of it under a Docker secret and the voucher's id, made at
+  /// the first sign-in and shown once; null before then, after a release, and once it expires.
+  pinHmac            String?       @map("pin_hmac") @db.VarChar(64)
+  /// Wrong PINs in a row: five wait 15 minutes (`pinWaitUntil`), ten lock it (`pinLockedAt`) until
+  /// staff release it. A right PIN starts the count again.
+  pinWrongTries      Int           @default(0) @map("pin_wrong_tries")
+  pinWaitUntil       DateTime?     @map("pin_wait_until") @db.Timestamptz(3)
+  pinLockedAt        DateTime?     @map("pin_locked_at") @db.Timestamptz(3)
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  package          Package?        @relation(fields: [packageId], references: [id], onDelete: SetNull)
-  venue            Venue?          @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  redeemedByDevice Device?         @relation(fields: [redeemedByDeviceId], references: [id], onDelete: SetNull)
+  package          Package?          @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  venue            Venue?            @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  redeemedByDevice Device?           @relation(fields: [redeemedByDeviceId], references: [id], onDelete: SetNull)
   devices          VoucherDevice[]
   payments         Payment[]
   sessions         WifiSession[]
   refund           Refund?
+  admissions       RadiusAdmission[]
 
   @@index([status])
   @@index([packageId])
@@ -876,6 +889,8 @@ model WifiSession {
   downloadSpeedMbps Decimal?      @map("download_speed_mbps") @db.Decimal(8, 2)
   signalStrengthDbm Int?          @map("signal_strength_dbm")
   terminationReason String?       @map("termination_reason") @db.VarChar(120)
+  /// The router's RADIUS Acct-Session-Id: accounting for it lands on this row, once.
+  acctSessionId     String?       @map("acct_session_id") @db.VarChar(64)
   isThrottled       Boolean       @default(false) @map("is_throttled")
   status            SessionStatus @default(connected)
   createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -887,6 +902,7 @@ model WifiSession {
   venue   Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
   router  Router?  @relation(fields: [routerId], references: [id], onDelete: SetNull)
 
+  @@unique([routerId, acctSessionId])
   @@index([deviceId])
   @@index([voucherId])
   @@index([routerId])
@@ -895,6 +911,27 @@ model WifiSession {
   @@index([macAddress])
   @@index([venueId])
   @@map("wifi_sessions")
+}
+
+/// A device the API has just let in at a voucher's sign-in (ADR-0015): the router's next RADIUS
+/// Access-Request for this address takes the place it holds, once, within a minute. A code reaches a
+/// router only this way: a request with a code and no admission is refused.
+model RadiusAdmission {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  voucherId  String   @map("voucher_id") @db.Uuid
+  routerId   String   @map("router_id") @db.Uuid
+  deviceId   String   @map("device_id") @db.Uuid
+  macAddress String   @map("mac_address") @db.VarChar(32)
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  router  Router  @relation(fields: [routerId], references: [id], onDelete: Cascade)
+  device  Device  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([routerId, macAddress])
+  @@index([voucherId])
+  @@map("radius_admissions")
 }
 
 /// The portal page a guest sees first: the voucher page, or the buy page.
