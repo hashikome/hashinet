@@ -3809,23 +3809,53 @@ html {
 .side:hover::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--muted-fg) 45%, transparent);
 }
-/* A quiet button rests in a soft fill with no outline, at every width: a button at a glance, a step
-   below the outlined ones. Row actions and ghost buttons share it; red is kept for the confirmation. */
-td .btn.secondary,
-td .btn.danger,
+/* A row's own action is a word, not a button: on every row a button competes with the page's one call to
+   action. It is underlined in the text colour like every other link, and red when it ends or removes
+   something: red is the only colour that warns. A row menu's Actions button stays a button. */
+td .btn.secondary:not([aria-haspopup]),
+td .btn.danger {
+  height: auto;
+  min-height: 32px;
+  padding: 0 2px;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font-weight: 500;
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+td .btn.secondary:not([aria-haspopup]):hover,
+td .btn.danger:hover {
+  background: none;
+  text-decoration-thickness: 2px;
+}
+td .btn.secondary:not([aria-haspopup]) svg,
+td .btn.danger svg {
+  display: none;
+}
+td .btn.danger {
+  color: var(--destructive);
+}
+td .actions:has(> .btn.secondary, > .btn.danger) {
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  td .btn.secondary:not([aria-haspopup]),
+  td .btn.danger {
+    min-height: 40px;
+  }
+}
+/* A quiet button rests in a soft fill with no outline: a button at a glance, a step below the outlined
+   ones. */
 .btn.ghost {
   background: var(--secondary);
   border-color: transparent;
   color: var(--foreground);
 }
-td .btn.secondary:hover,
-td .btn.danger:hover,
 .btn.ghost:hover {
   background: color-mix(in oklab, var(--foreground) 9%, var(--secondary));
-}
-/* A row's destructive action reads red, so removing never looks as light as changing. */
-td .btn.danger {
-  color: var(--destructive);
 }
 /* Paused by an overdue bill: any action keeps its place in muted ink, and a tap says why. */
 .btn.paused,

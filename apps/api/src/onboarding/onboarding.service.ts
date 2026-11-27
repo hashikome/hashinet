@@ -152,7 +152,7 @@ export class OnboardingService {
       // Held as a payment holds it, so nothing is paid on the old charge while this changes it.
       await lockBusiness(tx, venue.businessId);
       const paid = await tx.billAllocation.count({
-        where: { invoice: { kind: "onboarding", venueId } },
+        where: { invoice: { kind: "onboarding", venueId, cancelledAt: null } },
       });
       if (paid > 0) throw notNow("Payment has come in; the package no longer changes.");
       // The fee first, then the rest as agreed.
@@ -350,7 +350,7 @@ export class OnboardingService {
               id: invoice.id,
               number: invoice.number,
               totalTsh: invoice.totalTsh,
-              ...invoiceSummary(invoice.totalTsh, invoice.paidTsh, invoice.dueOn, new Date()),
+              ...invoiceSummary(invoice, invoice.paidTsh, new Date()),
             }
           : null,
       setupDate: o.setupDate?.toISOString().slice(0, 10) ?? null,

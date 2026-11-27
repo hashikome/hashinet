@@ -248,9 +248,10 @@ export type InvoiceKind = "monthly_fees" | "onboarding" | "site_slot";
 
 /**
  * Where an invoice stands: `overdue` once its due date has passed with anything left to pay,
- * whatever came in; `part_paid` before then with some paid.
+ * whatever came in; `part_paid` before then with some paid; `cancelled` when it was withdrawn
+ * before anything was paid, kept as history and never owed.
  */
-export type InvoiceState = "due" | "part_paid" | "paid" | "overdue";
+export type InvoiceState = "due" | "part_paid" | "paid" | "overdue" | "cancelled";
 
 /** One line of an invoice, as it was issued. */
 export interface InvoiceLineRecord {

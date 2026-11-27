@@ -177,12 +177,12 @@ addresses and file names.
   shared dialog: a question naming the thing ("Revoke the invitation to halima@…?"), one sentence on
   what happens and what stays, then a red button that names the action ("Revoke invitation", never
   "Yes" or "OK") beside Cancel, which has the focus. Actions that are easily undone don't ask.
-- A row with one or two actions shows them as quiet buttons: a soft `secondary` fill with no outline,
-  a step darker on hover, at every width, never outlined or red in the row, so a long list doesn't
-  shout yet each reads as a button at a glance (Download PDF, End session, Release). Ghost buttons
-  (Clear filters, Remove on a line) take the same look; nothing tappable rests as bare text, except a
-  link, which is underlined. Three or more fold into one Actions button, with a danger action last and
-  on its own. Red is kept for the button that confirms.
+- A row with one or two actions shows them as text links at its right edge, not buttons, so a long list
+  doesn't repeat a call to action on every row: underlined in the text colour like every other link
+  (Download PDF, Release), red when it ends or removes something (End session, Remove), with a 40px
+  touch area on a phone. Red is the only colour that warns; ember is never used for an action. Ghost
+  buttons (Clear filters) keep a soft `secondary` fill. Three or more actions fold into one Actions
+  button, with a danger action last and on its own.
 - Where a list needs the same action on many rows (Devices: Block, Remove), the rows take checkboxes
   instead of per-row buttons, with a select-all on the list's title; ticking any turns the title into
   "3 selected" with the actions and Clear beside it, and each action confirms with the count

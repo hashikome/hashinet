@@ -32,6 +32,7 @@ const STATE: Record<InvoiceState, [string, string]> = {
   part_paid: ["Part paid", "#8a5a00"],
   paid: ["Paid", "#1f7a4d"],
   overdue: ["Overdue", "#b42318"],
+  cancelled: ["Cancelled", "#5b6470"],
 };
 const METHOD: Record<string, string> = {
   mobile_money: "Mobile money",

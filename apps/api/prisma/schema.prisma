@@ -1295,7 +1295,8 @@ enum InvoiceKind {
 }
 
 /// An invoice, kept as issued: its lines are what was charged and are never recomputed. At most
-/// one a business a month (`period`), and one a venue for its onboarding (a partial index).
+/// one a business a month (`period`), and one live one a venue for its onboarding (a partial index
+/// that skips cancelled ones).
 model Invoice {
   id            String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
   /// INV-2026-11-0001: the month it was issued in, then a number from `invoice_number_seq`.
@@ -1311,6 +1312,11 @@ model Invoice {
   totalTsh      Int         @map("total_tsh")
   /// When the owner was reminded on its due date, left unpaid: once.
   dueRemindedAt DateTime?   @map("due_reminded_at") @db.Timestamptz(3)
+  /// Cancelled before anything was paid (its site removed, its package made free): kept with its
+  /// number as history, never owed. Only an unpaid one is cancelled.
+  cancelledAt   DateTime?   @map("cancelled_at") @db.Timestamptz(3)
+  /// Why, as the owner's email said it.
+  cancelReason  String?     @map("cancel_reason") @db.VarChar(240)
   createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 

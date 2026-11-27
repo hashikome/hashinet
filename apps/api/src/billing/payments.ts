@@ -57,7 +57,7 @@ export class BillPayments {
       if (!locked) throw new NotFoundException(apiError("NOT_FOUND", "There is no such business."));
 
       const invoices = await tx.invoice.findMany({
-        where: { businessId: input.businessId },
+        where: { businessId: input.businessId, cancelledAt: null },
         include: { allocations: { select: { amountTsh: true } } },
         orderBy: [{ dueOn: "asc" }, { issuedAt: "asc" }],
       });

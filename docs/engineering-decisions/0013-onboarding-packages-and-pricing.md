@@ -6,6 +6,7 @@ on HashiNet's bill, and platform operators work the setups handed to them. Narro
 2026: ADR-0017 replaces point 4's basis (a voucher exists only by its sale; fees are on each month's
 sales less refunds). Narrowed 26 November 2026: the minimum is prorated by the share of the month a
 router served the venue, and a payment recorded on a charge settles that charge (points 3 and 6).
+Widened 28 November 2026: an unpaid invoice is cancelled, never deleted (point 6).
 
 ## Context
 
@@ -108,6 +109,10 @@ and the guests. Owners are not network technicians, so the team installs it.
    the overdue amount as usual (ADR-0014). Only fees count: they pay for service already used, while a one-off
    payment, such as an onboarding charge or an extra site, comes before what it buys, so leaving it
    unpaid only holds that back and leaves service access alone.
+   An invoice is never deleted. One withdrawn before anything was paid on it (its extra site removed,
+   its onboarding package made free) is cancelled: kept with its number, shown as cancelled on Billing
+   and its PDF, never owed, reminded or paid against, and its owner is emailed why. A venue charged
+   again later gets a new invoice. A paid or part-paid invoice is never cancelled.
 7. **SMS is the business's choice and its cost.** The fee includes no messages: a business that wants
    codes sent by SMS buys credits in advance, TSh 30 a message, at least 1,000 at a time (TSh 30,000).
    Credits arrive once the purchase is paid, and it is a one-off charge. Only packages of a day or

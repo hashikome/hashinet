@@ -157,13 +157,14 @@ export class SitesService implements OnModuleInit {
 
   async remove(staff: Principal, venueId: string, siteId: string): Promise<VenueSites> {
     const venue = await this.venues.get(staff, venueId);
-    const gaveBack = await this.db.$transaction(async (tx) => {
+    const cancelled = await this.db.$transaction(async (tx) => {
       await lockBusiness(tx, venue.businessId);
       const site = await tx.venueSite.findFirst({ where: { id: siteId, venueId } });
       if (!site) throw notFound();
       await tx.venueSite.delete({ where: { id: siteId } });
       const count = await tx.venueSite.count({ where: { venueId } });
-      // Slots beyond the sites left go back, newest first, only if nothing was paid towards them.
+      // Slots beyond the sites left go back, newest first, only if nothing was paid towards them;
+      // each one's invoice is cancelled, kept with its number.
       const slots = await tx.siteSlot.findMany({
         where: { venueId },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -174,14 +175,19 @@ export class SitesService implements OnModuleInit {
         },
       });
       let spare = slots.length - Math.max(0, count - 1);
-      let returned = 0;
+      const withdrawn = [];
       for (const slot of slots) {
         if (spare <= 0) break;
         if (!slot.invoiceId || (slot.invoice?.allocations.length ?? 0) > 0) continue;
         await tx.siteSlot.delete({ where: { id: slot.id } });
-        await tx.invoice.delete({ where: { id: slot.invoiceId } });
+        withdrawn.push(
+          await this.invoices.cancel(
+            tx,
+            slot.invoiceId,
+            `The site it was for, ${site.host}, was removed before anything was paid.`,
+          ),
+        );
         spare -= 1;
-        returned += 1;
       }
       await this.audit.record(
         staff,
@@ -190,13 +196,16 @@ export class SitesService implements OnModuleInit {
           businessId: venue.businessId,
           venueId,
           target: { type: "venue", id: venueId },
-          change: { before: { host: site.host }, after: { slotsCancelled: returned } },
+          change: {
+            before: { host: site.host },
+            after: { invoicesCancelled: withdrawn.map((i) => i.number).join(", ") || null },
+          },
         },
         tx,
       );
-      return returned;
+      return withdrawn;
     });
-    if (gaveBack > 0) await this.invoices.syncBillIssues(venue.businessId);
+    if (cancelled.length > 0) await this.invoices.chargeChanged(venue.businessId, ...cancelled);
     await this.push(venueId);
     return this.list(staff, venueId);
   }

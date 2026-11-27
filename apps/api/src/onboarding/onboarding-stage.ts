@@ -34,12 +34,13 @@ export const VENUE_FACTS = {
   routers: { select: { ...JOURNEY_SELECT, lastSeenAt: true } },
   // The package's invoice and what has settled it (slice 4).
   invoices: {
-    where: { kind: "onboarding" },
+    where: { kind: "onboarding", cancelledAt: null },
     select: {
       id: true,
       number: true,
       totalTsh: true,
       dueOn: true,
+      cancelledAt: true,
       allocations: { select: { amountTsh: true } },
     },
   },

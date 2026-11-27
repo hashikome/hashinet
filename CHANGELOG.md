@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Invoices are never deleted. Removing a site cancels its unpaid invoice, and an onboarding package
+  made free cancels its unpaid one: kept with its number, shown as Cancelled on Billing and its PDF,
+  never owed, reminded or paid against, and the owner is emailed why. A venue charged again gets a
+  new invoice (migration `20261128600000_invoice_cancelled`).
+- A row's actions are text links, not buttons: underlined in the text colour, red when they end or
+  remove something.
 - HashiNet's Sales across businesses, with its fees, is for platform admins and managers only, as
   Fees and Billing are; platform operators keep Usage.
 - The frame is wider: the menu and the page stay centred together, up to 104rem, so a page gets up

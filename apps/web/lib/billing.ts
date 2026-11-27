@@ -20,6 +20,7 @@ export const STATE: Record<InvoiceState, [string, PillKind]> = {
   part_paid: ["Part paid", "wait"],
   paid: ["Paid", "ok"],
   overdue: ["Overdue", "bad"],
+  cancelled: ["Cancelled", "neutral"],
 };
 
 /** What an invoice is for: "November 2026 fees", "Bahari Beach Bar onboarding". */

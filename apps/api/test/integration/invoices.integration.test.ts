@@ -265,13 +265,31 @@ describe("an onboarding charge", () => {
     const [again] = await read();
     expect(again).toMatchObject({ id: first?.id, number: first?.number, totalTsh: 250_000 });
 
-    // Agreed free: no charge, no invoice.
+    // Agreed free before anything was paid: the invoice is cancelled, kept with its number, never
+    // owed, and the owner hears why.
+    const sent = api.email.sent.length;
     const free = await asha.request("POST", `/api/venues/${venueId}/onboarding/confirm`, {
       plan: "connect",
       lines: [{ kind: "onboarding_fee", description: "In town", amountTsh: 0 }],
     });
     expect(free.status).toBe(200);
-    expect(await read()).toEqual([]);
+    const [withdrawn] = await read();
+    expect(withdrawn).toMatchObject({ number: first?.number, state: "cancelled", dueTsh: 0 });
+    const account = (await c.request("GET", "/api/billing/account")).body as BillingAccount;
+    expect(account).toMatchObject({ dueTsh: 0, owed: [] });
+    const mail = api.email.sent.slice(sent).find((m) => m.subject.includes(first?.number ?? "?"));
+    expect(mail?.subject).toBe(`Invoice ${first?.number} is cancelled`);
+    expect(mail?.text).toContain("changed to one with no charge");
+
+    // Charged again later: a new invoice, the cancelled one kept beside it.
+    const charged = await asha.request("POST", `/api/venues/${venueId}/onboarding/confirm`, {
+      plan: "connect",
+      lines: [{ kind: "onboarding_fee", description: "In town", amountTsh: 50_000 }],
+    });
+    expect(charged.status).toBe(200);
+    const after = await read();
+    expect(after.map((i) => i.state).sort()).toEqual(["cancelled", "due"]);
+    expect(after.find((i) => i.state === "due")?.number).not.toBe(first?.number);
   });
 });
 

@@ -16,13 +16,22 @@ export function invoiceState(
   return paidTsh > 0 ? "part_paid" : "due";
 }
 
-/** An invoice's money as of `now`: what was paid, what is left, and where it stands. */
-export function invoiceSummary(totalTsh: number, paidTsh: number, dueOn: Date, now: Date) {
-  const due = dateOf(dueOn);
+/**
+ * An invoice's money as of `now`: what was paid, what is left, and where it stands. A cancelled one
+ * leaves nothing owed, whatever its total.
+ */
+export function invoiceSummary(
+  invoice: { totalTsh: number; dueOn: Date; cancelledAt: Date | null },
+  paidTsh: number,
+  now: Date,
+) {
+  const due = dateOf(invoice.dueOn);
   return {
     paidTsh,
-    dueTsh: totalTsh - paidTsh,
+    dueTsh: invoice.cancelledAt ? 0 : invoice.totalTsh - paidTsh,
     dueOn: due,
-    state: invoiceState(totalTsh, paidTsh, due, businessDayOf(now)),
+    state: invoice.cancelledAt
+      ? ("cancelled" as const)
+      : invoiceState(invoice.totalTsh, paidTsh, due, businessDayOf(now)),
   };
 }

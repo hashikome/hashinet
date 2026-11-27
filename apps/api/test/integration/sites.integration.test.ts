@@ -99,7 +99,7 @@ describe("a venue's sites open before paying", () => {
     expect(await t.db.invoice.count({ where: { kind: "site_slot" } })).toBe(1);
   });
 
-  test("removing a waiting site cancels its unpaid invoice", async () => {
+  test("removing a waiting site cancels its unpaid invoice, kept with its number", async () => {
     const lodge = await venue("Mama Neema Lodge");
     const owner = await signedIn("owner", "neema@example.com");
     const path = `/api/venues/${lodge.id}/sites`;
@@ -107,8 +107,23 @@ describe("a venue's sites open before paying", () => {
     const two = sites((await owner.request("POST", path, { host: "two.co.tz" })).body)[1];
     expect(await t.db.invoice.count({ where: { kind: "site_slot" } })).toBe(1);
     await owner.request("DELETE", `${path}/${two?.id}`);
-    expect(await t.db.invoice.count({ where: { kind: "site_slot" } })).toBe(0);
     expect(await t.db.siteSlot.count()).toBe(0);
+    const kept = await t.db.invoice.findFirstOrThrow({ where: { kind: "site_slot" } });
+    expect(kept.cancelledAt).not.toBeNull();
+    expect(kept.cancelReason).toContain("two.co.tz");
+    const account = (await owner.request("GET", "/api/billing/account")).body as {
+      dueTsh: number;
+      invoices: { number: string; state: string }[];
+    };
+    expect(account.dueTsh).toBe(0);
+    expect(account.invoices).toEqual([
+      expect.objectContaining({ number: kept.number, state: "cancelled" }),
+    ]);
+    // A cancelled invoice takes no payment.
+    const businessId = (await t.db.venue.findUniqueOrThrow({ where: { id: lodge.id } })).businessId;
+    expect(
+      await t.db.issue.count({ where: { kind: "bill_due", businessId, status: "open" } }),
+    ).toBe(0);
   });
 
   test("an address is reduced to its host; others are refused; a site is listed once", async () => {

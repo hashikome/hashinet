@@ -54,6 +54,25 @@ export function invoiceEmail(to: string, invoice: InvoiceRecord, billing: string
   };
 }
 
+/** An unpaid invoice withdrawn, to the business's owner: which one, why, and that nothing is owed on it. */
+export function cancelledEmail(
+  to: string,
+  invoice: InvoiceRecord,
+  reason: string,
+  billing: string,
+): EmailMessage {
+  const what = invoiceSubject(invoice);
+  return {
+    to,
+    subject: `Invoice ${invoice.number} is cancelled`,
+    text: [
+      `${what}, for ${invoice.businessName}: invoice ${invoice.number}, ${tsh(invoice.totalTsh)}, is cancelled. ${reason} Nothing is owed on it.`,
+      "",
+      `It stays on Billing, marked cancelled: ${billing}`,
+    ].join("\n"),
+  };
+}
+
 /** What a business owes, invoice by invoice, to its owner: on request, or on a due date left unpaid. */
 export function reminderEmail(to: string, owed: InvoiceRecord[], billing: string): EmailMessage {
   const total = owed.reduce((sum, i) => sum + i.dueTsh, 0);

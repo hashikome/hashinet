@@ -30,7 +30,7 @@ import { passedSetup } from "../routers/router-journey.js";
 import { BillingSettings, businessFeeTerms } from "./billing-settings.js";
 import { lockBusiness, paidOf } from "./business-lock.js";
 import { type Span, servedShare, venueFee } from "./fee.js";
-import { invoiceEmail, reminderEmail } from "./invoice-emails.js";
+import { cancelledEmail, invoiceEmail, reminderEmail } from "./invoice-emails.js";
 import { invoiceSummary } from "./invoice-state.js";
 import { OWNERS, OwnerMail } from "./owner-mail.js";
 import { ServiceAccessService } from "./service-access.js";
@@ -231,14 +231,18 @@ export class Invoices {
     const total = lines.reduce((sum, l) => sum + l.amountTsh, 0);
     const dueOn = addDays(businessDayOf(onboarding.confirmedAt), CHARGE_DUE_DAYS);
     const existing = await tx.invoice.findFirst({
-      where: { kind: "onboarding", venueId },
+      where: { kind: "onboarding", venueId, cancelledAt: null },
       include: { allocations: { select: { id: true } } },
     });
     if (existing) {
       if (existing.allocations.length > 0) return null;
+      // Made free before anything was paid: withdrawn, and kept with its number.
       if (total <= 0) {
-        await tx.invoice.delete({ where: { id: existing.id } });
-        return null;
+        return this.cancel(
+          tx,
+          existing.id,
+          "Its onboarding package was changed to one with no charge.",
+        );
       }
       if (existing.totalTsh === total && dateOf(existing.dueOn) === dueOn) return null;
       // Changed on the call before anything was paid: the same invoice, its lines as agreed now.
@@ -295,9 +299,25 @@ export class Invoices {
     });
   }
 
-  /** After a one-off charge was issued or changed: its owners hear, and their bill issue follows. */
-  async chargeChanged(businessId: string, invoice: InvoiceRow | null): Promise<void> {
-    if (invoice) await this.emailOwners(invoice);
+  /**
+   * Withdraws an unpaid invoice in the caller's transaction, which has checked that nothing was
+   * paid on it: it is kept with its number as history and is never owed again. The owners hear
+   * once it commits (`chargeChanged`).
+   */
+  cancel(tx: Prisma.TransactionClient, id: string, reason: string, now = new Date()) {
+    return tx.invoice.update({
+      where: { id },
+      data: { cancelledAt: now, cancelReason: reason },
+      include: INVOICE_INCLUDE,
+    });
+  }
+
+  /**
+   * After a one-off charge was issued, changed or cancelled: its owners hear which, and their bill
+   * issue follows.
+   */
+  async chargeChanged(businessId: string, ...invoices: (InvoiceRow | null)[]): Promise<void> {
+    for (const invoice of invoices) if (invoice) await this.emailOwners(invoice);
     await this.syncBillIssues(businessId);
   }
 
@@ -307,7 +327,7 @@ export class Invoices {
       where: {
         confirmedAt: { not: null },
         lines: { some: { amountTsh: { gt: 0 } } },
-        venue: { invoices: { none: { kind: "onboarding" } } },
+        venue: { invoices: { none: { kind: "onboarding", cancelledAt: null } } },
       },
       select: { venueId: true },
     });
@@ -362,11 +382,14 @@ export class Invoices {
     }
   }
 
-  /** An invoice as issued, emailed to its owners. */
+  /** An invoice as issued, or its cancellation and why, emailed to its owners. */
   private emailOwners(invoice: InvoiceRow): Promise<void> {
     const record = this.record(invoice, new Date());
+    const reason = invoice.cancelReason;
     return this.ownerMail.send(invoice.businessId, (to, billing) =>
-      invoiceEmail(to, record, billing),
+      reason === null
+        ? invoiceEmail(to, record, billing)
+        : cancelledEmail(to, record, reason, billing),
     );
   }
 
@@ -376,11 +399,12 @@ export class Invoices {
    */
   async syncBillIssues(businessId: string | null = null, now = new Date()): Promise<void> {
     const rows = await this.db.invoice.findMany({
-      where: businessId ? { businessId } : {},
+      where: { cancelledAt: null, ...(businessId ? { businessId } : {}) },
       select: {
         businessId: true,
         totalTsh: true,
         dueOn: true,
+        cancelledAt: true,
         allocations: { select: { amountTsh: true } },
       },
     });
@@ -389,7 +413,7 @@ export class Invoices {
       const paid = paidOf(row);
       const invoice = {
         businessId: row.businessId,
-        ...invoiceSummary(row.totalTsh, paid, row.dueOn, now),
+        ...invoiceSummary(row, paid, now),
       };
       if (invoice.dueTsh <= 0) continue;
       const was = owing.get(invoice.businessId);
@@ -420,7 +444,7 @@ export class Invoices {
   /** What a business still owes, oldest first. */
   private async owing(businessId: string, now: Date): Promise<InvoiceRecord[]> {
     const rows = await this.db.invoice.findMany({
-      where: { businessId },
+      where: { businessId, cancelledAt: null },
       include: INVOICE_INCLUDE,
       orderBy: OLDEST_FIRST,
     });
@@ -451,7 +475,7 @@ export class Invoices {
   async remindDue(now = new Date()): Promise<void> {
     const today = new Date(`${businessDayOf(now)}T00:00:00Z`);
     const rows = await this.db.invoice.findMany({
-      where: { dueRemindedAt: null, dueOn: { lte: today } },
+      where: { dueRemindedAt: null, cancelledAt: null, dueOn: { lte: today } },
       include: INVOICE_INCLUDE,
     });
     for (const row of rows) {
@@ -583,7 +607,7 @@ export class Invoices {
           FROM invoices i
           LEFT JOIN (SELECT invoice_id, SUM(amount_tsh) AS paid FROM bill_allocations GROUP BY invoice_id) a
             ON a.invoice_id = i.id
-          WHERE i.total_tsh > COALESCE(a.paid, 0)
+          WHERE i.cancelled_at IS NULL AND i.total_tsh > COALESCE(a.paid, 0)
           GROUP BY i.business_id`
       ).map((r) => [r.business_id, r.owed]),
     );
@@ -607,7 +631,9 @@ export class Invoices {
       const oneOff = own.filter((i) => i.kind !== "monthly_fees");
       const sum = (list: InvoiceRecord[], f: (i: InvoiceRecord) => number) =>
         list.reduce((total, i) => total + f(i), 0);
-      const billed = sum(own, (i) => i.totalTsh);
+      // A cancelled invoice is listed, never billed.
+      const live = own.filter((i) => i.state !== "cancelled");
+      const billed = sum(live, (i) => i.totalTsh);
       const paid = sum(own, (i) => i.paidTsh);
       const due = sum(own, (i) => i.dueTsh);
       const overdue = sum(
@@ -637,7 +663,10 @@ export class Invoices {
         venues: b.venues.filter((v) => v.routers.some((r) => passedSetup(r.lastSetup))).length,
         salesTsh,
         feesTsh,
-        oneOffTsh: sum(oneOff, (i) => i.totalTsh),
+        oneOffTsh: sum(
+          oneOff.filter((i) => i.state !== "cancelled"),
+          (i) => i.totalTsh,
+        ),
         billedTsh: billed,
         paidTsh: paid,
         dueTsh: due,
@@ -722,7 +751,7 @@ export class Invoices {
       venueName: row.kind === "monthly_fees" ? null : (row.venue?.name ?? null),
       issuedAt: row.issuedAt.toISOString(),
       totalTsh: row.totalTsh,
-      ...invoiceSummary(row.totalTsh, paidTsh, row.dueOn, now),
+      ...invoiceSummary(row, paidTsh, now),
       lines,
       payments: row.allocations.map((a) => ({
         receivedOn: dateOf(a.payment.receivedOn),
