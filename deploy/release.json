@@ -12,7 +12,13 @@
     "manifest": "deploy/docker-stack.migrate.yml",
     "service": "hashinet-migration",
     "image": "API_IMAGE",
-    "command": ["bun", "--bun", "prisma", "migrate", "deploy"]
+    "command": [
+      "bun",
+      "--bun",
+      "prisma",
+      "migrate",
+      "deploy"
+    ]
   },
   "services": {
     "hashinet-api": {
@@ -57,14 +63,25 @@
     "R2_SECRET_ACCESS_KEY_SECRET"
   ],
   "inputs": {
-    "INGRESS_NETWORK": "hashikome-edge",
+    "AUTH_KEY_SECRET": "hashinet_auth_20261111_v1",
     "BACKEND_NETWORK": "hashikome-network",
     "DATABASE_URL_SECRET": "hashinet_database_url_20261111_v1",
-    "MIGRATION_DATABASE_URL_SECRET": "hashinet_migration_database_url_20261111_v1"
+    "ENCRYPTION_KEY_SECRET": "hashinet_encryption_key_20261111_v1",
+    "INGRESS_NETWORK": "hashikome-edge",
+    "MIGRATION_DATABASE_URL_SECRET": "hashinet_migration_database_url_20261111_v1",
+    "R2_ACCESS_KEY_ID_SECRET": "hashinet_r2_access_key_id_20261111_v1",
+    "R2_SECRET_ACCESS_KEY_SECRET": "hashinet_r2_secret_access_key_20261111_v1",
+    "RESEND_KEY_SECRET": "hashinet_resend_20261111_v1",
+    "SENTRY_DSN_SECRET": "hashinet_sentry_dsn_20261111_v1",
+    "TUNNEL_PRIVATE_KEY_SECRET": "hashinet_tunnel_private_key_20261111_v1",
+    "TUNNEL_SYNC_SECRET": "hashinet_tunnel_sync_20261111_v1"
   },
   "requiredValues": {
     "PUBLIC_HOST": "hashinet.hashikome.com",
     "INGRESS_NETWORK": "hashikome-edge"
   },
-  "sharedInputs": ["BACKEND_NETWORK", "MIGRATION_DATABASE_URL_SECRET"]
+  "sharedInputs": [
+    "BACKEND_NETWORK",
+    "MIGRATION_DATABASE_URL_SECRET"
+  ]
 }

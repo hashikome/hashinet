@@ -76,33 +76,20 @@ jobs:
         run: |
           printf 'API_IMAGE=%s\nWEB_IMAGE=%s\nTUNNEL_IMAGE=%s\n' "$API_IMAGE" "$WEB_IMAGE" "$TUNNEL_IMAGE" | tee -a "$GITHUB_STEP_SUMMARY"
           printf 'api=%s\nweb=%s\ntunnel=%s\n' "$API_IMAGE" "$WEB_IMAGE" "$TUNNEL_IMAGE" >> "$GITHUB_OUTPUT"
-  deploy:
+  release:
+    # Nothing here can deploy: this job records the release, and the deploy agent on hs (infra,
+    # retire-Dokploy M3) migrates, then applies the latest release; its verdict goes to Kuma.
+    # Rolling back is marking an earlier release as latest (`gh release edit <tag> --latest`).
     needs: image
     if: github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
-    environment: production
     permissions:
-      contents: read
-      # GitHub's OIDC token, exchanged for HashiNet's KMS key in hashikome/secrets
-      id-token: write
+      contents: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Create missing Docker secrets
-        uses: hashikome/actions/docker-secrets@3134a14f9e86352e1c13e97cd0716e57c391a817
-        with:
-          product: hashinet
-          reader-client-id: ${{ vars.SECRETS_READER_CLIENT_ID }}
-          reader-private-key: ${{ secrets.SECRETS_READER_PRIVATE_KEY }}
-          ssh-key: ${{ secrets.SERVER_SSH_KEY }}
-          ssh-target: ${{ vars.SERVER_SSH_TARGET }}
-          ssh-host-key: ${{ vars.SERVER_HOST_KEY }}
-      - name: Migrate, then promote the application images
-        uses: hashikome/actions/dokploy-release@66a6e8f29d643f53b7f3c8b52df175b8eb7971db # v1.1.0
+      - uses: hashikome/actions/github-release@a467efcf2cd3a8568642844a58bc65b376d5e156
         with:
           images: |
             API_IMAGE=${{ needs.image.outputs.api }}
             WEB_IMAGE=${{ needs.image.outputs.web }}
             TUNNEL_IMAGE=${{ needs.image.outputs.tunnel }}
-          dokploy-api-key: ${{ secrets.DOKPLOY_API_KEY }}
-          registry-id: ${{ vars.DOKPLOY_REGISTRY_ID }}
           github-token: ${{ github.token }}
