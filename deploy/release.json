@@ -12,13 +12,7 @@
     "manifest": "deploy/docker-stack.migrate.yml",
     "service": "hashinet-migration",
     "image": "API_IMAGE",
-    "command": [
-      "bun",
-      "--bun",
-      "prisma",
-      "migrate",
-      "deploy"
-    ]
+    "command": ["bun", "--bun", "prisma", "migrate", "deploy"]
   },
   "services": {
     "hashinet-api": {
@@ -80,8 +74,5 @@
     "PUBLIC_HOST": "hashinet.hashikome.com",
     "INGRESS_NETWORK": "hashikome-edge"
   },
-  "sharedInputs": [
-    "BACKEND_NETWORK",
-    "MIGRATION_DATABASE_URL_SECRET"
-  ]
+  "sharedInputs": ["BACKEND_NETWORK", "MIGRATION_DATABASE_URL_SECRET"]
 }
