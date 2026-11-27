@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { parsePeers, peerChanges, relayPath, relayResponse } from "./peers.js";
+import { serveRadius } from "./radius-relay.js";
 
 /**
  * The platform's end of the routers' management tunnel (ADR-0006). It runs on the host's network,
@@ -63,9 +64,11 @@ const sync = () =>
 await sync();
 setInterval(sync, SYNC_MS);
 
-// Reached only from the tunnel: it listens on the tunnel address alone.
+// Reached only from the tunnel: these listen on the tunnel address alone.
+const tunnelIp = address.split("/")[0] ?? "";
+await serveRadius(tunnelIp, portalOrigin, syncSecret);
 Bun.serve({
-  hostname: address.split("/")[0],
+  hostname: tunnelIp,
   port: 8080,
   async fetch(request) {
     const { pathname } = new URL(request.url);

@@ -1,0 +1,98 @@
+import { describe, expect, test } from "bun:test";
+import { askOf, comesBack, normalMac, terms, type VoucherFacts } from "./access-decision.js";
+
+const NOW = new Date("2026-11-28T10:00:00Z");
+const MAC = "52:54:00:4A:00:10";
+
+const voucher = (over: Partial<VoucherFacts> = {}): VoucherFacts => ({
+  id: "v1",
+  expiresAt: new Date(NOW.getTime() + 3_600_000),
+  deviceLimit: 1,
+  dataLimitGb: null,
+  dataUsedBytes: 0n,
+  pinLocked: false,
+  speed: {
+    downloadSpeedMbps: 5,
+    uploadSpeedMbps: 2,
+    throttledDownloadMbps: 1,
+    throttledUploadMbps: null,
+  },
+  ...over,
+});
+
+describe("what a request asks", () => {
+  test("a MAC login names the calling station; the API's sign-in sends the code twice", () => {
+    expect(askOf("52:54:00:4a:00:10", MAC, null)).toEqual({ kind: "mac", mac: MAC });
+    expect(askOf("482716936518", MAC, "482716936518")).toEqual({
+      kind: "code",
+      code: "482716936518",
+      mac: MAC,
+    });
+  });
+
+  test("a code without its password, or with no station, is not a sign-in", () => {
+    expect(askOf("482716936518", MAC, "other")).toEqual({ kind: "unknown" });
+    expect(askOf("482716936518", MAC, null)).toEqual({ kind: "unknown" });
+    expect(askOf("482716936518", null, "482716936518")).toEqual({ kind: "unknown" });
+  });
+
+  test("addresses are kept upper-case and colon-separated", () => {
+    expect(normalMac("52-54-00-4a-00-10")).toBe(MAC);
+    expect(normalMac("525400")).toBeNull();
+  });
+});
+
+describe("the terms of a place", () => {
+  test("time left from HashiNet, at the package's speed", () => {
+    expect(terms(voucher(), NOW)).toEqual({
+      accept: true,
+      voucherId: "v1",
+      sessionSeconds: 3600,
+      rateLimit: "2M/5M",
+    });
+  });
+
+  test("its data used: throttled where the package says to, refused where it doesn't", () => {
+    const used = { dataLimitGb: 1, dataUsedBytes: 1024n ** 3n };
+    expect(terms(voucher(used), NOW)).toMatchObject({ accept: true, rateLimit: "1M/1M" });
+    const noThrottle = voucher({
+      ...used,
+      speed: {
+        downloadSpeedMbps: 5,
+        uploadSpeedMbps: 2,
+        throttledDownloadMbps: null,
+        throttledUploadMbps: null,
+      },
+    });
+    expect(terms(noThrottle, NOW)).toEqual({ accept: false, reason: "data_used" });
+  });
+
+  test("expired, not started or locked is refused", () => {
+    expect(terms(voucher({ expiresAt: NOW }), NOW)).toEqual({ accept: false, reason: "expired" });
+    expect(terms(voucher({ expiresAt: null }), NOW)).toEqual({
+      accept: false,
+      reason: "not_started",
+    });
+    expect(terms(voucher({ pinLocked: true }), NOW)).toEqual({
+      accept: false,
+      reason: "voucher_locked",
+    });
+  });
+});
+
+describe("a device coming back by its address", () => {
+  test("it takes a free place, or the one it holds", () => {
+    expect(comesBack(voucher(), [], MAC, NOW)).toMatchObject({ accept: true });
+    expect(comesBack(voucher(), [{ mac: MAC }], MAC, NOW)).toMatchObject({ accept: true });
+  });
+
+  test("it never takes a place another device holds: the portal asks for the PIN", () => {
+    expect(comesBack(voucher(), [{ mac: "AA:AA:AA:AA:AA:AA" }], MAC, NOW)).toEqual({
+      accept: false,
+      reason: "in_use",
+    });
+    expect(
+      comesBack(voucher({ deviceLimit: 2 }), [{ mac: "AA:AA:AA:AA:AA:AA" }], MAC, NOW),
+    ).toMatchObject({ accept: true });
+  });
+});

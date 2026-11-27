@@ -1,0 +1,42 @@
+import { describe, expect, test } from "bun:test";
+import { relayPacket } from "./radius-relay.js";
+
+describe("the RADIUS relay", () => {
+  test("sends the packet and its sender to the API, and returns the API's reply as it came", async () => {
+    let sent: { url: string; init: RequestInit } | null = null;
+    const reply = Buffer.from([2, 9, 0, 20, ...Array(16).fill(1)]);
+    const out = await relayPacket(
+      async (url, init) => {
+        sent = { url, init };
+        return Response.json({ reply: reply.toString("base64") });
+      },
+      "https://hashinet.example",
+      "secret",
+      "10.88.0.7",
+      new Uint8Array([1, 9, 0, 20]),
+    );
+    expect(Buffer.from(out ?? [])).toEqual(reply);
+    expect(sent?.url).toBe("https://hashinet.example/api/internal/radius");
+    expect(JSON.parse(String(sent?.init.body))).toEqual({ peer: "10.88.0.7", packet: "AQkAFA==" });
+    expect(new Headers(sent?.init.headers).get("authorization")).toBe("Bearer secret");
+  });
+
+  test("a dropped request, or a refused relay, sends nothing back", async () => {
+    const none = await relayPacket(
+      async () => Response.json({ reply: null }),
+      "o",
+      "s",
+      "p",
+      new Uint8Array(),
+    );
+    expect(none).toBeNull();
+    const refused = await relayPacket(
+      async () => new Response(null, { status: 401 }),
+      "o",
+      "s",
+      "p",
+      new Uint8Array(),
+    );
+    expect(refused).toBeNull();
+  });
+});

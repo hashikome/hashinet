@@ -1,12 +1,9 @@
-import { createHash, timingSafeEqual } from "node:crypto";
-import { Controller, Get, Headers, Inject, UnauthorizedException } from "@nestjs/common";
+import { Controller, Get, Headers, Inject } from "@nestjs/common";
 import { Public } from "../access/access.guard.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
-import { apiError } from "../http/error-envelope.js";
-
-const digest = (text: string) => createHash("sha256").update(text).digest();
+import { requireTunnelSecret } from "./tunnel-secret.js";
 
 /**
  * The routers allowed on the management tunnel, for the tunnel service: public keys and addresses,
@@ -24,11 +21,7 @@ export class TunnelPeersController {
   async peers(
     @Headers("authorization") authorization: string | undefined,
   ): Promise<{ peers: { publicKey: string; address: string }[] }> {
-    const secret = this.config.tunnelSyncSecret;
-    const given = authorization ?? "";
-    if (secret === null || !timingSafeEqual(digest(given), digest(`Bearer ${secret}`))) {
-      throw new UnauthorizedException(apiError("UNAUTHORIZED", "Refused."));
-    }
+    requireTunnelSecret(this.config.tunnelSyncSecret, authorization);
     const routers = await this.db.router.findMany({
       where: { tunnelPublicKey: { not: null }, tunnelAddress: { not: null } },
       select: { tunnelPublicKey: true, tunnelAddress: true },

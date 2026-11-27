@@ -18,6 +18,7 @@ import { PackagesModule } from "./packages/packages.module.js";
 import { PaymentWaysModule } from "./payment-ways/payment-ways.module.js";
 import { PaymentsModule } from "./payments/payments.module.js";
 import { PortalModule } from "./portal/portal.module.js";
+import { RadiusModule } from "./radius/radius.module.js";
 import { RoutersModule } from "./routers/routers.module.js";
 import { SessionsModule } from "./sessions/sessions.module.js";
 import { SitesModule } from "./sites/sites.module.js";
@@ -42,6 +43,7 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
       OnboardingModule,
       TeamModule,
       RoutersModule,
+      RadiusModule,
       VenuesModule,
       PackagesModule,
       VouchersModule,
