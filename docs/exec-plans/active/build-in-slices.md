@@ -1031,11 +1031,27 @@ device coming back by MAC address is accepted only when it holds the place or a 
 otherwise it lands on the portal. Retransmits get the same reply; accounting is idempotent per
 `Acct-Session-Id`, and the live monitor reconciles lost Stops.
 
-  - [ ] (a) Spike on the sim, one router: the relay, a minimal handler and `guest-test` through RADIUS.
-    Settles from the router or MikroTik's documentation, not memory: what `/ip/hotspot/active` shows
-    as `user` for a MAC login (LiveMonitor, `disconnectDevice` and `kickVoucher` match on the code);
-    `/radius` defaults in 7.25 (timeout, Message-Authenticator); the MikroTik vendor attributes;
-    `/radius monitor` for the self-test; Bun's UDP socket; a maintained codec or our own.
+  - [x] (a) Spike on the sim, one router, with a throwaway RADIUS listener on the host (27 November
+    2026, RouterOS 7.25 CHR). Found:
+    - The API's `/ip/hotspot/active/login` (user and password the code) sends an Access-Request with
+      User-Name and PAP User-Password both the code, Calling-Station-Id the MAC, Called-Station-Id the
+      hotspot server, Framed-IP-Address, Acct-Session-Id, NAS-Identifier the router's identity, and a
+      Message-Authenticator; `active` shows `user` as the code, flag R.
+    - A return by MAC address (`login-by=mac,mac-cookie`) sends User-Name the MAC with CHAP and an
+      empty password, and `active` shows `user` as the MAC even when the Accept returns User-Name the
+      code. So the live monitor, `disconnectDevice` and `kickVoucher` must match on the MAC, not the code.
+    - A Class in the Accept comes back in accounting Start and Stop: the voucher's id goes there, so a
+      session names its voucher whatever its user shows.
+    - `/radius` defaults to `timeout=1s100ms` and `require-message-auth=yes-for-request-resp`: setup
+      sets the timeout (3s) and every reply carries a Message-Authenticator.
+    - Session-Timeout sets the session's time left; Mikrotik-Rate-Limit (vendor 14988, attribute 8,
+      "rx/tx") makes a dynamic queue at that rate on CHR, where a local user's `rate-limit` was refused.
+    - Accounting: an Accounting-On at start, Start, Interim-Update at `radius-interim-update`, and Stop
+      with bytes, gigawords, packets, Acct-Session-Time and the terminate cause.
+    - `/radius monitor` gives requests, accepts, rejects, timeouts and the last round trip: the
+      self-test reads it instead of the local-user round trip.
+    - Bun's `Bun.udpSocket` serves both ports; a small codec of our own (RFC 2865/2866 with
+      Message-Authenticator) was accepted by the router, so no package is needed.
   - [ ] (b) Schema: a router's RADIUS secret (encrypted); the voucher's PIN HMAC (a new Docker secret
     key) and its attempts (wrong tries, wait-until, locked); the accounting session id on
     `wifi_sessions`; admissions.
