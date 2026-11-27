@@ -7,6 +7,12 @@ import { NotAnImageError, processLogo } from "./brand-images.js";
 import { BRAND_STORE, type BrandStore } from "./brand-store.js";
 
 const FILE = /^logo-[0-9a-f]{16}\.webp$/;
+/**
+ * The keys this store has made: an owner's id, then a logo, or a background picture from before
+ * portals kept only logos. The sweep touches nothing else, whatever else the bucket holds.
+ */
+const MADE_HERE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/(logo|background)-[0-9a-f]{16}\.webp$/;
 /** How old an unreferenced file must be before the sweep removes it. */
 const SWEEP_AFTER_MS = 60 * 60_000;
 
@@ -65,7 +71,7 @@ export class Logos {
     const kept = new Set([...venues, ...businesses].map((r) => r.logoKey));
     const settled = now.getTime() - SWEEP_AFTER_MS;
     const stale = (await this.store.list()).filter(
-      (file) => !kept.has(file.key) && file.at.getTime() < settled,
+      (file) => MADE_HERE.test(file.key) && !kept.has(file.key) && file.at.getTime() < settled,
     );
     for (const file of stale) await this.store.remove(file.key);
     return stale.length;

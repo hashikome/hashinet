@@ -278,6 +278,8 @@ describe("a business's and its venues' portals", () => {
     const kept = editor(await upload(c, cafe, await png())).logo.url ?? "";
     const store = join(BRAND_DIR, cafe);
     await Bun.write(join(store, "background-0123456789abcdef.webp"), "old");
+    // Nothing the store didn't make is ever touched.
+    await Bun.write(join(BRAND_DIR, "backups", "db.sql.gz"), "not ours");
     const sweep = (at: Date) => api.app.get(Logos).sweep(at);
     // Too new to remove yet: its row may still be on its way.
     expect(await sweep(new Date())).toBe(0);
@@ -285,6 +287,7 @@ describe("a business's and its venues' portals", () => {
     expect(await sweep(new Date(Date.now() + 2 * 60 * 60_000))).toBeGreaterThanOrEqual(1);
     expect(await Bun.file(join(store, "background-0123456789abcdef.webp")).exists()).toBe(false);
     expect((await fetch(`${api.url}${kept}`)).status).toBe(200);
+    expect(await Bun.file(join(BRAND_DIR, "backups", "db.sql.gz")).exists()).toBe(true);
   });
 
   test("the business profile: its owner changes it, business managers read it, venue managers don't", async () => {
