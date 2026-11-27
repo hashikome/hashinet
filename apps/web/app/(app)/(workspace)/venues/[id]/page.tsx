@@ -3,7 +3,7 @@
 import type { SalesReport, VenueDetail, VenueOnboarding, VenueTakings } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { axisOf } from "@/components/hearth/analytics";
+import { axisOf, SHOW_PER } from "@/components/hearth/analytics";
 import { LineChart } from "@/components/hearth/chart";
 import { BusinessMark } from "@/components/hearth/icons";
 import { GettingStarted } from "@/components/hearth/onboarding";
@@ -148,6 +148,7 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
               <LineChart
                 values={week.series}
                 axis={axisOf(week.period)}
+                unit={SHOW_PER[week.period.show]}
                 height={220}
                 label={`Takings per day at ${v.name}, ${tsh(week.takingsTsh)} in 7 days`}
               />

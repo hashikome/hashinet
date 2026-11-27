@@ -809,6 +809,10 @@ fieldset.segs {
   stroke-width: 2.4;
   stroke-linejoin: round;
 }
+/* Into a bucket its figure covers only part of: so far, not a fall. */
+.chart .line.part {
+  stroke-dasharray: 5 5;
+}
 .chart .ghost {
   fill: none;
   stroke: var(--muted-fg);
@@ -832,6 +836,15 @@ fieldset.segs {
   height: 3px;
   margin-left: 6px;
   background: var(--chart);
+}
+/* A dashed swatch: a line drawn into part of a period, so far. */
+.lg.part {
+  height: 0;
+  border-top: 2px dashed var(--chart);
+  background: none;
+}
+.legend:is(p) {
+  margin-top: 8px;
 }
 .lg.g {
   height: 2px;

@@ -1224,7 +1224,11 @@ export interface AnalyticsPeriod {
   days: number;
   shows: AnalyticsShow[];
   show: AnalyticsShow;
-  buckets: { start: string; last: BusinessDay; past: boolean }[];
+  /**
+   * `complete` is false for a bucket its figure covers only part of: a week or month the period
+   * cuts short, or today, or this hour. The chart draws the line to it as "so far".
+   */
+  buckets: { start: string; last: BusinessDay; past: boolean; complete: boolean }[];
 }
 
 /** A chart's values, one per bucket of the period; null after today. */

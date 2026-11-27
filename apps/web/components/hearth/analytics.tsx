@@ -78,7 +78,11 @@ export function bucketLabel(start: string, show: AnalyticsShow): string {
 
 /** A period's chart axis: each bucket's key and label. */
 export const axisOf = (p: AnalyticsPeriod) =>
-  p.buckets.map((b) => ({ key: b.start, label: bucketLabel(b.start, p.show) }));
+  p.buckets.map((b) => ({
+    key: b.start,
+    label: bucketLabel(b.start, p.show),
+    complete: b.complete,
+  }));
 
 /** "Last 7 days", "Current month", "1 Oct to 31 Oct". */
 export function periodTitle(p: AnalyticsPeriod): string {

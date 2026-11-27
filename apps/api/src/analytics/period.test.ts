@@ -69,4 +69,23 @@ describe("analytics periods", () => {
     ).toThrow();
     expect(() => periodOf(q({ range: "current", period: "90d" }), NOW)).toThrow();
   });
+
+  test("a bucket the period cuts short, today or this hour is not complete", () => {
+    const weeks = periodOf(q({ period: "30d", show: "week" }), NOW);
+    expect(weeks.buckets.map((b) => [b.start, b.complete])).toEqual([
+      ["2026-10-05", true],
+      ["2026-10-12", true],
+      ["2026-10-19", true],
+      ["2026-10-26", true],
+      ["2026-11-02", false],
+    ]);
+    const days = periodOf(q({ period: "7d" }), NOW);
+    expect(days.buckets.at(-1)?.complete).toBe(false);
+    expect(days.buckets.at(-2)?.complete).toBe(true);
+    const hours = periodOf(q({ range: "current", period: "day" }), NOW);
+    expect(hours.buckets[17]?.complete).toBe(true);
+    expect(hours.buckets[18]).toMatchObject({ past: true, complete: false });
+    const ninety = periodOf(q({ period: "90d", show: "month" }), NOW);
+    expect(ninety.buckets.map((b) => b.complete)).toEqual([false, true, true, false]);
+  });
 });

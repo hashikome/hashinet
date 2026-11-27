@@ -53,6 +53,24 @@ function useWidth(): [React.RefObject<HTMLDivElement | null>, number | null] {
 }
 
 /**
+ * The line in runs: solid between whole buckets, dashed into one its figure covers only part of
+ * (a week the period cuts short, today), so a part is read as "so far", not as a fall.
+ */
+function runs(
+  shown: number[],
+  axis: { complete: boolean }[],
+): { from: number; to: number; part: boolean }[] {
+  const out: { from: number; to: number; part: boolean }[] = [];
+  for (let i = 0; i + 1 < shown.length; i += 1) {
+    const part = !axis[i]?.complete || !axis[i + 1]?.complete;
+    const prev = out[out.length - 1];
+    if (prev && prev.part === part && prev.to === i) prev.to = i + 1;
+    else out.push({ from: i, to: i + 1, part });
+  }
+  return out;
+}
+
+/**
  * The one line chart (prototype `lineChart`): Analytics' Sales and Usage and a venue's page. The
  * axis runs the whole period; the line stops at the last value, marked with a dot, as a series
  * holds null after today.
@@ -61,13 +79,16 @@ export function LineChart({
   values,
   axis,
   label,
+  unit,
   height = 260,
 }: {
   values: Series;
-  /** Each bucket's key and its label on the axis. */
-  axis: { key: string; label: string }[];
+  /** Each bucket's key, its label on the axis, and whether its figure covers all of it. */
+  axis: { key: string; label: string; complete: boolean }[];
   /** What it shows, for screen readers: "Takings per day, TSh 412,000". */
   label: string;
+  /** What a bucket is, for the legend under a line that runs into a part of one: "week". */
+  unit: string;
   height?: number;
 }) {
   const [box, measured] = useWidth();
@@ -82,6 +103,7 @@ export function LineChart({
   const y = (v: number) => top + ih - (ih * v) / max;
   const last = shown.length - 1;
   const step = Math.max(1, Math.floor(axis.length / (narrow ? 4 : 6)));
+  const lines = runs(shown, axis);
   return (
     <div ref={box}>
       <svg className="chart" viewBox={`0 0 ${w} ${height}`} role="img" aria-label={label}>
@@ -93,12 +115,16 @@ export function LineChart({
             </text>
           </g>
         ))}
-        {shown.length > 1 ? (
+        {lines.map((run) => (
           <polyline
-            className="line"
-            points={shown.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ")}
+            key={`${run.from}-${run.part}`}
+            className={run.part ? "line part" : "line"}
+            points={shown
+              .slice(run.from, run.to + 1)
+              .map((v, i) => `${x(run.from + i).toFixed(1)},${y(v).toFixed(1)}`)
+              .join(" ")}
           />
-        ) : null}
+        ))}
         {last >= 0 ? (
           <circle cx={x(last)} cy={y(shown[last] ?? 0)} r={4.5} className="dot" />
         ) : null}
@@ -110,6 +136,12 @@ export function LineChart({
           ) : null,
         )}
       </svg>
+      {lines.some((run) => run.part) ? (
+        <p className="legend">
+          <span className="lg part" aria-hidden="true" />
+          So far: part of a {unit}
+        </p>
+      ) : null}
     </div>
   );
 }

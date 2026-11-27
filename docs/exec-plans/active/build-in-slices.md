@@ -617,8 +617,11 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     the address, remembered between them), the platform's Sales, and the venue page's "Sales, last
     7 days", all on one `LineChart` drawn at its own width. The seed invents 90 days of sales and
     sessions at Neema Hospitality. Tests: analytics integration and `period.test.ts`; 213/213.
-    Open: Reliability (the prototype's are sample figures); `daily_usage_stats` and
-    `session_usage_samples` have no writer or reader, kept until the owner decides.
+    A bucket the period cuts short, today or this hour is not `complete`; the chart draws the line
+    into it dashed, with "So far: part of a week" under it. `daily_usage_stats` and
+    `session_usage_samples`, which nothing wrote or read, are dropped (migration
+    `20261128400000_drop_unused_usage_tables`). Open: Reliability (the prototype's are sample
+    figures).
   - [ ] (g) Each role's screens reviewed at 390px first; finish-work; release; acceptance.
 - [ ] Slice 6: online (held until the providers' credentials exist).
 - [ ] Slice 7: one voucher, devices online at once, through RADIUS (ADR-0015), with its switch PIN.

@@ -95,6 +95,7 @@ function BusinessSales() {
             <LineChart
               values={r.series}
               axis={axisOf(r.period)}
+              unit={SHOW_PER[r.period.show]}
               label={`Takings per ${SHOW_PER[r.period.show]}, ${tsh(r.takingsTsh)} in this period`}
             />
           </Panel>
@@ -207,6 +208,7 @@ function PlatformSales() {
                 <LineChart
                   values={r.series}
                   axis={axisOf(r.period)}
+                  unit={SHOW_PER[r.period.show]}
                   label={`Sales per ${SHOW_PER[r.period.show]}, ${tsh(r.salesTsh)} in this period`}
                 />
               </Panel>

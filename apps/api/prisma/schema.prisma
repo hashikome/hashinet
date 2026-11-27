@@ -524,7 +524,6 @@ model Venue {
   vouchers     Voucher[]
   payments     Payment[]
   sessions     WifiSession[]
-  dailyStats   DailyUsageStat[]
   refunds      Refund[]
   invoices     Invoice[]
   invoiceLines InvoiceLine[]
@@ -630,15 +629,14 @@ model Package {
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  business   Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
   /// A venue's own package is of that venue's business: the key holds both.
-  ownVenue   Venue?           @relation("VenueOwnPackages", fields: [venueId, businessId], references: [id, businessId], onDelete: Cascade)
-  venues     VenuePackage[]
-  vouchers   Voucher[]
-  payments   Payment[]
-  sessions   WifiSession[]
-  dailyStats DailyUsageStat[]
-  refunds    Refund[]
+  ownVenue Venue?         @relation("VenueOwnPackages", fields: [venueId, businessId], references: [id, businessId], onDelete: Cascade)
+  venues   VenuePackage[]
+  vouchers Voucher[]
+  payments Payment[]
+  sessions WifiSession[]
+  refunds  Refund[]
 
   @@index([businessId])
   @@index([isActive])
@@ -879,12 +877,11 @@ model WifiSession {
   createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  device  Device?              @relation(fields: [deviceId], references: [id], onDelete: SetNull)
-  voucher Voucher?             @relation(fields: [voucherId], references: [id], onDelete: SetNull)
-  package Package?             @relation(fields: [packageId], references: [id], onDelete: SetNull)
-  venue   Venue?               @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  router  Router?              @relation(fields: [routerId], references: [id], onDelete: SetNull)
-  samples SessionUsageSample[]
+  device  Device?  @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  voucher Voucher? @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+  package Package? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  venue   Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  router  Router?  @relation(fields: [routerId], references: [id], onDelete: SetNull)
 
   @@index([deviceId])
   @@index([voucherId])
@@ -894,23 +891,6 @@ model WifiSession {
   @@index([macAddress])
   @@index([venueId])
   @@map("wifi_sessions")
-}
-
-model SessionUsageSample {
-  id                String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  sessionId         String   @map("session_id") @db.Uuid
-  sampledAt         DateTime @default(now()) @map("sampled_at") @db.Timestamptz(3)
-  uploadBytes       BigInt   @default(0) @map("upload_bytes")
-  downloadBytes     BigInt   @default(0) @map("download_bytes")
-  uploadSpeedMbps   Decimal? @map("upload_speed_mbps") @db.Decimal(8, 2)
-  downloadSpeedMbps Decimal? @map("download_speed_mbps") @db.Decimal(8, 2)
-  signalStrengthDbm Int?     @map("signal_strength_dbm")
-
-  session WifiSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([sessionId])
-  @@index([sampledAt])
-  @@map("session_usage_samples")
 }
 
 /// The portal page a guest sees first: the voucher page, or the buy page.
@@ -1001,28 +981,6 @@ model VenuePortal {
   venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
 
   @@map("venue_portals")
-}
-
-model DailyUsageStat {
-  id               String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  venueId          String?  @map("venue_id") @db.Uuid
-  packageId        String?  @map("package_id") @db.Uuid
-  /// The business day in Africa/Dar_es_Salaam.
-  statDate         DateTime @map("stat_date") @db.Date
-  sessionsCount    Int      @default(0) @map("sessions_count")
-  activeUsersCount Int      @default(0) @map("active_users_count")
-  uploadBytes      BigInt   @default(0) @map("upload_bytes")
-  downloadBytes    BigInt   @default(0) @map("download_bytes")
-  revenueTsh       Decimal  @default(0) @map("revenue_tsh") @db.Decimal(14, 2)
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-
-  venue   Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  package Package? @relation(fields: [packageId], references: [id], onDelete: SetNull)
-
-  @@index([venueId])
-  @@index([packageId])
-  @@index([statDate])
-  @@map("daily_usage_stats")
 }
 
 /// The audit log (ADR-0012): append-only, written in the change's transaction, scoped like

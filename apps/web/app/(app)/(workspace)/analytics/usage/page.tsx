@@ -79,6 +79,7 @@ function Usage() {
             <LineChart
               values={r.series}
               axis={axisOf(r.period)}
+              unit={SHOW_PER[r.period.show]}
               label={`Sessions per ${SHOW_PER[r.period.show]}, ${r.sessions} in this period`}
             />
           </Panel>

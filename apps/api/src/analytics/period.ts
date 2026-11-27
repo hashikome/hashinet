@@ -112,6 +112,15 @@ export function bucketsOf(
   return out;
 }
 
+/** Whether a bucket is a whole unit: a full week, or a month from its first day to its last. */
+function whole(b: { start: string; last: string }, show: AnalyticsShow): boolean {
+  if (show === "week") return daysBetween(b.start, b.last) === 7;
+  if (show === "month") {
+    return b.start.endsWith("-01") && addDays(b.last, 1) === nextMonth(`${b.start.slice(0, 7)}-01`);
+  }
+  return true;
+}
+
 /**
  * The period a report covers, decided here (ADR-0003): its span in business days, the units it
  * may show, the unit chosen and its buckets. The axis covers the whole span; figures stop at
@@ -140,6 +149,12 @@ export function periodOf(query: PeriodQuery, now: { day: string; hour: number })
       ? b.start.slice(0, 10) < now.day ||
         (b.start.slice(0, 10) === now.day && Number(b.start.slice(11)) <= now.hour)
       : b.start <= now.day;
+  // A bucket is finished once its last day, or its hour, is over.
+  const finished = (b: { start: string; last: string }) =>
+    b.start.length > 10
+      ? b.start.slice(0, 10) < now.day ||
+        (b.start.slice(0, 10) === now.day && Number(b.start.slice(11)) < now.hour)
+      : b.last < now.day;
   let show: AnalyticsShow;
   if (query.show !== null) {
     if (!shows.includes(query.show)) throw refuse("show", "is not offered for this period");
@@ -160,6 +175,10 @@ export function periodOf(query: PeriodQuery, now: { day: string; hour: number })
     days: start > now.day ? 0 : daysBetween(start, end < now.day ? end : now.day),
     shows,
     show,
-    buckets: bucketsOf(start, end, show).map((b) => ({ ...b, past: past(b) })),
+    buckets: bucketsOf(start, end, show).map((b) => ({
+      ...b,
+      past: past(b),
+      complete: past(b) && whole(b, show) && finished(b),
+    })),
   };
 }
