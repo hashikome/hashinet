@@ -2,7 +2,7 @@
 
 import type { BillingAccount, BillingOverview, BillingRow, BillState } from "@hashinet/types";
 import { useState } from "react";
-import { BillActions, InvoicesPanel, percent } from "@/components/hearth/billing";
+import { InvoicesPanel, percent } from "@/components/hearth/billing";
 import { Attention, Figs, Head, Panel, Pill, type PillKind, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { fullDay, STATE as INVOICE_STATE, owedText, owedTitle } from "@/lib/billing";
@@ -82,8 +82,8 @@ function periods(by: By, months: string[]): [string, string, string][] {
 
 /**
  * Payments (prototype `billing`): every business's bill for a month, a quarter, a year or a range,
- * with what was paid and what is due, and Record payment and Remind on each. A row opens that
- * business's bill.
+ * with what was paid and what is due. A row opens that business's bill, where Record payment and
+ * Remind are: a row that opens a page holds no buttons.
  */
 function Payments() {
   const [by, setBy] = useState<By>("Month");
@@ -268,7 +268,6 @@ function Payments() {
                 ["Paid", true],
                 ["Amount due", true],
                 ["Status"],
-                [""],
               ]}
               rows={rows.map((r) => ({
                 key: r.businessId,
@@ -304,15 +303,6 @@ function Payments() {
                       </div>
                     ) : null}
                   </div>,
-                  <BillActions
-                    key="a"
-                    row
-                    businessId={r.businessId}
-                    ownerName={r.ownerName}
-                    owedTsh={r.owedTsh}
-                    says={`${r.name} owes ${tsh(r.owedTsh)} in all. A payment settles the oldest bill first.`}
-                    onDone={load.reload}
-                  />,
                 ],
               }))}
             />

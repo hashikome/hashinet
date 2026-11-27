@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- A row that opens a page holds no buttons: the prototype's Issues, Payments and SMS credits lists and
+  the app's Payments lose their row buttons, and Record payment and Remind stay on the business's
+  bill. HashiNet's billing overview counts extra-site invoices among one-off charges. Packages, the
+  counter and the portal read a venue's packages in one query, and a business's second venue starts
+  with its first venue's portal.
 - Analytics (slice 5): Usage and Sales over a period, last, current or chosen dates, shown hourly,
   daily, weekly or monthly. Usage has devices, sessions, data used, peak hours and the busiest
   venues; Sales has takings, vouchers sold, the average sale, the best seller, takings by venue and

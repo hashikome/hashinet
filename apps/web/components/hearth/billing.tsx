@@ -97,7 +97,8 @@ export function InvoicesPanel({ invoices }: { invoices: InvoiceRecord[] }) {
 
 /**
  * Record payment and Remind, for HashiNet's admin and managers while something is owed. The
- * payment settles the oldest first, or the invoice chosen. `row` sits them in a table row.
+ * payment settles the oldest first, or the invoice chosen. On the business's bill, never in a list's
+ * row, since a row that opens a page holds no buttons.
  */
 export function BillActions({
   businessId,
@@ -105,7 +106,6 @@ export function BillActions({
   owedTsh,
   says,
   owed = [],
-  row = false,
   onDone,
 }: {
   businessId: string;
@@ -115,7 +115,6 @@ export function BillActions({
   says: string;
   /** Its open invoices, oldest first: with more than one, the payment says which it settles. */
   owed?: InvoiceRecord[];
-  row?: boolean;
   onDone: () => void;
 }) {
   const can = useCan();
@@ -124,12 +123,7 @@ export function BillActions({
   const [reminding, setReminding] = useState(false);
   if (owedTsh <= 0) return null;
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: in a row, the buttons don't open the row's page
-    <div
-      className={row ? "actions row-actions" : "profile-actions"}
-      onClick={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-    >
+    <div className="profile-actions">
       {can("billing.record") ? (
         <Button onClick={() => setPaying(true)}>Record payment</Button>
       ) : null}
