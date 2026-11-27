@@ -99,6 +99,82 @@ function left(iso: string): string {
   const hours = Math.floor((minutes % 1440) / 60);
   return days ? `${days}d ${hours}h` : `${hours}h ${minutes % 60}m`;
 }
+/** A page of the portal as the Captive portal editor previews it. */
+export type PreviewPage =
+  | "voucher"
+  | "wrong-code"
+  | "run-out"
+  | "signing"
+  | "sign-failed"
+  | "online"
+  | "buy"
+  | "approve"
+  | "pay-failed"
+  | "paid"
+  | "terms";
+
+/** The editor's preview: the portal a guest gets, with this context, on this page, offline. */
+export interface Preview {
+  context: GuestContext;
+  page: PreviewPage;
+}
+
+const SAMPLE_CODE = "482913675204";
+const inADay = () => new Date(Date.now() + 86_400_000).toISOString();
+const paidAs = (state: GuestPaymentStatus["state"]): GuestPaymentStatus => ({
+  state,
+  code: state === "paid" ? SAMPLE_CODE : null,
+  expiresAt: state === "paid" ? inADay() : null,
+  online: state === "paid",
+  ended: false,
+  owed: false,
+  sms: null,
+  dst: null,
+});
+
+/** Where the preview starts: the page, and the purchase it shows. */
+function previewState(page: PreviewPage): {
+  stage: Stage;
+  payment: GuestPaymentStarted | null;
+  paid: GuestPaymentStatus | null;
+  error: string | null;
+} {
+  const none = { payment: null, paid: null, error: null };
+  const purchase = { paymentId: "preview", secret: "preview" };
+  switch (page) {
+    case "wrong-code":
+      return {
+        ...none,
+        stage: { kind: "voucher" },
+        error: "That code isn't right. Check it against your voucher.",
+      };
+    case "run-out":
+      return {
+        ...none,
+        stage: { kind: "run-out", message: "This voucher has been used up." },
+      };
+    case "online":
+      return {
+        ...none,
+        stage: { kind: "online", expiresAt: inADay(), givenBackMinutes: 0 },
+      };
+    case "signing":
+    case "sign-failed":
+    case "buy":
+      return { ...none, stage: { kind: page } };
+    case "terms":
+      return { ...none, stage: { kind: "terms", back: "voucher" } };
+    case "approve":
+      return { ...none, stage: { kind: "buy" }, payment: purchase };
+    case "pay-failed":
+      return { ...none, stage: { kind: "buy" }, payment: purchase, paid: paidAs("failed") };
+    case "paid":
+      return { ...none, stage: { kind: "buy" }, payment: purchase, paid: paidAs("paid") };
+    default:
+      return { ...none, stage: { kind: "voucher" } };
+  }
+}
+
 type Stage =
   | { kind: "loading" }
   | { kind: "not-on-wifi" }
@@ -118,24 +194,32 @@ type Stage =
  * pay ahead: a sale is recorded as it happens (ADR-0017). Nothing says online until the router
  * confirms it.
  */
-export function GuestPortal() {
-  const [stage, setStage] = useState<Stage>({ kind: "loading" });
-  const [context, setContext] = useState<GuestContext | null>(null);
-  const [request, setRequest] = useState<FromRouter | null>(null);
-  const [digits, setDigits] = useState("");
-  const [error, setError] = useState<string | null>(null);
+export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
+  const start = preview ? previewState(preview.page) : null;
+  const [stage, setStage] = useState<Stage>(start?.stage ?? { kind: "loading" });
+  const [loaded, setLoaded] = useState<GuestContext | null>(null);
+  const [request, setRequest] = useState<FromRouter | null>(
+    preview ? { router: "preview", mac: "", ip: "", linkOrig: "" } : null,
+  );
+  const [digits, setDigits] = useState(start?.error ? "482913675205" : "");
+  const [error, setError] = useState<string | null>(start?.error ?? null);
   const [busy, setBusy] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
-  const [phone, setPhone] = useState("");
-  const [payment, setPayment] = useState<GuestPaymentStarted | null>(null);
-  const [paid, setPaid] = useState<GuestPaymentStatus | null>(null);
+  const [phone, setPhone] = useState(preview ? "0712 345 678" : "");
+  const [payment, setPayment] = useState<GuestPaymentStarted | null>(start?.payment ?? null);
+  const [paid, setPaid] = useState<GuestPaymentStatus | null>(start?.paid ?? null);
+  // The preview's context follows the editor's form as it changes.
+  const shown = preview?.context ?? loaded;
 
   useEffect(() => {
+    if (preview) return;
     const held = store.get(PAYMENT_KEY);
     if (held) setPayment(JSON.parse(held) as GuestPaymentStarted);
-  }, []);
+  }, [preview]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the page opens
   useEffect(() => {
+    if (preview) return;
     // Opened anywhere but through the router, it has no device to sign in: join the WiFi first.
     const from = fromRouter();
     if (from === null) {
@@ -145,8 +229,9 @@ export function GuestPortal() {
     setRequest(from);
     post<GuestContext>("/api/guest/context", { router: from.router, mac: from.mac, ip: from.ip })
       .then((found) => {
-        setContext(found);
-        setStage({ kind: "voucher" });
+        setLoaded(found);
+        // The page the venue opens on; with nothing on sale, a guest can only use a voucher.
+        setStage({ kind: found.settings.opensOn === "buy" && found.selling ? "buy" : "voucher" });
       })
       .catch((err: unknown) =>
         setStage({
@@ -159,6 +244,10 @@ export function GuestPortal() {
   const redeem = useCallback(
     async (code: string) => {
       if (!request) return;
+      if (preview) {
+        setStage({ kind: "signing" });
+        return;
+      }
       setDigits(code);
       setBusy(true);
       setError(null);
@@ -188,13 +277,13 @@ export function GuestPortal() {
         setBusy(false);
       }
     },
-    [request],
+    [request, preview],
   );
 
   // A paid purchase is polled until its device is online.
   const done = paid?.state === "failed" || (paid?.state === "paid" && paid.online);
   useEffect(() => {
-    if (payment === null || done) return;
+    if (payment === null || done || preview) return;
     const ask = () =>
       post<GuestPaymentStatus>("/api/guest/payments/status", payment)
         .then((status) => {
@@ -211,10 +300,14 @@ export function GuestPortal() {
     void ask();
     const timer = window.setInterval(ask, POLL_MS);
     return () => window.clearInterval(timer);
-  }, [payment, done]);
+  }, [payment, done, preview]);
 
   async function pay(packageId: string) {
     if (!request) return;
+    if (preview) {
+      setPayment({ paymentId: "preview", secret: "preview" });
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -239,7 +332,7 @@ export function GuestPortal() {
     }
   }
   const startOver = () => {
-    store.set(PAYMENT_KEY, null);
+    if (!preview) store.set(PAYMENT_KEY, null);
     setPayment(null);
     setPaid(null);
     setError(null);
@@ -247,7 +340,7 @@ export function GuestPortal() {
   };
 
   // Before the router: the dark sign-in frame, no venue yet.
-  if (!context) {
+  if (!shown) {
     return (
       <Frame vars={portalVars("#0d1b2a", "#f59e2a")}>
         <Say
@@ -269,10 +362,11 @@ export function GuestPortal() {
     );
   }
 
+  const context = shown;
   const s = context.settings;
-  const vars = portalVars(s.backgroundColor, s.primaryColor);
+  const vars = portalVars(s.pageColor, s.buttonColor);
   const sells = context.mobileMoney && context.packages.some((p) => p.payable);
-  const welcome = s.headline || "Karibu. Pull up a seat.";
+  const welcome = s.welcome || "Karibu. Pull up a seat.";
   const toPlans = () => setStage({ kind: "buy" });
   const terms = (back: "voucher" | "buy") =>
     s.requireTerms ? (
@@ -285,7 +379,7 @@ export function GuestPortal() {
       </p>
     ) : null;
   const frame = (body: ReactNode) => (
-    <Frame vars={vars} venue={context.venueName} logo={s.logoUrl}>
+    <Frame vars={vars} venue={context.venueName} logo={s.logoUrl} inPhone={preview !== null}>
       {body}
     </Frame>
   );
@@ -456,11 +550,7 @@ export function GuestPortal() {
       return frame(
         <>
           <Say title="Terms of use">{context.venueName}&apos;s terms for its WiFi.</Say>
-          <p className="g-terms">
-            Use this WiFi for lawful purposes only. Don&apos;t share your voucher code. Time runs
-            from when you first join and doesn&apos;t pause. We may limit speeds at busy times.
-            Vouchers aren&apos;t refundable once used.
-          </p>
+          <p className="g-terms">{s.terms}</p>
           <button
             className="g-btn alt"
             type="button"
@@ -513,7 +603,7 @@ export function GuestPortal() {
       return frame(
         <>
           <Say title={welcome}>
-            Choose your time and pay with mobile money. You&apos;re online in a moment.
+            {s.buyText || "Choose your time and pay with mobile money. You're online in a moment."}
           </Say>
           <div className="g-rows" role="radiogroup" aria-label="Packages">
             {payable.map((p) => (
@@ -579,9 +669,9 @@ export function GuestPortal() {
             if (digits.length === CODE_LENGTH) void redeem(digits);
           }}
         >
-          <Say title={welcome}>{s.message || "Enter the code on your voucher."}</Say>
+          <Say title={welcome}>{s.voucherText || "Enter the code on your voucher."}</Say>
           <label className="g-label" htmlFor="gcode">
-            {s.voucherLabel || "Voucher code"}
+            Voucher code
           </label>
           <input
             className="g-input"
@@ -637,15 +727,19 @@ function Frame({
   vars,
   venue,
   logo,
+  inPhone = false,
   children,
 }: {
   vars: Record<string, string>;
   venue?: string;
   logo?: string | null;
+  /** The editor's preview: a phone's screen inside the page, not the page itself. */
+  inPhone?: boolean;
   children: ReactNode;
 }) {
+  const Root = inPhone ? "div" : "main";
   return (
-    <main className="g-s g-page" style={vars as React.CSSProperties}>
+    <Root className={inPhone ? "g-s" : "g-s g-page"} style={vars as React.CSSProperties}>
       <div className="g-arc">
         <svg viewBox="0 0 32 32" aria-hidden="true">
           <path
@@ -674,7 +768,7 @@ function Frame({
         {children}
       </div>
       <p className="g-strip">{SIGNATURE}</p>
-    </main>
+    </Root>
   );
 }
 

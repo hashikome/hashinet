@@ -30,7 +30,9 @@ async function request<T>(method: string, path: string, body: unknown): Promise<
     credentials: "include",
     ...(body === null
       ? {}
-      : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+      : body instanceof Blob
+        ? { headers: { "Content-Type": "application/octet-stream" }, body }
+        : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
   });
   const text = await response.text();
   const json = (response.headers.get("content-type") ?? "").includes("application/json");
@@ -45,6 +47,8 @@ export const api = {
   post: <T>(path: string, body: unknown = {}) => request<T>("POST", path, body),
   put: <T>(path: string, body: unknown = {}) => request<T>("PUT", path, body),
   delete: <T = null>(path: string) => request<T>("DELETE", path, null),
+  /** A file sent as it is, such as a logo the API re-encodes. */
+  upload: <T>(path: string, file: Blob) => request<T>("PUT", path, file),
   /** A download the API makes, such as a CSV, saved under the name it gives. */
   async download(path: string, fallbackName: string): Promise<void> {
     const response = await fetch(`${API_URL}${path}`, { credentials: "include" });

@@ -73,30 +73,70 @@ export interface VoucherList {
   nextBefore: string | null;
 }
 
+/** The portal page a guest sees first. */
+export type PortalStart = "voucher" | "buy";
+
 /**
- * The captive portal's wording, colours and voucher defaults (`GET` and `PUT /api/portal`).
- * There are no uploaded images: HashiNet's logo ships with the web. Until an admin saves, the
- * API answers with its defaults and `updatedAt` is null.
+ * What a portal says and does (ADR-0009): the page it opens on, whether it shows a logo, and its
+ * wording. The platform's starts a new business's; a business's starts each new venue's.
  */
-export interface PortalSettingsRecord {
-  brandName: string;
-  headline: string;
-  message: string;
-  primaryColor: string;
-  accentColor: string;
-  backgroundColor: string;
-  radius: number;
-  voucherLabel: string;
+export interface PortalContent {
+  opensOn: PortalStart;
+  showLogo: boolean;
+  /** The heading on the voucher and buy pages. */
+  welcome: string;
+  voucherText: string;
+  buyText: string;
   /** Where a guest with no voucher buys one in person; empty for "at the venue". */
   whereToBuy: string;
   /** A number guests can call to find the seller (+255…), shown to anyone on the WiFi; optional. */
   contactPhone: string | null;
-  ticketTitle: string;
-  ticketFooter: string;
   requireTerms: boolean;
-  isActive: boolean;
-  /** When an admin last saved it; null while the defaults apply. */
+  /** Shown behind "the venue's terms" when `requireTerms`. */
+  terms: string;
+}
+
+/**
+ * A business's or venue's portal: its content and two colours, the page's and its button's. Every
+ * other colour the portal uses is worked out from these two, so it stays readable.
+ */
+export interface PortalLook extends PortalContent {
+  pageColor: string;
+  buttonColor: string;
+}
+
+/** A pair of colours every business can pick; one is what a new business starts with. */
+export interface PortalTheme {
+  id: string;
+  name: string;
+  pageColor: string;
+  buttonColor: string;
+  isDefault: boolean;
+}
+
+/** `GET`, `PUT` and `DELETE /api/portal`: what a new business starts with, and the themes. */
+export interface PlatformPortal {
+  content: PortalContent;
+  themes: PortalTheme[];
+  /** When it was last saved; null while HashiNet's own apply. */
   updatedAt: Timestamp | null;
+}
+
+/**
+ * `GET`, `PUT` and `DELETE /api/portal/business` (what the business's new venues start with) and
+ * `/api/venues/:id/portal` (a venue's own), with what the editor's preview shows.
+ */
+export interface PortalEditor {
+  look: PortalLook;
+  themes: PortalTheme[];
+  /**
+   * The logo guests see when it is shown: the venue's own, else the business's; null for none.
+   * `own` is true when it is the venue's own.
+   */
+  logo: { url: string | null; own: boolean };
+  /** What the preview shows: as a guest at this venue, or at a new venue of the business. */
+  preview: GuestContext;
+  updatedAt: Timestamp;
 }
 
 /** What a way to pay is; each asks for what a guest needs to pay it. */
@@ -153,23 +193,6 @@ export interface VenuePaymentWay {
 }
 
 /** What a venue shows: its own branding, or the HashiNet default. */
-export interface BrandRecord extends PortalSettingsRecord {
-  /** Served from the portal's own origin; null shows HashiNet's logo. */
-  logoUrl: string | null;
-  backgroundUrl: string | null;
-}
-
-/** `GET`, `PUT` and `DELETE /api/venues/:id/brand`. */
-export interface VenueBrandResponse {
-  brand: BrandRecord;
-  /** False while the venue shows the HashiNet default. */
-  isCustom: boolean;
-}
-
-export interface PortalSettingsResponse {
-  settings: PortalSettingsRecord;
-}
-
 /**
  * HashiNet's fee on a venue's net sales in a month (ADR-0013, 3): `rateBp` of it, `lowerRateBp`
  * on the part above `lowerRateAboveTsh`, and at least `minimumTsh` a serving venue. Rates are basis
@@ -1306,6 +1329,12 @@ export const AUDIT_ACTIONS = [
   "device.delete",
   "sale.record",
   "portal.defaults.update",
+  "portal.defaults.reset",
+  "portal.theme.add",
+  "portal.theme.default",
+  "portal.theme.remove",
+  "portal.business.update",
+  "portal.business.reset",
   "fees.update",
   "billing.payment",
   "billing.remind",
@@ -1413,22 +1442,8 @@ export interface GuestContext {
    * portal then shows no plans, and a voucher already sold still signs in.
    */
   selling: boolean;
-  settings: Pick<
-    BrandRecord,
-    | "brandName"
-    | "headline"
-    | "message"
-    | "primaryColor"
-    | "accentColor"
-    | "backgroundColor"
-    | "radius"
-    | "voucherLabel"
-    | "whereToBuy"
-    | "contactPhone"
-    | "requireTerms"
-    | "logoUrl"
-    | "backgroundUrl"
-  >;
+  /** The venue's portal, with the logo to show; null shows none. */
+  settings: PortalLook & { logoUrl: string | null };
   /** What this venue sells, for reading; buying arrives with payments. */
   packages: {
     id: string;

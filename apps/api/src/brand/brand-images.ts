@@ -1,7 +1,5 @@
 import sharp from "sharp";
 
-export type BrandImageKind = "logo" | "background";
-
 /** A phone photo fits; anything larger is refused before it is read in full. */
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 
@@ -16,11 +14,8 @@ export class NotAnImageError extends Error {}
  * of its metadata (a phone photo's location among it), made small, and re-encoded as WebP, which
  * keeps a logo's transparency.
  */
-export async function processBrandImage(
-  input: Uint8Array,
-  kind: BrandImageKind,
-): Promise<Uint8Array> {
-  const size = kind === "logo" ? 256 : 1280;
+export async function processLogo(input: Uint8Array): Promise<Uint8Array> {
+  const size = 256;
   try {
     const image = sharp(input, { failOn: "error", limitInputPixels: 50_000_000 });
     const { format } = await image.metadata();
@@ -28,7 +23,7 @@ export async function processBrandImage(
     return await image
       .rotate()
       .resize({ width: size, height: size, fit: "inside", withoutEnlargement: true })
-      .webp({ quality: kind === "logo" ? 90 : 70 })
+      .webp({ quality: 90 })
       .toBuffer();
   } catch {
     throw new NotAnImageError();

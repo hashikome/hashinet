@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isPayable, MINIMUM_PAYMENT_TSH } from "./guest.service.js";
+import { isPayable, MINIMUM_PAYMENT_TSH } from "./guest-context.js";
 
 describe("what can be paid online", () => {
   test("whole shillings from the provider's minimum", () => {

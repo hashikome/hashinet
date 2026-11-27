@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { onSalePackages } from "../../src/packages/on-sale.js";
 import { DEFAULT_PACKAGES } from "../../src/platform/bootstrap.js";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
@@ -116,12 +117,11 @@ describe("accepting an invitation to start a business", () => {
     expect(
       await t.db.issue.findFirst({ where: { key: `venue-package:${venueId}`, status: "open" } }),
     ).toMatchObject({ scope: "platform", kind: "venue_package", venueId });
-    const packages = await t.db.package.findMany({
-      where: { businessId: business.id },
-      include: { venues: true },
-    });
-    expect(packages.map((p) => p.name).sort()).toEqual(["1 day", "1 hour", "1 week"]);
-    expect(packages.every((p) => p.venues.length === 1)).toBe(true);
+    // The platform's packages, on sale at every venue, and its portal, copied down to the venue.
+    const sold = (await onSalePackages(t.db, venueId)) ?? [];
+    expect(sold.map((p) => p.name).sort()).toEqual(["1 day", "1 hour", "1 week"]);
+    expect(await t.db.businessPortal.count({ where: { businessId: business.id } })).toBe(1);
+    expect(await t.db.venuePortal.count({ where: { venueId } })).toBe(1);
     expect(await t.db.membership.findFirstOrThrow({ where: { userId: user.id } })).toMatchObject({
       scope: "business",
       role: "owner",

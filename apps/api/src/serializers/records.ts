@@ -1,6 +1,5 @@
 import type {
   PackageRecord,
-  PortalSettingsRecord,
   Region,
   RouterRecord,
   SessionRecord,
@@ -10,7 +9,6 @@ import type {
 import { sellingStopped } from "../billing/access-rule.js";
 import type {
   Package,
-  PortalSetting,
   Router,
   ServiceAccess,
   Venue,
@@ -82,26 +80,6 @@ export function voucherRecord(row: Voucher): VoucherRecord {
     expiresAt: isoOrNull(row.expiresAt),
     refundedAt: isoOrNull(row.refundedAt),
     createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-  };
-}
-
-export function portalSettingsRecord(row: PortalSetting): PortalSettingsRecord {
-  return {
-    brandName: row.brandName,
-    headline: row.headline,
-    message: row.message,
-    primaryColor: row.primaryColor,
-    accentColor: row.accentColor,
-    backgroundColor: row.backgroundColor,
-    radius: row.radius,
-    voucherLabel: row.voucherLabel,
-    whereToBuy: row.whereToBuy,
-    contactPhone: row.contactPhone,
-    ticketTitle: row.ticketTitle,
-    ticketFooter: row.ticketFooter,
-    requireTerms: row.requireTerms,
-    isActive: row.isActive,
     updatedAt: iso(row.updatedAt),
   };
 }

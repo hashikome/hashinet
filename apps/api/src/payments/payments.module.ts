@@ -1,5 +1,4 @@
 import { Inject, Injectable, Module } from "@nestjs/common";
-import { BrandModule } from "../brand/brand.module.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { GuestModule } from "../guest/guest.module.js";
@@ -26,7 +25,7 @@ class PaymentJobs extends ScheduledJobs {
 }
 
 @Module({
-  imports: [RoutersModule, PackagesModule, PaymentWaysModule, BrandModule, GuestModule],
+  imports: [RoutersModule, PackagesModule, PaymentWaysModule, GuestModule],
   controllers: [GuestPaymentsController, PaymentsController, WebhooksController],
   providers: [PaymentsService, SmsReports, PaymentJobs],
 })

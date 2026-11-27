@@ -1,7 +1,8 @@
 # ADR-0009: A business's profile and each venue's brand, with images in R2
 
 Status: accepted, 31 October 2026; widened on 3 November 2026 to a business profile above each
-venue's brand (ADR-0011). Reverses the plan's "no uploaded branding" decision of 30 October.
+venue's brand (ADR-0011), and on 28 November 2026 to a portal copied down from the platform to the
+business to each venue, with the platform's themes. Reverses the plan's "no uploaded branding" decision of 30 October.
 
 ## Context
 
@@ -19,6 +20,16 @@ another address.
    portal, edited by the owner or a manager of that venue. A guest sees the venue's logo, else the
    business's, else HashiFi's default in `portal_settings`, which the platform admin edits. Printed
    cards follow the voucher's venue; voucher codes have no prefix (ADR-0008).
+1a. **Copied down, not inherited** (28 November 2026). A portal is two colours (the page's and its
+   button's; every other colour is worked out from them), the page it opens on, whether it shows a
+   logo, its wording and its terms. HashiNet's team keeps the themes (named pairs of colours, one
+   the default) and the content a new business starts with (`portal_settings`); a new business
+   copies it, in the default theme's colours, into `business_portals`; a new venue copies its
+   business's into `venue_portals`. A later change reaches only what is created after it, and
+   Restore defaults copies from one level up. A portal keeps its colours, not a theme, so removing
+   a theme changes nobody's. While a business has one venue, saving the venue's portal saves the
+   business's too, so its second venue starts the same. The logo is not copied: a guest sees the
+   venue's own, else the business's (the business profile), else none.
 2. **The admin stays HashiFi's.** A business changes no colours or layout in the admin, so every
    business gets the same readable screens and support can describe them; the portal's foot and
    the admin sidebar's foot keep a small HashiFi credit.

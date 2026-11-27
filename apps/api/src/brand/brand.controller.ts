@@ -1,4 +1,4 @@
-import type { VenueBrandResponse } from "@hashinet/types";
+import type { PortalEditor } from "@hashinet/types";
 import {
   Body,
   Controller,
@@ -6,7 +6,6 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  NotFoundException,
   Param,
   Put,
   Req,
@@ -17,9 +16,8 @@ import type { Principal } from "../access/principal.js";
 import { apiError } from "../http/error-envelope.js";
 import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
-import { brandInput } from "../portal/portal-input.js";
+import { lookInput } from "../portal/portal-input.js";
 import { BrandService } from "./brand.service.js";
-import type { BrandImageKind } from "./brand-images.js";
 import { MAX_UPLOAD_BYTES } from "./brand-images.js";
 
 const tooLarge = () =>
@@ -27,11 +25,6 @@ const tooLarge = () =>
     apiError("IMAGE_TOO_LARGE", "That image is too large: 8 MB at most."),
     HttpStatus.PAYLOAD_TOO_LARGE,
   );
-
-function kindOf(value: string): BrandImageKind {
-  if (value === "logo" || value === "background") return value;
-  throw new NotFoundException(apiError("NOT_FOUND", "There is no such image."));
-}
 
 /** The image is the request's body. Stops reading at the limit, so a large one costs nothing. */
 async function readUpload(request: Request): Promise<Uint8Array> {
@@ -47,8 +40,35 @@ async function readUpload(request: Request): Promise<Uint8Array> {
   return Buffer.concat(chunks);
 }
 
-@Controller("api/venues/:id/brand")
-export class BrandController {
+/** What a business's new venues start with: whoever reaches the whole business changes it. */
+@Controller("api/portal/business")
+export class BusinessPortalController {
+  constructor(private readonly brand: BrandService) {}
+
+  @Get()
+  @Can("portal.business.update")
+  get(@CurrentPrincipal() staff: Principal): Promise<PortalEditor> {
+    return this.brand.ofBusiness(staff);
+  }
+
+  /** Replaces the template: the form sends all of it. */
+  @Put()
+  @Can("portal.business.update")
+  save(@CurrentPrincipal() staff: Principal, @Body() body: unknown): Promise<PortalEditor> {
+    return this.brand.saveBusiness(staff, parseInput(lookInput, body));
+  }
+
+  /** Back to what the platform's new businesses start with. */
+  @Delete()
+  @Can("portal.business.update")
+  restore(@CurrentPrincipal() staff: Principal): Promise<PortalEditor> {
+    return this.brand.restoreBusiness(staff);
+  }
+}
+
+/** A venue's own portal and logo: its owner and managers change them. */
+@Controller("api/venues/:id/portal")
+export class VenuePortalController {
   constructor(private readonly brand: BrandService) {}
 
   @Get()
@@ -56,50 +76,49 @@ export class BrandController {
   get(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-  ): Promise<VenueBrandResponse> {
+  ): Promise<PortalEditor> {
     return this.brand.ofVenue(staff, id);
   }
 
+  /** Replaces the venue's portal: the form sends all of it. */
   @Put()
   @Can("brand.update")
   save(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
     @Body() body: unknown,
-  ): Promise<VenueBrandResponse> {
-    return this.brand.save(staff, id, parseInput(brandInput, body));
+  ): Promise<PortalEditor> {
+    return this.brand.saveVenue(staff, id, parseInput(lookInput, body));
   }
 
-  /** Back to the HashiNet default. */
+  /** Back to what the business's new venues start with. */
   @Delete()
   @Can("brand.update")
-  reset(
+  restore(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-  ): Promise<VenueBrandResponse> {
-    return this.brand.reset(staff, id);
+  ): Promise<PortalEditor> {
+    return this.brand.restoreVenue(staff, id);
   }
 
-  @Put("images/:kind")
+  @Put("logo")
   @Can("brand.update")
-  async putImage(
+  async putLogo(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-    @Param("kind") kind: string,
     @Req() request: Request,
-  ): Promise<VenueBrandResponse> {
-    const imageKind = kindOf(kind);
+  ): Promise<PortalEditor> {
+    // Scope first: an upload to a venue out of reach is refused before it is read.
     await this.brand.ofVenue(staff, id);
-    return this.brand.putImage(staff, id, imageKind, await readUpload(request));
+    return this.brand.putLogo(staff, id, await readUpload(request));
   }
 
-  @Delete("images/:kind")
+  @Delete("logo")
   @Can("brand.update")
-  removeImage(
+  removeLogo(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-    @Param("kind") kind: string,
-  ): Promise<VenueBrandResponse> {
-    return this.brand.removeImage(staff, id, kindOf(kind));
+  ): Promise<PortalEditor> {
+    return this.brand.removeLogo(staff, id);
   }
 }

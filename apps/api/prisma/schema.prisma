@@ -344,6 +344,7 @@ model Business {
   paymentWays       PaymentWay[]          @relation("BusinessWays")
   accessChanges     ServiceAccessChange[]
   venues            Venue[]
+  portal            BusinessPortal?
   memberships       Membership[]
   invitations       Invitation[]
   packages          Package[]
@@ -517,7 +518,7 @@ model Venue {
   paymentWayId String?           @map("payment_way_id") @db.Uuid
   paymentWay   PaymentWay?       @relation(fields: [businessId, paymentWayId], references: [businessId, id], onDelete: NoAction, onUpdate: NoAction)
   onboarding   VenueOnboarding?
-  brand        VenueBrand?
+  portal       VenuePortal?
   vouchers     Voucher[]
   payments     Payment[]
   sessions     WifiSession[]
@@ -908,58 +909,94 @@ model SessionUsageSample {
   @@map("session_usage_samples")
 }
 
-/// The captive portal's wording, colours and voucher defaults: one row (`singleton`, true by
-/// CHECK), so saving is an upsert. No images: HashiNet's logo ships with the web.
+/// The portal page a guest sees first: the voucher page, or the buy page.
+enum PortalStart {
+  voucher
+  buy
+
+  @@map("portal_start")
+}
+
+/// What a new business's portal starts with (ADR-0009): its wording and the page it opens on; its
+/// colours are the default theme's. One row (`singleton`, true by CHECK), so saving is an upsert.
 model PortalSetting {
-  id              String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  singleton       Boolean  @unique @default(true)
-  brandName       String   @map("brand_name") @db.VarChar(160)
-  headline        String   @db.VarChar(180)
-  message         String
-  primaryColor    String   @map("primary_color") @db.VarChar(16)
-  accentColor     String   @map("accent_color") @db.VarChar(16)
-  backgroundColor String   @map("background_color") @db.VarChar(16)
-  radius          Int      @default(18)
-  voucherLabel    String   @map("voucher_label") @db.VarChar(100)
+  id           String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  singleton    Boolean     @unique @default(true)
+  opensOn      PortalStart @default(voucher) @map("opens_on")
+  showLogo     Boolean     @default(true) @map("show_logo")
+  welcome      String      @db.VarChar(120)
+  voucherText  String      @map("voucher_text") @db.VarChar(240)
+  buyText      String      @map("buy_text") @db.VarChar(240)
   /// Where a guest with no voucher buys one in person; empty says "at the venue".
-  whereToBuy      String   @map("where_to_buy")
+  whereToBuy   String      @map("where_to_buy") @db.VarChar(240)
   /// A number guests can call to find the seller, shown to anyone on the WiFi.
-  contactPhone    String?  @map("contact_phone") @db.VarChar(20)
-  ticketTitle     String   @map("ticket_title") @db.VarChar(160)
-  ticketFooter    String   @map("ticket_footer") @db.VarChar(255)
-  requireTerms    Boolean  @default(true) @map("require_terms")
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  contactPhone String?     @map("contact_phone") @db.VarChar(20)
+  requireTerms Boolean     @default(true) @map("require_terms")
+  terms        String      @db.VarChar(2000)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("portal_settings")
 }
 
-/// A venue's own branding. No row means the HashiNet default (`portal_settings`).
-model VenueBrand {
-  venueId         String   @id @map("venue_id") @db.Uuid
-  brandName       String   @map("brand_name") @db.VarChar(160)
-  headline        String   @db.VarChar(180)
-  message         String
-  primaryColor    String   @map("primary_color") @db.VarChar(16)
-  accentColor     String   @map("accent_color") @db.VarChar(16)
-  backgroundColor String   @map("background_color") @db.VarChar(16)
-  radius          Int      @default(18)
-  voucherLabel    String   @map("voucher_label") @db.VarChar(100)
-  whereToBuy      String   @map("where_to_buy")
-  contactPhone    String?  @map("contact_phone") @db.VarChar(20)
-  ticketTitle     String   @map("ticket_title") @db.VarChar(160)
-  ticketFooter    String   @map("ticket_footer") @db.VarChar(255)
-  requireTerms    Boolean  @default(true) @map("require_terms")
-  /// Keys in the brand store; the files themselves never enter this database.
-  logoKey         String?  @map("logo_key") @db.VarChar(120)
-  backgroundKey   String?  @map("background_key") @db.VarChar(120)
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+/// A pair of colours every business can choose for its portal; one is the default a new business
+/// starts with (a partial unique index). A portal keeps its colours, not the theme: removing a theme
+/// changes nobody's portal.
+model PortalTheme {
+  id          String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name        String   @unique @db.VarChar(60)
+  pageColor   String   @map("page_color") @db.VarChar(7)
+  buttonColor String   @map("button_color") @db.VarChar(7)
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@map("portal_themes")
+}
+
+/// What a business's new venues start with (ADR-0009): copied from the platform's when the
+/// business is created, and into each venue's own when the venue is.
+model BusinessPortal {
+  businessId   String      @id @map("business_id") @db.Uuid
+  pageColor    String      @map("page_color") @db.VarChar(7)
+  buttonColor  String      @map("button_color") @db.VarChar(7)
+  opensOn      PortalStart @default(voucher) @map("opens_on")
+  showLogo     Boolean     @default(true) @map("show_logo")
+  welcome      String      @db.VarChar(120)
+  voucherText  String      @map("voucher_text") @db.VarChar(240)
+  buyText      String      @map("buy_text") @db.VarChar(240)
+  whereToBuy   String      @map("where_to_buy") @db.VarChar(240)
+  contactPhone String?     @map("contact_phone") @db.VarChar(20)
+  requireTerms Boolean     @default(true) @map("require_terms")
+  terms        String      @db.VarChar(2000)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_portals")
+}
+
+/// What a venue's guests see (ADR-0009): its own copy, made from its business's when the venue is
+/// created, and an optional logo of its own.
+model VenuePortal {
+  venueId      String      @id @map("venue_id") @db.Uuid
+  pageColor    String      @map("page_color") @db.VarChar(7)
+  buttonColor  String      @map("button_color") @db.VarChar(7)
+  opensOn      PortalStart @default(voucher) @map("opens_on")
+  showLogo     Boolean     @default(true) @map("show_logo")
+  welcome      String      @db.VarChar(120)
+  voucherText  String      @map("voucher_text") @db.VarChar(240)
+  buyText      String      @map("buy_text") @db.VarChar(240)
+  whereToBuy   String      @map("where_to_buy") @db.VarChar(240)
+  contactPhone String?     @map("contact_phone") @db.VarChar(20)
+  requireTerms Boolean     @default(true) @map("require_terms")
+  terms        String      @db.VarChar(2000)
+  /// A key in the brand store; the file itself never enters this database.
+  logoKey      String?     @map("logo_key") @db.VarChar(120)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
 
-  @@map("venue_brands")
+  @@map("venue_portals")
 }
 
 model DailyUsageStat {

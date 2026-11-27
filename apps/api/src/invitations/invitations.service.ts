@@ -17,6 +17,7 @@ import { apiError } from "../http/error-envelope.js";
 import { oneLine } from "../http/validation.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { OnboardingService } from "../onboarding/onboarding.service.js";
+import { copyToBusiness, copyToVenue } from "../portal/copy-down.js";
 import { normalizeTzPhone } from "../utils/phone.js";
 import { businessInvitationEmail } from "./invitation-emails.js";
 import { digestOf, INVITATION_HOURS, newInvitationToken } from "./invitation-token.js";
@@ -320,9 +321,12 @@ export class InvitationsService {
       });
       const venue = business.venues[0];
       if (!venue) throw new ConflictException(apiError("CONFLICT", "The venue was not created."));
+      // Its portal starts as the platform's new businesses do, and its first venue's from it.
+      await copyToBusiness(tx, business.id);
+      await copyToVenue(tx, venue.id, business.id);
       await this.onboarding.begin(venue.id, tx);
 
-      // A new business starts with the platform's default packages, sold at its first venue
+      // A new business starts with the platform's default packages, sold at every venue
       // (ADR-0011, 10); a later change to the defaults never reaches it.
       const defaults = await tx.platformDefaultPackage.findMany({ orderBy: { position: "asc" } });
       for (const d of defaults) {
@@ -334,7 +338,6 @@ export class InvitationsService {
             deviceLimit: d.deviceLimit,
             priceTsh: d.priceTsh,
             downloadSpeedMbps: STARTING_DOWNLOAD_MBPS,
-            venues: { create: { venueId: venue.id } },
           },
         });
       }

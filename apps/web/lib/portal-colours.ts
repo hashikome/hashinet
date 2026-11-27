@@ -60,3 +60,7 @@ export function portalVars(page: string, button: string): Record<string, string>
     "--g-bad": reach(dark ? "#ff8a8a" : "#c4242a", text, [bg, card], 4.6),
   };
 }
+
+/** A button this close to its page is hard to see. */
+export const coloursTooClose = (page: string, button: string) =>
+  HEX.test(page) && HEX.test(button) && contrast(page, button) < 1.6;

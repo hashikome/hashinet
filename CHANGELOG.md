@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Settings › Captive portal (slice 5): a business's owner and managers set what guests see at each
+  venue, its theme or own two colours, the page it opens on, its logo, wording and terms, beside a
+  phone showing the real portal page by page, and what new venues start with. HashiNet's team keeps
+  the themes and what new businesses start with. Each is copied when a business or venue is
+  created, so a change reaches only what comes after. Every portal keeps what its guests saw; the
+  brand name, accent colour, radius, voucher label, ticket wording and background picture, which
+  the portal never showed, are gone.
 - Prices per venue (slice 5): a venue sells the business's packages at their price until the owner
   or a business manager gives it its own price or stops selling one there, from Packages' venue
   view; a venue's managers add packages sold only at their venue. A venue that sold only some

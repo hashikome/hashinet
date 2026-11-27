@@ -111,9 +111,13 @@ without re-entering the code, without the code ever being exposed.
 Acceptance: a phone on a HashiNet hotspot reaches the portal, redeems a voucher and browses;
 the voucher's limits and expiry are enforced by the router.
 
-Branding is per venue: its name, logo, background, colours and wording, shown on its portal and
-the vouchers it sells. A venue that has set none shows the HashiNet default. Admins edit the default,
-and managers brand their own venues.
+Each venue has its own portal (ADR-0009): two colours, a theme or its own, the page it opens on
+(voucher or buy), whether it shows a logo, its wording and its terms, and optionally its own logo.
+HashiNet's team keeps the themes and what a new business starts with; a business's owner and
+business managers keep what its new venues start with; a venue's owner and managers change its
+own. Each is copied when the business or venue is created, so a later change reaches only what is
+created after it. While a business has one venue, its venue's portal is also what the next starts
+with.
 
 ### 4.5 Sessions and figures
 

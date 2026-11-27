@@ -6,6 +6,7 @@ import { loadConfig } from "../src/config/config.js";
 import { createPrismaClient } from "../src/database/client.js";
 import { beginOnboarding } from "../src/onboarding/begin.js";
 import { bootstrapPlatform, DEFAULT_PACKAGES } from "../src/platform/bootstrap.js";
+import { copyToBusiness, copyToVenue } from "../src/portal/copy-down.js";
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("The seed is for local development only.");
@@ -51,8 +52,12 @@ async function business(
     data: { name, region, area, venues: { create: venues } },
     include: { venues: true },
   });
-  // Every venue starts at its package, as one created in the app does.
-  for (const v of created.venues) await beginOnboarding(db, v.id);
+  // Its portal and every venue's start as the app's do, and every venue at its package.
+  await copyToBusiness(db, created.id);
+  for (const v of created.venues) {
+    await copyToVenue(db, v.id, created.id);
+    await beginOnboarding(db, v.id);
+  }
   for (const p of DEFAULT_PACKAGES) {
     await db.package.create({
       data: {
@@ -62,7 +67,6 @@ async function business(
         deviceLimit: p.deviceLimit,
         priceTsh: p.priceTsh,
         downloadSpeedMbps: 10,
-        venues: { create: created.venues.map((v) => ({ venueId: v.id })) },
       },
     });
   }

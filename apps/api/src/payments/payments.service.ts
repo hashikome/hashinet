@@ -22,13 +22,13 @@ import {
 import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
-import { BrandService } from "../brand/brand.service.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { countFailure, isLimited } from "../guest/attempts.js";
-import { GuestService, isPayable, safeDestination } from "../guest/guest.service.js";
+import { GuestService, safeDestination } from "../guest/guest.service.js";
+import { isPayable } from "../guest/guest-context.js";
 import { apiError } from "../http/error-envelope.js";
 import { SMS_SENDER, type SmsSender } from "../messaging/sms-sender.js";
 import { captureFailure } from "../observability/telemetry.js";
@@ -95,7 +95,6 @@ export class PaymentsService {
     private readonly db: PrismaService,
     private readonly sync: RouterSync,
     private readonly guest: GuestService,
-    private readonly brand: BrandService,
     private readonly packages: PackagesService,
     private readonly audit: AuditLog,
     private readonly ways: PaymentWaysService,
@@ -402,11 +401,18 @@ export class PaymentsService {
       skipDuplicates: true,
     });
     if (count === 0) return;
-    const { brandName } = await this.brand.resolve(row.venueId);
+    // The guest knows the venue by its name; a payment with none is HashiNet's.
+    const venue =
+      row.venueId === null
+        ? { name: "HashiNet" }
+        : await this.db.venue.findUniqueOrThrow({
+            where: { id: row.venueId },
+            select: { name: true },
+          });
     try {
       const { jobId } = await this.sms.send({
         to: row.phone,
-        text: `${brandName} WiFi code: ${groupedCode(row.voucher.code)}. Keep it to reconnect or add a device.`,
+        text: `${venue.name} WiFi code: ${groupedCode(row.voucher.code)}. Keep it to reconnect or add a device.`,
       });
       await this.db.smsMessage.update({
         where: { paymentId: row.id },

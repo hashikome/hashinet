@@ -64,10 +64,12 @@ export const POLICY = {
   // Revenue across businesses: its routes are not scoped to a business, so they stay the
   // platform's. A business reads its own takings from scoped routes (Overview, Payments).
   "revenue.read": PLATFORM_STAFF,
-  // The portal: HashiNet's defaults are the platform's (ADR-0011, 3); a business's managers brand
-  // their own venues.
+  // The captive portal (ADR-0009): what new businesses start with and the themes are the
+  // platform's (ADR-0011, 3); what a business's new venues start with is changed by whoever reaches
+  // the whole business; a venue's own by its owner and managers.
   "portal.defaults.read": PLATFORM_ALL,
   "portal.defaults.update": PLATFORM_STAFF,
+  "portal.business.update": WHOLE_BUSINESS,
   "brand.read": BUSINESS_ALL,
   "brand.update": BUSINESS_MANAGERS,
   // What businesses pay HashiNet: its admin and managers read the terms and where to pay; only the

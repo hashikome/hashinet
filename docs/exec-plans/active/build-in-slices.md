@@ -579,8 +579,20 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     for the whole business; a venue manager starts on their venue), the venue view with Source
     (Default, Own price, Not sold here, This venue only) and Change price, Use default, Stop
     selling, Sell it, and Add for this venue. Tests: packages and payments integration; 204/204.
-  - [ ] (d) Captive portal (ADR-0009): the business's own branding between the venue's and HashiNet's
-    defaults, Settings › Captive portal with its preview, and the platform's defaults.
+  - [x] (2026-11-28) (d) Captive portal (ADR-0009, widened). The portal is copied down:
+    `portal_settings` (the platform's content) and `portal_themes` (one default) start a new
+    business's `business_portals`, which starts each new venue's `venue_portals` (from
+    `venue_brands`), in `portal/copy-down.ts`, on every creation path (Add a venue, an accepted
+    invitation, the seed). Migration `20261128100000_portal_templates` gives every business and
+    venue a copy of what its guests saw, and drops what nothing showed (brand name, accent colour,
+    radius, voucher label, ticket wording, the background image). `GET/PUT/DELETE /api/portal` and
+    `/api/portal/themes` (platform staff), `/api/portal/business` (`portal.business.update`,
+    owner and business managers), `/api/venues/:id/portal` and its `logo` (`brand.update`). The
+    guest context carries the page it opens on and its wording; `guest/guest-context.ts` builds it
+    for the guest and for the editor's preview, which is the guest portal itself (`GuestPortal`
+    with `preview`). Screens: Settings › Captive portal for a business (New venues, or a venue) and
+    for the platform (Themes, Starts with, Wording), each beside the phone. Tests: portal and brand
+    integration; 208/208.
   - [ ] (e) Settings › General: the business profile with its logo (business-scopes M5).
   - [ ] (f) Analytics: usage and sales, computed by the API.
   - [ ] (g) Each role's screens reviewed at 390px first; finish-work; release; acceptance.

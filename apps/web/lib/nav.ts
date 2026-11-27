@@ -77,7 +77,12 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
             {
               label: "Settings",
               icon: "settings" as const,
-              links: [{ href: "/fees", label: "Fees" }],
+              links: [
+                { href: "/fees", label: "Fees" },
+                ...(can("portal.defaults.read")
+                  ? [{ href: "/settings/portal", label: "Captive portal" }]
+                  : []),
+              ],
             },
           ]
         : []),
@@ -113,6 +118,9 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   const settings = [
     ...(can("package.read") ? [{ href: "/packages", label: "Packages" }] : []),
     ...(can("payment_way.read") ? [{ href: "/settings/payments", label: "Payments" }] : []),
+    ...(can("brand.read") && can("brand.update")
+      ? [{ href: "/settings/portal", label: "Captive portal" }]
+      : []),
   ];
   if (settings.length) entries.push({ label: "Settings", icon: "settings", links: settings });
   return entries;

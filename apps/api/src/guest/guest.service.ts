@@ -24,6 +24,7 @@ import { PackagesService } from "../packages/packages.service.js";
 import { bytes } from "../serializers/records.js";
 import { describeFailures, outcomeOk, RouterSync } from "../services/router-sync.js";
 import { countFailure, isLimited } from "./attempts.js";
+import { guestContext } from "./guest-context.js";
 import type { contextInput, redeemInput, sessionInput } from "./guest-input.js";
 
 const WINDOW_SECONDS = 600;
@@ -31,12 +32,6 @@ const WINDOW_SECONDS = 600;
 const FAILURES_PER_ADDRESS = 60;
 const FAILURES_PER_DEVICE = 10;
 const GIB = 1_073_741_824;
-/**
- * The lowest amount the mobile-money provider (Snippe) takes. Not confirmed with Snippe yet (owner,
- * 13 November 2026); it may be TSh 1,000. It is separate from a voucher's lowest price (TSh 500): a
- * package below it still sells as printed vouchers, and is not offered for payment online.
- */
-export const MINIMUM_PAYMENT_TSH = 500;
 
 const refuse = (code: string, message: string) => new BadRequestException(apiError(code, message));
 
@@ -70,7 +65,7 @@ export class GuestService {
 
   async context(input: z.infer<typeof contextInput>): Promise<GuestContext> {
     const router = await this.routerOf(input.router);
-    const [settings, sold, venue] = await Promise.all([
+    const [{ look, logoUrl }, sold, venue] = await Promise.all([
       this.brand.resolve(router.venueId),
       this.packages.onSaleAt(router.venueId),
       this.db.venue.findUniqueOrThrow({
@@ -78,38 +73,15 @@ export class GuestService {
         include: { business: { select: { access: true } } },
       }),
     ]);
-    const selling = !sellingStopped(venue.business.access);
-    return {
+    return guestContext({
       venueName: venue.name,
       internet: router.internetOk,
       mobileMoney: this.config.features.mobileMoney,
-      selling,
-      settings: {
-        brandName: settings.brandName,
-        headline: settings.headline,
-        message: settings.message,
-        primaryColor: settings.primaryColor,
-        accentColor: settings.accentColor,
-        backgroundColor: settings.backgroundColor,
-        radius: settings.radius,
-        voucherLabel: settings.voucherLabel,
-        whereToBuy: settings.whereToBuy,
-        contactPhone: settings.contactPhone,
-        requireTerms: settings.requireTerms,
-        logoUrl: settings.logoUrl,
-        backgroundUrl: settings.backgroundUrl,
-      },
-      // Nothing is on sale while its business can't sell.
-      packages: (selling ? sold : []).map((p) => ({
-        id: p.id,
-        name: p.name,
-        durationMinutes: p.durationMinutes,
-        priceTsh: p.priceTsh,
-        downloadSpeedMbps: p.downloadSpeedMbps,
-        dataLimitGb: p.dataLimitGb,
-        payable: isPayable(p.priceTsh),
-      })),
-    };
+      selling: !sellingStopped(venue.business.access),
+      look,
+      logoUrl,
+      packages: sold,
+    });
   }
 
   /**
@@ -335,12 +307,6 @@ export class GuestService {
     const { venue: _venue, ...rest } = router;
     return rest;
   }
-}
-
-/** The provider takes whole TSH, from its minimum. */
-export function isPayable(priceTsh: string): boolean {
-  const amount = Number(priceTsh);
-  return Number.isInteger(amount) && amount >= MINIMUM_PAYMENT_TSH;
 }
 
 function refuseIfFinished(voucher: Pick<Voucher, "status" | "expiresAt">): void {

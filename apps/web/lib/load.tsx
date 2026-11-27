@@ -23,10 +23,13 @@ export function LoadProvider({ children }: { children: ReactNode }) {
 /**
  * Loads what a page shows. `name` and `deps` say what it is: loads with the same name and deps
  * share what was loaded (Today's figures on Overview and Payments). `data` is null only until the
- * first answer; a failure is `error`, never an empty page; `reload` asks again.
+ * first answer; a failure is `error`, never an empty page; `reload` asks again; `set` keeps what a
+ * change answered with.
  */
 export function useLoad<T>(name: string, load: () => Promise<T>, deps: DependencyList) {
-  const query = useQuery({ queryKey: keyOf(name, deps), queryFn: load });
+  const client = useQueryClient();
+  const key = keyOf(name, deps);
+  const query = useQuery({ queryKey: key, queryFn: load });
   const { refetch } = query;
   const reload = useCallback(async () => {
     await refetch();
@@ -35,6 +38,8 @@ export function useLoad<T>(name: string, load: () => Promise<T>, deps: Dependenc
     data: query.data ?? null,
     error: query.error === null ? null : messageOf(query.error),
     reload,
+    /** What a change answered with, shown at once without asking again. */
+    set: (data: T) => client.setQueryData(key, data),
     at: query.dataUpdatedAt === 0 ? null : new Date(query.dataUpdatedAt),
   };
 }

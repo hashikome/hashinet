@@ -7,6 +7,7 @@ import { BrandService } from "../brand/brand.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { OnboardingService } from "../onboarding/onboarding.service.js";
+import { copyToVenue } from "../portal/copy-down.js";
 import { venueRecord } from "../serializers/records.js";
 import { venueNotFound } from "./venue-errors.js";
 import type { VenueInput } from "./venue-input.js";
@@ -81,6 +82,8 @@ export class VenuesService {
     // Every venue starts at its package: no router comes without an issue behind it (ADR-0013, 1).
     const row = await this.db.$transaction(async (tx) => {
       const created = await tx.venue.create({ data: { ...fields, businessId } });
+      // Its portal starts as the business's new venues do (ADR-0009).
+      await copyToVenue(tx, created.id, businessId);
       await this.onboarding.begin(created.id, tx);
       await this.audit.record(
         staff,
