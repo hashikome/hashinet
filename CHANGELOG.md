@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A Lipa namba names its provider, a network or a bank, and whoever sells reads it out as "M-Pesa
+  Lipa namba" or "CRDB Lipa namba". Lipa nambas added before keep working until someone changes
+  them and picks theirs.
 - Overdue bills set a business's service access by themselves (slice 4, step g; ADR-0014 widened):
   a grace period once a month's fees are overdue, then read-only 14 days after the due date for a
   business late before. Read-only sells nothing new, at the counter or on the portal, and changes no

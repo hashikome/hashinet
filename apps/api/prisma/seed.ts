@@ -120,6 +120,7 @@ if ((await db.paymentWay.count({ where: { businessId: neema.id } })) === 0) {
     data: {
       businessId: neema.id,
       kind: "lipa_namba",
+      provider: "M-Pesa",
       number: "5123 4567",
       name: "NEEMA HOSPITALITY",
       label: "Lodge reception",
@@ -129,6 +130,7 @@ if ((await db.paymentWay.count({ where: { businessId: neema.id } })) === 0) {
     data: {
       businessId: neema.id,
       kind: "lipa_namba",
+      provider: "CRDB",
       number: "6620 1188",
       name: "KIJIWE CAFE",
       label: "Café till",

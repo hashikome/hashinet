@@ -108,7 +108,8 @@ export type PaymentWayKind = "lipa_namba" | "mobile_number" | "bank_account";
  */
 export interface PaymentWay {
   kind: PaymentWayKind;
-  /** The mobile money network or the bank; null for a Lipa namba. */
+  /** Whose it is: a Lipa namba's provider (M-Pesa, CRDB), the mobile money network or
+   * the bank; null only on a Lipa namba added before providers were asked. */
   provider: string | null;
   /** The Lipa namba, mobile money number or account number. */
   number: string;

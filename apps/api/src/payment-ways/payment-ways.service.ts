@@ -39,7 +39,7 @@ const common = {
 
 /** A way to pay: each kind asks for what a guest needs to pay it. */
 export const paymentWayInput = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("lipa_namba"), ...common }),
+  z.object({ kind: z.literal("lipa_namba"), provider: required(60), ...common }),
   z.object({ kind: z.literal("mobile_number"), provider: required(60), ...common }),
   z.object({
     kind: z.literal("bank_account"),
@@ -55,9 +55,13 @@ export const venuePaymentWayInput = z.object({
   wayId: z.uuid().nullable(),
 });
 
-/** What whoever sells reads first: a Lipa namba says so; the others name their network or bank. */
+/** What whoever sells reads first: a Lipa namba and its provider, the network, or the bank. */
 const throughOf = (w: Pick<PaymentWayRow, "kind" | "provider">) =>
-  w.kind === "lipa_namba" ? "Lipa namba" : (w.provider ?? "");
+  w.kind === "lipa_namba"
+    ? w.provider
+      ? `${w.provider} Lipa namba`
+      : "Lipa namba"
+    : (w.provider ?? "");
 
 function wayOf(w: PaymentWayRow): PaymentWay {
   return {
@@ -75,7 +79,7 @@ function wayOf(w: PaymentWayRow): PaymentWay {
 function columnsOf(input: PaymentWayInput) {
   return {
     kind: input.kind,
-    provider: input.kind === "lipa_namba" ? null : input.provider,
+    provider: input.provider,
     branch: input.kind === "bank_account" ? input.branch : null,
     number: input.number,
     name: input.name,

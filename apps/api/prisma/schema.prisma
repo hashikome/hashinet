@@ -1163,7 +1163,8 @@ model PaymentWay {
   id         String         @id @default(dbgenerated("uuidv7()")) @db.Uuid
   businessId String         @map("business_id") @db.Uuid
   kind       PaymentWayKind
-  /// The mobile money network or the bank; null for a Lipa namba (a CHECK holds it).
+  /// Whose it is: a Lipa namba's provider (M-Pesa, CRDB), the mobile money network or
+  /// the bank. Required but for a Lipa namba added before providers were asked (a CHECK holds it).
   provider   String?        @db.VarChar(60)
   /// The Lipa namba, mobile money number or account number.
   number     String         @db.VarChar(40)

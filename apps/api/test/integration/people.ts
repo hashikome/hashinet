@@ -114,7 +114,13 @@ export async function sellingVenue(db: PrismaClient, venueId: string): Promise<v
   const business = await db.business.findUniqueOrThrow({ where: { id: businessId } });
   if (business.defaultPaymentWayId === null) {
     const way = await db.paymentWay.create({
-      data: { businessId, kind: "lipa_namba", number: "5123 4567", name: "TEST BUSINESS" },
+      data: {
+        businessId,
+        kind: "lipa_namba",
+        provider: "M-Pesa",
+        number: "5123 4567",
+        name: "TEST BUSINESS",
+      },
     });
     await db.business.update({
       where: { id: businessId },

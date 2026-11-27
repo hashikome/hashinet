@@ -35,6 +35,15 @@ export function PayCard({ way }: { way: Pick<PaymentWay, "through" | "number" | 
   );
 }
 
+/** Lipa nambas guests know, offered as the provider is typed; any other can be typed too. */
+const LIPA_PROVIDERS = ["M-Pesa", "Airtel Money", "Yas", "CRDB", "Stanbic"];
+
+/** What a way is, under its name in the table, unless its name already says it. */
+function subOf(w: PaymentWayRecord): string | null {
+  if (w.kind === "lipa_namba") return w.label === null ? null : w.through;
+  return w.label === null ? KIND_NAME[w.kind] : `${KIND_NAME[w.kind]} · ${w.through}`;
+}
+
 /** How the business's people know a way: its label, or what it is and its number. */
 const nameOf = (w: PaymentWay) => w.label ?? `${w.through} ${w.number}`;
 /** A way in a list of choices: label, what it is, number and name. */
@@ -98,12 +107,7 @@ export function PaymentWays({ edit }: { edit: boolean }) {
                       </>
                     ) : null}
                     {/* What it is, unless its name already says so. */}
-                    {w.label === null && w.kind === "lipa_namba" ? null : (
-                      <div className="sub">
-                        {KIND_NAME[w.kind]}
-                        {w.label === null || w.kind === "lipa_namba" ? "" : ` · ${w.through}`}
-                      </div>
-                    )}
+                    {subOf(w) ? <div className="sub">{subOf(w)}</div> : null}
                   </span>,
                   <span key="n">
                     <span className="num nowrap">{w.number}</span>
@@ -206,6 +210,7 @@ function WayDialog({
         inputMode={numeric ? "numeric" : undefined}
         autoComplete="off"
         value={String(d[key])}
+        list={key === "provider" && d.kind === "lipa_namba" ? "lipa-providers" : undefined}
         onChange={set(key)}
         aria-invalid={errors[key] ? true : undefined}
       />
@@ -214,6 +219,12 @@ function WayDialog({
   const fields =
     d.kind === "lipa_namba" ? (
       <>
+        {input("provider", "Provider", "Whose Lipa namba it is, a network or a bank")}
+        <datalist id="lipa-providers">
+          {LIPA_PROVIDERS.map((p) => (
+            <option key={p} value={p} />
+          ))}
+        </datalist>
         {input("number", "Lipa namba", undefined, true)}
         {input("name", "Name it shows", "As a guest's phone shows it when they pay")}
       </>
@@ -231,7 +242,12 @@ function WayDialog({
         {input("branch", "Branch (optional)")}
       </>
     );
-  const through = d.kind === "lipa_namba" ? "Lipa namba" : d.provider.trim();
+  const through =
+    d.kind === "lipa_namba"
+      ? d.provider.trim()
+        ? `${d.provider.trim()} Lipa namba`
+        : "Lipa namba"
+      : d.provider.trim();
   const save = async () => {
     const body = {
       kind: d.kind,
@@ -239,7 +255,7 @@ function WayDialog({
       name: d.name,
       label: d.label,
       makeDefault: d.makeDefault,
-      ...(d.kind === "lipa_namba" ? {} : { provider: d.provider }),
+      provider: d.provider,
       ...(d.kind === "bank_account" ? { branch: d.branch } : {}),
     };
     const ok = await run(

@@ -27,7 +27,8 @@ wapi?").
    arrived at the venue's number. A sale is never undone.
 4. **Where to pay is on the sale.** For mobile money the sale shows the venue's way to pay. A
    business keeps its ways to pay in Settings › Payments, entered once for every venue: each a Lipa
-   namba, a mobile money number on a network, or a bank account, with its number, the name the
+   namba with its provider (read out as "M-Pesa Lipa namba"), a mobile money number on a network, or
+   a bank account, with its number, the name the
    payment shows and an optional label. Its owner and business managers keep the list; one is the
    default, which can't be removed while it is. Each venue reads out the way its managers chose, or
    the default; removing a way moves the venues that chose it to the default. A business with no way

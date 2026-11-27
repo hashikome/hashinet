@@ -24,8 +24,19 @@ async function venue(name: string) {
   });
 }
 
-const LIPA = { kind: "lipa_namba", number: "5123 4567", name: "NEEMA HOSPITALITY", label: "Lodge" };
-const CAFE = { kind: "lipa_namba", number: "6620 1188", name: "KIJIWE CAFE" };
+const LIPA = {
+  kind: "lipa_namba",
+  provider: "M-Pesa",
+  number: "5123 4567",
+  name: "NEEMA HOSPITALITY",
+  label: "Lodge",
+};
+const CAFE = {
+  kind: "lipa_namba",
+  provider: "CRDB",
+  number: "6620 1188",
+  name: "KIJIWE CAFE",
+};
 const BANK = {
   kind: "bank_account",
   provider: "CRDB Bank",
@@ -56,7 +67,7 @@ describe("a business's ways to pay", () => {
 
     const first = ways((await owner.request("POST", "/api/payment-ways", LIPA)).body);
     expect(first).toMatchObject([
-      { through: "Lipa namba", label: "Lodge", provider: null, isDefault: true },
+      { through: "M-Pesa Lipa namba", label: "Lodge", provider: "M-Pesa", isDefault: true },
     ]);
     const added = ways((await owner.request("POST", "/api/payment-ways", CAFE)).body);
     const cafeWay = added.find((w) => w.number === CAFE.number);
@@ -76,7 +87,7 @@ describe("a business's ways to pay", () => {
     // Whoever sells at the café reads its way and changes nothing.
     const musa = await signedIn("venue_operator", "musa@example.com", [cafe.id]);
     expect((await musa.request("GET", `/api/venues/${cafe.id}/payment-way`)).body).toMatchObject({
-      way: { through: "Lipa namba", number: CAFE.number, name: CAFE.name },
+      way: { through: "CRDB Lipa namba", number: CAFE.number, name: CAFE.name },
     });
     expect((await musa.request("GET", "/api/payment-ways")).status).toBe(403);
     expect(
@@ -133,9 +144,10 @@ describe("a business's ways to pay", () => {
     );
     expect((await post({ ...LIPA, number: "51-23" })).status).toBe(400);
     expect((await post({ ...LIPA, name: " " })).status).toBe(400);
-    // A Lipa namba keeps no provider or branch, whatever is sent.
-    const [w] = ways((await post({ ...LIPA, provider: "X", branch: "Y" })).body);
-    expect(w).toMatchObject({ provider: null, branch: null });
+    // A Lipa namba names its provider, and keeps no branch, whatever is sent.
+    expect((await post({ ...LIPA, provider: " " })).status).toBe(400);
+    const [w] = ways((await post({ ...LIPA, branch: "Y" })).body);
+    expect(w).toMatchObject({ provider: "M-Pesa", branch: null });
   });
 
   test("the whole business keeps the list; a venue manager chooses only for their venues", async () => {
@@ -186,7 +198,7 @@ describe("a business's ways to pay", () => {
     expect((await sell("mobile_money")).status).toBe(201);
     const mobile = await t.db.payment.findFirstOrThrow({ where: { provider: "mobile_money" } });
     expect(mobile).toMatchObject({
-      paidThrough: "Lipa namba",
+      paidThrough: "CRDB Lipa namba",
       paidToNumber: CAFE.number,
       paidToName: CAFE.name,
     });
