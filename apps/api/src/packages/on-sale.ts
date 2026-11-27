@@ -1,23 +1,27 @@
-import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { Package, Prisma, PrismaClient } from "../generated/prisma/client.js";
+
+type Db = PrismaClient | Prisma.TransactionClient;
 
 /**
- * The rule for what a venue sells: its business's active packages, narrowed to the ones assigned
- * to it when there are any. Never another business's. Null when the venue doesn't exist.
+ * What a venue sells (ADR-0011, 4): its business's active packages it hasn't stopped selling, at
+ * its own price where it set one, and its own packages. Never another business's or another
+ * venue's own. Each comes back at the price the venue charges, cheapest first. Null when the venue
+ * doesn't exist. The one rule for Sell, the portal and onboarding.
  */
-export async function onSaleWhere(
-  db: Pick<PrismaClient, "venue" | "venuePackage">,
-  venueId: string,
-): Promise<Prisma.PackageWhereInput | null> {
-  const venue = await db.venue.findUnique({ where: { id: venueId } });
+export async function onSalePackages(db: Db, venueId: string): Promise<Package[] | null> {
+  const venue = await db.venue.findUnique({ where: { id: venueId }, select: { businessId: true } });
   if (!venue) return null;
-  const assigned = await db.venuePackage.findMany({
-    where: { venueId },
-    select: { packageId: true },
+  const rows = await db.package.findMany({
+    where: {
+      businessId: venue.businessId,
+      isActive: true,
+      OR: [{ venueId: null }, { venueId }],
+    },
+    include: { venues: { where: { venueId } } },
+    orderBy: { createdAt: "asc" },
   });
-  const ids = assigned.map((a) => a.packageId);
-  return {
-    businessId: venue.businessId,
-    isActive: true,
-    ...(ids.length === 0 ? {} : { id: { in: ids } }),
-  };
+  return rows
+    .filter((p) => p.venueId === venueId || p.venues[0]?.onSale !== false)
+    .map(({ venues, ...p }) => ({ ...p, priceTsh: venues[0]?.priceTsh ?? p.priceTsh }))
+    .sort((a, b) => Number(a.priceTsh) - Number(b.priceTsh));
 }

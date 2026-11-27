@@ -512,6 +512,7 @@ model Venue {
   routers      Router[]
   issues       Issue[]
   packages     VenuePackage[]
+  ownPackages  Package[]         @relation("VenueOwnPackages")
   /// The business's way to pay whoever sells here reads out; null uses the business's default.
   paymentWayId String?           @map("payment_way_id") @db.Uuid
   paymentWay   PaymentWay?       @relation(fields: [businessId, paymentWayId], references: [businessId, id], onDelete: NoAction, onUpdate: NoAction)
@@ -603,6 +604,9 @@ model Router {
 model Package {
   id                    String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   businessId            String   @map("business_id") @db.Uuid
+  /// A venue's own package, sold only there (ADR-0011, 4); null for the business's, sold at every
+  /// venue that hasn't stopped selling it.
+  venueId               String?  @map("venue_id") @db.Uuid
   name                  String   @db.VarChar(180)
   description           String?
   /// Whole minutes.
@@ -623,6 +627,7 @@ model Package {
   updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   business   Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  ownVenue   Venue?           @relation("VenueOwnPackages", fields: [venueId], references: [id], onDelete: Cascade)
   venues     VenuePackage[]
   vouchers   Voucher[]
   payments   Payment[]
@@ -637,10 +642,17 @@ model Package {
 }
 
 /// Which packages a venue sells.
+/// A venue's own setting for one of its business's packages (ADR-0011, 4): its own price, or not
+/// sold there. A venue with no row follows the business: on sale, at the package's price.
 model VenuePackage {
   venueId   String   @map("venue_id") @db.Uuid
   packageId String   @map("package_id") @db.Uuid
+  /// The venue's own price; null follows the package's.
+  priceTsh  Decimal? @map("price_tsh") @db.Decimal(12, 2)
+  /// False: the venue doesn't sell it.
+  onSale    Boolean  @default(true) @map("on_sale")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   venue   Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
   package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)

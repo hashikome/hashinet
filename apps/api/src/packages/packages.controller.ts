@@ -5,7 +5,7 @@ import type { Principal } from "../access/principal.js";
 import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
 import { packageInput } from "./package-input.js";
-import { PackagesService } from "./packages.service.js";
+import { PackagesService, venuePackageInput } from "./packages.service.js";
 
 @Controller("api/packages")
 export class PackagesController {
@@ -14,7 +14,7 @@ export class PackagesController {
   @Get()
   @Can("package.read")
   async list(@CurrentPrincipal() staff: Principal): Promise<PackageList> {
-    return { packages: await this.packages.list(staff) };
+    return this.packages.list(staff);
   }
 
   /** Every package, its price and where it is sold, as `packages.csv`. */
@@ -68,12 +68,12 @@ export class PackagesController {
   }
 }
 
-/** What a venue sells, and admins' assignments of packages to it. */
-@Controller("api/venues/:venueId/packages")
+/** What a venue sells: its own prices for the business's packages, and its own packages. */
+@Controller("api/venues/:venueId")
 export class VenuePackagesController {
   constructor(private readonly packages: PackagesService) {}
 
-  @Get()
+  @Get("packages")
   @Can("package.read")
   soldAt(
     @CurrentPrincipal() staff: Principal,
@@ -82,23 +82,46 @@ export class VenuePackagesController {
     return this.packages.soldAt(staff, venueId);
   }
 
-  @Put(":packageId")
+  /** The venue's price for a business package, or not selling it there. */
+  @Put("packages/:packageId")
   @Can("package.venue.assign")
-  assign(
+  set(
     @CurrentPrincipal() staff: Principal,
     @Param("venueId", idParam()) venueId: string,
     @Param("packageId", idParam()) packageId: string,
+    @Body() body: unknown,
   ): Promise<VenuePackages> {
-    return this.packages.assign(staff, venueId, packageId);
+    return this.packages.setAtVenue(staff, venueId, packageId, parseInput(venuePackageInput, body));
   }
 
-  @Delete(":packageId")
-  @Can("package.venue.assign")
-  unassign(
+  @Post("own-packages")
+  @Can("package.venue.own")
+  createOwn(
     @CurrentPrincipal() staff: Principal,
     @Param("venueId", idParam()) venueId: string,
-    @Param("packageId", idParam()) packageId: string,
+    @Body() body: unknown,
   ): Promise<VenuePackages> {
-    return this.packages.unassign(staff, venueId, packageId);
+    return this.packages.createOwn(staff, venueId, parseInput(packageInput, body));
+  }
+
+  @Put("own-packages/:id")
+  @Can("package.venue.own")
+  updateOwn(
+    @CurrentPrincipal() staff: Principal,
+    @Param("venueId", idParam()) venueId: string,
+    @Param("id", idParam()) id: string,
+    @Body() body: unknown,
+  ): Promise<VenuePackages> {
+    return this.packages.updateOwn(staff, venueId, id, parseInput(packageInput, body));
+  }
+
+  @Delete("own-packages/:id")
+  @Can("package.venue.own")
+  removeOwn(
+    @CurrentPrincipal() staff: Principal,
+    @Param("venueId", idParam()) venueId: string,
+    @Param("id", idParam()) id: string,
+  ): Promise<VenuePackages> {
+    return this.packages.removeOwn(staff, venueId, id);
   }
 }

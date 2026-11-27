@@ -30,6 +30,7 @@ export const ACTION_NAME: Record<AuditAction, string> = {
   "package.delete": "Took a package off sale",
   "package.venue.assign": "Put a package on sale at a venue",
   "package.venue.unassign": "Took a package off sale at a venue",
+  "package.venue.set": "Changed a package at a venue",
   "voucher.read": "Looked at voucher codes",
   "voucher.refund": "Refunded a voucher",
   "voucher.release": "Released a voucher",

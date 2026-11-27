@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Prices per venue (slice 5): a venue sells the business's packages at their price until the owner
+  or a business manager gives it its own price or stops selling one there, from Packages' venue
+  view; a venue's managers add packages sold only at their venue. A venue that sold only some
+  packages keeps selling just those.
 - A business's Venues and each venue's page (slice 5): every venue's status, routers and last 7
   days; who runs it, its takings and its way to pay; Add a venue for the owner, opening on its way
   online, and Edit venue for the owner and business managers. Venue managers get Venues in their

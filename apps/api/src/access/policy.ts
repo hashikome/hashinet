@@ -40,6 +40,9 @@ export const POLICY = {
   "package.read": [...PLATFORM_ALL, ...BUSINESS_ALL],
   "package.manage": ["owner"],
   "package.venue.assign": WHOLE_BUSINESS,
+  // A venue manager adds packages sold only at their own venues (ADR-0011, 4); the owner and
+  // business managers may too.
+  "package.venue.own": BUSINESS_MANAGERS,
   // A business's guests: codes, sessions and devices are the business's; the platform sees
   // counts only (ADR-0014).
   "voucher.read": BUSINESS_ALL,
@@ -124,6 +127,7 @@ const PAUSED_WHILE_READ_ONLY: ReadonlySet<Action> = new Set([
   "sale.record",
   "package.manage",
   "package.venue.assign",
+  "package.venue.own",
 ]);
 
 export function pausedWhileReadOnly(action: Action): boolean {

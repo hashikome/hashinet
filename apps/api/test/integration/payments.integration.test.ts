@@ -172,16 +172,9 @@ describe("buying on the portal", () => {
         priceTsh: "1000",
       },
     });
-    const venue2 = await t.db.venue.create({
-      data: {
-        businessId: await testBusinessId(t.db),
-        name: "Other",
-        region: "Dar es Salaam",
-        area: "Dar",
-      },
+    await t.db.venuePackage.create({
+      data: { venueId: router.venueId, packageId: pkg.id, onSale: false },
     });
-    await t.db.venuePackage.create({ data: { venueId: venue2.id, packageId: pkg.id } });
-    await t.db.venuePackage.create({ data: { venueId: router.venueId, packageId: other.id } });
     expect((await buy(router.id, pkg.id)).body).toMatchObject({ code: "PACKAGE_NOT_ON_SALE" });
 
     expect((await buy(router.id, other.id, { phone: "12345" })).status).toBe(400);

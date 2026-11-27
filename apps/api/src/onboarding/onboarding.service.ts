@@ -20,7 +20,7 @@ import type { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
 import { oneLine, paragraph } from "../http/validation.js";
 import { IssuesService, PLATFORM_WORKSPACE } from "../issues/issues.service.js";
-import { onSaleWhere } from "../packages/on-sale.js";
+import { onSalePackages } from "../packages/on-sale.js";
 import { venueNotFound } from "../venues/venue-errors.js";
 import { beginOnboarding, packageKey, setupKey } from "./begin.js";
 import {
@@ -297,10 +297,9 @@ export class OnboardingService {
     const o = onboardingOf(venue);
     const stage = venueStage(venue);
     const platform = staff.scope === "platform";
-    const onSale = await onSaleWhere(this.db, venue.id);
     const [isProtected, packagesOnSale, issues] = await Promise.all([
       ownerProtected(this.db, venue.businessId),
-      onSale ? this.db.package.count({ where: onSale }) : 0,
+      onSalePackages(this.db, venue.id).then((sold) => sold?.length ?? 0),
       platform
         ? this.db.issue.findMany({
             where: {

@@ -565,8 +565,20 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     the venue page's Sites (list, cost, Invoice PDF for the owner while waiting, Remove with a
     confirmation) and Add a site with its cost, Fees' "Extra site, once". Tests: sites
     integration; 204/204.
-  - [ ] (c) Prices per venue and venue-only packages: a venue's own price, a package a venue manager
-    adds for their venues, and the on-sale rule that keeps it there.
+  - [x] (2026-11-28) (c) Prices per venue and venue-only packages. A venue follows the business's
+    packages unless it has a row in `venue_packages`: its own price (`price_tsh`) or not sold there
+    (`on_sale` false); `packages.venue_id` makes a package the venue's own, sold only there.
+    `onSalePackages` is the one rule, at the venue's prices, for the portal, the counter and
+    onboarding's count. `PUT /api/venues/:id/packages/:packageId` with `{ priceTsh, onSale }`
+    (`package.venue.assign`, owner and business managers; following the business again leaves no
+    row), and `POST`/`PUT`/`DELETE /api/venues/:id/own-packages[/:id]` (`package.venue.own`, a
+    venue's managers too, paused while read-only); the assign/unassign routes are gone. Migration
+    `20261128000000_venue_prices` keeps what each venue sold: a venue that had assignments stops
+    selling the rest. `GET /api/packages` says where each sells and how many venues have their own
+    price; the CSV puts each own price on its own line. Screens: Packages' venue picker (All venues
+    for the whole business; a venue manager starts on their venue), the venue view with Source
+    (Default, Own price, Not sold here, This venue only) and Change price, Use default, Stop
+    selling, Sell it, and Add for this venue. Tests: packages and payments integration; 204/204.
   - [ ] (d) Captive portal (ADR-0009): the business's own branding between the venue's and HashiNet's
     defaults, Settings › Captive portal with its preview, and the platform's defaults.
   - [ ] (e) Settings › General: the business profile with its logo (business-scopes M5).

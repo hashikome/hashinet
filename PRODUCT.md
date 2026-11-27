@@ -83,7 +83,10 @@ automated setup alone, and the checklist reports each check's real state.
 ### 4.2 Packages
 
 A package defines a price in TSH, a duration, optional speed and data limits and a device
-limit, and is offered at selected venues.
+limit. The business's packages are sold at every venue at their price, unless a venue has its own
+price for one or stops selling it there; the owner keeps them, and the owner and business managers
+set a venue's prices (ADR-0011, 4). A venue's managers add packages sold only at that venue. A
+voucher keeps the price it was sold at.
 
 ### 4.3 Vouchers
 

@@ -965,11 +965,17 @@ export interface BootstrapScriptResponse {
 }
 
 /** `GET /api/packages`: the packages on sale, each with where it sells. */
+/** `GET /api/packages`: the business's packages and its venues' own, within the reader's venues. */
 export interface PackageList {
   packages: (PackageRecord & {
-    /** The venues it is sold at; empty means every venue. */
-    venueIds: string[];
+    /** A venue's own package, sold only there: its venue; null for the business's. */
+    venue: { id: string; name: string } | null;
+    /** Of the reader's venues, how many sell it, and how many of those at their own price. */
+    soldAt: number;
+    ownPrices: number;
   })[];
+  /** How many venues the reader reaches. */
+  venues: number;
 }
 
 /** `GET` and `PUT /api/packages/:id`, and `POST /api/packages`. */
@@ -978,13 +984,20 @@ export interface PackageResponse {
 }
 
 /** `GET /api/venues/:venueId/packages`: what the venue sells. */
+/** `GET /api/venues/:id/packages`: what a venue sells, and how it has each package (ADR-0011, 4). */
 export interface VenuePackages {
-  /** The active packages on sale at the venue. */
+  /** What it sells now, at its own prices, cheapest first. */
   packages: PackageRecord[];
-  /** The packages assigned to the venue, active or not. */
-  assignedPackageIds: string[];
-  /** True when the venue has no assignments, and so sells every active package. */
-  sellsAll: boolean;
+  /** The business's packages as this venue has them, then the venue's own. */
+  catalogue: {
+    /** At the business's price; a venue's own package at its price. */
+    package: PackageRecord;
+    /** The venue's own price for a business package; null follows the business's. */
+    ownPriceTsh: DecimalString | null;
+    onSale: boolean;
+    /** The venue's own package, sold only there. */
+    own: boolean;
+  }[];
 }
 
 export type DeviceStatus = "active" | "blocked";
@@ -1275,8 +1288,10 @@ export const AUDIT_ACTIONS = [
   "package.create",
   "package.update",
   "package.delete",
+  // Recorded before a venue's prices: kept so those rows still read.
   "package.venue.assign",
   "package.venue.unassign",
+  "package.venue.set",
   "voucher.read",
   "voucher.refund",
   "voucher.release",

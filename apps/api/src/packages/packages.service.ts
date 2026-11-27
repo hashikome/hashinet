@@ -1,21 +1,42 @@
-import type { AuditAction, PackageList, PackageRecord, VenuePackages } from "@hashinet/types";
+import {
+  type AuditAction,
+  MINIMUM_PRICE_TSH,
+  type PackageList,
+  type PackageRecord,
+  type VenuePackages,
+} from "@hashinet/types";
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { z } from "zod";
 import type { Principal } from "../access/principal.js";
-import { businessScope } from "../access/venue-scope.js";
+import { businessScope, venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { packageRecord } from "../serializers/records.js";
 import { VenuesService } from "../venues/venues.service.js";
-import { onSaleWhere } from "./on-sale.js";
+import { onSalePackages } from "./on-sale.js";
 import type { PackageInput } from "./package-input.js";
 
 export const packageNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That package does not exist."));
 
+/** A venue's own price for one of its business's packages, or not selling it there. */
+export const venuePackageInput = z.object({
+  /** Null follows the business's price. */
+  priceTsh: z
+    .number({ error: (issue) => (issue.code === "invalid_type" ? "must be a number" : null) })
+    .int("must be a whole number")
+    .min(MINIMUM_PRICE_TSH)
+    .max(10_000_000)
+    .nullable(),
+  onSale: z.boolean(),
+});
+
 /**
- * Packages are one catalogue shared by every venue; a venue sells the ones assigned to it, or
- * every active one when none are assigned.
+ * Packages (ADR-0011, 4): the business's, sold at every venue unless a venue stopped selling one,
+ * at the package's price unless the venue set its own; and a venue's own, sold only there. The
+ * owner keeps the business's; the owner and business managers set a venue's prices; a venue's
+ * managers add its own.
  */
 @Injectable()
 export class PackagesService {
@@ -25,31 +46,59 @@ export class PackagesService {
     private readonly venues: VenuesService,
   ) {}
 
-  /** Admins see the whole catalogue; managers only what can be sold. */
-  async list(staff: Principal): Promise<PackageList["packages"]> {
-    const rows = await this.db.package.findMany({
-      where: { ...businessScope(staff), isActive: true },
-      include: { venues: { select: { venueId: true } } },
-      orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
+  /** The business's packages and its venues' own, as the reader's venues sell them. */
+  async list(staff: Principal): Promise<PackageList> {
+    const venues = await this.db.venue.findMany({
+      where: venueScope(staff),
+      select: { id: true, businessId: true },
     });
-    return rows.map((row) => ({
-      ...packageRecord(row),
-      venueIds: row.venues.map((v) => v.venueId),
-    }));
+    const ids = venues.map((v) => v.id);
+    const rows = await this.db.package.findMany({
+      where: {
+        ...businessScope(staff),
+        isActive: true,
+        OR: [{ venueId: null }, { venueId: { in: ids } }],
+      },
+      include: {
+        venues: { where: { venueId: { in: ids } } },
+        ownVenue: { select: { id: true, name: true } },
+      },
+      // The business's first; each venue's own after them, under it.
+      orderBy: [
+        { venueId: { sort: "asc", nulls: "first" } },
+        { priceTsh: "asc" },
+        { createdAt: "asc" },
+      ],
+    });
+    return {
+      venues: ids.length,
+      packages: rows.map((row) => {
+        if (row.ownVenue) {
+          return { ...packageRecord(row), venue: row.ownVenue, soldAt: 1, ownPrices: 0 };
+        }
+        const at = venues.filter((v) => v.businessId === row.businessId).length;
+        const off = row.venues.filter((v) => !v.onSale).length;
+        const own = row.venues.filter((v) => v.onSale && v.priceTsh !== null).length;
+        return { ...packageRecord(row), venue: null, soldAt: at - off, ownPrices: own };
+      }),
+    };
   }
 
   /**
    * Every package the reader's business has, its price and where it is sold, as a CSV file
-   * (ADR-0011, 10). A package assigned to no venue is sold at every venue.
-   * Platform staff reach every business, so their file names each package's business.
+   * (ADR-0011, 10): a venue's own price on its own line. Platform staff reach every business, so
+   * their file names each package's business.
    */
   async exportCsv(staff: Principal): Promise<string> {
+    const venues = await this.db.venue.findMany({
+      where: venueScope(staff),
+      select: { id: true, name: true, businessId: true },
+      orderBy: { name: "asc" },
+    });
+    const ids = venues.map((v) => v.id);
     const rows = await this.db.package.findMany({
-      where: businessScope(staff),
-      include: {
-        business: { select: { name: true } },
-        venues: { include: { venue: { select: { id: true, name: true } } } },
-      },
+      where: { ...businessScope(staff), OR: [{ venueId: null }, { venueId: { in: ids } }] },
+      include: { business: { select: { name: true } }, venues: true },
       orderBy: [{ businessId: "asc" }, { priceTsh: "asc" }, { createdAt: "asc" }],
     });
     const platform = staff.scope === "platform";
@@ -62,36 +111,43 @@ export class PackagesService {
       "On sale",
       "Sold at",
     ];
-    // A reader limited to some venues sees the packages sold there, and those venues' names.
-    const mine = (venueId: string) => staff.venueIds === null || staff.venueIds.includes(venueId);
-    const visible = rows.filter(
-      (row) => row.venues.length === 0 || row.venues.some((v) => mine(v.venueId)),
-    );
-    const lines = visible.map((row) => [
-      ...(platform ? [row.business.name] : []),
-      row.name,
-      String(row.durationMinutes),
-      String(row.deviceLimit),
-      String(Math.round(Number(row.priceTsh))),
-      row.isActive ? "Yes" : "No",
-      row.venues.length === 0
-        ? "Every venue"
-        : row.venues
-            .filter((v) => mine(v.venueId))
-            .map((v) => v.venue.name)
-            .sort()
-            .join("; "),
-    ]);
+    const lines = rows.flatMap((row) => {
+      const at = venues.filter((v) =>
+        row.venueId ? v.id === row.venueId : v.businessId === row.businessId,
+      );
+      // One line per price: the business's at the venues that follow it, then each venue's own.
+      const setting = (venueId: string) => row.venues.find((x) => x.venueId === venueId);
+      const follow = at.filter((v) => setting(v.id)?.onSale !== false && !setting(v.id)?.priceTsh);
+      const own = at.filter((v) => setting(v.id)?.onSale !== false && setting(v.id)?.priceTsh);
+      const line = (price: string, names: string[]) => [
+        ...(platform ? [row.business.name] : []),
+        row.name,
+        String(row.durationMinutes),
+        String(row.deviceLimit),
+        String(Math.round(Number(price))),
+        row.isActive ? "Yes" : "No",
+        names.join("; "),
+      ];
+      // A venue manager's file holds only what their venues sell.
+      if (staff.venueIds !== null && follow.length === 0 && own.length === 0) return [];
+      return [
+        ...(follow.length || own.length === 0
+          ? [
+              line(
+                String(row.priceTsh),
+                follow.map((v) => v.name),
+              ),
+            ]
+          : []),
+        ...own.map((v) => line(String(setting(v.id)?.priceTsh ?? row.priceTsh), [v.name])),
+      ];
+    });
     return `${[header, ...lines].map((cells) => cells.map(csvCell).join(",")).join("\r\n")}\r\n`;
   }
 
   async get(staff: Principal, id: string): Promise<PackageRecord> {
     const row = await this.db.package.findFirst({
-      where: {
-        id,
-        ...businessScope(staff),
-        isActive: true,
-      },
+      where: { id, ...businessScope(staff), isActive: true },
     });
     if (!row) throw packageNotFound();
     return packageRecord(row);
@@ -108,76 +164,132 @@ export class PackagesService {
 
   /**
    * Issued vouchers keep the duration and price they were sold with; a speed change reaches
-   * the routers at their next sync.
+   * the routers at their next sync. A business package only: a venue's own changes from its venue.
    */
   async update(staff: Principal, id: string, input: PackageInput) {
-    await this.get(staff, id);
+    await this.business(staff, id);
     const row = await this.db.package.update({ where: { id }, data: input });
     await this.record(staff, "package.update", row, null);
     return packageRecord(row);
   }
 
   /**
-   * Takes a package off sale for good: guests can no longer buy it, while vouchers already printed
-   * or sold keep working until their time ends and its sales stay in the figures. It is kept, so
-   * those vouchers and figures still name it.
+   * Takes a package off sale for good: guests can no longer buy it, while vouchers already sold
+   * keep working until their time ends and its sales stay in the figures. It is kept, so those
+   * vouchers and figures still name it.
    */
   async remove(staff: Principal, id: string): Promise<void> {
-    const pkg = await this.get(staff, id);
+    const pkg = await this.business(staff, id);
     await this.db.package.update({ where: { id }, data: { isActive: false } });
     await this.record(staff, "package.delete", pkg, null);
   }
 
-  /** What a venue sells: its assigned packages that are active, or every active package. */
+  /** What a venue sells, and how it has each of its business's packages and its own. */
   async soldAt(staff: Principal, venueId: string): Promise<VenuePackages> {
-    await this.venues.get(staff, venueId);
-    const assigned = await this.db.venuePackage.findMany({
-      where: { venueId },
-      select: { packageId: true },
-    });
-    const assignedPackageIds = assigned.map((a) => a.packageId);
-    const packages = await this.onSaleAt(venueId);
-    return { packages, assignedPackageIds, sellsAll: assignedPackageIds.length === 0 };
+    const venue = await this.venues.get(staff, venueId);
+    const [packages, rows] = await Promise.all([
+      this.onSaleAt(venueId),
+      this.db.package.findMany({
+        where: {
+          businessId: venue.businessId,
+          isActive: true,
+          OR: [{ venueId: null }, { venueId }],
+        },
+        include: { venues: { where: { venueId } } },
+        orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
+      }),
+    ]);
+    const catalogue = rows
+      .map(({ venues, ...row }) => ({
+        package: packageRecord(row),
+        ownPriceTsh: venues[0]?.priceTsh ? venues[0].priceTsh.toFixed(2) : null,
+        onSale: row.venueId === venueId || venues[0]?.onSale !== false,
+        own: row.venueId === venueId,
+      }))
+      .sort((a, b) => Number(a.own) - Number(b.own));
+    return { packages, catalogue };
   }
 
-  /** What a venue sells (`onSaleWhere`), for the guest portal, which has no principal. */
+  /** What a venue sells, at its prices (`onSalePackages`), for the portal, which has no principal. */
   async onSaleAt(venueId: string): Promise<PackageRecord[]> {
-    const where = await onSaleWhere(this.db, venueId);
-    if (!where) return [];
-    const rows = await this.db.package.findMany({
-      where,
-      orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
-    });
-    return rows.map(packageRecord);
+    return ((await onSalePackages(this.db, venueId)) ?? []).map(packageRecord);
   }
 
-  /** Puts a package on sale at a venue. Idempotent. */
-  async assign(staff: Principal, venueId: string, packageId: string) {
+  /** A venue's own price for a business package, or not selling it there; back to the business's. */
+  async setAtVenue(
+    staff: Principal,
+    venueId: string,
+    packageId: string,
+    input: z.infer<typeof venuePackageInput>,
+  ): Promise<VenuePackages> {
     const venue = await this.venues.get(staff, venueId);
-    const pkg = await this.get(staff, packageId);
-    // A venue sells only its own business's packages; anything else is not found.
+    const pkg = await this.business(staff, packageId);
     if (pkg.businessId !== venue.businessId) throw packageNotFound();
-    await this.db.venuePackage.upsert({
-      where: { venueId_packageId: { venueId, packageId } },
-      create: { venueId, packageId },
-      update: {},
-    });
-    await this.record(staff, "package.venue.assign", pkg, venueId, { venueId });
-    return this.soldAt(staff, venueId);
-  }
-
-  /** Takes a package off sale at a venue. Idempotent. */
-  async unassign(staff: Principal, venueId: string, packageId: string) {
-    const venue = await this.venues.get(staff, venueId);
-    const removed = await this.db.venuePackage.deleteMany({ where: { venueId, packageId } });
-    if (removed.count > 0) {
-      const pkg = { id: packageId, businessId: venue.businessId };
-      await this.record(staff, "package.venue.unassign", pkg, venueId, { venueId });
+    if (input.onSale && input.priceTsh === null) {
+      // Following the business again: nothing of the venue's own is left.
+      await this.db.venuePackage.deleteMany({ where: { venueId, packageId } });
+    } else {
+      const data = { priceTsh: input.onSale ? input.priceTsh : null, onSale: input.onSale };
+      await this.db.venuePackage.upsert({
+        where: { venueId_packageId: { venueId, packageId } },
+        create: { venueId, packageId, ...data },
+        update: data,
+      });
     }
+    await this.record(staff, "package.venue.set", pkg, venueId, {
+      onSale: String(input.onSale),
+      priceTsh: input.priceTsh === null ? "default" : String(input.priceTsh),
+    });
     return this.soldAt(staff, venueId);
   }
 
-  /** A package is its business's; putting it on or off sale also names the venue. */
+  /** A package a venue's managers add, sold only at that venue (ADR-0011, 4). */
+  async createOwn(staff: Principal, venueId: string, input: PackageInput): Promise<VenuePackages> {
+    const venue = await this.venues.get(staff, venueId);
+    const row = await this.db.package.create({
+      data: { ...input, businessId: venue.businessId, venueId },
+    });
+    await this.record(staff, "package.create", row, venueId);
+    return this.soldAt(staff, venueId);
+  }
+
+  async updateOwn(
+    staff: Principal,
+    venueId: string,
+    id: string,
+    input: PackageInput,
+  ): Promise<VenuePackages> {
+    await this.own(staff, venueId, id);
+    const row = await this.db.package.update({ where: { id }, data: input });
+    await this.record(staff, "package.update", row, venueId);
+    return this.soldAt(staff, venueId);
+  }
+
+  async removeOwn(staff: Principal, venueId: string, id: string): Promise<VenuePackages> {
+    const pkg = await this.own(staff, venueId, id);
+    await this.db.package.update({ where: { id }, data: { isActive: false } });
+    await this.record(staff, "package.delete", pkg, venueId);
+    return this.soldAt(staff, venueId);
+  }
+
+  /** A business package, as the owner keeps them; a venue's own is not found here. */
+  private async business(staff: Principal, id: string) {
+    const row = await this.db.package.findFirst({
+      where: { id, ...businessScope(staff), isActive: true, venueId: null },
+    });
+    if (!row) throw packageNotFound();
+    return row;
+  }
+
+  /** A venue's own package, within the reader's venues. */
+  private async own(staff: Principal, venueId: string, id: string) {
+    await this.venues.get(staff, venueId);
+    const row = await this.db.package.findFirst({ where: { id, venueId, isActive: true } });
+    if (!row) throw packageNotFound();
+    return row;
+  }
+
+  /** A package is its business's; a change at a venue also names the venue. */
   private async record(
     staff: Principal,
     action: AuditAction,
