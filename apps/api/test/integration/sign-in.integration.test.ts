@@ -268,8 +268,15 @@ describe("passkeys", () => {
     expect(register.status).toBe(200);
     expect(register.body).toMatchObject({
       rp: { id: "localhost", name: "HashiNet" },
+      // Filed under the address the person signs in with, whatever name the client asks for.
+      user: { name: "pk@example.com" },
       authenticatorSelection: { userVerification: "required" },
     });
+    const asked = await operator.request(
+      "GET",
+      "/api/auth/passkey/generate-register-options?name=someone-else",
+    );
+    expect(asked.body).toMatchObject({ user: { name: "pk@example.com" } });
   });
 
   test("removing a passkey asks for proof first: an email code alone cannot", async () => {

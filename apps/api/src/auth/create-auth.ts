@@ -161,6 +161,13 @@ export function createAuth({ config, db, email }: AuthDependencies) {
             throw new APIError("FORBIDDEN", proofRequired("add"));
           }
         }
+        if (ctx.path === "/passkey/generate-register-options") {
+          // The passkey's account is the email the person signs in with, whatever the client asks:
+          // a device or password manager then files it under HashiNet and that address, rather
+          // than under a display name it can match to nothing, or another site's login.
+          const current = await getSessionFromCtx(ctx);
+          if (current) return { context: { query: { ...ctx.query, name: current.user.email } } };
+        }
       }),
       after: createAuthMiddleware(async (ctx) => {
         // After hooks run for failures too, with the error as the result: a wrong code proves

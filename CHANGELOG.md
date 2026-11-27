@@ -11,6 +11,8 @@
   works" shows once the API has seen it used. Passkeys show when they were last used
   (`GET /api/me/passkeys`), and a device that already holds one says so. Short flows like this one fit
   their content (`StepDialog`'s `fit`) at the same width and place.
+- A new passkey is filed under the email its person signs in with, set by the API, so a password
+  manager saves it as HashiNet and that address rather than matching it to another site's login.
 - Account › Sign-in: every change opens a dialog over a wider, flat page. Its flows use one shared dialog
   with steps, `StepDialog`: one size and place through every step, where you are in a quiet line, an ×
   at every step, and a question first where closing costs something (the new recovery codes, a
