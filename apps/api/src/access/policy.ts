@@ -61,9 +61,9 @@ export const POLICY = {
   "sale.record": BUSINESS_ALL,
   "customer.read": BUSINESS_MANAGERS,
   "analytics.read": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
-  // Revenue across businesses: its routes are not scoped to a business, so they stay the
-  // platform's. A business reads its own takings from scoped routes (Overview, Payments).
-  "revenue.read": PLATFORM_STAFF,
+  // Sales across businesses and HashiNet's fees: its routes are not scoped to a business, so they
+  // stay the platform's. A business reads its own sales from scoped routes.
+  "analytics.platform.read": PLATFORM_ALL,
   // The captive portal (ADR-0009): what new businesses start with and the themes are the
   // platform's (ADR-0011, 3); what a business's new venues start with is changed by whoever reaches
   // the whole business; a venue's own by its owner and managers.

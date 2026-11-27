@@ -1125,19 +1125,6 @@ export type BusinessDay = string;
  */
 export type RevenueSource = "mobile_money" | "card" | "cash";
 
-/** `GET /api/analytics/summary`, over the caller's venues. */
-export interface AnalyticsSummary {
-  activeSessions: number;
-  totalSessions: number;
-  devices: number;
-  weeklyUploadBytes: number;
-  weeklyDownloadBytes: number;
-  allTimeUploadBytes: number;
-  allTimeDownloadBytes: number;
-  /** This business month's revenue; null for managers, who are not shown revenue. */
-  revenueThisMonthTsh: DecimalString | null;
-}
-
 /**
  * `GET /api/analytics/today` (a business's own): today so far, by the Dar es Salaam day, over the
  * caller's venues or one of them. Sales follow the one definition of revenue.
@@ -1179,72 +1166,6 @@ export interface TodaySummary {
   }[];
 }
 
-/** `GET /api/analytics/daily-usage`: every business day in the range, including empty ones. */
-export interface DailyUsage {
-  days: {
-    date: BusinessDay;
-    uploadBytes: number;
-    downloadBytes: number;
-    /** Null for managers. */
-    revenueTsh: DecimalString | null;
-  }[];
-}
-
-/** `GET /api/analytics/monthly` (admins): the last six business months, oldest first. */
-export interface MonthlyTrend {
-  months: { month: BusinessMonth; revenueTsh: DecimalString; newDevices: number }[];
-}
-
-export interface Share {
-  count: number;
-  /** Whole percent of the total. */
-  percentage: number;
-}
-
-/** `GET /api/analytics/packages`: active vouchers by package, in the caller's venues. */
-export interface PackageShares {
-  packages: (Share & { packageId: string | null; packageName: string | null })[];
-}
-
-/** `GET /api/analytics/devices`: devices by the type they reported, in the caller's venues. */
-export interface DeviceTypeShares {
-  types: (Share & { type: string })[];
-}
-
-/** `GET /api/analytics/venues` (admins): the ten venues with the most revenue. */
-export interface TopVenues {
-  venues: { venueId: string; venueName: string; devices: number; revenueTsh: DecimalString }[];
-}
-
-/** `GET /api/revenue/summary` (admins): sales less refunds (ADR-0017, 8). */
-export interface RevenueSummary {
-  month: BusinessMonth;
-  today: DecimalString;
-  thisMonth: DecimalString;
-  lastMonth: DecimalString;
-  allTime: DecimalString;
-  /** Whole percent against the month before, or null when that month had none. */
-  monthGrowthPct: number | null;
-  bySource: Record<RevenueSource, { allTime: DecimalString; month: DecimalString }>;
-}
-
-/** `GET /api/revenue/by-package` (admins). */
-export interface RevenueByPackage {
-  month: BusinessMonth;
-  packages: {
-    packageId: string | null;
-    packageName: string | null;
-    revenueTsh: DecimalString;
-    sales: number;
-  }[];
-}
-
-/** `GET /api/revenue/by-venue` (admins). */
-export interface RevenueByVenue {
-  month: BusinessMonth;
-  venues: { venueId: string | null; venueName: string | null; revenueTsh: DecimalString }[];
-}
-
 /**
  * `GET /api/payments/received` (a business's own): what guests paid in a month, by the one
  * definition of revenue: every sale recorded or paid online, and every printed voucher once a
@@ -1279,18 +1200,126 @@ export interface PaymentsReceived {
   nextBefore: string | null;
 }
 
-/** `GET /api/revenue/transactions` (admins): the month's latest 50. */
-export interface RevenueTransactions {
-  month: BusinessMonth;
-  transactions: {
-    id: string;
-    source: RevenueSource;
-    amountTsh: DecimalString;
-    packageName: string | null;
-    venueName: string | null;
-    /** The provider's reference for a payment; null for a printed card. Never a phone. */
-    reference: string | null;
-    occurredAt: Timestamp;
+/** Analytics' Range (prototype `anFilters`): the last few, the current one, or chosen dates. */
+export type PeriodRange = "last" | "current" | "custom";
+/** A named period: Last offers day (yesterday) to year; Current offers day to year. */
+export type PeriodName = "day" | "7d" | "30d" | "90d" | "week" | "month" | "quarter" | "year";
+/** How a chart groups its period. */
+export type AnalyticsShow = "hour" | "day" | "week" | "month";
+
+/**
+ * The period a report covers, as the API decides it: its first and last business day, the day its
+ * figures run to (today at the latest), the units it may show and the one shown, and the chart's
+ * buckets: each one's first business day (or `YYYY-MM-DDTHH` for an hour) and last day. A bucket
+ * after today is not `past`, and has no figure.
+ */
+export interface AnalyticsPeriod {
+  range: PeriodRange;
+  /** Null for a custom period. */
+  period: PeriodName | null;
+  start: BusinessDay;
+  end: BusinessDay;
+  through: BusinessDay;
+  shows: AnalyticsShow[];
+  show: AnalyticsShow;
+  buckets: { start: string; last: BusinessDay; past: boolean }[];
+}
+
+/** A chart's values, one per bucket of the period; null after today. */
+export type Series = (number | null)[];
+
+/**
+ * `GET /api/analytics/sales` (a business's own, or one venue's): its takings by the one definition
+ * of revenue, net of refunds, as Payments counts them.
+ */
+export interface SalesReport {
+  period: AnalyticsPeriod;
+  /** Nothing sold or refunded in the period. */
+  empty: boolean;
+  takingsTsh: DecimalString;
+  /** Vouchers sold: sales, not refunds. */
+  vouchers: number;
+  /** What a voucher sold for on average, before refunds; null with none sold. */
+  averageSaleTsh: DecimalString | null;
+  /** The package sold most; null with none sold. */
+  bestSeller: { name: string; vouchers: number } | null;
+  /** Net takings per bucket, in whole shillings. */
+  series: Series;
+  /** Each venue in the reader's scope, the most taken first. */
+  venues: {
+    venueId: string;
+    name: string;
+    vouchers: number;
+    takingsTsh: DecimalString;
+    share: number;
+  }[];
+  /** What guests buy: each package's vouchers and net takings, the most sold first. */
+  packages: { name: string; vouchers: number; takingsTsh: DecimalString }[];
+}
+
+/** `GET /api/analytics/platform-sales` (HashiNet's team): sales across businesses and the fees. */
+export interface PlatformSalesReport {
+  period: AnalyticsPeriod;
+  empty: boolean;
+  salesTsh: DecimalString;
+  /**
+   * What HashiNet's fee on those sales comes to: each venue's net sales in the period by its
+   * business's own fee terms, before any monthly minimum.
+   */
+  feesTsh: DecimalString;
+  venuesServing: number;
+  venuesNotServing: number;
+  /** Businesses created in the period, newest first. */
+  newBusinesses: { id: string; name: string }[];
+  series: Series;
+  businesses: {
+    businessId: string;
+    name: string;
+    venues: number;
+    salesTsh: DecimalString;
+    share: number;
+    feeTsh: DecimalString;
+  }[];
+}
+
+/**
+ * `GET /api/analytics/usage`: how the WiFi was used, from the sessions the routers report, over the
+ * reader's venues (every venue for HashiNet's team) or one of them.
+ */
+export interface UsageReport {
+  period: AnalyticsPeriod;
+  /** No session started in the period. */
+  empty: boolean;
+  /** Distinct devices with a session started in the period. */
+  devices: number;
+  /** Of those, the ones seen on two or more business days. */
+  returning: number;
+  sessions: number;
+  /** The average session, from its start to its end (or now); null with none. */
+  averageSessionMinutes: number | null;
+  /** Every session's data, counted on the day it started. */
+  dataBytes: number;
+  /** Sessions started per bucket. */
+  series: Series;
+  /**
+   * Peak hours: for each weekday (Monday first) and hour from 06:00 to 21:00, the most devices
+   * online at once in that hour on any one day of the period.
+   */
+  peak: {
+    hours: number[];
+    days: number[][];
+    max: number;
+    at: { weekday: number; hour: number } | null;
+  };
+  /** Each venue, the most sessions first; `business` for HashiNet's team. */
+  venues: {
+    venueId: string;
+    name: string;
+    business: string | null;
+    devices: number;
+    sessions: number;
+    dataBytes: number;
+    onlineNow: number;
   }[];
 }
 

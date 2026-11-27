@@ -573,7 +573,10 @@ describe("sales and records", () => {
     await platformMember(t.db, { email: "admin@example.com", name: "Admin", role: "admin" });
     const admin = browser(api);
     await enrollAuthenticatorFor(api, admin, "admin@example.com");
-    const revenue = await admin.request("GET", "/api/revenue/summary");
-    expect(JSON.stringify(revenue.body)).toContain("2000");
+    const today = await admin.request(
+      "GET",
+      "/api/analytics/platform-sales?range=current&period=day",
+    );
+    expect(today.body).toMatchObject({ salesTsh: "2000.00" });
   });
 });

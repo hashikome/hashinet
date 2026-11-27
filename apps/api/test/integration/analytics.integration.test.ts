@@ -140,171 +140,206 @@ async function october(operatorId: string | null) {
 
 type Body = Record<string, unknown>;
 
-describe("revenue", () => {
-  test("one definition of revenue, by the Dar es Salaam month", async () => {
-    const c = await admin();
-    await october(null);
-    const summary = (await c.request("GET", "/api/revenue/summary?month=2026-10")).body as Body;
-    expect(summary).toMatchObject({
-      month: "2026-10",
-      thisMonth: "9000.00",
-      lastMonth: "4000.00",
-      allTime: "13000.00",
-      monthGrowthPct: 125,
-      bySource: {
-        mobile_money: { allTime: "9000.00", month: "5000.00" },
-        cash: { allTime: "4000.00", month: "4000.00" },
-        card: { allTime: "0.00", month: "0.00" },
-      },
+/** The test business's owner, signed in with an authenticator app. */
+async function owner(): Promise<Client> {
+  await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
+  const c = browser(api);
+  await enrollAuthenticatorFor(api, c, "owner@example.com");
+  return c;
+}
+
+const OCTOBER = "range=custom&from=2026-10-01&to=2026-10-31";
+
+describe("sales", () => {
+  test("October by the Dar es Salaam day: net of refunds, by venue and package", async () => {
+    const c = await owner();
+    const { home, day } = await october(null);
+    // A refund made in October nets out of its takings, never out of vouchers sold.
+    const sold = await t.db.payment.findFirstOrThrow({
+      where: { venueId: home.id, provider: "cash" },
     });
-
-    const byVenue = (await c.request("GET", "/api/revenue/by-venue?month=2026-10")).body as Body;
-    expect(byVenue.venues).toEqual([
-      expect.objectContaining({ venueName: "Other", revenueTsh: "5000.00" }),
-      expect.objectContaining({ venueName: "Home", revenueTsh: "4000.00" }),
-    ]);
-    const byPackage = (await c.request("GET", "/api/revenue/by-package?month=2026-10"))
-      .body as Body;
-    expect(byPackage.packages).toEqual([
-      expect.objectContaining({ packageName: "Day", revenueTsh: "9000.00", sales: 4 }),
-    ]);
-
-    const tx = (await c.request("GET", "/api/revenue/transactions?month=2026-10")).body as {
-      transactions: Body[];
-    };
-    expect(tx.transactions.map((x) => x.amountTsh)).toEqual([
-      "2000.00",
-      "5000.00",
-      "1000.00",
-      "1000.00",
-    ]);
-    expect(JSON.stringify(tx)).not.toContain("+255");
-    expect(tx.transactions[0]).toMatchObject({ source: "cash", reference: "REF-1" });
-    expect(tx.transactions.at(-1)).toMatchObject({ source: "cash", reference: null });
-
-    const bad = await c.request("GET", "/api/revenue/summary?month=2026-13");
-    expect(bad.status).toBe(400);
-  });
-
-  test("daily usage covers every day, and revenue on days without sessions", async () => {
-    const c = await admin();
-    const { home } = await october(null);
-    await t.db.wifiSession.create({
+    await t.db.refund.create({
       data: {
+        voucherId: sold.voucherId ?? "",
+        paymentId: sold.id,
         venueId: home.id,
-        macAddress: "AA:BB:CC:00:00:01",
-        status: "disconnected",
-        startedAt: new Date("2026-10-15T08:00:00Z"),
-        downloadBytes: 1_000_000n,
+        packageId: day.id,
+        amountTsh: 1000,
+        method: "cash",
+        createdAt: new Date("2026-10-16T09:00:00Z"),
       },
     });
-    const reply = await c.request(
-      "GET",
-      "/api/analytics/daily-usage?from=2026-10-01&to=2026-10-31",
-    );
-    const days = (reply.body as { days: Body[] }).days;
-    expect(days).toHaveLength(31);
-    const byDate = new Map(days.map((d) => [d.date, d]));
-    expect(byDate.get("2026-10-01")).toMatchObject({ revenueTsh: "1000.00", downloadBytes: 0 });
-    expect(byDate.get("2026-10-15")).toMatchObject({
-      revenueTsh: "1000.00",
-      downloadBytes: 1_000_000,
+    const reply = await c.request("GET", `/api/analytics/sales?${OCTOBER}&show=week`);
+    expect(reply.status).toBe(200);
+    const r = reply.body as Body & { series: number[]; period: { buckets: { start: string }[] } };
+    // 1,000 at 21:30 UTC on 30 September is 1 October here; September's 4,000 is not October's.
+    expect(r).toMatchObject({
+      empty: false,
+      takingsTsh: "8000.00",
+      vouchers: 4,
+      averageSaleTsh: "2250.00",
+      bestSeller: { name: "Day", vouchers: 4 },
     });
-    expect(byDate.get("2026-10-31")).toMatchObject({ revenueTsh: "2000.00" });
-    expect(byDate.get("2026-10-02")).toMatchObject({ revenueTsh: "0.00", downloadBytes: 0 });
+    expect(r.period.buckets.map((b) => b.start)).toEqual([
+      "2026-10-01",
+      "2026-10-08",
+      "2026-10-15",
+      "2026-10-22",
+      "2026-10-29",
+    ]);
+    expect(r.series).toEqual([1000, 0, 5000, 0, 2000]);
+    expect(r.venues).toEqual([
+      { venueId: expect.any(String), name: "Other", vouchers: 1, takingsTsh: "5000.00", share: 63 },
+      { venueId: home.id, name: "Home", vouchers: 3, takingsTsh: "3000.00", share: 38 },
+    ]);
+    expect(r.packages).toEqual([{ name: "Day", vouchers: 4, takingsTsh: "8000.00" }]);
 
-    const reversed = await c.request(
-      "GET",
-      "/api/analytics/daily-usage?from=2026-10-31&to=2026-10-01",
-    );
-    expect(reversed.status).toBe(400);
+    // One venue, for its page.
+    const one = await c.request("GET", `/api/analytics/sales?${OCTOBER}&venueId=${home.id}`);
+    expect((one.body as Body).takingsTsh).toBe("3000.00");
   });
 
-  test("the monthly trend has six months, and new devices by month", async () => {
-    const c = await admin();
-    await october(null);
-    await t.db.device.create({ data: { macAddress: "AA:BB:CC:00:00:02" } });
-    const months = ((await c.request("GET", "/api/analytics/monthly")).body as { months: Body[] })
-      .months;
-    expect(months).toHaveLength(6);
-    expect(months.at(-1)).toMatchObject({ newDevices: 1 });
-    expect(months.map((m) => m.month)).toEqual([...months.map((m) => m.month)].sort());
+  test("a venue manager sees only their venues; HashiNet's team uses its own report", async () => {
+    const m = await manager("m@example.com");
+    const { home, other } = await october(m.id);
+    const reply = await m.client.request("GET", `/api/analytics/sales?${OCTOBER}`);
+    expect((reply.body as Body).takingsTsh).toBe("4000.00");
+    expect(((reply.body as Body).venues as Body[]).map((v) => v.name)).toEqual(["Home"]);
+    expect(
+      (await m.client.request("GET", `/api/analytics/sales?${OCTOBER}&venueId=${other.id}`)).status,
+    ).toBe(404);
+    expect((await m.client.request("GET", `/api/analytics/platform-sales?${OCTOBER}`)).status).toBe(
+      403,
+    );
+    const a = await admin();
+    expect((await a.request("GET", `/api/analytics/sales?${OCTOBER}`)).status).toBe(403);
+    expect(home.id).toBeTruthy();
+  });
+
+  test("a period that can't be is refused, field by field", async () => {
+    const c = await owner();
+    const details = async (q: string) => {
+      const reply = await c.request("GET", `/api/analytics/sales?${q}`);
+      expect(reply.status).toBe(400);
+      return Object.keys((reply.body as { details: object }).details);
+    };
+    expect(await details("range=custom&from=2025-01-01&to=2026-06-01")).toEqual(["to"]);
+    expect(await details("range=custom&from=2026-10-01")).toEqual(["to"]);
+    expect(await details("range=current&period=7d")).toEqual(["period"]);
+    expect(await details(`${OCTOBER}&show=hour`)).toEqual(["show"]);
   });
 });
 
-describe("analytics for a manager", () => {
-  test("usage over their venues, no revenue, and no admin reports", async () => {
-    const own = await manager("own@example.com");
-    const { home, other, day } = await october(own.id);
-    const phone = await t.db.device.create({
-      data: { macAddress: "AA:BB:CC:00:00:03", deviceType: "Phone" },
+describe("platform sales", () => {
+  test("across businesses, with HashiNet's fee by each business's own terms", async () => {
+    const a = await admin();
+    await october(null);
+    const mine = await testBusinessId(t.db);
+    // The test business pays 5% on sales; another, on its own terms, 10%.
+    await t.db.business.update({
+      where: { id: mine },
+      data: { feeRateBp: 500, feeLowerRateBp: 250, feeLowerRateAboveTsh: 2_000_000 },
     });
-    const laptop = await t.db.device.create({
-      data: { macAddress: "AA:BB:CC:00:00:04", deviceType: "laptop" },
+    const otherId = await testBusinessId(t.db, "Other Business");
+    await t.db.business.update({
+      where: { id: otherId },
+      data: { feeRateBp: 1000, feeLowerRateBp: 1000, feeLowerRateAboveTsh: 2_000_000 },
     });
-    for (const [venueId, deviceId] of [
-      [home.id, phone.id],
-      [other.id, laptop.id],
-    ] as const) {
-      await t.db.wifiSession.create({
-        data: { venueId, deviceId, macAddress: "AA:BB", status: "connected", uploadBytes: 10n },
-      });
-    }
-    await t.db.voucher.create({
+    const far = await t.db.venue.create({
+      data: { businessId: otherId, name: "Far", region: "Dar es Salaam", area: "Mwanza" },
+    });
+    await t.db.payment.create({
       data: {
-        venueId: other.id,
-        packageId: day.id,
-        code: "OTHER-1",
-        status: "active",
-        priceTsh: 1000,
+        provider: "cash",
+        status: "paid",
+        paidAt: new Date("2026-10-10T09:00:00Z"),
+        amountTsh: 20000,
+        venueId: far.id,
       },
     });
-
-    const summary = (await own.client.request("GET", "/api/analytics/summary")).body as Body;
-    expect(summary).toMatchObject({
-      activeSessions: 1,
-      totalSessions: 1,
-      devices: 1,
-      allTimeUploadBytes: 10,
-      revenueThisMonthTsh: null,
-    });
-    const days = (
-      (await own.client.request("GET", "/api/analytics/daily-usage?from=2026-10-01&to=2026-10-02"))
-        .body as { days: Body[] }
-    ).days;
-    expect(days.every((d) => d.revenueTsh === null)).toBe(true);
-
-    const types = (await own.client.request("GET", "/api/analytics/devices")).body as Body;
-    expect(types.types).toEqual([{ type: "phone", count: 1, percentage: 100 }]);
-    const shares = (await own.client.request("GET", "/api/analytics/packages")).body as Body;
-    // Home's one active card; Other's is not theirs.
-    expect(shares.packages).toEqual([
-      expect.objectContaining({ packageName: "Day", count: 1, percentage: 100 }),
+    const reply = await a.request("GET", `/api/analytics/platform-sales?${OCTOBER}`);
+    expect(reply.status).toBe(200);
+    const r = reply.body as Body & { businesses: Body[] };
+    // 9,000 at 5% by venue (Home 4,000: 200; Other 5,000: 250) and 20,000 at 10%: 2,000.
+    expect(r).toMatchObject({ salesTsh: "29000.00", feesTsh: "2450.00", venuesServing: 0 });
+    expect(r.businesses.map((b) => [b.name, b.salesTsh, b.feeTsh, b.share])).toEqual([
+      ["Other Business", "20000.00", "2000.00", 69],
+      ["Test Business", "9000.00", "450.00", 31],
     ]);
+  });
+});
 
-    for (const path of [
-      "/api/analytics/monthly",
-      "/api/analytics/venues",
-      "/api/revenue/summary",
-      "/api/revenue/by-package",
-      "/api/revenue/by-venue",
-      "/api/revenue/transactions",
-    ]) {
-      expect({ path, status: (await own.client.request("GET", path)).status }).toEqual({
-        path,
-        status: 403,
+describe("usage", () => {
+  test("devices, sessions, data and peak hours from the sessions, over the reader's venues", async () => {
+    const c = await owner();
+    const { home, other } = await october(null);
+    const session = (
+      venueId: string,
+      mac: string,
+      started: string,
+      ended: string | null,
+      bytes: number,
+    ) =>
+      t.db.wifiSession.create({
+        data: {
+          venueId,
+          macAddress: mac,
+          startedAt: new Date(started),
+          endedAt: ended === null ? null : new Date(ended),
+          downloadBytes: BigInt(bytes),
+          status: ended === null ? "connected" : "disconnected",
+        },
       });
-    }
-
-    const top = (await (await admin()).request("GET", "/api/analytics/venues")).body as {
+    // Saturday 3 October, 19:10 to 20:40 in Dar es Salaam: two devices at once at 19:00 and 20:00.
+    await session(
+      home.id,
+      "AA:00:00:00:00:01",
+      "2026-10-03T16:10:00Z",
+      "2026-10-03T17:40:00Z",
+      1000,
+    );
+    await session(
+      home.id,
+      "AA:00:00:00:00:02",
+      "2026-10-03T16:30:00Z",
+      "2026-10-03T17:10:00Z",
+      500,
+    );
+    // The first device again on another day, across the end of the 4th into the 5th here.
+    await session(
+      other.id,
+      "AA:00:00:00:00:01",
+      "2026-10-04T20:30:00Z",
+      "2026-10-04T21:30:00Z",
+      250,
+    );
+    const reply = await c.request("GET", `/api/analytics/usage?${OCTOBER}&show=day`);
+    expect(reply.status).toBe(200);
+    const r = reply.body as Body & {
+      series: number[];
+      peak: { days: number[][]; max: number; at: Body };
       venues: Body[];
     };
-    expect(top.venues.map((v) => [v.venueName, v.revenueTsh, v.devices])).toEqual(
-      [
-        ["Other", "5000.00", 1],
-        ["Home", "8000.00", 1],
-      ].sort((a, b) => Number(b[1]) - Number(a[1])),
-    );
+    expect(r).toMatchObject({
+      empty: false,
+      devices: 2,
+      returning: 1,
+      sessions: 3,
+      dataBytes: 1750,
+    });
+    // Started on the 3rd (two) and the 4th here (23:30 local), one each.
+    expect(r.series.slice(0, 5)).toEqual([0, 0, 2, 1, 0]);
+    expect(r.peak.max).toBe(2);
+    expect(r.peak.at).toEqual({ weekday: 5, hour: 19 });
+    expect(r.venues.map((v) => [v.name, v.sessions, v.devices])).toEqual([
+      ["Home", 2, 2],
+      ["Other", 1, 1],
+    ]);
+
+    const m = await manager("m@example.com");
+    await t.db.membershipVenue.create({ data: { membershipId: m.id, venueId: other.id } });
+    const theirs = await m.client.request("GET", `/api/analytics/usage?${OCTOBER}`);
+    expect(theirs.body).toMatchObject({ sessions: 1, devices: 1 });
   });
 });
 
