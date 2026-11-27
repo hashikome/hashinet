@@ -532,7 +532,25 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   Accepted live: Paul's home's first monthly invoice is issued on 1 December (its router not yet
   serving, so 5% of its net sales and no minimum); Asha records its payment; the owner sees it paid.
   An onboarding charge can be confirmed, invoiced and paid live before then.
-- [ ] Slice 5: many venues.
+- [ ] Slice 5: many venues. Started 27 November 2026 on the local branch `slice-5`, slice 4's live
+  acceptance (1 December) and slice 2's router checks still pending; neither blocks it. The
+  prototype's slice-5 screens were walked again as Neema (owner), Grace (business manager), Daudi
+  (venue manager) and Musa (operator): no script errors; a venue manager's menu has no way to their
+  venue's page, and the prototype offers them Edit venue while the policy keeps `venue.update` to
+  the whole business (asked of the owner). Steps, each a journey:
+  - [ ] (a) Venues: the business's Venues list and each venue's page (its day, its way to pay, Edit
+    venue), the owner's Add a venue with how its router should come (onboarding, slice 3), and every
+    role's way to their venues.
+  - [ ] (b) Sites, open before paying, with extra-site slots: sites as rows with their slots, a slot
+    invoice on the owner's bill issue, the venue's routers updated on add, remove and payment; the
+    Blocked list waits for the router side.
+  - [ ] (c) Prices per venue and venue-only packages: a venue's own price, a package a venue manager
+    adds for their venues, and the on-sale rule that keeps it there.
+  - [ ] (d) Captive portal (ADR-0009): the business's own branding between the venue's and HashiNet's
+    defaults, Settings › Captive portal with its preview, and the platform's defaults.
+  - [ ] (e) Settings › General: the business profile with its logo (business-scopes M5).
+  - [ ] (f) Analytics: usage and sales, computed by the API.
+  - [ ] (g) Each role's screens reviewed at 390px first; finish-work; release; acceptance.
 - [ ] Slice 6: online (held until the providers' credentials exist).
 - [ ] Slice 7: one voucher, devices online at once, through RADIUS (ADR-0015), with its switch PIN.
 
