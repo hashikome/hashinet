@@ -114,7 +114,6 @@ export function venueRecord(
   return {
     id: row.id,
     name: row.name,
-    allowedSites: row.allowedSites,
     businessId: row.businessId,
     region: row.region as Region,
     area: row.area,

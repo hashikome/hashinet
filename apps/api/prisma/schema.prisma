@@ -387,6 +387,7 @@ model Membership {
   billPayments     BillPayment[]
   paymentWays      PaymentWay[]
   accessChanges    ServiceAccessChange[]
+  venueSites       VenueSite[]
 
   @@unique([userId, scope, businessId])
   @@index([businessId])
@@ -456,6 +457,8 @@ model BillingSetting {
   feeLowerRateBp       Int      @map("fee_lower_rate_bp")
   feeLowerRateAboveTsh Int      @map("fee_lower_rate_above_tsh")
   feeMinimumTsh        Int      @map("fee_minimum_tsh")
+  /// What a venue's second and each further site open before paying costs, once.
+  siteSlotTsh          Int      @default(10000) @map("site_slot_tsh")
   /// HashiNet's Lipa namba, and the name a payment to it shows.
   payMobileMoney       String?  @map("pay_mobile_money") @db.VarChar(40)
   payMobileMoneyName   String?  @map("pay_mobile_money_name") @db.VarChar(160)
@@ -493,18 +496,16 @@ model PlatformDefaultPackage {
 }
 
 model Venue {
-  id           String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  businessId   String      @map("business_id") @db.Uuid
-  name         String      @db.VarChar(180)
-  /// Host names guests can open before paying, such as the venue's own website.
-  allowedSites String[]    @default([]) @map("allowed_sites")
+  id         String      @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  businessId String      @map("business_id") @db.Uuid
+  name       String      @db.VarChar(180)
   /// One of Tanzania's 31 regions, chosen from the closed list in `@hashinet/types`.
-  region       String      @db.VarChar(40)
+  region     String      @db.VarChar(40)
   /// The area or street, as the owner types it, such as Mjimwema, Kigamboni.
-  area         String      @db.VarChar(160)
-  status       VenueStatus @default(active)
-  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  area       String      @db.VarChar(160)
+  status     VenueStatus @default(active)
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   business     Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   members      MembershipVenue[]
@@ -523,6 +524,8 @@ model Venue {
   refunds      Refund[]
   invoices     Invoice[]
   invoiceLines InvoiceLine[]
+  venueSites   VenueSite[]
+  siteSlots    SiteSlot[]
 
   @@index([businessId])
   @@index([status])
@@ -1270,6 +1273,8 @@ model RouterOutage {
 enum InvoiceKind {
   monthly_fees
   onboarding
+  /// An extra site a venue opens before paying, once (slice 5).
+  site_slot
 
   @@map("invoice_kind")
 }
@@ -1298,6 +1303,7 @@ model Invoice {
   venue       Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
   lines       InvoiceLine[]
   allocations BillAllocation[]
+  siteSlot    SiteSlot?
 
   @@unique([businessId, period])
   @@index([businessId, issuedAt])
@@ -1433,4 +1439,40 @@ model ServiceAccessChange {
 
   @@index([businessId, at])
   @@map("service_access_changes")
+}
+
+/// A site guests open before paying at a venue, such as its own website. The first comes with the
+/// venue; each more opens once its slot is paid for (slice 5). Only open sites reach its routers.
+model VenueSite {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  venueId   String   @map("venue_id") @db.Uuid
+  /// A host name only, such as mamaneemalodge.co.tz.
+  host      String   @db.VarChar(253)
+  /// Why it is open, for the business's people.
+  note      String?  @db.VarChar(120)
+  addedById String?  @map("added_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  venue   Venue       @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  addedBy Membership? @relation(fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@unique([venueId, host])
+  @@index([venueId, createdAt])
+  @@map("venue_sites")
+}
+
+/// A venue's room for one more site open before paying, bought once through its own invoice, or
+/// granted (no invoice) to a site open before slots existed. A paid slot stays with the venue
+/// when its site is removed.
+model SiteSlot {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  venueId   String   @map("venue_id") @db.Uuid
+  invoiceId String?  @unique @map("invoice_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  venue   Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@index([venueId])
+  @@map("site_slots")
 }

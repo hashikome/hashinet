@@ -30,8 +30,11 @@ export const monthName = (period: string) => longDay(`${period}-01`).replace(/^1
 
 /** What an invoice is for, in a sentence's words. */
 export function invoiceSubject(invoice: InvoiceRecord): string {
-  return invoice.kind === "monthly_fees" && invoice.period
-    ? `HashiNet's fees for ${monthName(invoice.period)}`
+  if (invoice.kind === "monthly_fees" && invoice.period) {
+    return `HashiNet's fees for ${monthName(invoice.period)}`;
+  }
+  return invoice.kind === "site_slot"
+    ? `${invoice.venueName ?? "Your venue"}'s extra site`
     : `${invoice.venueName ?? "Your venue"}'s onboarding`;
 }
 

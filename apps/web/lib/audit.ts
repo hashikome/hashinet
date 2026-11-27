@@ -12,6 +12,8 @@ export const ACTION_NAME: Record<AuditAction, string> = {
   "venue.delete": "Removed a venue",
   "venue.payment_details.update": "Changed payment details",
   "venue.payment_way.choose": "Chose a venue's way to pay",
+  "venue.site.add": "Added a site open before paying",
+  "venue.site.remove": "Removed a site open before paying",
   "payment_way.create": "Added a way to pay",
   "payment_way.update": "Changed a way to pay",
   "payment_way.delete": "Removed a way to pay",

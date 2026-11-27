@@ -588,6 +588,7 @@ describe("what the review found", () => {
     await enrollAuthenticatorFor(api, admin, "admin@example.com");
     const refused = await admin.request("PUT", "/api/billing/settings", {
       terms: { rateBp: 250, lowerRateBp: 500, lowerRateAboveTsh: 2_000_000, minimumTsh: 5_000 },
+      siteSlotTsh: 10_000,
       payTo: {
         mobileMoney: "",
         mobileMoneyName: "",

@@ -24,8 +24,9 @@ export const STATE: Record<InvoiceState, [string, PillKind]> = {
 
 /** What an invoice is for: "November 2026 fees", "Bahari Beach Bar onboarding". */
 export function invoiceWhat(i: InvoiceRecord): string {
-  return i.kind === "monthly_fees" && i.period
-    ? `${monthName(i.period)} fees`
+  if (i.kind === "monthly_fees" && i.period) return `${monthName(i.period)} fees`;
+  return i.kind === "site_slot"
+    ? `${i.venueName ?? "A venue"}'s extra site`
     : `${i.venueName ?? "A venue's"} onboarding`;
 }
 

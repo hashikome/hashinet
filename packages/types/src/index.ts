@@ -208,6 +208,8 @@ export interface HashiNetIssuer {
 /** `GET` and `PUT /api/billing/settings`: the terms new businesses start with, and where to pay. */
 export interface BillingSettingsRecord {
   terms: FeeTerms;
+  /** What a venue's second and each further site open before paying costs, once. */
+  siteSlotTsh: number;
   payTo: HashiNetPayTo;
   issuer: HashiNetIssuer;
   /** When the platform admin last saved; null while today's terms apply. */
@@ -219,7 +221,7 @@ export interface BillingSettingsResponse {
 }
 
 /** What a business owes HashiNet for: a month's fees, or a venue's onboarding. */
-export type InvoiceKind = "monthly_fees" | "onboarding";
+export type InvoiceKind = "monthly_fees" | "onboarding" | "site_slot";
 
 /**
  * Where an invoice stands: `overdue` once its due date has passed with anything left to pay,
@@ -262,7 +264,7 @@ export interface InvoiceRecord {
   kind: InvoiceKind;
   /** The month billed (YYYY-MM), for a month's fees. */
   period: string | null;
-  /** The venue onboarded, for an onboarding charge. */
+  /** The venue a one-off charge is for: its onboarding, or an extra site. */
   venueName: string | null;
   issuedAt: Timestamp;
   /** The last day to pay, YYYY-MM-DD. */
@@ -765,8 +767,6 @@ export type VenueSelling =
 export interface VenueRecord {
   id: string;
   name: string;
-  /** Host names guests can open before paying. */
-  allowedSites: string[];
   businessId: string;
   region: Region;
   /** The area or street, as the owner types it. */
@@ -789,6 +789,32 @@ export interface VenueList {
 /** `GET` and `PUT /api/venues/:id`, and `POST /api/venues`. */
 export interface VenueResponse {
   venue: VenueRecord;
+}
+
+/**
+ * A site guests open before paying at a venue (slice 5): open, or waiting for its slot's payment.
+ * Its cost: the first comes with the venue; each more is a slot paid for once, or granted to a site
+ * open before slots existed.
+ */
+export interface VenueSiteRecord {
+  id: string;
+  host: string;
+  note: string | null;
+  state: "open" | "waiting";
+  cost: "included" | "paid" | "due";
+  /** What its slot costs; null when included. */
+  slotTsh: number | null;
+  /** The invoice for its slot, while it waits for payment; the owner downloads it. */
+  invoice: { id: string; number: string } | null;
+  addedAt: Timestamp;
+  addedBy: string | null;
+}
+
+/** `GET /api/venues/:id/sites`: its sites, in the order they were added. */
+export interface VenueSites {
+  sites: VenueSiteRecord[];
+  /** What adding one more open site costs: 0 while it comes with the venue or a slot is free. */
+  nextCostTsh: number;
 }
 
 /** `GET /api/venues/:id`: the venue, and who runs it: its venue managers, or its owner when none. */
@@ -1233,6 +1259,8 @@ export const AUDIT_ACTIONS = [
   // Recorded before ways to pay moved to the business; kept so those rows still read.
   "venue.payment_details.update",
   "venue.payment_way.choose",
+  "venue.site.add",
+  "venue.site.remove",
   "payment_way.create",
   "payment_way.update",
   "payment_way.delete",

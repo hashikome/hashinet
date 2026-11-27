@@ -17,6 +17,9 @@ export const DEFAULT_FEE_TERMS: FeeTerms = {
 
 const ACCOUNT_NAME = "Shikome Technology Limited";
 
+/** A venue's second and each further site open before paying, once (slice 5). */
+const DEFAULT_SITE_SLOT_TSH = 10_000;
+
 const basisPoints = z
   .number("must be a number")
   .int("must have at most two decimal places")
@@ -43,6 +46,7 @@ export const billingSettingsInput = z.object({
       path: ["lowerRateBp"],
       message: "can't be above the fee",
     }),
+  siteSlotTsh: shillings,
   payTo: z.object({
     mobileMoney: optional(40),
     mobileMoneyName: optional(160),
@@ -66,6 +70,7 @@ function record(row: BillingSetting | null): BillingSettingsRecord {
   if (row === null) {
     return {
       terms: DEFAULT_FEE_TERMS,
+      siteSlotTsh: DEFAULT_SITE_SLOT_TSH,
       payTo: {
         mobileMoney: null,
         mobileMoneyName: null,
@@ -81,6 +86,7 @@ function record(row: BillingSetting | null): BillingSettingsRecord {
   }
   return {
     terms: businessFeeTerms(row),
+    siteSlotTsh: row.siteSlotTsh,
     payTo: {
       mobileMoney: row.payMobileMoney,
       mobileMoneyName: row.payMobileMoneyName,
@@ -118,6 +124,7 @@ export class BillingSettings {
     const before = await this.get();
     const data = {
       ...feeTermsColumns(input.terms),
+      siteSlotTsh: input.siteSlotTsh,
       payMobileMoney: input.payTo.mobileMoney,
       payMobileMoneyName: input.payTo.mobileMoneyName,
       payBankName: input.payTo.bankName,
@@ -140,11 +147,13 @@ export class BillingSettings {
     // Only what changed, so the log says what the admin did.
     const was: Record<string, string | number | null> = {
       ...before.terms,
+      siteSlotTsh: before.siteSlotTsh,
       ...before.payTo,
       ...before.issuer,
     };
     const now: Record<string, string | number | null> = {
       ...after.terms,
+      siteSlotTsh: after.siteSlotTsh,
       ...after.payTo,
       ...after.issuer,
     };

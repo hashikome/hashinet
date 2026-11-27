@@ -178,7 +178,7 @@ export function invoicePdf(
   // The lines, what came in, and what is left.
   y += 18;
   doc.font("regular").fontSize(8).fillColor(MUTED);
-  doc.text(invoice.kind === "onboarding" ? "Item" : "Venue", left, y);
+  doc.text(invoice.kind === "monthly_fees" ? "Venue" : "Item", left, y);
   doc.text("Amount", left, y, { width, align: "right" });
   y += 14;
   rule(y);
@@ -204,8 +204,12 @@ export function invoicePdf(
   };
   for (const l of invoice.lines) {
     row(
-      l.onboardingKind ? (LINE_NAME[l.onboardingKind] ?? l.label) : l.label,
-      lineDetail(l, terms),
+      l.onboardingKind
+        ? (LINE_NAME[l.onboardingKind] ?? l.label)
+        : invoice.kind === "site_slot"
+          ? "Extra site, once"
+          : l.label,
+      invoice.kind === "site_slot" ? `${l.label}, open before guests pay` : lineDetail(l, terms),
       tsh(l.amountTsh),
     );
     rule(y);

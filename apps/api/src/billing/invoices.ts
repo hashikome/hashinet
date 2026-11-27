@@ -23,7 +23,7 @@ import {
 import { REVENUE_EVENTS } from "../analytics/revenue-events.js";
 import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
-import { Prisma } from "../generated/prisma/client.js";
+import { type InvoiceKind, Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
 import { IssuesService } from "../issues/issues.service.js";
 import { passedSetup } from "../routers/router-journey.js";
@@ -263,8 +263,39 @@ export class Invoices {
     });
   }
 
-  /** After a package's invoice changed: its owners hear, and their bill issue follows. */
-  async onboardingChanged(businessId: string, invoice: InvoiceRow | null): Promise<void> {
+  /**
+   * A venue's extra site, invoiced once at its price, due 7 days later, as an onboarding charge is
+   * (slice 5). Run in the transaction that adds the site, holding the business row; the caller
+   * tells the owners once it commits (`chargeChanged`).
+   */
+  issueSlot(
+    tx: Prisma.TransactionClient,
+    slot: { businessId: string; venueId: string; host: string; priceTsh: number },
+    now = new Date(),
+  ): Promise<InvoiceRow | null> {
+    return this.create(tx, {
+      businessId: slot.businessId,
+      kind: "site_slot",
+      period: null,
+      venueId: slot.venueId,
+      dueOn: addDays(businessDayOf(now), CHARGE_DUE_DAYS),
+      lines: [
+        {
+          venueId: slot.venueId,
+          label: slot.host,
+          onboardingKind: null,
+          netSalesTsh: null,
+          servedBp: null,
+          minimumTsh: null,
+          amountTsh: slot.priceTsh,
+        },
+      ],
+      now,
+    });
+  }
+
+  /** After a one-off charge was issued or changed: its owners hear, and their bill issue follows. */
+  async chargeChanged(businessId: string, invoice: InvoiceRow | null): Promise<void> {
     if (invoice) await this.emailOwners(invoice);
     await this.syncBillIssues(businessId);
   }
@@ -281,7 +312,7 @@ export class Invoices {
     });
     for (const m of missing) {
       const invoice = await this.db.$transaction((tx) => this.syncOnboarding(m.venueId, tx, now));
-      if (invoice) await this.onboardingChanged(invoice.businessId, invoice);
+      if (invoice) await this.chargeChanged(invoice.businessId, invoice);
     }
   }
 
@@ -290,7 +321,7 @@ export class Invoices {
     tx: Prisma.TransactionClient,
     input: {
       businessId: string;
-      kind: "monthly_fees" | "onboarding";
+      kind: InvoiceKind;
       period: Date | null;
       venueId: string | null;
       dueOn: string;
@@ -686,7 +717,7 @@ export class Invoices {
       businessName: row.business.name,
       kind: row.kind,
       period: row.period === null ? null : dateOf(row.period).slice(0, 7),
-      venueName: row.kind === "onboarding" ? (row.venue?.name ?? null) : null,
+      venueName: row.kind === "monthly_fees" ? null : (row.venue?.name ?? null),
       issuedAt: row.issuedAt.toISOString(),
       totalTsh: row.totalTsh,
       ...invoiceSummary(row.totalTsh, paidTsh, row.dueOn, now),

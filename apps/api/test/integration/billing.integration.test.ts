@@ -28,6 +28,7 @@ async function tokenFor(to: string): Promise<string> {
 
 const SETTINGS = {
   terms: { rateBp: 600, lowerRateBp: 300, lowerRateAboveTsh: 3_000_000, minimumTsh: 6_000 },
+  siteSlotTsh: 12_000,
   payTo: {
     mobileMoney: "5512 8840",
     mobileMoneyName: "",

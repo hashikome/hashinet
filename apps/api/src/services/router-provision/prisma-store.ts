@@ -1,5 +1,6 @@
 import { toJsonValue } from "../../database/json.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
+import { openHosts } from "../../sites/open-sites.js";
 import type { RouterAccess } from "../router-credentials.js";
 import type { RouterSync } from "../router-sync.js";
 import type { BackendSettings } from "./context.js";
@@ -13,11 +14,11 @@ export class PrismaRouterStore implements RouterStore {
     readonly backend: BackendSettings,
   ) {}
 
-  load(routerId: string) {
-    return this.db.router.findUnique({
-      where: { id: routerId },
-      include: { venue: { select: { allowedSites: true } } },
-    });
+  /** The router, and the sites its venue opens before paying: only open ones, never those waiting. */
+  async load(routerId: string) {
+    const router = await this.db.router.findUnique({ where: { id: routerId } });
+    if (!router) return null;
+    return { ...router, venue: { allowedSites: await openHosts(this.db, router.venueId) } };
   }
 
   credentials(router: Parameters<RouterStore["credentials"]>[0]) {

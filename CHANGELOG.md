@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- A business's Venues and each venue's page (slice 5): every venue's status, routers and last 7
+  days; who runs it, its takings and its way to pay; Add a venue for the owner, opening on its way
+  online, and Edit venue for the owner and business managers. Venue managers get Venues in their
+  menu.
+- Sites open before paying (slice 5): the first comes with the venue; each more is a slot paid for
+  once (TSh 10,000, set on Fees), invoiced when it is added and open once paid, on the owner's bill
+  issue meanwhile. Only open sites reach a venue's routers, at once on every change. The sites a
+  venue already had stay open.
 - A Lipa namba names its provider, a network or a bank, and whoever sells reads it out as "M-Pesa
   Lipa namba" or "CRDB Lipa namba". Lipa nambas added before keep working until someone changes
   them and picks theirs.

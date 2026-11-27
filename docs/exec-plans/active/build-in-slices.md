@@ -550,9 +550,21 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     pay, or its setup steps until a router serves, the Overview's `GettingStarted` shared); Edit
     venue for the owner and business managers. The 7-day chart comes with Analytics (f). Tests:
     analytics and venues integration; 201/201.
-  - [ ] (b) Sites, open before paying, with extra-site slots: sites as rows with their slots, a slot
-    invoice on the owner's bill issue, the venue's routers updated on add, remove and payment; the
-    Blocked list waits for the router side.
+  - [x] (2026-11-27) (b) Sites, open before paying, with extra-site slots: sites as rows with their
+    slots, a slot invoice on the owner's bill issue, the venue's routers updated on add, remove and
+    payment; the Blocked list waits for the router side. Built: `venue_sites` and `site_slots`
+    (migration `20261127230000_venue_sites`: each venue's `allowed_sites` became rows, the second
+    and each more with a granted slot, and the column went); `site_slot` invoices (one line, the
+    site; due 7 days after; emailed and on the bill issue); the price on Fees (`site_slot_tsh`,
+    TSh 10,000). `sites/open-sites.ts` is the one rule for which sites are open (the first, then
+    one per paid or granted slot, in the order added), read by the venue page, provisioning and
+    `RouterSync.pushOpenSites`, which brings each of the venue's routers in line on add and
+    remove, and after a payment through `BillingEvents`. Removing a site cancels an unpaid slot
+    and its invoice; a paid slot stays with the venue. `GET`/`POST`/`DELETE
+    /api/venues/:id/sites` (`venue.read`; `venue.site.manage` for owners and managers). Screens:
+    the venue page's Sites (list, cost, Invoice PDF for the owner while waiting, Remove with a
+    confirmation) and Add a site with its cost, Fees' "Extra site, once". Tests: sites
+    integration; 204/204.
   - [ ] (c) Prices per venue and venue-only packages: a venue's own price, a package a venue manager
     adds for their venues, and the on-sale rule that keeps it there.
   - [ ] (d) Captive portal (ADR-0009): the business's own branding between the venue's and HashiNet's

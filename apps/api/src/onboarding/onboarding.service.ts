@@ -184,7 +184,7 @@ export class OnboardingService {
       // Its charge, invoiced as agreed, due 7 days later (ADR-0013, 6).
       return this.invoices.syncOnboarding(venueId, tx);
     });
-    await this.invoices.onboardingChanged(venue.businessId, invoice);
+    await this.invoices.chargeChanged(venue.businessId, invoice);
     return this.get(staff, venueId);
   }
 

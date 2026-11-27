@@ -22,6 +22,7 @@ interface Form {
   lowerRate: string;
   above: string;
   minimum: string;
+  siteSlot: string;
   accountName: string;
   bankName: string;
   bankBranch: string;
@@ -61,6 +62,7 @@ function formOf(s: BillingSettingsRecord): Form {
     lowerRate: percent(s.terms.lowerRateBp),
     above: grouped(s.terms.lowerRateAboveTsh),
     minimum: grouped(s.terms.minimumTsh),
+    siteSlot: grouped(s.siteSlotTsh),
     accountName: s.payTo.accountName,
     bankName: s.payTo.bankName ?? "",
     bankBranch: s.payTo.bankBranch ?? "",
@@ -111,6 +113,7 @@ export default function FeesPage() {
       ["Lower rate", `${percent(s.terms.lowerRateBp)}%`],
       ["Lower rate starts above", `${tsh(s.terms.lowerRateAboveTsh)} a month`],
       ["Monthly minimum per venue", tsh(s.terms.minimumTsh)],
+      ["Extra site, once", tsh(s.siteSlotTsh)],
     ];
     const shown = (list: [keyof Form, Path, string][]): [string, string][] =>
       list.map(([key, , label]) => [label.replace(" (optional)", ""), form[key] || "Not set"]);
@@ -163,6 +166,7 @@ export default function FeesPage() {
           lowerRateAboveTsh: shillings(form.above),
           minimumTsh: shillings(form.minimum),
         },
+        siteSlotTsh: shillings(form.siteSlot),
         payTo: {
           accountName: form.accountName,
           bankName: form.bankName,
@@ -214,6 +218,9 @@ export default function FeesPage() {
             error={errors["terms.minimumTsh"]}
           >
             {input("minimum", "terms.minimumTsh", true)}
+          </Field>
+          <Field label="Extra site, once (TSh)" id="siteSlotTsh" error={errors.siteSlotTsh}>
+            {input("siteSlot", "siteSlotTsh", true)}
           </Field>
           <div className="form-save">
             <Button kind="primary" type="submit" busy={busy}>

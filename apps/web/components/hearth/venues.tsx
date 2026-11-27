@@ -62,7 +62,6 @@ export function VenueDialog({
             region,
             area,
             status,
-            allowedSites: venue?.allowedSites ?? [],
           };
           const ok = await run(
             async () => {

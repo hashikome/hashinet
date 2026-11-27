@@ -21,6 +21,7 @@ import type { Principal } from "../access/principal.js";
 import { monthParam } from "../analytics/analytics.service.js";
 import { idParam } from "../http/id-param.js";
 import { parseInput } from "../http/validation.js";
+import { BillingEvents } from "./billing-events.js";
 import { BillingSettings, billingSettingsInput } from "./billing-settings.js";
 import { invoicePdf } from "./invoice-pdf.js";
 import { Invoices } from "./invoices.js";
@@ -47,6 +48,7 @@ export class BillingController {
     private readonly invoices: Invoices,
     private readonly payments: BillPayments,
     private readonly access: ServiceAccessService,
+    private readonly events: BillingEvents,
   ) {}
 
   @Get("settings")
@@ -94,6 +96,8 @@ export class BillingController {
     await Promise.all([
       this.invoices.syncBillIssues(input.businessId),
       this.access.sync(input.businessId),
+      // What it paid for opens: a venue's extra site reaches its routers.
+      this.events.paid(input.businessId),
     ]);
   }
 

@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import { BusinessMark } from "@/components/hearth/icons";
 import { GettingStarted } from "@/components/hearth/onboarding";
 import { VenueWay } from "@/components/hearth/payment-ways";
+import { SitesPanel } from "@/components/hearth/sites";
 import { Button, CopyText, Figs, Pill } from "@/components/hearth/ui";
 import { STATUS, sellingPill, VenueDialog } from "@/components/hearth/venues";
 import { api } from "@/lib/api";
@@ -135,6 +136,7 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
             />
           ) : null}
           <VenueWay venueId={v.id} choose={can("venue.payment_way.choose")} />
+          <SitesPanel venueId={v.id} venueName={v.name} />
         </>
       )}
       {editing ? (

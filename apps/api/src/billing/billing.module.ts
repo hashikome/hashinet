@@ -5,6 +5,7 @@ import { APP_CONFIG } from "../config/config.module.js";
 import { IssuesModule } from "../issues/issues.module.js";
 import { IntervalJob, ScheduledJobs } from "../jobs/interval-job.js";
 import { BillingController } from "./billing.controller.js";
+import { BillingEvents } from "./billing-events.js";
 import { BillingSettings } from "./billing-settings.js";
 import { BILLING_STARTS, Invoices } from "./invoices.js";
 import { OwnerMail } from "./owner-mail.js";
@@ -48,6 +49,7 @@ export class BillingJobs extends ScheduledJobs {
   imports: [IssuesModule],
   controllers: [BillingController],
   providers: [
+    BillingEvents,
     BillingSettings,
     Invoices,
     BillPayments,
@@ -55,6 +57,6 @@ export class BillingJobs extends ScheduledJobs {
     ServiceAccessService,
     BillingJobs,
   ],
-  exports: [BillingSettings, Invoices, ServiceAccessService],
+  exports: [BillingEvents, BillingSettings, Invoices, ServiceAccessService],
 })
 export class BillingModule {}

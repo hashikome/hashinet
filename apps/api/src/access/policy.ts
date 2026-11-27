@@ -18,6 +18,8 @@ export const POLICY = {
   // Venues in the menu: who looks after venues. Operators work the counter, and read their venue
   // through what they sell there (owner, 27 November 2026).
   "venue.list": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
+  // A venue's sites open before paying: its owner and managers add and remove them (slice 5).
+  "venue.site.manage": BUSINESS_MANAGERS,
   "venue.create": [...PLATFORM_STAFF, "owner"],
   "venue.update": [...PLATFORM_STAFF, ...WHOLE_BUSINESS],
   "venue.delete": PLATFORM_STAFF,

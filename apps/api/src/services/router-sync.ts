@@ -29,6 +29,9 @@ import {
   userProfileNameForPackage,
 } from "./mikrotik.js";
 import type { RouterAccess } from "./router-credentials.js";
+import { RouterLogger } from "./router-log.js";
+import { RosClient } from "./router-provision/ros-client.js";
+import { applyAllowedSites } from "./router-provision/steps.js";
 
 // Voucher codes are credentials: they appear in no log line, only counts do.
 const logger = getLogger(["hashinet", "router-sync"]);
@@ -547,6 +550,21 @@ export class RouterSync {
       return null;
     } finally {
       if (conn) await closeConnection(conn);
+    }
+  }
+
+  /**
+   * Brings each of a venue's routers' open sites in line with `hosts`, now rather than at the next
+   * Set up: after a site is added, removed or paid for. Best effort: a router that can't be reached
+   * gets them at its next Set up, which applies the same list.
+   */
+  async pushOpenSites(venueId: string, hosts: string[]): Promise<void> {
+    for (const router of await this.db.router.findMany({ where: { venueId } })) {
+      const creds = this.access.credentials(router);
+      if (!creds) continue;
+      await this.onRouter(router, (conn) =>
+        applyAllowedSites(new RosClient(conn, new RouterLogger("sync"), creds.host), hosts),
+      );
     }
   }
 
