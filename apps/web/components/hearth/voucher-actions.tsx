@@ -163,7 +163,7 @@ export function ReleaseDialog({
       <ul className="facts-list">
         <li>Its devices go offline now.</li>
         <li>Its time keeps running.</li>
-        <li>The next device signs in with the code alone.</li>
+        <li>The next device signs in with the code alone, and gets a new switch PIN.</li>
       </ul>
       <div className="dialog-actions">
         <Button

@@ -1075,7 +1075,11 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
   - [x] (g) Release clears the PIN and its attempts. Blocking a device blocks the live vouchers it
     used at that business too (`vouchers.blocked_at`), refused at the portal and by RADIUS on every
     device, and ends their sessions; unblocking it lifts them.
-  - [ ] (h) The portal's PIN screens and Release against the prototype, audited at 390px first.
+  - [x] (h) The portal's PIN screens against the prototype: in use (the switch PIN and Move it
+    here), wrong PIN, too many tries (until when), locked, and the PIN shown once on Online with Copy
+    code and PIN, which then stays on the page rather than redirecting. Screens without a field sit in
+    the middle of the space below the venue's name. The editor's preview lists the four new pages;
+    the default terms and the Release dialog name the switch PIN.
   - [ ] (i) Two routers on the sim (the sim runs one today), proving the acceptance there.
   - [ ] (j) finish-work, docs (ADR-0015 widened), push on the owner's go, real phones.
 

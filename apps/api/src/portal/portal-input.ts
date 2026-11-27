@@ -14,7 +14,7 @@ export const HASHINET_PORTAL: PortalContent = {
   contactPhone: null,
   requireTerms: true,
   terms:
-    "Use this WiFi for lawful purposes only. Don't share your voucher code. Time runs from when you first join and doesn't pause. We may limit speeds at busy times. Vouchers aren't refundable once used.",
+    "Use this WiFi for lawful purposes only. Don't share your voucher code or switch PIN. Time runs from when you first join and doesn't pause. We may limit speeds at busy times. Vouchers aren't refundable once used.",
 };
 
 /** HashiNet's colours, should the platform have no default theme. */

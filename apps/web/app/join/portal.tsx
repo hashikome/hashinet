@@ -67,6 +67,7 @@ class Refused extends Error {
   constructor(
     readonly code: string,
     message: string,
+    readonly details: Record<string, string> | null = null,
   ) {
     super(message);
   }
@@ -85,6 +86,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     throw new Refused(
       refusal?.code ?? "ERROR",
       refusal?.message ?? "Something went wrong. Try again.",
+      refusal?.details ?? null,
     );
   }
   return data as T;
@@ -92,6 +94,11 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 /** "Friday 18:04": when a voucher ends, in Dar es Salaam time. */
 const until = (iso: string) => `${weekday(iso)} ${clock(iso)}`;
+/** "15 minutes" until `iso`, at least one. */
+const minutesUntil = (iso: string) => {
+  const m = Math.max(1, Math.ceil((new Date(iso).getTime() - Date.now()) / 60_000));
+  return `${m} minute${m === 1 ? "" : "s"}`;
+};
 /** "23h 59m" left until `iso`. */
 function left(iso: string): string {
   const minutes = Math.max(0, Math.round((Date.parse(iso) - Date.now()) / 60_000));
@@ -104,6 +111,10 @@ export type PreviewPage =
   | "voucher"
   | "wrong-code"
   | "run-out"
+  | "in-use"
+  | "pin-wrong"
+  | "pin-wait"
+  | "pin-locked"
   | "signing"
   | "sign-failed"
   | "online"
@@ -158,8 +169,22 @@ function previewState(page: PreviewPage): {
     case "online":
       return {
         ...none,
-        stage: { kind: "online", expiresAt: inADay(), givenBackMinutes: 0 },
+        stage: { kind: "online", expiresAt: inADay(), givenBackMinutes: 0, pin: "1942" },
       };
+    case "in-use":
+      return { ...none, stage: { kind: "in-use", error: null } };
+    case "pin-wrong":
+      return {
+        ...none,
+        stage: { kind: "in-use", error: "That PIN isn't right. Check it and try again." },
+      };
+    case "pin-wait":
+      return {
+        ...none,
+        stage: { kind: "pin-wait", until: new Date(Date.now() + 15 * 60_000).toISOString() },
+      };
+    case "pin-locked":
+      return { ...none, stage: { kind: "pin-locked" } };
     case "signing":
     case "sign-failed":
     case "buy":
@@ -185,7 +210,12 @@ type Stage =
   | { kind: "signing" }
   | { kind: "sign-failed" }
   | { kind: "run-out"; message: string }
-  | { kind: "online"; expiresAt: string | null; givenBackMinutes: number }
+  /** Online on another device: its switch PIN moves it here (ADR-0015, 4). */
+  | { kind: "in-use"; error: string | null }
+  | { kind: "pin-wait"; until: string }
+  | { kind: "pin-locked" }
+  /** `pin`: the switch PIN, made at this first sign-in and shown this once. */
+  | { kind: "online"; expiresAt: string | null; givenBackMinutes: number; pin: string | null }
   | { kind: "terms"; back: "voucher" | "buy" }
   | { kind: "buy" };
 
@@ -203,7 +233,10 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
   const [request, setRequest] = useState<FromRouter | null>(
     preview ? { router: "preview", mac: "", ip: "", linkOrig: "" } : null,
   );
-  const [digits, setDigits] = useState(start?.error ? SAMPLE_CODE : "");
+  // The preview shows a code on every page past the empty voucher page, as a guest's would.
+  const [digits, setDigits] = useState(
+    start && (start.error || start.stage.kind !== "voucher") ? SAMPLE_CODE : "",
+  );
   const [error, setError] = useState<string | null>(start?.error ?? null);
   const [busy, setBusy] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -243,7 +276,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
   }, []);
 
   const redeem = useCallback(
-    async (code: string) => {
+    async (code: string, pin: string | null = null) => {
       if (!request) return;
       if (preview) {
         setStage({ kind: "signing" });
@@ -254,16 +287,25 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
       setError(null);
       setStage({ kind: "signing" });
       try {
-        const { dst, expiresAt, givenBackMinutes } = await post<RedeemResult>("/api/guest/redeem", {
-          ...request,
-          code,
-        });
-        setStage({ kind: "online", expiresAt, givenBackMinutes });
-        if (dst !== null) window.setTimeout(() => window.location.replace(dst), 1800);
+        const { dst, expiresAt, givenBackMinutes, switchPin } = await post<RedeemResult>(
+          "/api/guest/redeem",
+          { ...request, code, pin },
+        );
+        setStage({ kind: "online", expiresAt, givenBackMinutes, pin: switchPin });
+        // Not while the PIN is on the page: it is shown this once, and leaving loses it.
+        if (dst !== null && switchPin === null) {
+          window.setTimeout(() => window.location.replace(dst), 1800);
+        }
       } catch (err) {
         const refused =
           err instanceof Refused ? err : new Refused("ERROR", "Something went wrong. Try again.");
         if (refused.code === "ROUTER_NOT_CONFIRMED") setStage({ kind: "sign-failed" });
+        else if (refused.code === "PIN_REQUIRED") setStage({ kind: "in-use", error: null });
+        else if (refused.code === "PIN_WRONG") {
+          setStage({ kind: "in-use", error: "That PIN isn't right. Check it and try again." });
+        } else if (refused.code === "PIN_WAIT") {
+          setStage({ kind: "pin-wait", until: refused.details?.until ?? new Date().toISOString() });
+        } else if (refused.code === "PIN_LOCKED") setStage({ kind: "pin-locked" });
         else if (["VOUCHER_USED", "VOUCHER_EXPIRED", "VOUCHER_REVOKED"].includes(refused.code)) {
           setStage({ kind: "run-out", message: refused.message });
         } else {
@@ -377,9 +419,18 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
         </button>
       </p>
     ) : null;
-  const frame = (body: ReactNode) => (
+  // `middle`: a screen with no field to type in or list to choose from, its message in the middle
+  // of the space below the venue's name; one with a field stays at the top, where the keyboard
+  // can't push it about.
+  const frame = (body: ReactNode, middle = false) => (
     <Frame vars={vars} venue={context.venueName} logo={s.logoUrl} inPhone={preview !== null}>
-      {body}
+      {middle ? (
+        <div className="g-mid">
+          <div>{body}</div>
+        </div>
+      ) : (
+        body
+      )}
     </Frame>
   );
 
@@ -390,6 +441,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
         The venue's internet line is down, so nothing would load. Your voucher keeps the time the
         outage takes: it's given back as soon as the internet returns.
       </Say>,
+      true,
     );
   }
 
@@ -411,6 +463,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
             </button>
           </p>
         </>,
+        true,
       );
     }
     if (paid.state === "failed") {
@@ -423,6 +476,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
             Try again
           </button>
         </>,
+        true,
       );
     }
     return frame(
@@ -445,7 +499,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
             </li>
           </ul>
         ) : null}
-        {paid.code ? <CopyCode code={paid.code} /> : null}
+        {paid.code ? <CopyCode code={paid.code} pin={null} /> : null}
         {paid.code && !paid.online ? (
           <button
             className="g-btn alt"
@@ -457,6 +511,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
           </button>
         ) : null}
       </>,
+      !paid.online,
     );
   }
 
@@ -470,6 +525,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
             Signing you in…
           </button>
         </>,
+        true,
       );
     case "sign-failed":
       return frame(
@@ -487,8 +543,9 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
           >
             Try again
           </button>
-          <CopyCode code={digits} />
+          <CopyCode code={digits} pin={null} />
         </>,
+        true,
       );
     case "run-out":
       return frame(
@@ -516,6 +573,32 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
             </button>
           ) : null}
         </>,
+        true,
+      );
+    case "in-use":
+      return frame(
+        <>
+          <Say title="This voucher is in use">
+            It&apos;s online on another device. Enter its switch PIN to move it to this phone.
+          </Say>
+          <PinEntry error={stage.error} busy={busy} onMove={(pin) => void redeem(digits, pin)} />
+        </>,
+      );
+    case "pin-wait":
+      return frame(
+        <Say title="Too many wrong PINs">
+          Try again in {minutesUntil(stage.until)}, at {clock(stage.until)}. Lost your PIN? Show
+          your voucher at the counter.
+        </Say>,
+        true,
+      );
+    case "pin-locked":
+      return frame(
+        <Say title="This voucher is locked">
+          Too many wrong PINs. Show your voucher at the counter: staff can release it, and its time
+          keeps running.
+        </Say>,
+        true,
       );
     case "online":
       return frame(
@@ -540,8 +623,22 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
             </p>
           ) : null}
           <Shown code={digits} />
-          <CopyCode code={digits} />
-          <p className="g-note">Keep the code: you need it to come back.</p>
+          {stage.pin ? (
+            <>
+              <p className="g-label">Switch PIN</p>
+              <p className="g-pinshow">{stage.pin}</p>
+              <CopyCode code={digits} pin={stage.pin} />
+              <p className="g-note">
+                Copy both now: the PIN is shown only once, and you need the code and PIN to come
+                back or to move to another phone.
+              </p>
+            </>
+          ) : (
+            <>
+              <CopyCode code={digits} pin={null} />
+              <p className="g-note">Keep the code: you need it to come back.</p>
+            </>
+          )}
         </>,
       );
     case "terms":
@@ -804,19 +901,67 @@ function Shown({ code }: { code: string }) {
   );
 }
 
-function CopyCode({ code }: { code: string }) {
+function CopyCode({ code, pin }: { code: string; pin: string | null }) {
   const [copied, setCopied] = useState(false);
   if (!code) return null;
+  const text = pin ? `Voucher code ${groupedCode(code)}, switch PIN ${pin}` : groupedCode(code);
   return (
     <button
       className="g-copy"
       type="button"
       onClick={() => {
-        void navigator.clipboard?.writeText(groupedCode(code)).catch(() => undefined);
+        void navigator.clipboard?.writeText(text).catch(() => undefined);
         setCopied(true);
       }}
     >
-      {copied ? "Copied" : "Copy code"}
+      {copied ? "Copied" : pin ? "Copy code and PIN" : "Copy code"}
     </button>
+  );
+}
+
+/** The switch PIN, four digits, and the button that moves the voucher here once they are in. */
+function PinEntry({
+  error,
+  busy,
+  onMove,
+}: {
+  error: string | null;
+  busy: boolean;
+  onMove: (pin: string) => void;
+}) {
+  const [pin, setPin] = useState("");
+  return (
+    <form
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (pin.length === 4) onMove(pin);
+      }}
+    >
+      <label className="g-label" htmlFor="gpin">
+        Switch PIN
+      </label>
+      <input
+        className="g-input g-pin"
+        id="gpin"
+        inputMode="numeric"
+        maxLength={4}
+        autoComplete="off"
+        placeholder="4 digits"
+        value={pin}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? "gpin-error" : undefined}
+        onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+      />
+      {error ? (
+        <p className="g-bad" id="gpin-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <button className="g-btn g-move" type="submit" disabled={busy || pin.length < 4}>
+        Move it here
+      </button>
+      <p className="g-note">Lost your PIN? Show your voucher at the counter.</p>
+    </form>
   );
 }

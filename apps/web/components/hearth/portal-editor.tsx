@@ -27,6 +27,10 @@ const PAGES: [group: string, pages: [PreviewPage | "counter", string][]][] = [
       ["voucher", "Voucher page"],
       ["wrong-code", "Wrong code"],
       ["run-out", "Run out"],
+      ["in-use", "In use"],
+      ["pin-wrong", "Wrong PIN"],
+      ["pin-wait", "PIN: too many tries"],
+      ["pin-locked", "PIN: locked"],
     ],
   ],
   [
