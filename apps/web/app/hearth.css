@@ -107,13 +107,14 @@ ul {
   font-size: 12.5px;
 }
 
-/* As Pigfarm's workspace shell: one centred container, a 16rem menu column, the content takes the rest. */
+/* One centred frame, the menu and the page together: a 16rem menu column, the content takes the rest,
+   up to 1280px of it (104rem in all, the usual cap for wide content). */
 .app {
   display: grid;
   grid-template-columns: 16rem minmax(0, 1fr);
   column-gap: 3rem;
   width: 100%;
-  max-width: 96rem;
+  max-width: 104rem;
   margin-inline: auto;
   padding-inline: 2.5rem;
   min-height: 100vh;

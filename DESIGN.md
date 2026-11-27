@@ -208,7 +208,9 @@ floats (a menu, a popover, a dialog) casts one. In dark mode elevation is lightn
 
 Radius is one tight scale: chips 4px, controls 6px, panels and dialogs 8px, pills full. Spacing is a
 4px base: one 24px gap between panels, 24px panel padding, 32px control height, 45px table rows, a
-230px sidebar. Motion is feedback only (press, hover, focus, a menu opening), about 150ms, and
+16rem menu. The menu and the page sit together in one centred frame, 104rem at most, which leaves up
+to 1280px for the page; settings and Account keep their own narrower column inside it. The menu is
+never pinned to the window's edge, and the page is never centred apart from it. Motion is feedback only (press, hover, focus, a menu opening), about 150ms, and
 respects `prefers-reduced-motion`.
 
 ## Components

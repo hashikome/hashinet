@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The frame is wider: the menu and the page stay centred together, up to 104rem, so a page gets up
+  to 1280px instead of 1152px. Removing a passkey says to delete it from the device or password
+  manager too, as the copy left there gets in the way of a new one.
 - Account › Sign-in: each change takes its own proof. The session records which factor proved it:
   new recovery codes take a passkey or the authenticator app, never a recovery code; replacing the app
   takes its current code or a recovery code, given just now; someone with neither removes the app with

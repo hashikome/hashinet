@@ -251,6 +251,10 @@ function SignInSettings() {
               ? " Your role then needs an authenticator app before you can work."
               : ""}
           </p>
+          <p className="muted">
+            Your device or password manager keeps its copy: delete it there too, or it gets in the
+            way of a new passkey.
+          </p>
           <div className="dialog-actions">
             <Button
               kind="danger"
