@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- HashiNet's Sales across businesses, with its fees, is for platform admins and managers only, as
+  Fees and Billing are; platform operators keep Usage.
 - The frame is wider: the menu and the page stay centred together, up to 104rem, so a page gets up
   to 1280px instead of 1152px. Removing a passkey says to delete it from the device or password
   manager too, as the copy left there gets in the way of a new one.

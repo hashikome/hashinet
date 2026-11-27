@@ -277,6 +277,12 @@ describe("platform sales", () => {
       ["Other Business", "20000.00", "2000.00", 69],
       ["Test Business", "9000.00", "450.00", 31],
     ]);
+
+    // Its operators support businesses; the money across them is the admins' and managers'.
+    await platformMember(t.db, { email: "op@example.com", name: "Op", role: "operator" });
+    const op = browser(api);
+    await enrollAuthenticatorFor(api, op, "op@example.com");
+    expect((await op.request("GET", `/api/analytics/platform-sales?${OCTOBER}`)).status).toBe(403);
   });
 });
 

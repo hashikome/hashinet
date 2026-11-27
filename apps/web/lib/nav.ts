@@ -39,10 +39,12 @@ export const homeOf = (me: Me) => (me.active.scope === "platform" ? "/issues" : 
 export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   const can = (action: string) => me.active.capabilities.includes(action);
   // Analytics: Usage and Sales, sharing one period (prototype `analytics`).
+  // On the platform, Sales is sales across businesses with HashiNet's fees: admins and managers only.
+  const sales = can(me.active.scope === "platform" ? "analytics.platform.read" : "analytics.read");
   const analytics = can("analytics.read")
     ? [
         { href: "/analytics/usage", label: "Usage" },
-        { href: "/analytics/sales", label: "Sales" },
+        ...(sales ? [{ href: "/analytics/sales", label: "Sales" }] : []),
       ]
     : [];
   const issues: NavLink[] = can("issue.read")
