@@ -14,6 +14,7 @@ import { apiError } from "../http/error-envelope.js";
 import { oneLine } from "../http/validation.js";
 import { IssuesService } from "../issues/issues.service.js";
 import { packageKey } from "../onboarding/begin.js";
+import { lockBusiness, paidOf } from "./business-lock.js";
 import { tsh } from "./invoice-emails.js";
 
 export const recordPaymentInput = z.object({
@@ -52,8 +53,7 @@ export class BillPayments {
     }
     await this.db.$transaction(async (tx) => {
       // One payment at a time for a business, so two at once can't settle the same amount twice.
-      const [locked] = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id FROM businesses WHERE id = ${input.businessId}::uuid FOR UPDATE`;
+      const locked = await lockBusiness(tx, input.businessId);
       if (!locked) throw new NotFoundException(apiError("NOT_FOUND", "There is no such business."));
 
       const invoices = await tx.invoice.findMany({
@@ -64,7 +64,7 @@ export class BillPayments {
       const owing = invoices
         .map((i) => ({
           ...i,
-          left: i.totalTsh - i.allocations.reduce((sum, a) => sum + a.amountTsh, 0),
+          left: i.totalTsh - paidOf(i),
         }))
         .filter((i) => i.left > 0);
 

@@ -8,6 +8,7 @@ import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useCan } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
+import { ConfirmDialog } from "./confirm-dialog";
 import { Dialog } from "./dialog";
 import { Button, Field, Panel, Pill, Table, useToast } from "./ui";
 
@@ -245,38 +246,19 @@ function RemoveSite({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const toast = useToast();
-  const [busy, setBusy] = useState(false);
   return (
-    <Dialog label={`Remove ${site.host}`} onClose={onClose} alert>
-      <h2>Remove {site.host}?</h2>
-      <p className="muted">
-        {site.state === "open"
+    <ConfirmDialog
+      title={`Remove ${site.host}?`}
+      confirm="Remove site"
+      done={`${site.host} removed.`}
+      what={
+        site.state === "open"
           ? "Guests can no longer reach it before they pay. A slot already paid for stays with the venue."
-          : "Its unpaid invoice is cancelled, and nothing is owed for it."}
-      </p>
-      <div className="dialog-actions">
-        <Button
-          kind="danger"
-          busy={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await api.delete(`/api/venues/${venueId}/sites/${site.id}`);
-              toast(`${site.host} removed.`);
-              onSaved();
-            } catch (e) {
-              toast(messageOf(e));
-              setBusy(false);
-            }
-          }}
-        >
-          Remove site
-        </Button>
-        <Button data-cancel onClick={onClose}>
-          Cancel
-        </Button>
-      </div>
-    </Dialog>
+          : "Its invoice is cancelled if nothing has been paid towards it yet; once something has, it stays on the bill."
+      }
+      send={() => api.delete(`/api/venues/${venueId}/sites/${site.id}`)}
+      onClose={onClose}
+      onDone={onSaved}
+    />
   );
 }

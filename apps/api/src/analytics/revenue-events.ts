@@ -50,3 +50,19 @@ export function moneySum(column: Prisma.Sql): Prisma.Sql {
 export function venueFilter(column: Prisma.Sql, venueIds: string[] | null): Prisma.Sql {
   return venueIds === null ? Prisma.sql`TRUE` : Prisma.sql`${column} = ANY(${venueIds}::uuid[])`;
 }
+
+/** Shillings as two-decimal text, from whole cents. */
+export const money = (cents: number) => (cents / 100).toFixed(2);
+/** Two-decimal money text as whole cents. */
+export const centsOf = (amount: string) => Math.round(Number(amount) * 100);
+/** Whole percent of `whole`, 0 when there is none. */
+export const shareOf = (part: number, whole: number) =>
+  whole > 0 ? Math.round((part / whole) * 100) : 0;
+
+/** Adds two-decimal money strings in whole cents, so no float error reaches a total. */
+export function sumMoney(amounts: string[]): string {
+  const cents = amounts.reduce((sum, a) => sum + BigInt(centsOf(a)), 0n);
+  const sign = cents < 0n ? "-" : "";
+  const abs = cents < 0n ? -cents : cents;
+  return `${sign}${abs / 100n}.${String(abs % 100n).padStart(2, "0")}`;
+}

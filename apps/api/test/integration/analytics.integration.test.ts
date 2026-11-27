@@ -192,7 +192,18 @@ describe("sales", () => {
       { venueId: expect.any(String), name: "Other", vouchers: 1, takingsTsh: "5000.00", share: 63 },
       { venueId: home.id, name: "Home", vouchers: 3, takingsTsh: "3000.00", share: 38 },
     ]);
-    expect(r.packages).toEqual([{ name: "Day", vouchers: 4, takingsTsh: "8000.00" }]);
+    expect(r.packages).toEqual([
+      {
+        packageId: day.id,
+        name: "Day",
+        vouchers: 4,
+        takingsTsh: "8000.00",
+        share: 100,
+        takingsShare: 100,
+      },
+    ]);
+    // Over October's 31 days, in whole shillings.
+    expect(r).toMatchObject({ takingsPerDayTsh: "258.00", vouchersPerDay: 0 });
 
     // One venue, for its page.
     const one = await c.request("GET", `/api/analytics/sales?${OCTOBER}&venueId=${home.id}`);

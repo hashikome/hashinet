@@ -16,19 +16,16 @@ import { Button, Panel } from "./ui";
 /** The filter as Analytics' address holds it. */
 export interface PeriodFilter {
   range: PeriodRange;
-  period: PeriodName;
+  /** Empty opens the range on its usual period, as the API decides it. */
+  period: PeriodName | "";
   from: string;
   to: string;
   show: AnalyticsShow | "";
 }
 
-const DEFAULT: PeriodFilter = { range: "last", period: "7d", from: "", to: "", show: "" };
+const DEFAULT: PeriodFilter = { range: "last", period: "", from: "", to: "", show: "" };
 const KEY = "hashinet.analytics";
 
-const PERIODS: Record<"last" | "current", PeriodName[]> = {
-  last: ["day", "7d", "30d", "90d", "month", "quarter", "year"],
-  current: ["day", "week", "month", "quarter", "year"],
-};
 const PERIOD_WORD: Record<PeriodName, string> = {
   day: "day",
   "7d": "7 days",
@@ -92,12 +89,6 @@ export function periodTitle(p: AnalyticsPeriod): string {
   return `${RANGE_WORD[p.range]} ${PERIOD_WORD[p.period]}`;
 }
 
-/** "3h 12m": a session's length. */
-export function minutesText(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  return h ? `${h}h ${minutes % 60}m` : `${minutes}m`;
-}
-
 /**
  * Analytics' filter (prototype `anFilters`), as the address holds it, so a period can be linked
  * to; each person's last one is remembered here so Usage and Sales share it. Applies as it changes.
@@ -118,7 +109,7 @@ export function usePeriodFilter(): {
   const filter: PeriodFilter = has
     ? {
         range: (params.get("range") as PeriodRange) ?? "last",
-        period: (params.get("period") as PeriodName) ?? "7d",
+        period: (params.get("period") as PeriodName | null) ?? "",
         from: params.get("from") ?? "",
         to: params.get("to") ?? "",
         show: (params.get("show") as AnalyticsShow | null) ?? "",
@@ -129,7 +120,7 @@ export function usePeriodFilter(): {
     if (f.range === "custom") {
       if (f.from) q.set("from", f.from);
       if (f.to) q.set("to", f.to);
-    } else q.set("period", f.period);
+    } else if (f.period) q.set("period", f.period);
     if (f.show) q.set("show", f.show);
     try {
       sessionStorage.setItem(KEY, q.toString());
@@ -154,16 +145,15 @@ export function usePeriodFilter(): {
     const next = { ...filter, ...change };
     // A new period starts on the grouping that suits it; Show changes it from there.
     if (!("show" in change)) next.show = "";
-    if (change.range && change.range !== "custom" && !("period" in change)) {
-      next.period = change.range === "current" ? "month" : "7d";
-    }
+    // A new range opens on its usual period.
+    if (change.range && !("period" in change)) next.period = "";
     write(next);
   };
   const q = new URLSearchParams({ range: filter.range });
   if (filter.range === "custom") {
     q.set("from", filter.from || filter.to);
     q.set("to", filter.to || filter.from);
-  } else q.set("period", filter.period);
+  } else if (filter.period) q.set("period", filter.period);
   if (filter.show) q.set("show", filter.show);
   const venueId = venue === "all" ? null : venue;
   if (venueId) q.set("venueId", venueId);
@@ -178,13 +168,18 @@ export function usePeriodFilter(): {
 export function PeriodFilters({
   filter,
   set,
-  shows,
+  served,
 }: {
   filter: PeriodFilter;
   set: (change: Partial<PeriodFilter> | null) => void;
-  shows: AnalyticsShow[];
+  /** The period the API answered with: its choices, and what it chose. */
+  served: AnalyticsPeriod | null;
 }) {
-  const changed = filter.range !== "last" || filter.period !== "7d" || filter.show !== "";
+  const shows = served?.shows ?? [];
+  const changed =
+    filter.range !== "last" ||
+    (filter.period !== "" && filter.period !== "7d") ||
+    filter.show !== "";
   return (
     <section className="panel">
       <form className="audit-filters" onSubmit={(e) => e.preventDefault()}>
@@ -232,10 +227,10 @@ export function PeriodFilters({
             <select
               id="ap"
               className="input"
-              value={filter.period}
+              value={served?.period ?? filter.period}
               onChange={(e) => set({ period: e.target.value as PeriodName })}
             >
-              {PERIODS[filter.range].map((p) => (
+              {(served?.periods[filter.range] ?? []).map((p) => (
                 <option key={p} value={p}>
                   {RANGE_WORD[filter.range]} {PERIOD_WORD[p]}
                 </option>
@@ -248,7 +243,7 @@ export function PeriodFilters({
           <select
             id="as"
             className="input"
-            value={filter.show || shows[0] || ""}
+            value={served?.show ?? filter.show}
             onChange={(e) => set({ show: e.target.value as AnalyticsShow })}
           >
             {shows.map((s) => (
@@ -335,4 +330,9 @@ function HeatRow({
       ))}
     </>
   );
+}
+
+/** A bar beside a figure, as long as its share of the largest (prototype `bar-in`). */
+export function Bar({ value, top }: { value: number; top: number }) {
+  return <span className="bar-in" style={{ width: (value / Math.max(top, 1)) * 48 }} />;
 }

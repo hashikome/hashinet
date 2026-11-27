@@ -1217,6 +1217,8 @@ export interface AnalyticsPeriod {
   range: PeriodRange;
   /** Null for a custom period. */
   period: PeriodName | null;
+  /** The periods each named range offers, for the filter. */
+  periods: Record<"last" | "current", PeriodName[]>;
   start: BusinessDay;
   end: BusinessDay;
   through: BusinessDay;
@@ -1245,6 +1247,9 @@ export interface SalesReport {
   takingsTsh: DecimalString;
   /** Vouchers sold: sales, not refunds. */
   vouchers: number;
+  /** Over the period's days so far: what "a day on average" says. */
+  takingsPerDayTsh: DecimalString;
+  vouchersPerDay: number;
   /** What a voucher sold for on average, before refunds; null with none sold. */
   averageSaleTsh: DecimalString | null;
   /** The package sold most; null with none sold. */
@@ -1259,8 +1264,18 @@ export interface SalesReport {
     takingsTsh: DecimalString;
     share: number;
   }[];
-  /** What guests buy: each package's vouchers and net takings, the most sold first. */
-  packages: { name: string; vouchers: number; takingsTsh: DecimalString }[];
+  /**
+   * What guests buy: each package's vouchers and net takings, the most sold first, with its whole
+   * percent of the vouchers sold and of the takings.
+   */
+  packages: {
+    packageId: string | null;
+    name: string;
+    vouchers: number;
+    takingsTsh: DecimalString;
+    share: number;
+    takingsShare: number;
+  }[];
 }
 
 /** `GET /api/analytics/platform-sales` (HashiNet's team): sales across businesses and the fees. */
@@ -1301,10 +1316,13 @@ export interface UsageReport {
   /** Of those, the ones seen on two or more business days. */
   returning: number;
   sessions: number;
+  /** Over the period's days so far: what "a day on average" says. */
+  sessionsPerDay: number;
   /** The average session, from its start to its end (or now); null with none. */
   averageSessionMinutes: number | null;
-  /** Every session's data, counted on the day it started. */
+  /** Every session's data, counted on the day it started, and per session. */
   dataBytes: number;
+  dataPerSessionBytes: number;
   /** Sessions started per bucket. */
   series: Series;
   /**
@@ -1485,8 +1503,11 @@ export interface GuestContext {
    * guest's paid time doesn't start for nothing.
    */
   internet: boolean;
-  /** Whether guests can buy here; until then the portal is for vouchers. */
-  mobileMoney: boolean;
+  /**
+   * Whether guests buy here with mobile money: it is set up and a package can be paid for. Else the
+   * plans are read, with where to buy in person.
+   */
+  sellsOnline: boolean;
   /**
    * Whether the business sells at all: not while it is read-only or suspended (ADR-0014, 2). The
    * portal then shows no plans, and a voucher already sold still signs in.

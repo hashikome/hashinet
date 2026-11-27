@@ -67,13 +67,14 @@ describe("a business's and its venues' portals", () => {
     const c = await owner();
     await c.request("PUT", "/api/portal/business", { ...LOOK, welcome: "Karibu", opensOn: "buy" });
     const first = await addVenue(c, "First");
+    await addVenue(c, "Second");
     await c.request("PUT", "/api/portal/business", { ...LOOK, welcome: "Hujambo" });
-    const second = await addVenue(c, "Second");
+    const third = await addVenue(c, "Third");
 
     const one = editor(await c.request("GET", `/api/venues/${first}/portal`));
     expect(one.look).toMatchObject({ welcome: "Karibu", opensOn: "buy" });
-    const two = editor(await c.request("GET", `/api/venues/${second}/portal`));
-    expect(two.look).toMatchObject({ welcome: "Hujambo", opensOn: "voucher" });
+    const later = editor(await c.request("GET", `/api/venues/${third}/portal`));
+    expect(later.look).toMatchObject({ welcome: "Hujambo", opensOn: "voucher" });
 
     // A venue's own change stays its own; restoring takes the template as it is now.
     await c.request("PUT", `/api/venues/${first}/portal`, {
@@ -98,17 +99,22 @@ describe("a business's and its venues' portals", () => {
     ]);
   });
 
-  test("with one venue, changing it changes what the next venue starts with", async () => {
+  test("a business's second venue starts as its first looks; restoring still restores", async () => {
     const c = await owner();
     const only = await addVenue(c, "Only");
     await c.request("PUT", `/api/venues/${only}/portal`, { ...LOOK, welcome: "Pull up a seat" });
+    // With one venue, Restore defaults gives back what new venues start with, not its own look.
+    const restored = editor(await c.request("DELETE", `/api/venues/${only}/portal`));
+    expect(restored.look.welcome).toBe(LOOK.welcome);
+    await c.request("PUT", `/api/venues/${only}/portal`, { ...LOOK, welcome: "Pull up a seat" });
     const next = await addVenue(c, "Next");
-    const seen = editor(await c.request("GET", `/api/venues/${next}/portal`));
-    expect(seen.look.welcome).toBe("Pull up a seat");
-    // With two, each is its own.
-    await c.request("PUT", `/api/venues/${only}/portal`, { ...LOOK, welcome: "Only mine" });
-    expect(editor(await c.request("GET", "/api/portal/business")).look.welcome).toBe(
+    expect(editor(await c.request("GET", `/api/venues/${next}/portal`)).look.welcome).toBe(
       "Pull up a seat",
+    );
+    // A third starts from what new venues start with.
+    const third = await addVenue(c, "Third");
+    expect(editor(await c.request("GET", `/api/venues/${third}/portal`)).look.welcome).toBe(
+      LOOK.welcome,
     );
   });
 

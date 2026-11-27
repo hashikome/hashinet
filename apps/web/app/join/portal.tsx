@@ -120,6 +120,8 @@ export interface Preview {
 }
 
 const SAMPLE_CODE = "482913675204";
+/** The preview's purchase: nothing is asked of the API. */
+const PREVIEW_PURCHASE: GuestPaymentStarted = { paymentId: "preview", secret: "preview" };
 const inADay = () => new Date(Date.now() + 86_400_000).toISOString();
 const paidAs = (state: GuestPaymentStatus["state"]): GuestPaymentStatus => ({
   state,
@@ -140,7 +142,7 @@ function previewState(page: PreviewPage): {
   error: string | null;
 } {
   const none = { payment: null, paid: null, error: null };
-  const purchase = { paymentId: "preview", secret: "preview" };
+  const purchase = PREVIEW_PURCHASE;
   switch (page) {
     case "wrong-code":
       return {
@@ -201,7 +203,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
   const [request, setRequest] = useState<FromRouter | null>(
     preview ? { router: "preview", mac: "", ip: "", linkOrig: "" } : null,
   );
-  const [digits, setDigits] = useState(start?.error ? "482913675205" : "");
+  const [digits, setDigits] = useState(start?.error ? SAMPLE_CODE : "");
   const [error, setError] = useState<string | null>(start?.error ?? null);
   const [busy, setBusy] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -209,7 +211,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
   const [payment, setPayment] = useState<GuestPaymentStarted | null>(start?.payment ?? null);
   const [paid, setPaid] = useState<GuestPaymentStatus | null>(start?.paid ?? null);
   // The preview's context follows the editor's form as it changes.
-  const shown = preview?.context ?? loaded;
+  const context = preview?.context ?? loaded;
 
   useEffect(() => {
     if (preview) return;
@@ -230,8 +232,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
     post<GuestContext>("/api/guest/context", { router: from.router, mac: from.mac, ip: from.ip })
       .then((found) => {
         setLoaded(found);
-        // The page the venue opens on; with nothing on sale, a guest can only use a voucher.
-        setStage({ kind: found.settings.opensOn === "buy" && found.selling ? "buy" : "voucher" });
+        setStage({ kind: found.settings.opensOn });
       })
       .catch((err: unknown) =>
         setStage({
@@ -305,7 +306,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
   async function pay(packageId: string) {
     if (!request) return;
     if (preview) {
-      setPayment({ paymentId: "preview", secret: "preview" });
+      setPayment(PREVIEW_PURCHASE);
       return;
     }
     setBusy(true);
@@ -340,7 +341,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
   };
 
   // Before the router: the dark sign-in frame, no venue yet.
-  if (!shown) {
+  if (!context) {
     return (
       <Frame vars={portalVars("#0d1b2a", "#f59e2a")}>
         <Say
@@ -362,11 +363,10 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
     );
   }
 
-  const context = shown;
   const s = context.settings;
   const vars = portalVars(s.pageColor, s.buttonColor);
-  const sells = context.mobileMoney && context.packages.some((p) => p.payable);
-  const welcome = s.welcome || "Karibu. Pull up a seat.";
+  const sells = context.sellsOnline;
+  const welcome = s.welcome;
   const toPlans = () => setStage({ kind: "buy" });
   const terms = (back: "voucher" | "buy") =>
     s.requireTerms ? (

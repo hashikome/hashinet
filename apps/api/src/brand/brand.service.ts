@@ -11,7 +11,7 @@ import type { Package, ServiceAccess, Venue } from "../generated/prisma/client.j
 import { guestContext } from "../guest/guest-context.js";
 import { apiError } from "../http/error-envelope.js";
 import { onSalePackages } from "../packages/on-sale.js";
-import { platformLook } from "../portal/copy-down.js";
+import { platformLook, portalOf, templateOf } from "../portal/copy-down.js";
 import { PortalService } from "../portal/portal.service.js";
 import { lookOf } from "../portal/portal-input.js";
 import { packageRecord } from "../serializers/records.js";
@@ -24,9 +24,8 @@ const noTemplate = () =>
 /**
  * Each business's and venue's captive portal (ADR-0009). A venue's portal is its own copy, made
  * from its business's template when the venue is created; a venue's owner and managers change it.
- * The template is what new venues start with, changed by whoever reaches the whole business; while a
- * business has one venue, the two are kept the same. The logo is the venue's own, else the
- * business's.
+ * The template is what new venues start with, changed by whoever reaches the whole business. The
+ * logo is the venue's own, else the business's.
  */
 @Injectable()
 export class BrandService {
@@ -42,15 +41,10 @@ export class BrandService {
   async resolve(venueId: string): Promise<{ look: PortalLook; logoUrl: string | null }> {
     const venue = await this.db.venue.findUniqueOrThrow({
       where: { id: venueId },
-      include: { portal: true, business: { include: { portal: true } } },
+      select: { businessId: true, business: { select: { logoKey: true } } },
     });
-    // A venue made outside the services (a fixture) shows its business's, as a new one would.
-    const look = venue.portal
-      ? lookOf(venue.portal)
-      : venue.business.portal
-        ? lookOf(venue.business.portal)
-        : await platformLook(this.db);
-    return { look, logoUrl: logoUrl(venue.portal?.logoKey ?? venue.business.logoKey) };
+    const portal = await portalOf(this.db, venueId, venue.businessId);
+    return { look: lookOf(portal), logoUrl: logoUrl(portal.logoKey ?? venue.business.logoKey) };
   }
 
   // ── A venue's own ──────────────────────────────────────────────────
@@ -62,21 +56,8 @@ export class BrandService {
 
   async saveVenue(staff: Principal, id: string, look: PortalLook): Promise<PortalEditor> {
     const venue = await this.venueOf(staff, id);
-    await this.db.$transaction(async (tx) => {
-      await tx.venuePortal.upsert({
-        where: { venueId: id },
-        create: { venueId: id, ...look },
-        update: look,
-      });
-      // With one venue, the business is that venue: its next venue starts the same.
-      if ((await tx.venue.count({ where: { businessId: venue.businessId } })) === 1) {
-        await tx.businessPortal.upsert({
-          where: { businessId: venue.businessId },
-          create: { businessId: venue.businessId, ...look },
-          update: look,
-        });
-      }
-    });
+    await portalOf(this.db, id, venue.businessId);
+    await this.db.venuePortal.update({ where: { venueId: id }, data: look });
     await this.recordVenue(staff, "brand.update", venue);
     return this.venueEditor(venue);
   }
@@ -84,15 +65,9 @@ export class BrandService {
   /** Back to what the business's new venues start with; the venue's logo stays. */
   async restoreVenue(staff: Principal, id: string): Promise<PortalEditor> {
     const venue = await this.venueOf(staff, id);
-    const template = await this.db.businessPortal.findUnique({
-      where: { businessId: venue.businessId },
-    });
-    const look = template ? lookOf(template) : await platformLook(this.db);
-    await this.db.venuePortal.upsert({
-      where: { venueId: id },
-      create: { venueId: id, ...look },
-      update: look,
-    });
+    const look = lookOf(await templateOf(this.db, venue.businessId));
+    await portalOf(this.db, id, venue.businessId);
+    await this.db.venuePortal.update({ where: { venueId: id }, data: look });
     await this.recordVenue(staff, "brand.reset", venue);
     return this.venueEditor(venue);
   }
@@ -100,14 +75,9 @@ export class BrandService {
   async putLogo(staff: Principal, id: string, upload: Uint8Array): Promise<PortalEditor> {
     const venue = await this.venueOf(staff, id);
     const key = await this.logos.save(id, upload);
-    const before = await this.db.venuePortal.findUnique({ where: { venueId: id } });
-    if (before === null) {
-      const { look } = await this.resolve(id);
-      await this.db.venuePortal.create({ data: { venueId: id, ...look, logoKey: key } });
-    } else {
-      await this.db.venuePortal.update({ where: { venueId: id }, data: { logoKey: key } });
-      if (before.logoKey !== key) this.logos.discard(before.logoKey);
-    }
+    const before = await portalOf(this.db, id, venue.businessId);
+    await this.db.venuePortal.update({ where: { venueId: id }, data: { logoKey: key } });
+    if (before.logoKey !== key) this.logos.discard(before.logoKey);
     await this.recordVenue(staff, "brand.image.upload", venue);
     return this.venueEditor(venue);
   }
@@ -137,11 +107,8 @@ export class BrandService {
 
   async saveBusiness(staff: Principal, look: PortalLook): Promise<PortalEditor> {
     const businessId = this.businessOf(staff);
-    await this.db.businessPortal.upsert({
-      where: { businessId },
-      create: { businessId, ...look },
-      update: look,
-    });
+    await templateOf(this.db, businessId);
+    await this.db.businessPortal.update({ where: { businessId }, data: look });
     await this.recordBusiness(staff, "portal.business.update", businessId);
     return this.businessEditor(businessId);
   }
@@ -149,11 +116,10 @@ export class BrandService {
   /** Back to what the platform's new businesses start with. */
   async restoreBusiness(staff: Principal): Promise<PortalEditor> {
     const businessId = this.businessOf(staff);
-    const look = await platformLook(this.db);
-    await this.db.businessPortal.upsert({
+    await templateOf(this.db, businessId);
+    await this.db.businessPortal.update({
       where: { businessId },
-      create: { businessId, ...look },
-      update: look,
+      data: await platformLook(this.db),
     });
     await this.recordBusiness(staff, "portal.business.reset", businessId);
     return this.businessEditor(businessId);
@@ -162,25 +128,29 @@ export class BrandService {
   // ── Editors ────────────────────────────────────────────────────────
 
   private async venueEditor(venue: Venue): Promise<PortalEditor> {
-    const [{ look, logoUrl: logo }, row, packages, business, themes] = await Promise.all([
-      this.resolve(venue.id),
-      this.db.venuePortal.findUnique({ where: { venueId: venue.id } }),
+    const [portal, business, packages, themes] = await Promise.all([
+      portalOf(this.db, venue.id, venue.businessId),
+      this.db.business.findUniqueOrThrow({
+        where: { id: venue.businessId },
+        select: { access: true, logoKey: true },
+      }),
       onSalePackages(this.db, venue.id),
-      this.db.business.findUniqueOrThrow({ where: { id: venue.businessId } }),
       this.portal.themes(),
     ]);
+    const look = lookOf(portal);
+    const logo = logoUrl(portal.logoKey ?? business.logoKey);
     return {
       look,
       themes,
-      logo: { url: logo, own: row?.logoKey != null },
+      logo: { url: logo, own: portal.logoKey !== null },
       preview: this.preview(venue.name, business.access, look, logo, packages ?? []),
-      updatedAt: (row?.updatedAt ?? venue.updatedAt).toISOString(),
+      updatedAt: portal.updatedAt.toISOString(),
     };
   }
 
   private async businessEditor(businessId: string): Promise<PortalEditor> {
-    const [row, business, packages, themes] = await Promise.all([
-      this.db.businessPortal.findUnique({ where: { businessId } }),
+    const [template, business, packages, themes] = await Promise.all([
+      templateOf(this.db, businessId),
       this.db.business.findUniqueOrThrow({ where: { id: businessId } }),
       this.db.package.findMany({
         where: { businessId, venueId: null, isActive: true },
@@ -188,21 +158,15 @@ export class BrandService {
       }),
       this.portal.themes(),
     ]);
-    // A business made outside the services (a fixture) starts as a new one would.
-    const look = row ? lookOf(row) : await platformLook(this.db);
+    const look = lookOf(template);
+    const logo = logoUrl(business.logoKey);
     return {
       look,
       themes,
-      logo: { url: logoUrl(business.logoKey), own: false },
+      logo: { url: logo, own: false },
       // A new venue of the business: its name until the venue has its own.
-      preview: this.preview(
-        business.name,
-        business.access,
-        look,
-        logoUrl(business.logoKey),
-        packages,
-      ),
-      updatedAt: (row?.updatedAt ?? business.updatedAt).toISOString(),
+      preview: this.preview(business.name, business.access, look, logo, packages),
+      updatedAt: template.updatedAt.toISOString(),
     };
   }
 

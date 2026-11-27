@@ -28,6 +28,7 @@ import { apiError } from "../http/error-envelope.js";
 import { IssuesService } from "../issues/issues.service.js";
 import { passedSetup } from "../routers/router-journey.js";
 import { BillingSettings, businessFeeTerms } from "./billing-settings.js";
+import { lockBusiness, paidOf } from "./business-lock.js";
 import { type Span, servedShare, venueFee } from "./fee.js";
 import { invoiceEmail, reminderEmail } from "./invoice-emails.js";
 import { invoiceSummary } from "./invoice-state.js";
@@ -217,7 +218,7 @@ export class Invoices {
       include: { lines: { orderBy: { position: "asc" } }, venue: { select: { businessId: true } } },
     });
     if (!onboarding?.confirmedAt) return null;
-    await tx.$queryRaw`SELECT id FROM businesses WHERE id = ${onboarding.venue.businessId}::uuid FOR UPDATE`;
+    await lockBusiness(tx, onboarding.venue.businessId);
     const lines = onboarding.lines.map((l) => ({
       venueId,
       label: l.description ?? "",
@@ -385,7 +386,7 @@ export class Invoices {
     });
     const owing = new Map<string, "due" | "overdue">();
     for (const row of rows) {
-      const paid = row.allocations.reduce((sum, a) => sum + a.amountTsh, 0);
+      const paid = paidOf(row);
       const invoice = {
         businessId: row.businessId,
         ...invoiceSummary(row.totalTsh, paid, row.dueOn, now),
@@ -566,7 +567,8 @@ export class Invoices {
               kind: "monthly_fees",
               period: { gte: new Date(`${first}T00:00:00Z`), lt: new Date(`${after}T00:00:00Z`) },
             },
-            { kind: "onboarding" },
+            // One-off charges: a venue's package, an extra site.
+            { kind: { not: "monthly_fees" } },
           ],
         },
         include: INVOICE_INCLUDE,
@@ -602,7 +604,7 @@ export class Invoices {
       const terms = businessFeeTerms(b);
       const own = (byBusiness.get(b.id) ?? []).filter(inPeriod);
       const months = own.filter((i) => i.kind === "monthly_fees");
-      const oneOff = own.filter((i) => i.kind === "onboarding");
+      const oneOff = own.filter((i) => i.kind !== "monthly_fees");
       const sum = (list: InvoiceRecord[], f: (i: InvoiceRecord) => number) =>
         list.reduce((total, i) => total + f(i), 0);
       const billed = sum(own, (i) => i.totalTsh);
@@ -700,7 +702,7 @@ export class Invoices {
   }
 
   private record(row: InvoiceRow, now: Date): InvoiceRecord {
-    const paidTsh = row.allocations.reduce((sum, a) => sum + a.amountTsh, 0);
+    const paidTsh = paidOf(row);
     const lines: InvoiceLineRecord[] = row.lines.map((l) => ({
       label: l.label,
       venueId: l.venueId,

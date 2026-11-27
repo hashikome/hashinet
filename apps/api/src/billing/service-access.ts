@@ -17,6 +17,7 @@ import { oneLine } from "../http/validation.js";
 import { IssuesService } from "../issues/issues.service.js";
 import { accessByBillsEmail, accessByHandEmail } from "./access-emails.js";
 import { type AccessByBills, accessByBills, type FeesBill, sellingStopped } from "./access-rule.js";
+import { lockBusiness } from "./business-lock.js";
 import { OwnerMail } from "./owner-mail.js";
 
 const REASONS = [
@@ -137,7 +138,7 @@ export class ServiceAccessService {
       const byBills = accessByBills(billsOf(b.invoices), today);
       // Under the business's lock, read fresh: a hold set meanwhile, or another run, wins.
       const step = await this.db.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT id FROM businesses WHERE id = ${b.id}::uuid FOR UPDATE`;
+        await lockBusiness(tx, b.id);
         const cur = await tx.business.findUniqueOrThrow({
           where: { id: b.id },
           select: { access: true, accessHeld: true, accessHeldUntil: true, accessPausesOn: true },
@@ -204,8 +205,7 @@ export class ServiceAccessService {
   ): Promise<ServiceAccessDetail> {
     const today = businessDayOf(now);
     const result = await this.db.$transaction(async (tx) => {
-      const [locked] = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id FROM businesses WHERE id = ${businessId}::uuid FOR UPDATE`;
+      const locked = await lockBusiness(tx, businessId);
       if (!locked) throw notFound();
       const b = await tx.business.findUniqueOrThrow({
         where: { id: businessId },

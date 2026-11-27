@@ -10,6 +10,7 @@ import type { Principal } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
 import { BillingEvents } from "../billing/billing-events.js";
 import { BillingSettings } from "../billing/billing-settings.js";
+import { lockBusiness } from "../billing/business-lock.js";
 import { Invoices } from "../billing/invoices.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma } from "../generated/prisma/client.js";
@@ -63,7 +64,7 @@ export class SitesService implements OnModuleInit {
         where: { businessId, siteSlots: { some: {} } },
         select: { id: true },
       });
-      for (const v of venues) await this.push(v.id);
+      await Promise.all(venues.map((v) => this.push(v.id)));
     });
   }
 
@@ -108,7 +109,7 @@ export class SitesService implements OnModuleInit {
     const venue = await this.venues.get(staff, venueId);
     const invoice = await this.db.$transaction(async (tx) => {
       // One change at a time to a business's charges, as a payment holds it.
-      await tx.$queryRaw`SELECT id FROM businesses WHERE id = ${venue.businessId}::uuid FOR UPDATE`;
+      await lockBusiness(tx, venue.businessId);
       try {
         await tx.venueSite.create({
           data: { venueId, host: input.host, note: input.note, addedById: staff.membershipId },
@@ -157,7 +158,7 @@ export class SitesService implements OnModuleInit {
   async remove(staff: Principal, venueId: string, siteId: string): Promise<VenueSites> {
     const venue = await this.venues.get(staff, venueId);
     const gaveBack = await this.db.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM businesses WHERE id = ${venue.businessId}::uuid FOR UPDATE`;
+      await lockBusiness(tx, venue.businessId);
       const site = await tx.venueSite.findFirst({ where: { id: siteId, venueId } });
       if (!site) throw notFound();
       await tx.venueSite.delete({ where: { id: siteId } });
@@ -200,9 +201,21 @@ export class SitesService implements OnModuleInit {
     return this.list(staff, venueId);
   }
 
-  /** The venue's routers get its open sites now; one that can't be reached gets them at Set up. */
-  private async push(venueId: string): Promise<void> {
-    const hosts = await openHosts(this.db, venueId);
-    void this.sync.pushOpenSites(venueId, hosts).catch(captureFailure);
+  /**
+   * The venue's routers get its open sites now; one that can't be reached gets them at Set up. A
+   * venue's pushes run one after another, each reading the list when it runs, so the last change's
+   * list is the one that stays.
+   */
+  private push(venueId: string): Promise<void> {
+    const run = (this.pushing.get(venueId) ?? Promise.resolve())
+      .then(async () => this.sync.pushOpenSites(venueId, await openHosts(this.db, venueId)))
+      .catch(captureFailure);
+    this.pushing.set(venueId, run);
+    void run.finally(() => {
+      if (this.pushing.get(venueId) === run) this.pushing.delete(venueId);
+    });
+    return Promise.resolve();
   }
+
+  private readonly pushing = new Map<string, Promise<void>>();
 }

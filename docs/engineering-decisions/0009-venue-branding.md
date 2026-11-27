@@ -13,13 +13,13 @@ another address.
 
 ## Decision
 
-1. **A business profile, then each venue's brand.** A business has a name and a square logo,
-   edited by its owner only. Its people see them at the head of the admin in place of HashiFi's
-   mark; platform staff always see HashiFi's, with the business named in the scope switcher. A
-   venue's brand (`venue_brands`: colours, background, wording, an optional logo) themes its captive
-   portal, edited by the owner or a manager of that venue. A guest sees the venue's logo, else the
-   business's, else HashiFi's default in `portal_settings`, which the platform admin edits. Printed
-   cards follow the voucher's venue; voucher codes have no prefix (ADR-0008).
+1. **A business profile, then each venue's portal.** A business has a name, an address and a
+   square logo, changed by its owner and read by its business managers. Its people see the logo at
+   the head of the admin in place of HashiNet's mark; platform staff always see HashiNet's, with the
+   business named in the scope switcher. A venue's portal (`venue_portals`: two colours, the page it
+   opens on, wording, terms and an optional logo) is changed by the owner or a manager of that
+   venue. A guest sees the venue's logo, else the business's, else none. Voucher codes have no
+   prefix (ADR-0008).
 1a. **Copied down, not inherited** (28 November 2026). A portal is two colours (the page's and its
    button's; every other colour is worked out from them), the page it opens on, whether it shows a
    logo, its wording and its terms. HashiNet's team keeps the themes (named pairs of colours, one
@@ -37,7 +37,7 @@ another address.
 3. **Files in R2, keys in PostgreSQL.** The private `hashifi` bucket holds the files; the backups
    bucket stays backups only. `BrandStore` has an R2 implementation on Bun's S3 client and a disk
    one under `data/brand/`, so nobody needs a bucket to run HashiFi. R2 is required in production.
-4. **Served from the portal's own origin.** `GET /api/guest/brand/:venueId/:file` streams through
+4. **Served from the portal's own origin.** `GET /api/guest/brand/:ownerId/:file` streams through
    the API on the path the web already proxies, so a phone reaches it through the walled garden
    with no router change and ADR-0008's one host still holds. A file is named by its content, so it
    caches for good, and a replacement gets a new address.

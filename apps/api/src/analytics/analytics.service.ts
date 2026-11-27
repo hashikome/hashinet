@@ -12,8 +12,14 @@ import { venueScope } from "../access/venue-scope.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
-import { addDays, businessDayOf, businessDaySql } from "./business-day.js";
-import { businessMonthSql, moneySum, REVENUE_EVENTS, venueFilter } from "./revenue-events.js";
+import { addDays, businessDayOf, businessDaySql, businessDayStart } from "./business-day.js";
+import {
+  businessMonthSql,
+  moneySum,
+  REVENUE_EVENTS,
+  sumMoney,
+  venueFilter,
+} from "./revenue-events.js";
 
 const DAY_MS = 86_400_000;
 const RECEIVED_PAGE = 100;
@@ -49,10 +55,7 @@ export const todayQuery = z.object({ venueId: z.uuid().nullable().default(null) 
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly db: PrismaService) {}
-  /**
-   * A business's day so far: who is online, what sold and what it took, against the same weekday a
-   * week ago up to now. The platform has its own figures, so this is a business's alone.
-   */
+
   /** Each venue's takings, today and over the last 7 days: the Venues list and a venue's page. */
   async venueTakings(staff: Principal): Promise<VenueTakings> {
     const venues = await this.businessVenues(staff, null);
@@ -63,7 +66,9 @@ export class AnalyticsService {
     >`
       WITH ${REVENUE_EVENTS},
       days AS (SELECT venue_id, kind, amount, ${businessDaySql(Prisma.sql`occurred_at`)} AS day
-               FROM revenue_events WHERE ${venueFilter(Prisma.sql`venue_id`, venues)})
+               FROM revenue_events
+               WHERE occurred_at >= ${businessDayStart(weekStart)}
+                 AND ${venueFilter(Prisma.sql`venue_id`, venues)})
       SELECT venue_id,
              COALESCE(SUM(amount) FILTER (WHERE day = ${today}::date), 0)::numeric(14,2)::text
                AS today,
@@ -87,6 +92,10 @@ export class AnalyticsService {
     };
   }
 
+  /**
+   * A business's day so far: who is online, what sold and what it took, against the same weekday a
+   * week ago up to now. The platform has its own figures, so this is a business's alone.
+   */
   async today(staff: Principal, query: z.infer<typeof todayQuery>): Promise<TodaySummary> {
     const venues = await this.businessVenues(staff, query.venueId);
     const now = new Date();
@@ -257,12 +266,4 @@ export class AnalyticsService {
   private currentMonth(): BusinessMonth {
     return businessDayOf(new Date()).slice(0, 7);
   }
-}
-
-/** Adds two-decimal money strings in whole cents, so no float error reaches a total. */
-function sumMoney(amounts: string[]): string {
-  const cents = amounts.reduce((sum, a) => sum + BigInt(Math.round(Number(a) * 100)), 0n);
-  const sign = cents < 0n ? "-" : "";
-  const abs = cents < 0n ? -cents : cents;
-  return `${sign}${abs / 100n}.${String(abs % 100n).padStart(2, "0")}`;
 }

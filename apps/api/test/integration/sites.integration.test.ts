@@ -71,6 +71,10 @@ describe("a venue's sites open before paying", () => {
     await platformMember(t.db, { email: "asha@example.com", name: "Asha", role: "manager" });
     const asha = browser(api);
     await enrollAuthenticatorFor(api, asha, "asha@example.com");
+    // HashiNet's billing overview counts it as a one-off charge, due.
+    const month = invoice.issuedAt.toISOString().slice(0, 7);
+    const overview = await asha.request("GET", `/api/billing/overview?from=${month}&to=${month}`);
+    expect(JSON.stringify(overview.body)).toContain('"oneOffTsh":10000');
     const paid = await asha.request("POST", "/api/billing/payments", {
       businessId: lodge.businessId,
       invoiceId,

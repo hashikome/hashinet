@@ -28,7 +28,8 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
   const can = useCan();
   const { reload: reloadVenues } = useVenues();
   const [editing, setEditing] = useState(false);
-  const money = can("analytics.read");
+  // A business's own figures: HashiNet's team reads a venue's sales from Analytics.
+  const money = me.active.scope === "business" && can("analytics.read");
   const data = useLoad("venue", async () => {
     const detail = await api.get<VenueDetail>(`/api/venues/${id}`);
     const settingUp = detail.venue.selling.state === "not-set-up";

@@ -14,6 +14,7 @@ import { z } from "zod";
 import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
+import { lockBusiness } from "../billing/business-lock.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { PaymentWay as PaymentWayRow, Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
@@ -305,7 +306,7 @@ export class PaymentWaysService {
 
   /** One change at a time to a business's ways, so its default is never lost between two. */
   private async lock(tx: Prisma.TransactionClient, businessId: string) {
-    await tx.$queryRaw`SELECT id FROM businesses WHERE id = ${businessId}::uuid FOR UPDATE`;
+    await lockBusiness(tx, businessId);
     return tx.business.findUniqueOrThrow({
       where: { id: businessId },
       select: { defaultPaymentWayId: true },

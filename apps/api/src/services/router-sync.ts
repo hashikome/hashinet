@@ -3,6 +3,7 @@ import { getLogger } from "@logtape/logtape";
 import type { AuditLog } from "../audit/audit-log.js";
 import type { Package, PrismaClient, Router } from "../generated/prisma/client.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
+import { passedSetup } from "../routers/router-journey.js";
 import { withRetry } from "../utils/retry.js";
 import {
   type CreateHotspotUserOptions,
@@ -559,7 +560,10 @@ export class RouterSync {
    * gets them at its next Set up, which applies the same list.
    */
   async pushOpenSites(venueId: string, hosts: string[]): Promise<void> {
-    for (const router of await this.db.router.findMany({ where: { venueId } })) {
+    // Only routers set up: setup probed what each supports and made its walled garden; one not
+    // set up gets the sites at Set up.
+    const routers = await this.db.router.findMany({ where: { venueId } });
+    for (const router of routers.filter((r) => passedSetup(r.lastSetup))) {
       const creds = this.access.credentials(router);
       if (!creds) continue;
       await this.onRouter(router, (conn) =>

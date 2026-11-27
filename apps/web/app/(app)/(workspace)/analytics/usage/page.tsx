@@ -4,8 +4,8 @@ import type { UsageReport } from "@hashinet/types";
 import { Suspense } from "react";
 import {
   axisOf,
+  Bar,
   Heatmap,
-  minutesText,
   NothingHere,
   PeriodFilters,
   peakNote,
@@ -17,6 +17,7 @@ import { LineChart } from "@/components/hearth/chart";
 import { Figs, Head, Panel, Table } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
 import { dataSize } from "@/lib/data-size";
+import { hoursAndMinutes } from "@/lib/duration";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useSession } from "@/lib/session";
 
@@ -44,7 +45,7 @@ function Usage() {
   return (
     <>
       <Head title="Usage" sub={r ? `${periodTitle(r.period)} · ${scope}` : scope} />
-      <PeriodFilters filter={filter} set={set} shows={r?.period.shows ?? []} />
+      <PeriodFilters filter={filter} set={set} served={r?.period ?? null} />
       {report.error ? <LoadFailed error={report.error} retry={report.reload} /> : null}
       {r === null ? null : r.empty ? (
         <NothingHere title="Usage" />
@@ -53,23 +54,15 @@ function Usage() {
           <Figs
             items={[
               ["Devices", r.devices, `${r.returning} came back on another day`],
-              [
-                "Sessions",
-                r.sessions,
-                `${Math.round(r.sessions / Math.max(r.period.days, 1))} a day on average`,
-              ],
+              ["Sessions", r.sessions, `${r.sessionsPerDay} a day on average`],
               [
                 "Average session",
                 r.averageSessionMinutes === null
                   ? "None yet"
-                  : minutesText(r.averageSessionMinutes),
+                  : hoursAndMinutes(r.averageSessionMinutes),
                 "from joining to leaving",
               ],
-              [
-                "Data used",
-                dataSize(r.dataBytes),
-                `${dataSize(r.sessions ? r.dataBytes / r.sessions : 0)} a session`,
-              ],
+              ["Data used", dataSize(r.dataBytes), `${dataSize(r.dataPerSessionBytes)} a session`],
             ]}
           />
           <Panel
@@ -108,7 +101,7 @@ function Usage() {
                       </span>,
                       v.devices,
                       <span key="s">
-                        <span className="bar-in" style={{ width: (v.sessions / top) * 48 }} />
+                        <Bar value={v.sessions} top={top} />
                         {v.sessions}
                       </span>,
                       dataSize(v.dataBytes),

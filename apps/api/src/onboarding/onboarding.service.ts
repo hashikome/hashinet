@@ -13,6 +13,7 @@ import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { businessDayOf } from "../analytics/business-day.js";
 import { AuditLog } from "../audit/audit-log.js";
+import { lockBusiness } from "../billing/business-lock.js";
 import { invoiceSummary } from "../billing/invoice-state.js";
 import { Invoices } from "../billing/invoices.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -149,7 +150,7 @@ export class OnboardingService {
     const total = totalOf(input.lines);
     const invoice = await this.db.$transaction(async (tx) => {
       // Held as a payment holds it, so nothing is paid on the old charge while this changes it.
-      await tx.$queryRaw`SELECT id FROM businesses WHERE id = ${venue.businessId}::uuid FOR UPDATE`;
+      await lockBusiness(tx, venue.businessId);
       const paid = await tx.billAllocation.count({
         where: { invoice: { kind: "onboarding", venueId } },
       });

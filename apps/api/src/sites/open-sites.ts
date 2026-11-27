@@ -1,3 +1,4 @@
+import { paidOf } from "../billing/business-lock.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
 
 type Db = PrismaClient | Prisma.TransactionClient;
@@ -7,7 +8,7 @@ export function slotPaid(slot: {
   invoice: { totalTsh: number; allocations: { amountTsh: number }[] } | null;
 }): boolean {
   if (slot.invoice === null) return true;
-  return slot.invoice.allocations.reduce((sum, a) => sum + a.amountTsh, 0) >= slot.invoice.totalTsh;
+  return paidOf(slot.invoice) >= slot.invoice.totalTsh;
 }
 
 export const SLOT_SELECT = {

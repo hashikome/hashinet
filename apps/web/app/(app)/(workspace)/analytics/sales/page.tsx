@@ -4,6 +4,7 @@ import type { PlatformSalesReport, SalesReport } from "@hashinet/types";
 import { Suspense } from "react";
 import {
   axisOf,
+  Bar,
   NothingHere,
   PeriodFilters,
   periodTitle,
@@ -31,11 +32,6 @@ function Sales() {
   return me.active.scope === "platform" ? <PlatformSales /> : <BusinessSales />;
 }
 
-/** A bar beside a figure, as long as its share of the largest. */
-const bar = (value: number, top: number) => (
-  <span className="bar-in" style={{ width: (value / Math.max(top, 1)) * 48 }} />
-);
-
 /** Sales (prototype `businessSales`): net takings, as Payments counts them. */
 function BusinessSales() {
   const { me } = useSession();
@@ -46,13 +42,12 @@ function BusinessSales() {
   ]);
   const r = report.data;
   const today = r?.period.range === "current" && r.period.period === "day";
-  const days = Math.max(r?.period.days ?? 1, 1);
   const top = Math.max(...(r?.venues.map((v) => Number(v.takingsTsh)) ?? [0]));
   const first = r?.packages[0];
   return (
     <>
       <Head title="Sales" sub={r ? `${periodTitle(r.period)} · ${scope}` : scope} />
-      <PeriodFilters filter={filter} set={set} shows={r?.period.shows ?? []} />
+      <PeriodFilters filter={filter} set={set} served={r?.period ?? null} />
       {report.error ? <LoadFailed error={report.error} retry={report.reload} /> : null}
       {r === null ? null : r.empty ? (
         <NothingHere title="Sales" />
@@ -63,16 +58,12 @@ function BusinessSales() {
               [
                 "Takings",
                 tsh(r.takingsTsh),
-                today
-                  ? "so far today"
-                  : `${tsh(Math.round(Number(r.takingsTsh) / days))} a day on average`,
+                today ? "so far today" : `${tsh(r.takingsPerDayTsh)} a day on average`,
               ],
               [
                 "Vouchers sold",
                 r.vouchers,
-                today
-                  ? "at the counter and online"
-                  : `${Math.round(r.vouchers / days)} a day on average`,
+                today ? "at the counter and online" : `${r.vouchersPerDay} a day on average`,
               ],
               [
                 "Average sale",
@@ -113,7 +104,7 @@ function BusinessSales() {
                       </span>,
                       v.vouchers,
                       <span key="t">
-                        {bar(Number(v.takingsTsh), top)}
+                        <Bar value={Number(v.takingsTsh)} top={top} />
                         {tsh(v.takingsTsh)}
                       </span>,
                       `${v.share}%`,
@@ -133,7 +124,7 @@ function BusinessSales() {
             >
               <ul className="mix">
                 {r.packages.map((p) => (
-                  <li key={p.name}>
+                  <li key={p.packageId ?? p.name}>
                     <div className="mix-top">
                       <span>{p.name}</span>
                       <span className="num">
@@ -141,18 +132,15 @@ function BusinessSales() {
                       </span>
                     </div>
                     <div className="track">
-                      <span
-                        style={{ width: `${r.vouchers ? (p.vouchers / r.vouchers) * 100 : 0}%` }}
-                      />
+                      <span style={{ width: `${p.share}%` }} />
                     </div>
                   </li>
                 ))}
               </ul>
-              {first && r.packages.length > 1 && r.vouchers && Number(r.takingsTsh) > 0 ? (
+              {first && r.packages.length > 1 ? (
                 <p className="note">
-                  {first.name} vouchers are {Math.round((first.vouchers / r.vouchers) * 100)}% of
-                  sales but {Math.round((Number(first.takingsTsh) / Number(r.takingsTsh)) * 100)}%
-                  of takings.
+                  {first.name} vouchers are {first.share}% of sales but {first.takingsShare}% of
+                  takings.
                 </p>
               ) : null}
             </Panel>
@@ -177,7 +165,7 @@ function PlatformSales() {
   return (
     <>
       <Head title="Sales" sub={r ? `${periodTitle(r.period)} · ${scope}` : scope} />
-      <PeriodFilters filter={filter} set={set} shows={r?.period.shows ?? []} />
+      <PeriodFilters filter={filter} set={set} served={r?.period ?? null} />
       {report.error ? <LoadFailed error={report.error} retry={report.reload} /> : null}
       {r === null ? null : (
         <>
@@ -230,7 +218,7 @@ function PlatformSales() {
                       </span>,
                       b.venues,
                       <span key="s">
-                        {bar(Number(b.salesTsh), top)}
+                        <Bar value={Number(b.salesTsh)} top={top} />
                         {tsh(b.salesTsh)}
                       </span>,
                       `${b.share}%`,

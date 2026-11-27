@@ -48,7 +48,7 @@ describe("without mobile money or SMS", () => {
     const { router, pkg } = await setting();
     const device = { router: router.id, mac: "AA:BB:CC:00:00:03", ip: "10.5.50.20" };
     const context = await post("/api/guest/context", device);
-    expect(context.body).toMatchObject({ mobileMoney: false, packages: [{ name: "Day" }] });
+    expect(context.body).toMatchObject({ sellsOnline: false, packages: [{ name: "Day" }] });
     const buying = await post("/api/guest/payments", {
       ...device,
       packageId: pkg.id,

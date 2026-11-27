@@ -137,3 +137,9 @@ export function timeLeft(endsAt: string | null, now = Date.now()): string {
   if (minutes < DAY) return `${Math.floor(minutes / HOUR)}h ${minutes % HOUR}m left`;
   return `${Math.floor(minutes / DAY)}d left`;
 }
+
+/** "3h 12m", "45m": how long something lasted. */
+export function hoursAndMinutes(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  return h ? `${h}h ${minutes % 60}m` : `${minutes}m`;
+}

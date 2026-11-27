@@ -8,13 +8,15 @@ import type {
   PortalLook,
   PortalTheme,
 } from "@hashinet/types";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { GuestPortal, type PreviewPage } from "@/app/join/portal";
 import { api, messageOf } from "@/lib/api";
 import { coloursTooClose } from "@/lib/portal-colours";
 import { useSubmit } from "@/lib/submit";
+import { ConfirmDialog } from "./confirm-dialog";
 import { Dialog } from "./dialog";
 import { Icon } from "./icons";
+import { LogoPicker } from "./logo-picker";
 import { Button, Field, Panel, Pill, Table, useToast } from "./ui";
 
 /** The guest pages the preview steps through, grouped by path (prototype `portalTabs`). */
@@ -53,13 +55,12 @@ const ALL = PAGES.flatMap(([, pages]) => pages);
  * The phone beside the form (prototype `portalPreview`): the portal a guest gets, on the page
  * picked, with the form's colours and words as they are typed.
  */
-export function PortalPreview({ context }: { context: GuestContext }) {
-  const [at, setAt] = useState(0);
-  const [id] = ALL[at] ?? ALL[0] ?? ["voucher", ""];
-  const step = (by: number) => setAt((i) => (i + by + ALL.length) % ALL.length);
-  // At the counter: the plans to read, where to buy and who to call, with no mobile money.
-  const shown =
-    id === "counter" ? { ...context, mobileMoney: false } : { ...context, mobileMoney: true };
+function PortalPreview({ context }: { context: GuestContext }) {
+  const [id, setId] = useState<PreviewPage | "counter">("voucher");
+  const at = ALL.findIndex(([p]) => p === id);
+  const step = (by: number) => setId(ALL[(at + by + ALL.length) % ALL.length]?.[0] ?? "voucher");
+  // Both buy pages a guest can meet: by mobile money, or at the counter (where to buy, who to call).
+  const shown = { ...context, sellsOnline: id !== "counter" };
   return (
     <div className="gp-col">
       <div className="gp-pick">
@@ -77,7 +78,7 @@ export function PortalPreview({ context }: { context: GuestContext }) {
           className="input"
           aria-label="Guest page"
           value={id}
-          onChange={(e) => setAt(ALL.findIndex(([p]) => p === e.target.value))}
+          onChange={(e) => setId(e.target.value as PreviewPage | "counter")}
         >
           {PAGES.map(([group, pages]) => (
             <optgroup key={group} label={group}>
@@ -249,7 +250,7 @@ export function LookEditor({
   venue: { name: string } | null;
   onSaved: (next: PortalEditor) => void;
 }) {
-  const toast = useToast();
+  const _toast = useToast();
   const { busy, errors, run } = useSubmit();
   const [look, setLook] = useState<PortalLook>(editor.look);
   const theme = editor.themes.find(
@@ -267,8 +268,6 @@ export function LookEditor({
     set(change);
   };
   const [restoring, setRestoring] = useState(false);
-  const [logoBusy, setLogoBusy] = useState(false);
-  const file = useRef<HTMLInputElement>(null);
   const set = (change: Partial<PortalLook>) => setLook((l) => ({ ...l, ...change }));
   const context: GuestContext = {
     ...editor.preview,
@@ -283,18 +282,6 @@ export function LookEditor({
     : editor.logo.url
       ? "The business logo"
       : "No logo yet";
-
-  const sendLogo = async (send: () => Promise<PortalEditor>, done: string) => {
-    setLogoBusy(true);
-    try {
-      onSaved(await send());
-      toast(done);
-    } catch (e) {
-      toast(messageOf(e));
-    } finally {
-      setLogoBusy(false);
-    }
-  };
 
   return (
     <div className="guest-layout">
@@ -376,41 +363,13 @@ export function LookEditor({
             />
             {look.showLogo && venue ? (
               <div className="field">
-                <div className="actions">
-                  <input
-                    ref={file}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    hidden
-                    onChange={(e) => {
-                      const chosen = e.target.files?.[0];
-                      e.target.value = "";
-                      if (chosen)
-                        void sendLogo(
-                          () => api.upload<PortalEditor>(`${path}/logo`, chosen),
-                          "Logo uploaded.",
-                        );
-                    }}
-                  />
-                  <Button busy={logoBusy} onClick={() => file.current?.click()}>
-                    {editor.logo.own ? "Replace the logo" : "Upload a logo"}
-                  </Button>
-                  {editor.logo.own ? (
-                    <Button
-                      kind="danger"
-                      disabled={logoBusy}
-                      onClick={() =>
-                        void sendLogo(
-                          () => api.delete<PortalEditor>(`${path}/logo`),
-                          "Logo removed.",
-                        )
-                      }
-                    >
-                      Remove
-                    </Button>
-                  ) : null}
-                </div>
-                <span className="hint">{logoHint}. A square JPEG, PNG or WebP image.</span>
+                <LogoPicker
+                  has={editor.logo.own}
+                  upload={(f) => api.upload<PortalEditor>(`${path}/logo`, f)}
+                  remove={() => api.delete<PortalEditor>(`${path}/logo`)}
+                  onSaved={onSaved}
+                  note={logoHint}
+                />
               </div>
             ) : look.showLogo ? (
               <span className="hint">{logoHint}</span>
@@ -442,7 +401,7 @@ export function LookEditor({
       </div>
       <PortalPreview context={context} />
       {restoring ? (
-        <Restore
+        <ConfirmDialog
           what={
             venue
               ? `${venue.name}'s colours and wording go back to what new venues start with. Its logo stays.`
@@ -486,60 +445,11 @@ function ThemeSwatch({
   );
 }
 
-/** Restoring, or removing a theme, asks first: what was saved goes. */
-function Restore<T>({
-  title = "Restore the defaults?",
-  confirm = "Restore defaults",
-  done = "Defaults restored.",
-  what,
-  send,
-  onClose,
-  onDone,
-}: {
-  title?: string;
-  confirm?: string;
-  done?: string;
-  what: string;
-  send: () => Promise<T>;
-  onClose: () => void;
-  onDone: (next: T) => void;
-}) {
-  const toast = useToast();
-  const [busy, setBusy] = useState(false);
-  return (
-    <Dialog label={title} onClose={onClose} alert>
-      <h2>{title}</h2>
-      <p className="muted">{what}</p>
-      <div className="dialog-actions">
-        <Button
-          kind="danger"
-          busy={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              onDone(await send());
-              toast(done);
-            } catch (e) {
-              toast(messageOf(e));
-              setBusy(false);
-            }
-          }}
-        >
-          {confirm}
-        </Button>
-        <Button data-cancel onClick={onClose}>
-          Cancel
-        </Button>
-      </div>
-    </Dialog>
-  );
-}
-
 /** A sample venue for the platform's preview: what a new business's first venue shows. */
 const SAMPLE: GuestContext = {
   venueName: "Your venue",
   internet: true,
-  mobileMoney: true,
+  sellsOnline: true,
   selling: true,
   settings: {
     opensOn: "voucher",
@@ -751,7 +661,7 @@ export function PlatformPortalEditor({
         />
       ) : null}
       {removing ? (
-        <Restore
+        <ConfirmDialog
           title={`Remove ${removing.name}?`}
           confirm="Remove theme"
           done={`${removing.name} removed.`}
@@ -765,7 +675,7 @@ export function PlatformPortalEditor({
         />
       ) : null}
       {restoring ? (
-        <Restore
+        <ConfirmDialog
           what="What new businesses start with goes back to HashiNet's own wording. The themes stay."
           send={() => api.delete<PlatformPortal>("/api/portal")}
           onClose={() => setRestoring(false)}

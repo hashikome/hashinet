@@ -489,9 +489,13 @@ export class PaymentsService {
    * is shown to them, and sent if there is a number.
    */
   async recordSale(staff: Principal, input: SaleInput): Promise<SaleResult> {
-    const sold = await this.packages.soldAt(staff, input.venueId);
+    // What the venue sells, in the seller's scope, and whether a router can take a voucher.
+    const [sold, serving] = await Promise.all([
+      this.packages.onSaleIn(staff, input.venueId),
+      this.db.router.count({ where: { venueId: input.venueId, ...SERVING } }),
+    ]);
     // A voucher with no router to take it sells nothing a guest can use.
-    if ((await this.db.router.count({ where: { venueId: input.venueId, ...SERVING } })) === 0) {
+    if (serving === 0) {
       throw new ConflictException(
         apiError(
           "VENUE_NOT_SERVING",
@@ -499,7 +503,7 @@ export class PaymentsService {
         ),
       );
     }
-    const pkg = sold.packages.find((p) => p.id === input.packageId) ?? null;
+    const pkg = sold.find((p) => p.id === input.packageId) ?? null;
     if (pkg === null) {
       throw new BadRequestException(
         apiError("VALIDATION_FAILED", "Check the highlighted fields.", {

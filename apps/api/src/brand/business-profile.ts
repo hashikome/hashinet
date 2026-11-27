@@ -17,8 +17,8 @@ import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Business } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
+import { readUpload } from "../http/upload.js";
 import { oneLine, parseInput } from "../http/validation.js";
-import { readUpload } from "./brand.controller.js";
 import { Logos, logoUrl } from "./logos.js";
 
 export const profileInput = z.object({

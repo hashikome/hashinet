@@ -1,10 +1,11 @@
 "use client";
 
 import { type BusinessProfile, REGIONS, type Region } from "@hashinet/types";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { BusinessMark } from "@/components/hearth/icons";
+import { LogoPicker } from "@/components/hearth/logo-picker";
 import { Button, Field, Head, useToast } from "@/components/hearth/ui";
-import { api, messageOf } from "@/lib/api";
+import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan, useSession } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
@@ -49,24 +50,11 @@ function Profile({
   edit: boolean;
   onSaved: (next: BusinessProfile) => void;
 }) {
-  const toast = useToast();
+  const _toast = useToast();
   const { busy, errors, run } = useSubmit();
   const [name, setName] = useState(profile.name);
   const [region, setRegion] = useState<Region>(profile.region);
   const [area, setArea] = useState(profile.area);
-  const [logoBusy, setLogoBusy] = useState(false);
-  const file = useRef<HTMLInputElement>(null);
-  const logo = async (send: () => Promise<BusinessProfile>, done: string) => {
-    setLogoBusy(true);
-    try {
-      onSaved(await send());
-      toast(done);
-    } catch (e) {
-      toast(messageOf(e));
-    } finally {
-      setLogoBusy(false);
-    }
-  };
   return (
     <section className="panel split" style={{ maxWidth: 1040 }}>
       <div className="split-head">
@@ -94,43 +82,12 @@ function Profile({
           <div className="actions" style={{ gap: 14 }}>
             <BusinessMark name={name || profile.name} logoUrl={profile.logoUrl} size={56} />
             {edit ? (
-              <div>
-                <div className="actions">
-                  <input
-                    ref={file}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    hidden
-                    onChange={(e) => {
-                      const chosen = e.target.files?.[0];
-                      e.target.value = "";
-                      if (chosen)
-                        void logo(
-                          () => api.upload<BusinessProfile>("/api/business/logo", chosen),
-                          "Logo uploaded.",
-                        );
-                    }}
-                  />
-                  <Button icon="upload" busy={logoBusy} onClick={() => file.current?.click()}>
-                    {profile.logoUrl ? "Replace logo" : "Upload a logo"}
-                  </Button>
-                  {profile.logoUrl ? (
-                    <Button
-                      kind="danger"
-                      disabled={logoBusy}
-                      onClick={() =>
-                        void logo(
-                          () => api.delete<BusinessProfile>("/api/business/logo"),
-                          "Logo removed.",
-                        )
-                      }
-                    >
-                      Remove
-                    </Button>
-                  ) : null}
-                </div>
-                <div className="hint">A square JPEG, PNG or WebP, up to 8 MB</div>
-              </div>
+              <LogoPicker
+                has={profile.logoUrl !== null}
+                upload={(f) => api.upload<BusinessProfile>("/api/business/logo", f)}
+                remove={() => api.delete<BusinessProfile>("/api/business/logo")}
+                onSaved={onSaved}
+              />
             ) : null}
           </div>
         </div>

@@ -37,9 +37,15 @@ export function guestContext(input: {
   return {
     venueName: input.venueName,
     internet: input.internet,
-    mobileMoney: input.mobileMoney,
+    sellsOnline:
+      input.mobileMoney && input.selling && input.packages.some((p) => isPayable(p.priceTsh)),
     selling: input.selling,
-    settings: { ...input.look, logoUrl: input.look.showLogo ? input.logoUrl : null },
+    settings: {
+      ...input.look,
+      // With nothing on sale, a guest can only use a voucher: the portal opens on that page.
+      opensOn: input.selling ? input.look.opensOn : "voucher",
+      logoUrl: input.look.showLogo ? input.logoUrl : null,
+    },
     // Nothing is on sale while its business can't sell.
     packages: (input.selling ? input.packages : []).map((p) => ({
       id: p.id,

@@ -14,7 +14,7 @@ import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { packageRecord } from "../serializers/records.js";
 import { VenuesService } from "../venues/venues.service.js";
-import { onSalePackages } from "./on-sale.js";
+import { onSalePackages, venueCatalogue } from "./on-sale.js";
 import type { PackageInput } from "./package-input.js";
 
 export const packageNotFound = () =>
@@ -116,30 +116,28 @@ export class PackagesService {
         row.venueId ? v.id === row.venueId : v.businessId === row.businessId,
       );
       // One line per price: the business's at the venues that follow it, then each venue's own.
-      const setting = (venueId: string) => row.venues.find((x) => x.venueId === venueId);
-      const follow = at.filter((v) => setting(v.id)?.onSale !== false && !setting(v.id)?.priceTsh);
-      const own = at.filter((v) => setting(v.id)?.onSale !== false && setting(v.id)?.priceTsh);
-      const line = (price: string, names: string[]) => [
+      const settings = new Map(row.venues.map((x) => [x.venueId, x]));
+      const sold = at
+        .map((v) => ({ v, own: settings.get(v.id) ?? null }))
+        .filter(({ own }) => own?.onSale !== false);
+      const follow = sold.filter(({ own }) => !own?.priceTsh).map(({ v }) => v.name);
+      const priced = sold.flatMap(({ v, own }) =>
+        own?.priceTsh ? [{ v, price: own.priceTsh }] : [],
+      );
+      const line = (price: number, names: string[]) => [
         ...(platform ? [row.business.name] : []),
         row.name,
         String(row.durationMinutes),
         String(row.deviceLimit),
-        String(Math.round(Number(price))),
+        String(Math.round(price)),
         row.isActive ? "Yes" : "No",
         names.join("; "),
       ];
       // A venue manager's file holds only what their venues sell.
-      if (staff.venueIds !== null && follow.length === 0 && own.length === 0) return [];
+      if (staff.venueIds !== null && sold.length === 0) return [];
       return [
-        ...(follow.length || own.length === 0
-          ? [
-              line(
-                String(row.priceTsh),
-                follow.map((v) => v.name),
-              ),
-            ]
-          : []),
-        ...own.map((v) => line(String(setting(v.id)?.priceTsh ?? row.priceTsh), [v.name])),
+        ...(follow.length || priced.length === 0 ? [line(Number(row.priceTsh), follow)] : []),
+        ...priced.map(({ v, price }) => line(Number(price), [v.name])),
       ];
     });
     return `${[header, ...lines].map((cells) => cells.map(csvCell).join(",")).join("\r\n")}\r\n`;
@@ -186,28 +184,33 @@ export class PackagesService {
 
   /** What a venue sells, and how it has each of its business's packages and its own. */
   async soldAt(staff: Principal, venueId: string): Promise<VenuePackages> {
-    const venue = await this.venues.get(staff, venueId);
-    const [packages, rows] = await Promise.all([
-      this.onSaleAt(venueId),
-      this.db.package.findMany({
-        where: {
-          businessId: venue.businessId,
-          isActive: true,
-          OR: [{ venueId: null }, { venueId }],
-        },
-        include: { venues: { where: { venueId } } },
-        orderBy: [{ priceTsh: "asc" }, { createdAt: "asc" }],
-      }),
-    ]);
-    const catalogue = rows
-      .map(({ venues, ...row }) => ({
-        package: packageRecord(row),
-        ownPriceTsh: venues[0]?.priceTsh ? venues[0].priceTsh.toFixed(2) : null,
-        onSale: row.venueId === venueId || venues[0]?.onSale !== false,
-        own: row.venueId === venueId,
-      }))
-      .sort((a, b) => Number(a.own) - Number(b.own));
-    return { packages, catalogue };
+    await this.venues.get(staff, venueId);
+    return this.catalogueOf(venueId);
+  }
+
+  /** A venue the caller has already found in scope: what it sells, and how it has each. */
+  private async catalogueOf(venueId: string): Promise<VenuePackages> {
+    const all = (await venueCatalogue(this.db, venueId)) ?? [];
+    return {
+      packages: all
+        .filter((p) => p.onSale)
+        .map((p) => packageRecord({ ...p.package, priceTsh: p.priceTsh })),
+      // The business's at their business price, then the venue's own.
+      catalogue: all
+        .map((p) => ({
+          package: packageRecord(p.package),
+          ownPriceTsh: p.ownPriceTsh === null ? null : p.ownPriceTsh.toFixed(2),
+          onSale: p.onSale,
+          own: p.own,
+        }))
+        .sort((a, b) => Number(a.own) - Number(b.own)),
+    };
+  }
+
+  /** What a venue in the caller's scope sells, at its prices: the counter's packages. */
+  async onSaleIn(staff: Principal, venueId: string): Promise<PackageRecord[]> {
+    await this.venues.get(staff, venueId);
+    return this.onSaleAt(venueId);
   }
 
   /** What a venue sells, at its prices (`onSalePackages`), for the portal, which has no principal. */
@@ -240,7 +243,7 @@ export class PackagesService {
       onSale: String(input.onSale),
       priceTsh: input.priceTsh === null ? "default" : String(input.priceTsh),
     });
-    return this.soldAt(staff, venueId);
+    return this.catalogueOf(venueId);
   }
 
   /** A package a venue's managers add, sold only at that venue (ADR-0011, 4). */
@@ -250,7 +253,7 @@ export class PackagesService {
       data: { ...input, businessId: venue.businessId, venueId },
     });
     await this.record(staff, "package.create", row, venueId);
-    return this.soldAt(staff, venueId);
+    return this.catalogueOf(venueId);
   }
 
   async updateOwn(
@@ -262,14 +265,14 @@ export class PackagesService {
     await this.own(staff, venueId, id);
     const row = await this.db.package.update({ where: { id }, data: input });
     await this.record(staff, "package.update", row, venueId);
-    return this.soldAt(staff, venueId);
+    return this.catalogueOf(venueId);
   }
 
   async removeOwn(staff: Principal, venueId: string, id: string): Promise<VenuePackages> {
     const pkg = await this.own(staff, venueId, id);
     await this.db.package.update({ where: { id }, data: { isActive: false } });
     await this.record(staff, "package.delete", pkg, venueId);
-    return this.soldAt(staff, venueId);
+    return this.catalogueOf(venueId);
   }
 
   /** A business package, as the owner keeps them; a venue's own is not found here. */

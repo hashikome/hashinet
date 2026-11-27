@@ -58,7 +58,9 @@ function Packages() {
   // While the business can't sell, its package actions stay in view, quieter, and a tap says why,
   // as Sell does when no router serves (ADR-0014, 2).
   const paused = me.active.pause !== null;
-  const act = (next: Open) => () => setOpen(paused ? { kind: "paused" } : next);
+  // One guard for every action: while paused, a tap says why instead.
+  const guard = (run: () => void) => (paused ? () => setOpen({ kind: "paused" }) : run);
+  const act = (next: Open) => guard(() => setOpen(next));
   const quiet = paused
     ? ({ className: "paused", "aria-disabled": true, "aria-describedby": "pkg-paused" } as const)
     : {};
@@ -123,6 +125,7 @@ function Packages() {
         addOwn={ownPackages}
         quiet={quiet}
         act={act}
+        guard={guard}
         picker={picker}
         pausedNote={pausedNote}
         dialogs={dialogs}
@@ -290,6 +293,7 @@ function VenueView({
   addOwn,
   quiet,
   act,
+  guard,
   picker,
   pausedNote,
   dialogs,
@@ -299,6 +303,7 @@ function VenueView({
   addOwn: boolean;
   quiet: Quiet;
   act: (next: Open) => () => void;
+  guard: (run: () => void) => () => void;
   picker: ReactNode;
   pausedNote: ReactNode;
   dialogs: (reload: () => Promise<void>) => ReactNode;
@@ -312,14 +317,14 @@ function VenueView({
   const [busy, setBusy] = useState<string | null>(null);
   /** Following the business's price again, or (not) selling it here: no dialog, a toast says it. */
   const quick = async (
-    item: Item,
+    packageId: string,
     body: { priceTsh: number | null; onSale: boolean },
     done: string,
   ) => {
-    setBusy(item.package.id);
+    setBusy(packageId);
     try {
-      await api.put(`/api/venues/${venue.id}/packages/${item.package.id}`, body);
-      await sold.reload();
+      // The API answers with the venue's packages as they are now.
+      sold.set(await api.put<VenuePackages>(`/api/venues/${venue.id}/packages/${packageId}`, body));
       toast(done);
     } catch (e) {
       toast(messageOf(e));
@@ -327,7 +332,6 @@ function VenueView({
       setBusy(null);
     }
   };
-  const tap = (run: () => void) => (quiet.className ? act({ kind: "paused" }) : run);
   const rows = (sold.data?.catalogue ?? []).map((item) => {
     const p = item.package;
     const tools = item.own ? (
@@ -346,8 +350,8 @@ function VenueView({
         key="on"
         {...quiet}
         busy={busy === p.id}
-        onClick={tap(() =>
-          quick(item, { priceTsh: null, onSale: true }, `${p.name} is on sale here.`),
+        onClick={guard(() =>
+          quick(p.id, { priceTsh: null, onSale: true }, `${p.name} is on sale here.`),
         )}
       >
         Sell it
@@ -361,9 +365,9 @@ function VenueView({
           <Button
             {...quiet}
             busy={busy === p.id}
-            onClick={tap(() =>
+            onClick={guard(() =>
               quick(
-                item,
+                p.id,
                 { priceTsh: null, onSale: true },
                 `${p.name} is back on the default price.`,
               ),
@@ -375,8 +379,8 @@ function VenueView({
           <Button
             {...quiet}
             busy={busy === p.id}
-            onClick={tap(() =>
-              quick(item, { priceTsh: null, onSale: false }, `${p.name} is no longer sold here.`),
+            onClick={guard(() =>
+              quick(p.id, { priceTsh: null, onSale: false }, `${p.name} is no longer sold here.`),
             )}
           >
             Stop selling

@@ -59,3 +59,15 @@ export function addDays(day: string, n: number): string {
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
+
+/** The business day and hour it is at `now`. */
+export function businessNow(now: Date): { day: string; hour: number } {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: BUSINESS_TIME_ZONE,
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(now),
+  );
+  return { day: businessDayOf(now), hour };
+}
