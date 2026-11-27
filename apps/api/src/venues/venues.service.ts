@@ -56,6 +56,16 @@ export class VenuesService {
     return venueRecord(row, row.routers, row.business.access);
   }
 
+  /** Who runs a venue day to day: its venue managers, by name. */
+  async managers(venueId: string): Promise<{ name: string; email: string }[]> {
+    const rows = await this.db.membership.findMany({
+      where: { role: "venue_manager", status: "active", venues: { some: { venueId } } },
+      orderBy: { createdAt: "asc" },
+      select: { user: { select: { name: true, email: true } } },
+    });
+    return rows.map((m) => m.user);
+  }
+
   async create(staff: Principal, input: VenueInput): Promise<VenueRecord> {
     const { businessId: named, ...fields } = input;
     const businessId = staff.scope === "platform" ? named : staff.businessId;

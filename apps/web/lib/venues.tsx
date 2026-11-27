@@ -13,6 +13,8 @@ interface Venues {
   setFilter: (id: string) => void;
   /** The venues in view after the filter. */
   shown: VenueRecord[];
+  /** Reads them again: after a venue is added or changed. */
+  reload: () => void;
 }
 
 const VenuesContext = createContext<Venues>({
@@ -20,6 +22,7 @@ const VenuesContext = createContext<Venues>({
   filter: "all",
   setFilter: () => {},
   shown: [],
+  reload: () => {},
 });
 
 /** The venues the workspace reaches, for the menu, the venue filter and the pages. */
@@ -31,6 +34,7 @@ export function VenuesProvider({
   const { me } = useSession();
   const [all, setAll] = useState<VenueRecord[] | null>(null);
   const [filter, setFilter] = useState("all");
+  const [round, setRound] = useState(0);
   const reads = me.active.capabilities.includes("venue.read") && me.active.scope === "business";
   // biome-ignore lint/correctness/useExhaustiveDependencies: reload when the workspace changes
   useEffect(() => {
@@ -47,7 +51,7 @@ export function VenuesProvider({
     return () => {
       live = false;
     };
-  }, [reads, me.active.id]);
+  }, [reads, me.active.id, round]);
   const value = useMemo(() => {
     const list = all ?? [];
     return {
@@ -55,6 +59,7 @@ export function VenuesProvider({
       filter,
       setFilter,
       shown: filter === "all" ? list : list.filter((v) => v.id === filter),
+      reload: () => setRound((n) => n + 1),
     };
   }, [all, filter]);
   return <VenuesContext.Provider value={value}>{children(all)}</VenuesContext.Provider>;

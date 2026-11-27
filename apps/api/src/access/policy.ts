@@ -15,6 +15,9 @@ export const POLICY = {
   // Venues and routers: HashiNet adds and configures routers (ADR-0011, 5); its operators run
   // connection checks; a business reads its own.
   "venue.read": [...PLATFORM_ALL, ...BUSINESS_ALL],
+  // Venues in the menu: who looks after venues. Operators work the counter, and read their venue
+  // through what they sell there (owner, 27 November 2026).
+  "venue.list": [...PLATFORM_ALL, ...BUSINESS_MANAGERS],
   "venue.create": [...PLATFORM_STAFF, "owner"],
   "venue.update": [...PLATFORM_STAFF, ...WHOLE_BUSINESS],
   "venue.delete": PLATFORM_STAFF,

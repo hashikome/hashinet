@@ -499,3 +499,96 @@ describe("payments received, page by page", () => {
     expect(ids.size).toBe(101);
   });
 });
+
+describe("each venue's takings", () => {
+  test("today and the last 7 days, net of refunds, each within the reader's venues", async () => {
+    const businessId = await testBusinessId(t.db);
+    const [home, cafe, quiet] = await Promise.all(
+      ["Home", "Cafe", "Quiet"].map((name) =>
+        t.db.venue.create({ data: { businessId, name, region: "Dar es Salaam", area: "Dar" } }),
+      ),
+    );
+    if (!home || !cafe || !quiet) throw new Error("venues");
+    const pkg = await t.db.package.create({
+      data: {
+        businessId,
+        name: "Day",
+        durationMinutes: 1440,
+        downloadSpeedMbps: 10,
+        priceTsh: 1000,
+      },
+    });
+    const now = new Date();
+    const sold = async (venueId: string, at: Date, refunded = false) => {
+      codes += 1;
+      const voucher = await t.db.voucher.create({
+        data: {
+          venueId,
+          packageId: pkg.id,
+          code: `WIFI-V${codes}`,
+          priceTsh: 1000,
+          durationMinutes: 1440,
+        },
+      });
+      const payment = await t.db.payment.create({
+        data: {
+          provider: "cash",
+          status: "paid",
+          paidAt: at,
+          amountTsh: 1000,
+          venueId,
+          packageId: pkg.id,
+          voucherId: voucher.id,
+        },
+      });
+      if (refunded) {
+        await t.db.refund.create({
+          data: {
+            voucherId: voucher.id,
+            paymentId: payment.id,
+            venueId,
+            packageId: pkg.id,
+            amountTsh: 1000,
+            method: "cash",
+            createdAt: at,
+          },
+        });
+      }
+    };
+    await sold(home.id, now);
+    await sold(home.id, now, true);
+    await sold(home.id, new Date(now.getTime() - 3 * 86_400_000));
+    // Eight days ago is outside the week.
+    await sold(home.id, new Date(now.getTime() - 8 * 86_400_000));
+    await sold(cafe.id, new Date(now.getTime() - 2 * 86_400_000));
+
+    await businessMember(t.db, { email: "owner@example.com", name: "Owner", role: "owner" });
+    const owner = browser(api);
+    await enrollAuthenticatorFor(api, owner, "owner@example.com");
+    const all = (await owner.request("GET", "/api/analytics/venue-takings")).body as {
+      venues: {
+        venueId: string;
+        todayTsh: string;
+        soldToday: number;
+        weekTsh: string;
+        soldWeek: number;
+      }[];
+    };
+    const of = (id: string) => all.venues.find((v) => v.venueId === id);
+    expect(of(home.id)).toMatchObject({
+      todayTsh: "1000.00",
+      soldToday: 2,
+      weekTsh: "2000.00",
+      soldWeek: 3,
+    });
+    expect(of(cafe.id)).toMatchObject({ todayTsh: "0.00", weekTsh: "1000.00", soldWeek: 1 });
+    expect(of(quiet.id)).toMatchObject({ todayTsh: "0.00", soldWeek: 0 });
+
+    const daudi = await manager("daudi@example.com");
+    await t.db.membershipVenue.create({ data: { membershipId: daudi.id, venueId: cafe.id } });
+    const his = (await daudi.client.request("GET", "/api/analytics/venue-takings")).body as {
+      venues: { venueId: string }[];
+    };
+    expect(his.venues.map((v) => v.venueId)).toEqual([cafe.id]);
+  });
+});

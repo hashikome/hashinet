@@ -540,9 +540,16 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   the whole business. Settled with the owner (Decision Log): only the owner and business managers
   change a venue; venue managers get Venues in their menu, listing their venues. Prototype updated.
   Steps, each a journey:
-  - [ ] (a) Venues: the business's Venues list and each venue's page (its day, its way to pay, Edit
-    venue), the owner's Add a venue with how its router should come (onboarding, slice 3), and every
-    role's way to their venues.
+  - [x] (2026-11-27) (a) Venues: the business's Venues list and each venue's page (its day, its way
+    to pay, Edit venue), the owner's Add a venue with how its router should come (onboarding, slice
+    3), and every role's way to their venues. Built: `GET /api/analytics/venue-takings` (each
+    venue's takings today and over the last 7 days, net of refunds, in the reader's scope); `GET
+    /api/venues/:id` adds the venue's managers; the policy's `venue.list` puts Venues in the menu
+    of owners and managers, not operators. Screens: Venues (status, routers, the last 7 days, Add a
+    venue), the venue page (profile card with status, managers and routers; takings and its way to
+    pay, or its setup steps until a router serves, the Overview's `GettingStarted` shared); Edit
+    venue for the owner and business managers. The 7-day chart comes with Analytics (f). Tests:
+    analytics and venues integration; 201/201.
   - [ ] (b) Sites, open before paying, with extra-site slots: sites as rows with their slots, a slot
     invoice on the owner's bill issue, the venue's routers updated on add, remove and payment; the
     Blocked list waits for the router side.

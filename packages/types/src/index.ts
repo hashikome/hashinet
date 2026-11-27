@@ -791,6 +791,11 @@ export interface VenueResponse {
   venue: VenueRecord;
 }
 
+/** `GET /api/venues/:id`: the venue, and who runs it: its venue managers, or its owner when none. */
+export interface VenueDetail extends VenueResponse {
+  managers: { name: string; email: string }[];
+}
+
 export type RouterStatus = "online" | "offline" | "provisioning" | "error";
 
 /** A router as the API shows it. Credentials and tunnel keys never leave the API. */
@@ -1063,6 +1068,20 @@ export interface AnalyticsSummary {
  * `GET /api/analytics/today` (a business's own): today so far, by the Dar es Salaam day, over the
  * caller's venues or one of them. Sales follow the one definition of revenue.
  */
+/**
+ * `GET /api/analytics/venue-takings`: each venue's takings in the reader's scope, today and over the last
+ * 7 days (today included), net of refunds, as Payments counts them.
+ */
+export interface VenueTakings {
+  venues: {
+    venueId: string;
+    todayTsh: DecimalString;
+    soldToday: number;
+    weekTsh: DecimalString;
+    soldWeek: number;
+  }[];
+}
+
 export interface TodaySummary {
   day: BusinessDay;
   /** Devices connected now. */

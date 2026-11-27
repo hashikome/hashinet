@@ -13,6 +13,7 @@ import type {
   RevenueTransactions,
   TodaySummary,
   TopVenues,
+  VenueTakings,
 } from "@hashinet/types";
 import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
 import { z } from "zod";
@@ -22,7 +23,7 @@ import { PrismaService } from "../database/prisma.service.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
 import { bytes } from "../serializers/records.js";
-import { businessDayOf, businessDaySql } from "./business-day.js";
+import { addDays, businessDayOf, businessDaySql } from "./business-day.js";
 import { businessMonthSql, moneySum, REVENUE_EVENTS, venueFilter } from "./revenue-events.js";
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -119,6 +120,40 @@ export class AnalyticsService {
    * A business's day so far: who is online, what sold and what it took, against the same weekday a
    * week ago up to now. The platform has its own figures, so this is a business's alone.
    */
+  /** Each venue's takings, today and over the last 7 days: the Venues list and a venue's page. */
+  async venueTakings(staff: Principal): Promise<VenueTakings> {
+    const venues = await this.businessVenues(staff, null);
+    const today = businessDayOf(new Date());
+    const weekStart = addDays(today, -6);
+    const rows = await this.db.$queryRaw<
+      { venue_id: string; today: string; sold_today: number; week: string; sold_week: number }[]
+    >`
+      WITH ${REVENUE_EVENTS},
+      days AS (SELECT venue_id, kind, amount, ${businessDaySql(Prisma.sql`occurred_at`)} AS day
+               FROM revenue_events WHERE ${venueFilter(Prisma.sql`venue_id`, venues)})
+      SELECT venue_id,
+             COALESCE(SUM(amount) FILTER (WHERE day = ${today}::date), 0)::numeric(14,2)::text
+               AS today,
+             (count(*) FILTER (WHERE kind = 'sale' AND day = ${today}::date))::int AS sold_today,
+             ${moneySum(Prisma.sql`amount`)} AS week,
+             (count(*) FILTER (WHERE kind = 'sale'))::int AS sold_week
+      FROM days WHERE day >= ${weekStart}::date AND day <= ${today}::date
+      GROUP BY venue_id`;
+    const byVenue = new Map(rows.map((r) => [r.venue_id, r]));
+    return {
+      venues: venues.map((venueId) => {
+        const r = byVenue.get(venueId);
+        return {
+          venueId,
+          todayTsh: r?.today ?? "0.00",
+          soldToday: r?.sold_today ?? 0,
+          weekTsh: r?.week ?? "0.00",
+          soldWeek: r?.sold_week ?? 0,
+        };
+      }),
+    };
+  }
+
   async today(staff: Principal, query: z.infer<typeof todayQuery>): Promise<TodaySummary> {
     const venues = await this.businessVenues(staff, query.venueId);
     const now = new Date();

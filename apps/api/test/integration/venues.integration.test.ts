@@ -105,7 +105,17 @@ describe("venues", () => {
 
     const list = await own.client.request("GET", "/api/venues");
     expect((list.body as { venues: { id: string }[] }).venues.map((v) => v.id)).toEqual([mine.id]);
-    expect((await own.client.request("GET", `/api/venues/${mine.id}`)).status).toBe(200);
+    // Its page says who runs it: its venue managers, never another venue's.
+    const page = await own.client.request("GET", `/api/venues/${mine.id}`);
+    expect(page.status).toBe(200);
+    expect((page.body as { managers: { name: string; email: string }[] }).managers).toEqual([
+      { name: "own@example.com", email: "own@example.com" },
+    ]);
+    // Venues in the menu is theirs; a venue's operators work the counter instead.
+    const me = (await own.client.request("GET", "/api/me")).body as {
+      active: { capabilities: string[] };
+    };
+    expect(me.active.capabilities).toContain("venue.list");
     const hidden = await own.client.request("GET", `/api/venues/${theirs.id}`);
     expect(hidden.status).toBe(404);
     expect(hidden.body).toMatchObject({ code: "NOT_FOUND" });

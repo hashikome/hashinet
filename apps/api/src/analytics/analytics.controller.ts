@@ -11,6 +11,7 @@ import type {
   RevenueTransactions,
   TodaySummary,
   TopVenues,
+  VenueTakings,
 } from "@hashinet/types";
 import { Controller, Get, Query } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
@@ -33,6 +34,13 @@ export class AnalyticsController {
   @Can("analytics.read")
   summary(@CurrentPrincipal() staff: Principal): Promise<AnalyticsSummary> {
     return this.analytics.summary(staff);
+  }
+
+  /** Each venue's takings, today and over 7 days: Venues and a venue's page (owners and managers). */
+  @Get("venue-takings")
+  @Can("analytics.read")
+  venueTakings(@CurrentPrincipal() staff: Principal): Promise<VenueTakings> {
+    return this.analytics.venueTakings(staff);
   }
 
   /** Every business role sees its own day: the Overview is each one's home, as Payments is. */

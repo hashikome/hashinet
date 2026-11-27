@@ -8,12 +8,19 @@ import { venueStatus } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { matchesSearch } from "@/lib/search";
 import { useSession } from "@/lib/session";
+import { BusinessVenues } from "./business-venues";
+
+/** The platform's Venues across every business, or a business's own. */
+export default function VenuesPage() {
+  const { me } = useSession();
+  return me.active.scope === "platform" ? <PlatformVenues /> : <BusinessVenues />;
+}
 
 /**
  * Venues across every business (prototype `venues`, the platform's): where each is on its way to
  * serving, its routers and its guests as counts. Each business edits its own.
  */
-export default function VenuesPage() {
+function PlatformVenues() {
   const { me } = useSession();
   const [search, setSearch] = useState("");
   const [business, setBusiness] = useState("");

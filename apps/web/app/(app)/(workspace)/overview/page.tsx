@@ -1,25 +1,20 @@
 "use client";
 
-import {
-  ONBOARDING_PLANS,
-  type OnboardingPlan,
-  type OnboardingStage,
-  type PaymentsReceived,
-  type RouterList,
-  type RouterRecord,
-  type SessionList,
-  type TodaySummary,
-  type VenueOnboarding,
-  type VenueRecord,
+import type {
+  PaymentsReceived,
+  RouterList,
+  RouterRecord,
+  SessionList,
+  TodaySummary,
+  VenueOnboarding,
+  VenueRecord,
 } from "@hashinet/types";
 import Link from "next/link";
-import { useState } from "react";
-import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/hearth/onboarding";
+import { GettingStarted } from "@/components/hearth/onboarding";
 import { ProtectNotice } from "@/components/hearth/protect";
 import { SellButton } from "@/components/hearth/sell";
 import {
   Attention,
-  Button,
   ButtonLink,
   CONDITION,
   DOWN,
@@ -30,14 +25,11 @@ import {
   Table,
 } from "@/components/hearth/ui";
 import { api } from "@/lib/api";
-import { fullDay } from "@/lib/billing";
 import { clock, dayName, weekday } from "@/lib/dates";
 import { timeLeft } from "@/lib/duration";
-import { PLAN, setupDay } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
-import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
 
 /**
@@ -290,172 +282,5 @@ function SettingUp({ sub }: { sub: string }) {
         </ul>
       </Panel>
     </>
-  );
-}
-
-/** Where each stage stands on the owner's four steps. */
-const OWNER_STEP: Record<OnboardingStage, number> = {
-  choose: 0,
-  confirm: 1,
-  pay: 1,
-  schedule: 1,
-  "add-router": 2,
-  "set-up": 2,
-  "first-guest": 3,
-  done: 3,
-};
-
-/** A venue's way online, as its owner sees it: one set of steps wherever it starts. */
-function GettingStarted({ o, reload }: { o: VenueOnboarding; reload: () => Promise<void> }) {
-  const { busy, run } = useSubmit();
-  const [plan, setPlan] = useState<OnboardingPlan | "">(o.preference?.plan ?? "");
-  const mayChoose = o.may.prefer;
-  const send = async (choice: OnboardingPlan | null) => {
-    const sent = await run(
-      () => api.put(`/api/venues/${o.venue.id}/onboarding/preference`, { plan: choice }),
-      choice
-        ? `${PLAN[choice].name} sent. HashiNet's team calls you within a working day.`
-        : "Asked. HashiNet's team calls you within a working day to advise.",
-    );
-    if (sent) await reload();
-  };
-  const chosen = o.preference?.plan ? PLAN[o.preference.plan] : null;
-  const agreed = o.agreed;
-  const steps: Step[] = [
-    {
-      title: "Choose how its router comes",
-      todo: "A few seconds",
-      done: chosen ? chosen.name : o.preference ? "You asked to talk first" : "Agreed on the call",
-      body: (
-        <>
-          <p>
-            HashiNet runs on a <b>MikroTik router</b> at {o.venue.name}. It sits behind your
-            internet router, puts your WiFi behind the portal, and sells your vouchers. Tell us how
-            you would like it to come; this is a preference, and nothing is charged until we agree
-            it with you.
-          </p>
-          {mayChoose ? (
-            <form
-              className="form wide"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (plan) void send(plan);
-              }}
-            >
-              <div className="pkg-pick three" role="radiogroup" aria-label="How the router comes">
-                {ONBOARDING_PLANS.map((p) => (
-                  <label className="pkg" key={p}>
-                    <input
-                      type="radio"
-                      name="pref"
-                      value={p}
-                      checked={plan === p}
-                      onChange={() => setPlan(p)}
-                    />
-                    <span>
-                      <b>{PLAN[p].name}</b>
-                      <span className="sub">{PLAN[p].text}</span>
-                      <span className="needs">You need: {PLAN[p].needs}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <div className="actions">
-                <Button kind="primary" type="submit" busy={busy} disabled={!plan}>
-                  Send my choice
-                </Button>
-                <Button busy={busy} onClick={() => void send(null)}>
-                  Talk to the team first
-                </Button>
-              </div>
-              <p className="muted small">
-                Not sure which fits? Talk to the team first; we call you and advise.
-              </p>
-            </form>
-          ) : (
-            <p className="muted">The owner chooses this.</p>
-          )}
-        </>
-      ),
-    },
-    {
-      title: "HashiNet's team calls you",
-      todo: "Within a working day",
-      done: agreed
-        ? `${PLAN[agreed.plan].name}${agreed.totalTsh ? ` · ${tsh(agreed.totalTsh)}${o.invoice?.state === "paid" ? " paid" : " due"}` : ""}`
-        : "",
-      body: (
-        <>
-          <p>
-            We call you within a working day. We go over {o.venue.name}: how big it is, how many
-            guests at peak, where the internet line comes in and where the router can go. Then we
-            agree the package and what it costs, line by line, and a day for the setup.
-          </p>
-          {agreed ? (
-            <>
-              <Breakdown agreed={agreed} />
-              <p>
-                {o.invoice?.state === "paid"
-                  ? `Paid ${tsh(o.invoice.totalTsh)}. We agree the setup day with you next.`
-                  : o.invoice
-                    ? `${tsh(o.invoice.dueTsh)} is due by ${fullDay(o.invoice.dueOn)}, on invoice ${o.invoice.number}, all on one bill from HashiNet. The setup is scheduled once it is paid.`
-                    : agreed.totalTsh
-                      ? "Its invoice is on its way by email."
-                      : "Nothing to charge. We agree the setup day with you next."}
-              </p>
-            </>
-          ) : (
-            <p className="muted">
-              {chosen
-                ? `You chose ${chosen.name}: ${chosen.text} You can change your mind on the call.`
-                : "You asked to talk it through first: we advise you which fits on the call."}
-            </p>
-          )}
-        </>
-      ),
-    },
-    {
-      title: "The setup visit",
-      todo: o.setupDate ? setupDay(o.setupDate) : "A day we agree",
-      done: "Done",
-      body: (
-        <>
-          <p>
-            {o.setupDate ? (
-              <>
-                <b>{setupDay(o.setupDate)}</b>.{" "}
-              </>
-            ) : null}
-            HashiNet&apos;s team{" "}
-            {agreed?.plan === "connect"
-              ? "sets up your MikroTik router"
-              : "brings your MikroTik router and installs it"}{" "}
-            at {o.venue.name}
-            {agreed?.plan === "launch"
-              ? ", with the provider's seller for the new line; you register it in the business's name there"
-              : ""}
-            . Be there yourself: you take the first steps with us, and sell us the first voucher,
-            the hourly package. Before the day:
-          </p>
-          <ReadyList o={o} owner={null} />
-        </>
-      ),
-    },
-    {
-      title: "Guests get online",
-      todo: o.ownerProtected ? "Then you start selling" : "Once your sign-in is protected",
-      done: "",
-      body: o.ownerProtected ? (
-        <p>Check it with your own phone, then print vouchers and start selling.</p>
-      ) : (
-        <p>
-          Before {o.venue.name} starts serving, protect your sign-in with an authenticator app or a
-          passkey, from Account and security.
-        </p>
-      ),
-    },
-  ];
-  return (
-    <SetupRail title={`Getting ${o.venue.name} online`} steps={steps} now={OWNER_STEP[o.stage]} />
   );
 }

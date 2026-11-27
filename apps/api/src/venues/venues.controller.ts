@@ -1,4 +1,4 @@
-import type { VenueList, VenueResponse } from "@hashinet/types";
+import type { VenueDetail, VenueList, VenueResponse } from "@hashinet/types";
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put } from "@nestjs/common";
 import { Can, CurrentPrincipal } from "../access/access.guard.js";
 import type { Principal } from "../access/principal.js";
@@ -22,8 +22,9 @@ export class VenuesController {
   async get(
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
-  ): Promise<VenueResponse> {
-    return { venue: await this.venues.get(staff, id) };
+  ): Promise<VenueDetail> {
+    const venue = await this.venues.get(staff, id);
+    return { venue, managers: await this.venues.managers(id) };
   }
 
   @Post()

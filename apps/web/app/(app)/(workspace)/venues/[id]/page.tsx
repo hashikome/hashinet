@@ -1,28 +1,153 @@
 "use client";
 
-import type { VenueResponse } from "@hashinet/types";
-import { use } from "react";
+import type { VenueDetail, VenueOnboarding, VenueTakings } from "@hashinet/types";
+import Link from "next/link";
+import { use, useEffect, useState } from "react";
+import { BusinessMark } from "@/components/hearth/icons";
+import { GettingStarted } from "@/components/hearth/onboarding";
 import { VenueWay } from "@/components/hearth/payment-ways";
-import { Head } from "@/components/hearth/ui";
+import { Button, CopyText, Figs, Pill } from "@/components/hearth/ui";
+import { STATUS, sellingPill, VenueDialog } from "@/components/hearth/venues";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
-import { useCan } from "@/lib/session";
+import { tsh } from "@/lib/money";
+import { useCan, useSession } from "@/lib/session";
+import { useVenues } from "@/lib/venues";
 
 /**
- * A business's venue (prototype `venue`): where it is, and the way to pay its counter reads out.
- * Its brand, prices and sites come with slice 5's venue page.
+ * A venue's page (prototype `venue`): a profile card with who runs it and how its routers are
+ * doing, then the venue's own panels: its takings and the way to pay its counter reads out, or,
+ * before its router serves, its way online. One page for every role; each sees what their role has.
  */
 export default function VenuePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { me } = useSession();
   const can = useCan();
-  const data = useLoad("venue", () => api.get<VenueResponse>(`/api/venues/${id}`), [id]);
-  if (data.error) return <LoadFailed error={data.error} retry={data.reload} />;
-  if (!data.data) return null;
-  const { venue } = data.data;
+  const { reload: reloadVenues } = useVenues();
+  const [editing, setEditing] = useState(false);
+  const money = can("analytics.read");
+  const data = useLoad("venue", async () => {
+    const detail = await api.get<VenueDetail>(`/api/venues/${id}`);
+    const settingUp = detail.venue.selling.state === "not-set-up";
+    const [onboarding, takings] = await Promise.all([
+      settingUp && can("onboarding.read")
+        ? api.get<VenueOnboarding>(`/api/venues/${id}/onboarding`)
+        : null,
+      !settingUp && money ? api.get<VenueTakings>("/api/analytics/venue-takings") : null,
+    ]);
+    return { ...detail, onboarding, takings };
+  }, [id, me.active.id]);
+  const v = data.data?.venue;
+  useEffect(() => {
+    if (v) document.title = `${v.name} · HashiNet`;
+  }, [v]);
+  const crumb = (
+    <div className="crumb">
+      <Link href="/venues">Venues</Link> /
+    </div>
+  );
+  if (data.error) {
+    return (
+      <>
+        {crumb}
+        <LoadFailed error={data.error} retry={data.reload} />
+      </>
+    );
+  }
+  if (!data.data || !v) return crumb;
+  const { managers, onboarding, takings } = data.data;
+  const [status, statusKind] = STATUS[v.status];
+  const [routers, routersKind] = sellingPill(v);
+  const t = takings?.venues.find((x) => x.venueId === v.id) ?? null;
+
   return (
     <>
-      <Head title={venue.name} sub={`${venue.area}, ${venue.region}`} />
-      <VenueWay venueId={venue.id} choose={can("venue.payment_way.choose")} />
+      {crumb}
+      <aside className="profile-card">
+        <div className="panel profile-body">
+          <BusinessMark name={v.name} size={64} />
+          <div>
+            <h1>{v.name}</h1>
+            <p className="profile-address">
+              {v.area}, {v.region}
+            </p>
+          </div>
+          <dl className="profile-list">
+            <div>
+              <dt>Status</dt>
+              <dd>
+                <Pill kind={statusKind}>{status}</Pill>
+              </dd>
+            </div>
+            <div>
+              <dt>Managers</dt>
+              <dd>
+                {managers.length
+                  ? managers.map((m) => (
+                      <div key={m.email}>
+                        {m.name}
+                        <span className="sub">
+                          <CopyText text={m.email} />
+                        </span>
+                      </div>
+                    ))
+                  : "Its owner"}
+              </dd>
+            </div>
+            <div>
+              <dt>Routers</dt>
+              <dd>
+                {can("router.read") ? (
+                  <Link className="link" href={`/venues/${v.id}/router`}>
+                    {routers}
+                  </Link>
+                ) : (
+                  <Pill kind={routersKind}>{routers}</Pill>
+                )}
+              </dd>
+            </div>
+          </dl>
+          {can("venue.update") ? (
+            <div className="profile-actions">
+              <Button onClick={() => setEditing(true)}>Edit venue</Button>
+            </div>
+          ) : null}
+        </div>
+      </aside>
+      {onboarding ? (
+        <GettingStarted o={onboarding} reload={data.reload} />
+      ) : (
+        <>
+          {t ? (
+            <Figs
+              items={[
+                [
+                  "Takings today",
+                  tsh(t.todayTsh),
+                  `${t.soldToday} ${t.soldToday === 1 ? "voucher" : "vouchers"}`,
+                ],
+                [
+                  "Last 7 days",
+                  tsh(t.weekTsh),
+                  `${t.soldWeek} ${t.soldWeek === 1 ? "voucher" : "vouchers"}`,
+                ],
+              ]}
+            />
+          ) : null}
+          <VenueWay venueId={v.id} choose={can("venue.payment_way.choose")} />
+        </>
+      )}
+      {editing ? (
+        <VenueDialog
+          venue={v}
+          onClose={() => setEditing(false)}
+          onSaved={() => {
+            setEditing(false);
+            reloadVenues();
+            void data.reload();
+          }}
+        />
+      ) : null}
     </>
   );
 }

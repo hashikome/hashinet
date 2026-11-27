@@ -92,16 +92,15 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   // Owners also pay HashiNet, so they alone have Billing, beside what guests pay them.
   if (can("billing.read")) top.push({ href: "/billing", label: "Billing", icon: "billing" });
   const entries: NavEntry[] = [...top];
-  // Each venue's page (its way to pay) and its router, then the devices the venues have seen.
+  // Venues (each venue's page), each venue's router, then the devices the venues have seen.
   const one = venues.length === 1;
   const manage = [
+    ...(can("venue.list") ? [{ href: "/venues", label: "Venues" }] : []),
     ...(can("router.read")
-      ? venues.flatMap((v) => [
-          ...(can("venue.payment_way.read")
-            ? [{ href: `/venues/${v.id}`, label: one ? "Venue" : v.name }]
-            : []),
-          { href: `/venues/${v.id}/router`, label: one ? "Routers" : `${v.name}'s router` },
-        ])
+      ? venues.map((v) => ({
+          href: `/venues/${v.id}/router`,
+          label: one ? "Routers" : `${v.name}'s router`,
+        }))
       : []),
     ...(can("device.read") ? [{ href: "/devices", label: "Devices" }] : []),
   ];
