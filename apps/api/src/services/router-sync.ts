@@ -6,11 +6,13 @@ import { enrichWideEvent } from "../observability/wide-event.js";
 import { passedSetup } from "../routers/router-journey.js";
 import { withRetry } from "../utils/retry.js";
 import {
+  answersArp,
   type CreateHotspotUserOptions,
   closeConnection,
   connectToRouter,
   createHotspotUser,
   disconnectHotspotDevice,
+  endHotspotSession,
   ensureHotspotUserProfile,
   ensureHotspotUserProfileAssigned,
   type HotspotUserCapabilities,
@@ -521,6 +523,18 @@ export class RouterSync {
   /** Where the router sees a device now; null if it does not, or cannot be asked. */
   async deviceAddress(router: Router, mac: string): Promise<string | null> {
     return this.onRouter(router, (conn) => hotspotClientAddress(conn, mac));
+  }
+
+  /** Whether the device holding a place still answers on this router; null when it can't be asked. */
+  async stillThere(router: Router, ip: string): Promise<boolean | null> {
+    const iface = router.hotspotInterface;
+    if (iface === null) return null;
+    return this.onRouter(router, (conn) => answersArp(conn, ip, iface));
+  }
+
+  /** Ends one device's session on this router. Best effort: the session ends at its limit anyway. */
+  async endSession(router: Router, mac: string): Promise<void> {
+    await this.onRouter(router, (conn) => endHotspotSession(conn, mac));
   }
 
   /** Signs a device in on this router; true only once the router reports it online. */

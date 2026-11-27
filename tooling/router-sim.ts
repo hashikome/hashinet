@@ -844,6 +844,8 @@ async function startApi(
       FAKE_PROVIDERS: String(fakeProviders),
       DATABASE_URL: simDatabaseUrl(),
       ENCRYPTION_KEY: state.encryptionKey ?? "",
+      // Derived like the auth secret, so a PIN given out survives a restart of the demo.
+      PIN_KEY: createHash("sha256").update(`pin:${state.encryptionKey}`).digest("hex"),
       // The demo's sign-ins and authenticators outlive a restart.
       BETTER_AUTH_SECRET: stableAuth
         ? createHash("sha256").update(`auth:${state.encryptionKey}`).digest("hex")

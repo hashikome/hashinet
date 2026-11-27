@@ -45,6 +45,7 @@ export function useApi(env: Record<string, string> = {}): {
       NODE_ENV: "test",
       DATABASE_URL: TEST_DATABASE_URL,
       ENCRYPTION_KEY: "ab".repeat(32),
+      PIN_KEY: "ef".repeat(32),
       BETTER_AUTH_SECRET: "cd".repeat(32),
       FRONTEND_ORIGIN,
       JOBS_ENABLED: "false",

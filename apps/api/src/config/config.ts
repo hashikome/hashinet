@@ -14,6 +14,8 @@ export interface AppConfig {
   databaseUrl: string;
   /** 32 bytes for AES-256-GCM. */
   encryptionKey: Buffer;
+  /** Keys the switch PINs' HMACs (ADR-0015, 4); changing it voids every PIN given out. */
+  pinKey: Buffer;
   frontendOrigin: string;
   appUrl: string;
   auth: {
@@ -96,6 +98,9 @@ const schema = z.object({
   FRONTEND_ORIGIN: url.default("http://localhost:3006"),
   APP_URL: url.default("http://localhost:4006"),
   BETTER_AUTH_SECRET: z.string().min(32, "must be at least 32 characters (openssl rand -hex 32)"),
+  PIN_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, "must be 32 bytes as 64 hex characters (openssl rand -hex 32)"),
   TRUSTED_PROXIES: z.string().default(""),
   RESEND_API_KEY: z.string().min(1).nullable().default(null),
   EMAIL_FROM: z.string().min(3).default("HashiNet <no-reply@hashikome.com>"),
@@ -149,6 +154,7 @@ const SECRETS = [
   "DATABASE_URL",
   "ENCRYPTION_KEY",
   "BETTER_AUTH_SECRET",
+  "PIN_KEY",
   "RESEND_API_KEY",
   "SNIPPE_API_KEY",
   "SNIPPE_WEBHOOK_SECRET",
@@ -218,6 +224,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     port: c.PORT,
     databaseUrl: c.DATABASE_URL,
     encryptionKey: Buffer.from(c.ENCRYPTION_KEY, "hex"),
+    pinKey: Buffer.from(c.PIN_KEY, "hex"),
     frontendOrigin: c.FRONTEND_ORIGIN,
     appUrl: c.APP_URL,
     auth: { secret: c.BETTER_AUTH_SECRET, trustedProxies },

@@ -1565,6 +1565,11 @@ export interface RedeemResult {
   expiresAt: Timestamp | null;
   /** Paid time given back after outages, already in `expiresAt`: the portal says so. */
   givenBackMinutes: number;
+  /**
+   * The voucher's switch PIN, made at its first sign-in and returned this once (ADR-0015, 4): the
+   * portal shows it with the code. Null on every later sign-in.
+   */
+  switchPin: string | null;
 }
 
 /** `GET /api/capabilities`: each is on once its provider's credentials are set. */

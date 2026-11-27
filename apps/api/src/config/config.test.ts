@@ -4,6 +4,7 @@ import { loadConfig } from "./config.js";
 const BASE = {
   DATABASE_URL: "postgresql://hashinet:hashinet@127.0.0.1:5438/hashinet",
   ENCRYPTION_KEY: "ab".repeat(32),
+  PIN_KEY: "ef".repeat(32),
   BETTER_AUTH_SECRET: "cd".repeat(32),
 };
 

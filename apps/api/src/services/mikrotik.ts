@@ -411,6 +411,32 @@ export async function disconnectHotspotDevice(
   }
 }
 
+/**
+ * Whether a device still answers on the hotspot: an ARP ping, which a device answers while it is
+ * there even when it ignores an ordinary ping (ADR-0015, 5). A refused or failed ping is no answer.
+ */
+export async function answersArp(conn: MikroTikConn, ip: string, iface: string): Promise<boolean> {
+  const rows = await conn
+    .write("/ping", [`=address=${ip}`, "=arp-ping=yes", `=interface=${iface}`, "=count=1"])
+    .then(toRows)
+    .catch(() => []);
+  return pingTotals(rows).received > 0;
+}
+
+/**
+ * Ends a device's session and forgets its cookie, whatever its user shows (the code at a sign-in,
+ * the device's own address when it came back by it).
+ */
+export async function endHotspotSession(conn: MikroTikConn, mac: string): Promise<void> {
+  for (const menu of ["/ip/hotspot/active", "/ip/hotspot/cookie"]) {
+    const rows = await conn.write(`${menu}/print`, [`?mac-address=${mac}`]);
+    for (const row of toRows(rows)) {
+      const id = row.get(".id");
+      if (id !== null) await conn.write(`${menu}/remove`, [`=.id=${id}`]);
+    }
+  }
+}
+
 /** The comment that marks a block as HashiNet's, so hand-made bindings are never touched. */
 const BLOCK_COMMENT = "wbs:device-block";
 

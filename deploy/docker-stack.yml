@@ -11,6 +11,7 @@ services:
       DATABASE_URL_FILE: /run/secrets/database_url
       ENCRYPTION_KEY_FILE: /run/secrets/encryption_key
       BETTER_AUTH_SECRET_FILE: /run/secrets/auth_secret
+      PIN_KEY_FILE: /run/secrets/pin_key
       RESEND_API_KEY_FILE: /run/secrets/resend_key
       SENTRY_DSN_FILE: /run/secrets/sentry_dsn
       SENTRY_RELEASE: ${RELEASE_SHA:?RELEASE_SHA_required}
@@ -33,6 +34,7 @@ services:
         database_url,
         encryption_key,
         auth_secret,
+        pin_key,
         resend_key,
         r2_access_key_id,
         r2_secret_access_key,
@@ -129,6 +131,7 @@ secrets:
   encryption_key:
     { external: true, name: "${ENCRYPTION_KEY_SECRET:?ENCRYPTION_KEY_SECRET_required}" }
   auth_secret: { external: true, name: "${AUTH_KEY_SECRET:?AUTH_KEY_SECRET_required}" }
+  pin_key: { external: true, name: "${PIN_KEY_SECRET:?PIN_KEY_SECRET_required}" }
   resend_key: { external: true, name: "${RESEND_KEY_SECRET:?RESEND_KEY_SECRET_required}" }
   r2_access_key_id:
     { external: true, name: "${R2_ACCESS_KEY_ID_SECRET:?R2_ACCESS_KEY_ID_SECRET_required}" }

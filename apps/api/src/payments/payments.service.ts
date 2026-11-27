@@ -370,6 +370,8 @@ export class PaymentsService {
         .admit(row.router, row.voucher, row.package?.deviceLimit ?? 1, {
           mac: row.macAddress,
           ip,
+          // Self-service payment is held until slice 6, which shows the paid device its PIN.
+          pin: null,
         })
         // The device has moved or left: its code still works, and it is on its screen.
         .then(() => true)

@@ -44,6 +44,13 @@ async function setting(deviceLimit = 1) {
   return { venue, router, pkg, voucher };
 }
 
+/** A device online on the voucher, as the router's accounting opened it. */
+function online(voucherId: string, routerId: string, mac: string, ip: string) {
+  return t.db.wifiSession.create({
+    data: { voucherId, routerId, macAddress: mac, ipAddress: ip, status: "connected" },
+  });
+}
+
 function post(path: string, body: unknown) {
   return fetch(`${api.url}${path}`, {
     method: "POST",
@@ -63,17 +70,26 @@ function redeem(routerId: string, changes: Record<string, unknown> = {}) {
   });
 }
 
+/** Sessions ended on a router, as `endSession` was asked. */
+const ended: string[] = [];
+/** Devices still answering an ARP ping, by address. */
+let answering = new Set<string>();
+
 /** The router answers as told: no real router in these tests. */
 function routerConfirms(ok: boolean) {
   const sync = api.app.get(RouterSync);
-  sync.ensureVoucher = async () => ({
-    attempted: 1,
-    succeeded: ok ? 1 : 0,
-    failures: ok ? [] : [{ router: "Lobby", error: "unreachable" }],
-  });
   sync.deviceOnNetwork = async () => true;
-  sync.signInDevice = async () => true;
+  sync.signInDevice = async () => ok;
+  sync.stillThere = async (_router, ip) => answering.has(ip);
+  sync.endSession = async (_router, mac) => {
+    ended.push(mac);
+  };
 }
+
+beforeEach(() => {
+  ended.length = 0;
+  answering = new Set();
+});
 
 beforeEach(() => routerConfirms(true));
 
@@ -155,6 +171,7 @@ describe("the guest portal", () => {
         dst: "http://example.com/a?b=1",
         expiresAt: active.expiresAt?.toISOString(),
         givenBackMinutes: 0,
+        switchPin: expect.stringMatching(/^\d{4}$/),
       },
     });
     expect(active.status).toBe("active");
@@ -196,19 +213,92 @@ describe("the guest portal", () => {
     }
   });
 
-  test("the device limit holds, also for two devices at once; a known device returns", async () => {
+  test("a voucher in use moves to a new device only with its switch PIN, shown once", async () => {
+    const { router, voucher } = await setting(1);
+    const first = await redeem(router.id, { mac: "AA:BB:CC:00:00:02" });
+    const pin = String(first.body.switchPin);
+    expect(pin).toMatch(/^\d{4}$/);
+    const stored = await t.db.voucher.findUniqueOrThrow({ where: { id: voucher.id } });
+    expect(stored.pinHmac).not.toContain(pin);
+    // It is online there, still answering.
+    await online(voucher.id, router.id, "AA:BB:CC:00:00:02", "10.5.50.2");
+
+    const other = { mac: "AA:BB:CC:00:00:03", ip: "10.5.50.3" };
+    expect((await redeem(router.id, other)).body.code).toBe("PIN_REQUIRED");
+    expect(
+      (await redeem(router.id, { ...other, pin: pin === "0517" ? "0518" : "0517" })).body.code,
+    ).toBe("PIN_WRONG");
+    const moved = await redeem(router.id, { ...other, pin });
+    expect(moved.status).toBe(200);
+    expect(moved.body.switchPin).toBeNull();
+    expect(ended).toEqual(["AA:BB:CC:00:00:02"]);
+    expect(await t.db.wifiSession.findFirstOrThrow()).toMatchObject({
+      status: "terminated",
+      terminationReason: "moved_to_another_device",
+    });
+    expect(await t.db.radiusAdmission.count({ where: { macAddress: other.mac } })).toBe(1);
+    expect(
+      (await t.db.voucher.findUniqueOrThrow({ where: { id: voucher.id } })).pinWrongTries,
+    ).toBe(0);
+  });
+
+  test("two devices at once: the second finds the voucher in use, never free", async () => {
     const { router } = await setting(1);
     const replies = await Promise.all([
-      redeem(router.id, { mac: "AA:BB:CC:00:00:02" }),
-      redeem(router.id, { mac: "AA:BB:CC:00:00:03" }),
+      redeem(router.id, { mac: "AA:BB:CC:00:00:02", ip: "10.5.50.2" }),
+      redeem(router.id, { mac: "AA:BB:CC:00:00:03", ip: "10.5.50.3" }),
     ]);
-    expect(replies.map((r) => r.status).sort()).toEqual([200, 403]);
-    expect(replies.find((r) => r.status === 403)?.body.code).toBe("DEVICE_LIMIT_REACHED");
-    expect(await t.db.voucherDevice.count()).toBe(1);
-    const winner = await t.db.device.findFirstOrThrow({
-      where: { vouchers: { some: {} } },
+    expect(replies.map((r) => r.status).sort()).toEqual([200, 409]);
+    expect(replies.find((r) => r.status === 409)?.body.code).toBe("PIN_REQUIRED");
+  });
+
+  test("five wrong PINs wait 15 minutes; ten lock the voucher", async () => {
+    const { router, voucher } = await setting(1);
+    const pin = String((await redeem(router.id, { mac: "AA:BB:CC:00:00:02" })).body.switchPin);
+    const wrong = pin === "0517" ? "0518" : "0517";
+    const other = { mac: "AA:BB:CC:00:00:03", ip: "10.5.50.3", pin: wrong };
+    for (let i = 1; i < 5; i++)
+      expect((await redeem(router.id, other)).body.code).toBe("PIN_WRONG");
+    const waiting = await redeem(router.id, other);
+    expect(waiting.status).toBe(429);
+    expect(waiting.body).toMatchObject({
+      code: "PIN_WAIT",
+      details: { until: expect.any(String) },
     });
-    expect((await redeem(router.id, { mac: winner.macAddress })).status).toBe(200);
+    // Even the right PIN waits.
+    expect((await redeem(router.id, { ...other, pin })).body.code).toBe("PIN_WAIT");
+
+    await t.db.voucher.update({ where: { id: voucher.id }, data: { pinWaitUntil: new Date() } });
+    for (let i = 6; i < 10; i++)
+      expect((await redeem(router.id, other)).body.code).toBe("PIN_WRONG");
+    const locked = await redeem(router.id, other);
+    expect(locked.status).toBe(423);
+    expect(locked.body.code).toBe("PIN_LOCKED");
+    expect((await redeem(router.id, { ...other, pin })).body.code).toBe("PIN_LOCKED");
+  });
+
+  test("a device that used the voucher comes back without the PIN to a free place, or one whose holder has gone", async () => {
+    const { router, voucher } = await setting(1);
+    await redeem(router.id, { mac: "AA:BB:CC:00:00:02", ip: "10.5.50.2" });
+    // Its own place, free again: no PIN.
+    expect((await redeem(router.id, { mac: "AA:BB:CC:00:00:02", ip: "10.5.50.2" })).status).toBe(
+      200,
+    );
+
+    // A second device moved it there with the PIN; then it left without signing off.
+    await online(voucher.id, router.id, "AA:BB:CC:00:00:03", "10.5.50.3");
+    expect((await redeem(router.id, { mac: "AA:BB:CC:00:00:02", ip: "10.5.50.2" })).status).toBe(
+      200,
+    );
+    expect(ended).toEqual(["AA:BB:CC:00:00:03"]);
+
+    // But a holder still there keeps its place: only a PIN takes it.
+    await online(voucher.id, router.id, "AA:BB:CC:00:00:04", "10.5.50.4");
+    answering.add("10.5.50.4");
+    await t.db.voucherDevice.deleteMany({ where: { device: { macAddress: "AA:BB:CC:00:00:02" } } });
+    expect((await redeem(router.id, { mac: "AA:BB:CC:00:00:02", ip: "10.5.50.2" })).body.code).toBe(
+      "PIN_REQUIRED",
+    );
   });
 
   test("a device its business blocked is refused, whatever the case of its MAC address", async () => {

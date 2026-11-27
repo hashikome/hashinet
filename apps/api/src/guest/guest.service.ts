@@ -18,15 +18,16 @@ import { Logos } from "../brand/logos.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
-import type { Router, Voucher } from "../generated/prisma/client.js";
+import type { Prisma, Router, Voucher } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { bytes } from "../serializers/records.js";
-import { describeFailures, outcomeOk, RouterSync } from "../services/router-sync.js";
+import { RouterSync } from "../services/router-sync.js";
 import { countFailure, isLimited } from "./attempts.js";
 import { guestContext } from "./guest-context.js";
 import type { contextInput, redeemInput, sessionInput } from "./guest-input.js";
+import { afterWrongPin, makePin, pinHmac, pinMatches } from "./switch-pin.js";
 
 const WINDOW_SECONDS = 600;
 /** A venue's guests share one public address, so this is generous; the code length is the wall. */
@@ -35,6 +36,26 @@ const FAILURES_PER_DEVICE = 10;
 const GIB = 1_073_741_824;
 
 const refuse = (code: string, message: string) => new BadRequestException(apiError(code, message));
+
+/** How long a sign-in's admission waits for the router's RADIUS request. */
+const ADMISSION_SECONDS = 60;
+
+type Holder = { id: string; macAddress: string; ipAddress: string | null; router: Router | null };
+
+const pinLocked = () =>
+  new HttpException(
+    apiError(
+      "PIN_LOCKED",
+      "Too many wrong PINs. Show your voucher at the counter: staff can release it.",
+    ),
+    HttpStatus.LOCKED,
+  );
+
+const pinWait = (until: Date) =>
+  new HttpException(
+    apiError("PIN_WAIT", "Too many wrong PINs. Try again later.", { until: until.toISOString() }),
+    HttpStatus.TOO_MANY_REQUESTS,
+  );
 
 /** One answer for a code that does not exist and one from another venue. */
 const invalidVoucher = () =>
@@ -126,7 +147,7 @@ export class GuestService {
     enrichWideEvent({ "voucher.id": voucher.id, "voucher.status": voucher.status });
     refuseIfFinished(voucher);
 
-    await this.admit(router, voucher, voucher.package?.deviceLimit ?? 1, input);
+    const { pin } = await this.admit(router, voucher, voucher.package?.deviceLimit ?? 1, input);
     const { expiresAt, givenBackMinutes } = await this.db.voucher.findUniqueOrThrow({
       where: { id: voucher.id },
     });
@@ -134,6 +155,7 @@ export class GuestService {
       dst: safeDestination(input.linkOrig),
       expiresAt: expiresAt?.toISOString() ?? null,
       givenBackMinutes,
+      switchPin: pin,
     };
   }
 
@@ -161,16 +183,19 @@ export class GuestService {
   }
 
   /**
-   * Lets a device online on a voucher: the one way in, whether the guest typed a code or paid.
-   * The router must see the device, then confirm the voucher, then report the device online,
-   * and only then is the voucher `active`. A failure here is an error a guest can retry.
+   * Lets a device online on a voucher: the one way in, whether the guest typed a code or paid. The
+   * router must see the device; the voucher must have a place for it (devices online at once,
+   * across the venue's routers, ADR-0015), which a new device on a voucher in use takes only with
+   * its switch PIN; then the API signs it in, the router asks RADIUS, which takes the admission left
+   * here, and only once the router reports it online is the voucher `active`. The first device gets
+   * the switch PIN, returned here once. A failure is an error a guest can retry.
    */
   async admit(
     router: Router,
     voucher: Voucher,
     deviceLimit: number,
-    device: { mac: string; ip: string },
-  ): Promise<void> {
+    device: { mac: string; ip: string; pin: string | null },
+  ): Promise<{ pin: string | null }> {
     // Asked only once a code is good, so the public route cannot be used to reach a router at will,
     // and before the claim, so the clock never starts for a device that is not here.
     const present = await this.sync.deviceOnNetwork(router, device);
@@ -182,13 +207,30 @@ export class GuestService {
       );
     }
 
-    await this.claim(voucher, device, deviceLimit);
-
-    const outcome = await this.sync.ensureVoucher(router.venueId, voucher.code, router.id);
-    if (!outcomeOk(outcome)) {
-      enrichWideEvent({ "error.message": describeFailures(outcome) });
-      throw notConfirmed();
+    // Who holds the voucher's places, and which of them have gone: asked of the routers before the
+    // voucher is locked, so the lock is never held across a router call.
+    const holders = await this.db.wifiSession.findMany({
+      where: { voucherId: voucher.id, status: "connected", macAddress: { not: device.mac } },
+      orderBy: { startedAt: "asc" },
+      select: { id: true, macAddress: true, ipAddress: true, router: true },
+    });
+    const gone = new Set<string>();
+    for (const h of holders) {
+      if (
+        h.router &&
+        h.ipAddress &&
+        (await this.sync.stillThere(h.router, h.ipAddress)) === false
+      ) {
+        gone.add(h.id);
+      }
     }
+
+    const claimed = await this.claim(voucher, device, deviceLimit, router, holders, gone);
+    if (claimed.refused) throw claimed.refused;
+    for (const h of claimed.displaced) {
+      if (h.router) await this.sync.endSession(h.router, h.macAddress);
+    }
+
     const client = { user: voucher.code, ip: device.ip, mac: device.mac };
     if (!(await this.sync.signInDevice(router, client))) throw notConfirmed();
 
@@ -196,6 +238,8 @@ export class GuestService {
       where: { id: voucher.id, status: "pending_activation" },
       data: { status: "active" },
     });
+    // Shown once, now the device is online: its PIN was made with the claim.
+    return { pin: claimed.pin };
   }
 
   /** A venue's or a business's logo, for the portal page. Null when there is none by that name. */
@@ -248,15 +292,22 @@ export class GuestService {
   }
 
   /**
-   * Records the device and starts the voucher, holding a lock on it: two devices at once cannot
-   * both take the last place, and two redemptions cannot both start its clock.
+   * Records the device, starts the voucher and takes it a place, holding a lock on the voucher, so
+   * two devices at once can't both take the last place and two sign-ins can't both start its clock.
+   * A new device on a voucher in use, or a known one whose places all hold devices still there,
+   * needs the switch PIN; a wrong one is counted, and committed, before it is refused. The right one
+   * moves the voucher: the oldest device online gives up its place. Leaves the admission the
+   * router's RADIUS request takes.
    */
   private async claim(
     voucher: Voucher,
-    input: { mac: string; ip: string },
+    input: { mac: string; ip: string; pin: string | null },
     deviceLimit: number,
-  ): Promise<void> {
-    await this.db.$transaction(async (tx) => {
+    router: Router,
+    holders: Holder[],
+    gone: Set<string>,
+  ): Promise<{ refused: HttpException | null; displaced: Holder[]; pin: string | null }> {
+    return this.db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM vouchers WHERE id = ${voucher.id}::uuid FOR UPDATE`;
       const now = new Date();
       const device = await tx.device.upsert({
@@ -264,21 +315,33 @@ export class GuestService {
         create: { macAddress: input.mac, lastIpAddress: input.ip, lastActiveAt: now },
         update: { lastIpAddress: input.ip, lastActiveAt: now },
       });
-      const key = { voucherId_deviceId: { voucherId: voucher.id, deviceId: device.id } };
-      if (!(await tx.voucherDevice.findUnique({ where: key }))) {
-        const taken = await tx.voucherDevice.count({ where: { voucherId: voucher.id } });
-        if (taken >= deviceLimit) {
-          throw new ForbiddenException(
-            apiError(
-              "DEVICE_LIMIT_REACHED",
-              `This voucher works on ${deviceLimit} device${deviceLimit === 1 ? "" : "s"}, and all are in use.`,
-            ),
-          );
-        }
-        await tx.voucherDevice.create({ data: { voucherId: voucher.id, deviceId: device.id } });
-      }
       const current = await tx.voucher.findUniqueOrThrow({ where: { id: voucher.id } });
       refuseIfFinished(current);
+      const key = { voucherId_deviceId: { voucherId: voucher.id, deviceId: device.id } };
+      const known = (await tx.voucherDevice.findUnique({ where: key })) !== null;
+      const live = holders.filter((h) => !gone.has(h.id));
+      const full = live.length >= deviceLimit;
+
+      if (current.status !== "unused" && current.pinHmac !== null && (!known || full)) {
+        const refused = await this.checkPin(tx, current, input.pin, now);
+        if (refused) return { refused, displaced: [], pin: null };
+      }
+      const displaced = [
+        ...holders.filter((h) => gone.has(h.id)),
+        ...(full ? live.slice(0, live.length - deviceLimit + 1) : []),
+      ];
+      if (displaced.length > 0) {
+        await tx.wifiSession.updateMany({
+          where: { id: { in: displaced.map((h) => h.id) } },
+          data: {
+            status: "terminated",
+            endedAt: now,
+            terminationReason: "moved_to_another_device",
+          },
+        });
+      }
+      if (!known)
+        await tx.voucherDevice.create({ data: { voucherId: voucher.id, deviceId: device.id } });
       if (current.status === "unused") {
         await tx.voucher.update({
           where: { id: voucher.id },
@@ -290,7 +353,70 @@ export class GuestService {
           },
         });
       }
+      // The switch PIN is made in the claim that starts the voucher, so a second device never finds
+      // one in use without it: for the first device (again, while its sign-in is unconfirmed, as the
+      // PIN it was never shown can't be asked for), and for the first after a release.
+      const first =
+        current.status === "unused" ||
+        (current.status === "pending_activation" && current.redeemedByDeviceId === device.id);
+      const pin = first || current.pinHmac === null ? makePin() : null;
+      if (pin !== null) {
+        await tx.voucher.update({
+          where: { id: voucher.id },
+          data: { pinHmac: pinHmac(this.config.pinKey, voucher.id, pin), pinWrongTries: 0 },
+        });
+      }
+      const admission = {
+        voucherId: voucher.id,
+        deviceId: device.id,
+        expiresAt: new Date(now.getTime() + ADMISSION_SECONDS * 1000),
+      };
+      await tx.radiusAdmission.upsert({
+        where: { routerId_macAddress: { routerId: router.id, macAddress: input.mac } },
+        create: { ...admission, routerId: router.id, macAddress: input.mac },
+        update: admission,
+      });
+      return { refused: null, displaced, pin };
     });
+  }
+
+  /**
+   * The switch PIN, checked: locked, waiting, missing and wrong are refused; a wrong one is counted
+   * (five wait 15 minutes, ten lock it). The right one starts the count again. Null when it may go on.
+   */
+  private async checkPin(
+    tx: Prisma.TransactionClient,
+    voucher: Voucher,
+    pin: string | null,
+    now: Date,
+  ): Promise<HttpException | null> {
+    if (voucher.pinLockedAt !== null) return pinLocked();
+    if (voucher.pinWaitUntil !== null && voucher.pinWaitUntil > now) {
+      return pinWait(voucher.pinWaitUntil);
+    }
+    if (pin === null) {
+      return new ConflictException(
+        apiError(
+          "PIN_REQUIRED",
+          "This voucher is online on another device. Enter its switch PIN to move it to this phone.",
+        ),
+      );
+    }
+    if (
+      voucher.pinHmac !== null &&
+      pinMatches(this.config.pinKey, voucher.id, pin, voucher.pinHmac)
+    ) {
+      await tx.voucher.update({
+        where: { id: voucher.id },
+        data: { pinWrongTries: 0, pinWaitUntil: null },
+      });
+      return null;
+    }
+    const after = afterWrongPin(voucher.pinWrongTries, now);
+    await tx.voucher.update({ where: { id: voucher.id }, data: after });
+    if (after.pinLockedAt) return pinLocked();
+    if (after.pinWaitUntil) return pinWait(after.pinWaitUntil);
+    return refuse("PIN_WRONG", "That PIN isn't right. Check it and try again.");
   }
 
   /** The router a guest is at, refused until its venue may serve: once the business's owner has

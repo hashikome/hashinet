@@ -21,6 +21,12 @@ export const redeemInput = z.object({
   linkOrig: z.string().max(2000).default(""),
   // Read off a card in groups ("4827 1693 6518"): stored without the spaces.
   code: z.string().max(80).transform(normalCode).pipe(z.string().min(1, "is required")),
+  /** The voucher's switch PIN, when it is online on another device (ADR-0015, 4). */
+  pin: z
+    .string()
+    .regex(/^\d{4}$/, "must be 4 digits")
+    .nullable()
+    .default(null),
 });
 
 export const sessionInput = z.object({ router: fromRouter.router, mac: fromRouter.mac });

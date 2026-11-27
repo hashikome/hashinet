@@ -52,6 +52,7 @@
     "MIGRATION_DATABASE_URL_SECRET",
     "ENCRYPTION_KEY_SECRET",
     "AUTH_KEY_SECRET",
+    "PIN_KEY_SECRET",
     "RESEND_KEY_SECRET",
     "R2_ACCESS_KEY_ID_SECRET",
     "R2_SECRET_ACCESS_KEY_SECRET"
@@ -63,6 +64,7 @@
     "ENCRYPTION_KEY_SECRET": "hashinet_encryption_key_20261111_v1",
     "INGRESS_NETWORK": "hashikome-edge",
     "MIGRATION_DATABASE_URL_SECRET": "hashinet_migration_database_url_20261111_v1",
+    "PIN_KEY_SECRET": "hashinet_pin_key_20261128_v1",
     "R2_ACCESS_KEY_ID_SECRET": "hashinet_r2_access_key_id_20261111_v1",
     "R2_SECRET_ACCESS_KEY_SECRET": "hashinet_r2_secret_access_key_20261111_v1",
     "RESEND_KEY_SECRET": "hashinet_resend_20261111_v1",
