@@ -203,6 +203,16 @@ describe("a business's and its venues' portals", () => {
     expect((await m.request("GET", "/api/portal/business")).status).toBe(403);
     expect((await m.request("PUT", "/api/portal/business", LOOK)).status).toBe(403);
     expect((await m.request("PUT", "/api/portal", HASHINET_PORTAL)).status).toBe(403);
+    // Whoever works the counter neither changes nor reads a venue's portal.
+    const { membershipId: op } = await businessMember(t.db, {
+      email: "op@example.com",
+      name: "Op",
+      role: "venue_operator",
+    });
+    await t.db.membershipVenue.create({ data: { membershipId: op, venueId: mine } });
+    const o = browser(api);
+    await signInWithCode(api, o, "op@example.com");
+    expect((await o.request("GET", `/api/venues/${mine}/portal`)).status).toBe(403);
   });
 
   test("the guest route serves only names it makes", async () => {

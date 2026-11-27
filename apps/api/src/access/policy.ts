@@ -70,7 +70,7 @@ export const POLICY = {
   "portal.defaults.read": PLATFORM_ALL,
   "portal.defaults.update": PLATFORM_STAFF,
   "portal.business.update": WHOLE_BUSINESS,
-  "brand.read": BUSINESS_ALL,
+  "brand.read": BUSINESS_MANAGERS,
   "brand.update": BUSINESS_MANAGERS,
   // What businesses pay HashiNet: its admin and managers read the terms and where to pay; only the
   // admin changes them, and a change reaches only businesses added after it (ADR-0013, 3).

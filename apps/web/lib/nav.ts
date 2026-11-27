@@ -134,9 +134,7 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
     ...(can("business.profile.read") ? [{ href: "/settings/general", label: "General" }] : []),
     ...(can("payment_way.read") ? [{ href: "/settings/payments", label: "Payments" }] : []),
     ...(can("package.read") ? [{ href: "/packages", label: "Packages" }] : []),
-    ...(can("brand.read") && can("brand.update")
-      ? [{ href: "/settings/portal", label: "Captive portal" }]
-      : []),
+    ...(can("brand.update") ? [{ href: "/settings/portal", label: "Captive portal" }] : []),
   ];
   if (settings.length) entries.push({ label: "Settings", icon: "settings", links: settings });
   return entries;

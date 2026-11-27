@@ -134,51 +134,66 @@ function Profile({
             ) : null}
           </div>
         </div>
-        <fieldset className="plain form" disabled={!edit}>
-          <Field
-            label="Business name"
-            id="gb-n"
-            error={errors.name ? `The name ${errors.name}.` : undefined}
-          >
-            <input
-              id="gb-n"
-              className="input"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Field>
-          <div className="pair">
-            <Field label="Region" id="gb-r" error={errors.region}>
-              <select
-                id="gb-r"
-                className="input"
-                value={region}
-                onChange={(e) => setRegion(e.target.value as Region)}
-              >
-                {REGIONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </Field>
+        {edit ? (
+          <fieldset className="plain form">
             <Field
-              label="Area or street"
-              id="gb-a"
-              hint="A street, or a landmark and area"
-              error={errors.area ? `The area ${errors.area}.` : undefined}
+              label="Business name"
+              id="gb-n"
+              error={errors.name ? `The name ${errors.name}.` : undefined}
             >
               <input
-                id="gb-a"
+                id="gb-n"
                 className="input"
                 type="text"
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </Field>
-          </div>
-        </fieldset>
+            <div className="pair">
+              <Field label="Region" id="gb-r" error={errors.region}>
+                <select
+                  id="gb-r"
+                  className="input"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value as Region)}
+                >
+                  {REGIONS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field
+                label="Area or street"
+                id="gb-a"
+                hint="A street, or a landmark and area"
+                error={errors.area ? `The area ${errors.area}.` : undefined}
+              >
+                <input
+                  id="gb-a"
+                  className="input"
+                  type="text"
+                  value={area}
+                  onChange={(e) => setArea(e.target.value)}
+                />
+              </Field>
+            </div>
+          </fieldset>
+        ) : (
+          <dl className="profile-list">
+            <div>
+              <dt>Business name</dt>
+              <dd>{profile.name}</dd>
+            </div>
+            <div>
+              <dt>Where it is</dt>
+              <dd>
+                {profile.area}, {profile.region}
+              </dd>
+            </div>
+          </dl>
+        )}
         {edit ? (
           <div className="form-save actions">
             <Button
