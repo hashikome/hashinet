@@ -258,7 +258,12 @@ respects `prefers-reduced-motion`.
 - Do keep what is the person's out of the business's navigation, never out of its look: Help has its
   own side list (Start here and the guides by area) on the dashboard's frame, title row and cards,
   under HashiNet's mark with a Help tag for every reader, since Help is the platform's, with a way back to the dashboard and one guide per shareable page; Account and security is a
-  page on the same frame with an Account tag, its flows in place and never in a popup.
+  page on the same frame with an Account tag. Its page stays flat (a settings list), and every change opens a
+  dialog over it: adding or removing a passkey, setting up or replacing the authenticator, new recovery
+  codes. A flow's dialog has the usual width, its name with one quiet line for where you are ("Scan and
+  verify · 2 of 3"), the step stacked below, and an × in the corner, as Sell's dialogs have. Past the
+  point of no return (the new recovery codes, a replacement's scan once the old app has stopped) it has no
+  × and a click outside or Escape doesn't close it: only finishing does.
 - Do write Help for the reader's role only: a guide or question someone can't act on is left out,
   not greyed or labelled. Steps are numbered and short, name the button in bold, and end with what to
   do if it goes wrong.

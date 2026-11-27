@@ -4065,11 +4065,37 @@ td .btn.paused {
 }
 
 /* Account and security: a page at a settings width (about 720px, as settings design systems cap
-   forms), so a part never stretches across a wide screen. A flow takes the part's place: its name, its
-   named steps as a progress row, then the step, with controls at one height. */
-.acct-page .canvas > * {
+   forms), so a part never stretches across a wide screen. A change to how you sign in opens as a
+   dialog over the page, of the usual width, with controls at one height. */
+.acct-page .canvas > :not(.dialog-wrap) {
   width: 100%;
-  max-width: 46rem;
+  max-width: 56rem;
+}
+.dialog.acct-flow {
+  width: min(480px, 100%);
+  padding: 22px 24px 24px;
+}
+/* Its name, and one quiet line for where you are in it; clear of the × in the corner. */
+.dialog.acct-flow .flow-head {
+  display: grid;
+  gap: 2px;
+  padding-right: 36px;
+}
+.flow-where {
+  font-size: 13.5px;
+  color: var(--muted-fg);
+}
+/* Stacked in the dialog: the QR code above its form, the code boxes above their button. */
+.dialog.acct-flow .tfa-setup {
+  grid-template-columns: minmax(0, 1fr);
+}
+.dialog.acct-flow .tfa-setup .tfa-qr {
+  justify-self: center;
+}
+.dialog.acct-flow .tfa-verify {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
 }
 .acct-flow {
   display: grid;
@@ -4087,32 +4113,6 @@ td .btn.paused {
   font-weight: 600;
 }
 
-.flow-steps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-  gap: 8px;
-}
-.flow-steps li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-top: 10px;
-  border-top: 3px solid var(--border);
-  color: var(--muted-fg);
-  font-size: 13px;
-}
-.flow-steps li.done {
-  border-top-color: var(--foreground);
-  color: var(--foreground);
-}
-.flow-steps li.now {
-  border-top-color: var(--foreground);
-  color: var(--foreground);
-  font-weight: 600;
-}
 .flow-body {
   display: grid;
   gap: 14px;
@@ -4218,38 +4218,14 @@ td .btn.paused {
   gap: 8px;
   flex: none;
 }
-.flow-now,
 .on-phone {
   display: none;
 }
-/* On a phone a setting's control goes under its words, so a three-way switch keeps one line. A flow's
-   step row keeps its bars with the current step named once under them; the code boxes share the width;
+/* On a phone a setting's control goes under its words, so a three-way switch keeps one line; a flow's
+   code boxes share the width;
    and the authenticator step leads with opening the app and the setup key, as a QR code can't be scanned
    by the phone showing it. */
 @media (max-width: 640px) {
-  .flow-steps li span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-  .flow-steps li {
-    padding-top: 0;
-  }
-  .flow-steps li svg {
-    display: none;
-  }
-  .flow-now {
-    display: block;
-    margin-top: -8px;
-    font-size: 13.5px;
-    color: var(--muted-fg);
-  }
-  .flow-now b {
-    color: var(--foreground);
-  }
   .acct-flow .tfa-verify .otp-set {
     flex: 1 1 100%;
   }

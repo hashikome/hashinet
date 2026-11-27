@@ -20,8 +20,7 @@ import { useCan, useSession } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
 import { PausedDialog as AccessPausedDialog } from "./bill-paused";
-import { Dialog } from "./dialog";
-import { Icon } from "./icons";
+import { Dialog, DialogClose } from "./dialog";
 import { PayCard, paymentWayAt } from "./payment-ways";
 import { Button, ButtonLink, Field, Pill, type PillKind, useToast } from "./ui";
 import { VoucherCard } from "./voucher-card";
@@ -271,14 +270,6 @@ function SellDialog({
   );
 }
 
-function Close({ onClose }: { onClose: () => void }) {
-  return (
-    <button className="dialog-close" type="button" aria-label="Close" onClick={onClose}>
-      <Icon name="close" size={16} />
-    </button>
-  );
-}
-
 /** Step 1: the packages as rows, one tap each; rows hold any number of packages. */
 function PickStep({
   venues,
@@ -345,7 +336,7 @@ function PickStep({
           Nothing is on sale here. The owner puts packages on sale in Packages.
         </p>
       )}
-      <Close onClose={onClose} />
+      <DialogClose onClose={onClose} />
     </Dialog>
   );
 }
@@ -456,7 +447,7 @@ function CheckStep({
         </Button>
         <Button onClick={onBack}>Change package</Button>
       </div>
-      <Close onClose={onClose} />
+      <DialogClose onClose={onClose} />
     </Dialog>
   );
 }
@@ -529,7 +520,7 @@ function SoldStep({
           }}
         />
       </div>
-      <Close onClose={onClose} />
+      <DialogClose onClose={onClose} />
     </Dialog>
   );
 }

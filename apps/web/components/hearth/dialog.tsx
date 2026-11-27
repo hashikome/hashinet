@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef } from "react";
+import { Icon } from "./icons";
 
 /**
  * A dialog over the page (prototype `.dialog`): Escape or a click on the backdrop closes it, focus
@@ -31,7 +32,10 @@ export function Dialog({
     const root = box.current;
     const first = alert
       ? root?.querySelector<HTMLElement>("[data-cancel]")
-      : root?.querySelector<HTMLElement>("input, select, textarea, button");
+      : // The first field, else the first button: never the × in the corner when there is a field.
+        (root?.querySelector<HTMLElement>("input, select, textarea") ??
+        root?.querySelector<HTMLElement>("button:not(.dialog-close)") ??
+        root?.querySelector<HTMLElement>("button"));
     first?.focus();
     const keys = (e: KeyboardEvent) => {
       if (e.key === "Escape") return close.current();
@@ -87,5 +91,14 @@ export function Dialog({
         </div>
       )}
     </div>
+  );
+}
+
+/** The × in a dialog's corner (Sell, a change to how you sign in): closes it, as Escape does. */
+export function DialogClose({ onClose }: { onClose: () => void }) {
+  return (
+    <button className="dialog-close" type="button" aria-label="Close" onClick={onClose}>
+      <Icon name="close" size={16} />
+    </button>
   );
 }

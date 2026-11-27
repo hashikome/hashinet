@@ -4,7 +4,7 @@ import { type Me, PROOF_HOURS } from "@hashinet/types";
 import { useSearchParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { type FormEvent, type ReactNode, Suspense, useEffect, useState } from "react";
-import { Icon } from "@/components/hearth/icons";
+import { Dialog, DialogClose } from "@/components/hearth/dialog";
 import { PasskeyAgain } from "@/components/hearth/protect";
 import {
   Attention,
@@ -79,6 +79,7 @@ function SignInSettings() {
   );
   const [flow, setFlow] = useState<Flow | null>(null);
   const [asking, setAsking] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
   const { required, authenticator } = me.protection;
   const keys = passkeys.data ?? [];
@@ -153,34 +154,33 @@ function SignInSettings() {
     if (params.get("flow") === "authenticator" && !authenticator) void start("setup");
   }, []);
 
-  if (flow) {
-    return (
-      <FlowCard flow={flow} onCancel={() => setFlow(null)}>
-        {flow.step === "confirm" ? (
-          <Confirm
-            hasPasskey={keys.length > 0}
-            hasAuthenticator={authenticator}
-            onProved={async () => {
-              await refresh();
-              await proceed(flow);
-            }}
-          />
-        ) : flow.step === "scan" && flow.totpURI ? (
-          <Scan
-            uri={flow.totpURI}
-            replacing={flow.kind === "replace"}
-            onDone={async () => {
-              await refresh();
-              setFlow({ ...flow, step: "codes" });
-              toast("Authenticator app on. Save your recovery codes.");
-            }}
-          />
-        ) : (
-          <Codes codes={flow.codes ?? []} onDone={() => setFlow(null)} />
-        )}
-      </FlowCard>
-    );
-  }
+  const flowDialog = flow ? (
+    <FlowCard flow={flow} onCancel={() => setFlow(null)}>
+      {flow.step === "confirm" ? (
+        <Confirm
+          hasPasskey={keys.length > 0}
+          hasAuthenticator={authenticator}
+          onProved={async () => {
+            await refresh();
+            await proceed(flow);
+          }}
+        />
+      ) : flow.step === "scan" && flow.totpURI ? (
+        <Scan
+          uri={flow.totpURI}
+          replacing={flow.kind === "replace"}
+          onDone={async () => {
+            await refresh();
+            setFlow({ ...flow, step: "codes" });
+            toast("Authenticator app on. Save your recovery codes.");
+          }}
+        />
+      ) : (
+        <Codes codes={flow.codes ?? []} onDone={() => setFlow(null)} />
+      )}
+    </FlowCard>
+  ) : null;
+  const removing = keys.find((k) => k.id === asking) ?? null;
 
   const need = !required
     ? "Optional. Once on, an email code needs it too."
@@ -192,6 +192,59 @@ function SignInSettings() {
 
   return (
     <>
+      {flowDialog}
+      {removing ? (
+        <Dialog
+          label={`Remove ${removing.name ?? "this passkey"}`}
+          onClose={() => setAsking(null)}
+          alert
+        >
+          <h2>Remove {removing.name ?? "this passkey"}?</h2>
+          <p className="muted">
+            It stops signing you in.
+            {keys.length === 1 && !authenticator && required
+              ? " Your role then needs an authenticator app before you can work."
+              : ""}
+          </p>
+          <div className="dialog-actions">
+            <Button
+              kind="danger"
+              busy={busy}
+              onClick={() => {
+                setAsking(null);
+                void start("remove", removing);
+              }}
+            >
+              Remove passkey
+            </Button>
+            <Button data-cancel onClick={() => setAsking(null)}>
+              Keep it
+            </Button>
+          </div>
+        </Dialog>
+      ) : null}
+      {adding ? (
+        <Dialog label="Add a passkey" onClose={() => setAdding(false)}>
+          <h2>Add a passkey</h2>
+          <p className="muted">
+            Sign in with this device&apos;s fingerprint, face or PIN, without an email code. Your
+            device asks for it next, and the passkey is named for this device and browser.
+          </p>
+          <div className="dialog-actions">
+            <Button
+              kind="primary"
+              busy={busy}
+              onClick={() => {
+                setAdding(false);
+                void start("passkey");
+              }}
+            >
+              Continue
+            </Button>
+            <Button onClick={() => setAdding(false)}>Cancel</Button>
+          </div>
+        </Dialog>
+      ) : null}
       {me.active.access === "account" ? (
         me.protection.passkeys > 0 ? (
           <Attention title="You signed in with an email code alone" action={<PasskeyAgain />}>
@@ -222,42 +275,25 @@ function SignInSettings() {
             sub="Sign in with your fingerprint, face or device PIN, without an email code."
             action={
               passkeysSupported() ? (
-                <Button busy={busy} onClick={() => void start("passkey")}>
+                <Button busy={busy} onClick={() => setAdding(true)}>
                   Add a passkey
                 </Button>
               ) : null
             }
           />
-          {keys.map((k) =>
-            asking === k.id ? (
-              <SettingRow
-                key={k.id}
-                className="sub-row ask-row"
-                title={`Remove ${k.name ?? "this passkey"}?`}
-                sub={`It stops signing you in.${keys.length === 1 && !authenticator && required ? " Your role then needs an authenticator app before you can work." : ""}`}
-                action={
-                  <div className="actions">
-                    <Button kind="danger" busy={busy} onClick={() => void start("remove", k)}>
-                      Remove
-                    </Button>
-                    <Button onClick={() => setAsking(null)}>Keep</Button>
-                  </div>
-                }
-              />
-            ) : (
-              <SettingRow
-                key={k.id}
-                className="sub-row"
-                title={k.name ?? "Passkey"}
-                sub={`Added ${longDate(k.createdAt)}`}
-                action={
-                  <Button kind="danger" onClick={() => setAsking(k.id)}>
-                    Remove
-                  </Button>
-                }
-              />
-            ),
-          )}
+          {keys.map((k) => (
+            <SettingRow
+              key={k.id}
+              className="sub-row"
+              title={k.name ?? "Passkey"}
+              sub={`Added ${longDate(k.createdAt)}`}
+              action={
+                <Button kind="danger" onClick={() => setAsking(k.id)}>
+                  Remove
+                </Button>
+              }
+            />
+          ))}
           <SettingRow
             title={
               <>
@@ -299,7 +335,11 @@ function SignInSettings() {
   );
 }
 
-/** A flow on the page: its name, its steps as a row of named stages, then the step itself. */
+/**
+ * A change to how you sign in, as a dialog over the page (owner, 28 November 2026): its name, one
+ * quiet line for where you are in it, then the step. The × in its corner, a click outside or Escape
+ * cancels, until the old app or codes have stopped working: then only finishing closes it.
+ */
 function FlowCard({
   flow,
   onCancel,
@@ -310,35 +350,24 @@ function FlowCard({
   children: ReactNode;
 }) {
   const at = flow.steps.indexOf(flow.step);
+  // Past the point of no return, only finishing closes it: the new codes (the old have stopped), and a
+  // replacement's scan (the old app has stopped), so a stray click never leaves the person without one.
+  const locked = flow.step === "codes" || (flow.step === "scan" && flow.kind === "replace");
   const title = TITLE[flow.kind];
   return (
-    <section className="panel acct-flow" aria-label={title}>
+    <Dialog label={title} className="acct-flow" onClose={locked ? () => {} : onCancel}>
+      {/* On the last step the old codes have already stopped working, so only Done closes it. */}
+      {locked ? null : <DialogClose onClose={onCancel} />}
       <div className="flow-head">
         <h2>{title}</h2>
-        {/* On the last step the old codes have already stopped working, so there is no going back. */}
-        {flow.step === "codes" ? null : <Button onClick={onCancel}>Cancel</Button>}
-      </div>
-      {flow.steps.length > 1 ? (
-        <>
-          <ol className="flow-steps">
-            {flow.steps.map((s, i) => {
-              const state = i < at ? "done" : i === at ? "now" : "next";
-              return (
-                <li key={s} className={state} aria-current={state === "now" ? "step" : undefined}>
-                  {state === "done" ? <Icon name="check" size={14} /> : null}
-                  <span>{STEP_NAME[s]}</span>
-                  {state === "done" ? <span className="sr"> (done)</span> : null}
-                </li>
-              );
-            })}
-          </ol>
-          <p className="flow-now" aria-hidden="true">
-            <b>{STEP_NAME[flow.step]}</b> · {at + 1} of {flow.steps.length}
+        {flow.steps.length > 1 ? (
+          <p className="flow-where">
+            {STEP_NAME[flow.step]} · {at + 1} of {flow.steps.length}
           </p>
-        </>
-      ) : null}
+        ) : null}
+      </div>
       <div className="flow-body">{children}</div>
-    </section>
+    </Dialog>
   );
 }
 
@@ -588,7 +617,7 @@ function Codes({ codes, onDone }: { codes: string[]; onDone: () => void }) {
             toast("hashinet-recovery-codes.txt saved");
           }}
         >
-          Download hashinet-recovery-codes.txt
+          Download
         </Button>
         <Button onClick={() => window.print()}>Print</Button>
         <Button
