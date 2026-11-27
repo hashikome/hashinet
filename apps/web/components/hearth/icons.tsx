@@ -72,7 +72,22 @@ export function Mark({ size = 28 }: { size?: number }) {
 }
 
 /** A business's mark until it uploads a logo: its first letter. */
-export function BusinessMark({ name, size = 28 }: { name: string; size?: number }) {
+export function BusinessMark({
+  name,
+  logoUrl = null,
+  size = 28,
+}: {
+  name: string;
+  /** The business's logo, served by the API; null shows its initial. */
+  logoUrl?: string | null;
+  size?: number;
+}) {
+  if (logoUrl) {
+    return (
+      // biome-ignore lint/performance/noImgElement: the business's uploaded logo, served by the API
+      <img className="mark biz-logo" src={logoUrl} alt="" width={size} height={size} />
+    );
+  }
   return (
     <svg
       className="mark biz-mark"

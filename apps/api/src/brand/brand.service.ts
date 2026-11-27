@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
 import type { AuditAction, GuestContext, PortalEditor, PortalLook } from "@hashinet/types";
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../access/principal.js";
 import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
@@ -11,24 +10,13 @@ import { PrismaService } from "../database/prisma.service.js";
 import type { Package, ServiceAccess, Venue } from "../generated/prisma/client.js";
 import { guestContext } from "../guest/guest-context.js";
 import { apiError } from "../http/error-envelope.js";
-import { captureFailure } from "../observability/telemetry.js";
 import { onSalePackages } from "../packages/on-sale.js";
 import { platformLook } from "../portal/copy-down.js";
 import { PortalService } from "../portal/portal.service.js";
 import { lookOf } from "../portal/portal-input.js";
 import { packageRecord } from "../serializers/records.js";
 import { venueNotFound } from "../venues/venue-errors.js";
-import { NotAnImageError, processLogo } from "./brand-images.js";
-import { BRAND_STORE, type BrandStore } from "./brand-store.js";
-
-const FILE = /^logo-[0-9a-f]{16}\.webp$/;
-/** How old an unreferenced file must be before the sweep removes it. */
-const SWEEP_AFTER_MS = 60 * 60_000;
-
-/** Where a guest's phone loads an image: the portal's own origin, the one host it can reach. */
-function urlOf(key: string | null): string | null {
-  return key === null ? null : `/api/guest/brand/${key}`;
-}
+import { Logos, logoUrl } from "./logos.js";
 
 const noTemplate = () =>
   new NotFoundException(apiError("NOT_FOUND", "This business has no portal to change."));
@@ -47,7 +35,7 @@ export class BrandService {
     private readonly portal: PortalService,
     private readonly audit: AuditLog,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    @Inject(BRAND_STORE) private readonly store: BrandStore,
+    private readonly logos: Logos,
   ) {}
 
   /** What a guest at a venue sees: its portal and the logo to show. */
@@ -62,7 +50,7 @@ export class BrandService {
       : venue.business.portal
         ? lookOf(venue.business.portal)
         : await platformLook(this.db);
-    return { look, logoUrl: urlOf(venue.portal?.logoKey ?? null) };
+    return { look, logoUrl: logoUrl(venue.portal?.logoKey ?? venue.business.logoKey) };
   }
 
   // ── A venue's own ──────────────────────────────────────────────────
@@ -111,21 +99,14 @@ export class BrandService {
 
   async putLogo(staff: Principal, id: string, upload: Uint8Array): Promise<PortalEditor> {
     const venue = await this.venueOf(staff, id);
-    const bytes = await processLogo(upload).catch((err: unknown) => {
-      if (!(err instanceof NotAnImageError)) throw err;
-      throw new BadRequestException(apiError("INVALID_IMAGE", "Upload a JPEG, PNG or WebP image."));
-    });
-    // Named by its content, so a phone can cache it for good and a new file gets a new address.
-    const hash = createHash("sha256").update(bytes).digest("hex").slice(0, 16);
-    const key = `${id}/logo-${hash}.webp`;
-    await this.store.put(key, bytes);
+    const key = await this.logos.save(id, upload);
     const before = await this.db.venuePortal.findUnique({ where: { venueId: id } });
     if (before === null) {
       const { look } = await this.resolve(id);
       await this.db.venuePortal.create({ data: { venueId: id, ...look, logoKey: key } });
     } else {
       await this.db.venuePortal.update({ where: { venueId: id }, data: { logoKey: key } });
-      if (before.logoKey !== null && before.logoKey !== key) this.discard(before.logoKey);
+      if (before.logoKey !== key) this.logos.discard(before.logoKey);
     }
     await this.recordVenue(staff, "brand.image.upload", venue);
     return this.venueEditor(venue);
@@ -136,45 +117,16 @@ export class BrandService {
     const row = await this.db.venuePortal.findUnique({ where: { venueId: id } });
     if (row?.logoKey) {
       await this.db.venuePortal.update({ where: { venueId: id }, data: { logoKey: null } });
-      this.discard(row.logoKey);
+      this.logos.discard(row.logoKey);
       await this.recordVenue(staff, "brand.image.remove", venue);
     }
     return this.venueEditor(venue);
   }
 
-  /** A logo, for the public route. Only a name this service makes is ever looked up. */
-  async image(venueId: string, file: string): Promise<Uint8Array | null> {
-    return FILE.test(file) ? this.store.get(`${venueId}/${file}`) : null;
-  }
-
-  /**
-   * Removes stored files nothing references: a logo whose delete failed, files of a venue that is
-   * gone, and kinds of image no longer kept. A file written in the last hour is left, as its row may
-   * not be saved yet. Returns how many went.
-   */
-  async sweep(now = new Date()): Promise<number> {
-    const kept = new Set(
-      (
-        await this.db.venuePortal.findMany({
-          where: { logoKey: { not: null } },
-          select: { logoKey: true },
-        })
-      )
-        .map((r) => r.logoKey)
-        .filter((key) => key !== null),
-    );
-    const settled = now.getTime() - SWEEP_AFTER_MS;
-    const stale = (await this.store.list()).filter(
-      (file) => !kept.has(file.key) && file.at.getTime() < settled,
-    );
-    for (const file of stale) await this.store.remove(file.key);
-    return stale.length;
-  }
-
   /** A deleted venue's logo goes too; its portal row goes with the venue. */
   async forget(venueId: string): Promise<void> {
     const row = await this.db.venuePortal.findUnique({ where: { venueId } });
-    if (row?.logoKey) this.discard(row.logoKey);
+    this.logos.discard(row?.logoKey ?? null);
   }
 
   // ── The business's template ────────────────────────────────────────
@@ -210,7 +162,7 @@ export class BrandService {
   // ── Editors ────────────────────────────────────────────────────────
 
   private async venueEditor(venue: Venue): Promise<PortalEditor> {
-    const [{ look, logoUrl }, row, packages, business, themes] = await Promise.all([
+    const [{ look, logoUrl: logo }, row, packages, business, themes] = await Promise.all([
       this.resolve(venue.id),
       this.db.venuePortal.findUnique({ where: { venueId: venue.id } }),
       onSalePackages(this.db, venue.id),
@@ -220,8 +172,8 @@ export class BrandService {
     return {
       look,
       themes,
-      logo: { url: logoUrl, own: row?.logoKey != null },
-      preview: this.preview(venue.name, business.access, look, logoUrl, packages ?? []),
+      logo: { url: logo, own: row?.logoKey != null },
+      preview: this.preview(venue.name, business.access, look, logo, packages ?? []),
       updatedAt: (row?.updatedAt ?? venue.updatedAt).toISOString(),
     };
   }
@@ -241,9 +193,15 @@ export class BrandService {
     return {
       look,
       themes,
-      logo: { url: null, own: false },
+      logo: { url: logoUrl(business.logoKey), own: false },
       // A new venue of the business: its name until the venue has its own.
-      preview: this.preview(business.name, business.access, look, null, packages),
+      preview: this.preview(
+        business.name,
+        business.access,
+        look,
+        logoUrl(business.logoKey),
+        packages,
+      ),
       updatedAt: (row?.updatedAt ?? business.updatedAt).toISOString(),
     };
   }
@@ -264,11 +222,6 @@ export class BrandService {
       logoUrl,
       packages: packages.map(packageRecord),
     });
-  }
-
-  /** An orphaned file costs a few kilobytes; a failed delete never fails the request. */
-  private discard(key: string): void {
-    void this.store.remove(key).catch(captureFailure);
   }
 
   private async venueOf(staff: Principal, id: string): Promise<Venue> {

@@ -37,7 +37,11 @@ function Brand({ me, space, size = 30 }: { me: Me; space?: Space; size?: number 
   }
   return (
     <Link className="brand" href={homeOf(me)} aria-label={`${business.name}, overview`}>
-      <BusinessMark name={business.name} size={size === 30 ? 28 : size} />
+      <BusinessMark
+        name={business.name}
+        logoUrl={business.logoUrl}
+        size={size === 30 ? 28 : size}
+      />
       <span className={`brand-name${business.name.length > 12 ? " long" : ""}`}>
         {business.name}
       </span>
@@ -92,7 +96,7 @@ function AccountMenu({ me }: { me: Me }) {
                 }}
               >
                 {m.business ? (
-                  <BusinessMark name={m.business.name} size={32} />
+                  <BusinessMark name={m.business.name} logoUrl={m.business.logoUrl} size={32} />
                 ) : (
                   <Mark size={32} />
                 )}

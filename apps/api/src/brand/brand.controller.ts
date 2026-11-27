@@ -27,7 +27,7 @@ const tooLarge = () =>
   );
 
 /** The image is the request's body. Stops reading at the limit, so a large one costs nothing. */
-async function readUpload(request: Request): Promise<Uint8Array> {
+export async function readUpload(request: Request): Promise<Uint8Array> {
   if (Number(request.headers["content-length"] ?? 0) > MAX_UPLOAD_BYTES) throw tooLarge();
   const chunks: Buffer[] = [];
   let size = 0;

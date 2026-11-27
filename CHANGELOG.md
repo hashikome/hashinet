@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Settings › General (slice 5): the business's name, region, area and logo, changed by its owner and
+  read by its business managers. The logo heads HashiNet's menu for its people and shows on the
+  portal of any venue without its own. Settings lists General, Payments, Packages and Captive portal.
 - The brand store is swept on start and once a day: a stored image nothing references, an hour
   old, is removed, which clears the portals' old background pictures from R2. A venue's own
   package can only be of that venue's business, in the database too. On the guest portal, a link

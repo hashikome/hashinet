@@ -63,13 +63,14 @@ export class GuestController {
 export class GuestBrandController {
   constructor(private readonly guest: GuestService) {}
 
-  @Get(":venueId/:file")
+  /** A venue's or a business's logo, by its owner's id. */
+  @Get(":ownerId/:file")
   async image(
-    @Param("venueId", idParam()) venueId: string,
+    @Param("ownerId", idParam()) ownerId: string,
     @Param("file") file: string,
     @Res() response: Response,
   ): Promise<void> {
-    const bytes = await this.guest.image(venueId, file);
+    const bytes = await this.guest.image(ownerId, file);
     if (bytes === null)
       throw new NotFoundException(apiError("NOT_FOUND", "There is no such image."));
     response

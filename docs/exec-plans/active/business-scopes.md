@@ -31,7 +31,8 @@ not found.
 - [ ] M2: the access policy and the principal; every service scoped through it; the audit log (ADR-0012).
 - [ ] M3: invitations and the people API for both scopes; adding a business for platform staff.
 - [ ] M4: packages per business, the platform defaults and a CSV export.
-- [ ] M5: the business profile: name and logo, stored and served as ADR-0009 says.
+- [x] (2026-11-28) M5: the business profile: name and logo, stored and served as ADR-0009 says
+  (build-in-slices, slice 5 (e)).
 - [ ] M6: live acceptance against production with a test business, once the Hearth screens exist.
 
 The screens are built by [redesign-admin.md](redesign-admin.md), whose "Order across plans" sets the

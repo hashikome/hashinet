@@ -339,6 +339,8 @@ model Business {
   defaultPaymentWayId  String?        @map("default_payment_way_id") @db.Uuid
   createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// Its logo's key in the brand store (ADR-0009); the file never enters this database.
+  logoKey              String?        @map("logo_key") @db.VarChar(120)
 
   defaultPaymentWay PaymentWay?           @relation("BusinessDefaultWay", fields: [id, defaultPaymentWayId], references: [businessId, id], onDelete: NoAction, onUpdate: NoAction)
   paymentWays       PaymentWay[]          @relation("BusinessWays")

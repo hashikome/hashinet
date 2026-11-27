@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { GuestContext, PortalEditor, PortalLook } from "@hashinet/types";
 import sharp from "sharp";
-import { BrandService } from "../../src/brand/brand.service.js";
+import { Logos } from "../../src/brand/logos.js";
 import { HASHINET_COLOURS, HASHINET_PORTAL } from "../../src/portal/portal-input.js";
 import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
@@ -268,12 +268,84 @@ describe("a business's and its venues' portals", () => {
     const kept = editor(await upload(c, cafe, await png())).logo.url ?? "";
     const store = join(BRAND_DIR, cafe);
     await Bun.write(join(store, "background-0123456789abcdef.webp"), "old");
-    const sweep = (at: Date) => api.app.get(BrandService).sweep(at);
+    const sweep = (at: Date) => api.app.get(Logos).sweep(at);
     // Too new to remove yet: its row may still be on its way.
     expect(await sweep(new Date())).toBe(0);
     // Other tests' logos, whose rows are gone, go too.
     expect(await sweep(new Date(Date.now() + 2 * 60 * 60_000))).toBeGreaterThanOrEqual(1);
     expect(await Bun.file(join(store, "background-0123456789abcdef.webp")).exists()).toBe(false);
     expect((await fetch(`${api.url}${kept}`)).status).toBe(200);
+  });
+
+  test("the business profile: its owner changes it, business managers read it, venue managers don't", async () => {
+    const c = await owner();
+    // The test business is found by its name, which this test changes: its people come first.
+    await businessMember(t.db, { email: "bm@example.com", name: "BM", role: "business_manager" });
+    await businessMember(t.db, { email: "vm@example.com", name: "VM", role: "venue_manager" });
+    const first = await c.request("GET", "/api/business");
+    expect(first.body).toMatchObject({ name: "Test Business", logoUrl: null });
+    const saved = await c.request("PUT", "/api/business", {
+      name: "Zuhura Cafes",
+      region: "Dar es Salaam",
+      area: "Mbezi Beach",
+    });
+    expect(saved.body).toEqual({
+      name: "Zuhura Cafes",
+      region: "Dar es Salaam",
+      area: "Mbezi Beach",
+      logoUrl: null,
+    });
+    expect(
+      (await c.request("PUT", "/api/business", { name: "", region: "Mars", area: "" })).status,
+    ).toBe(400);
+
+    const bm = browser(api);
+    await enrollAuthenticatorFor(api, bm, "bm@example.com");
+    expect((await bm.request("GET", "/api/business")).body).toMatchObject({ name: "Zuhura Cafes" });
+    expect((await bm.request("PUT", "/api/business", saved.body)).status).toBe(403);
+    const vm = browser(api);
+    await signInWithCode(api, vm, "vm@example.com");
+    expect((await vm.request("GET", "/api/business")).status).toBe(403);
+    const actions = (await t.db.auditLog.findMany()).map((a) => a.action);
+    expect(actions).toContain("business.profile.update");
+  });
+
+  test("the business logo heads the admin and shows where a venue has none of its own", async () => {
+    const c = await owner();
+    const cafe = await addVenue(c, "Cafe");
+    await sellingVenue(t.db, cafe);
+    const router = await t.db.router.create({
+      data: { venueId: cafe, name: "Lobby", ipAddress: "192.168.88.2" },
+    });
+    const reply = await c.requestWith("PUT", "/api/business/logo", await png(), {
+      Origin: "http://localhost:3006",
+      "Content-Type": "application/octet-stream",
+    });
+    const business = (reply.body as { logoUrl: string }).logoUrl;
+    expect(business).toMatch(/^\/api\/guest\/brand\/[0-9a-f-]+\/logo-[0-9a-f]{16}\.webp$/);
+    expect((await fetch(`${api.url}${business}`)).status).toBe(200);
+    const me = (await c.request("GET", "/api/me")).body as {
+      active: { business: { logoUrl: string } };
+    };
+    expect(me.active.business.logoUrl).toBe(business);
+
+    // The venue has none of its own: its portal and its editor show the business's.
+    expect((await context(router.id)).settings.logoUrl).toBe(business);
+    expect(editor(await c.request("GET", `/api/venues/${cafe}/portal`)).logo).toEqual({
+      url: business,
+      own: false,
+    });
+    const own = editor(await upload(c, cafe, await png(300, 1))).logo.url;
+    expect((await context(router.id)).settings.logoUrl).toBe(own);
+
+    // The sweep keeps both; removing the business's takes its file.
+    expect(
+      await api.app.get(Logos).sweep(new Date(Date.now() + 2 * 60 * 60_000)),
+    ).toBeGreaterThanOrEqual(0);
+    expect((await fetch(`${api.url}${business}`)).status).toBe(200);
+    const removed = await c.request("DELETE", "/api/business/logo");
+    expect(removed.body).toMatchObject({ logoUrl: null });
+    await Bun.sleep(50);
+    expect((await fetch(`${api.url}${business}`)).status).toBe(404);
   });
 });

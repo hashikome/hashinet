@@ -14,6 +14,7 @@ import { AccountRoute, CurrentPrincipal } from "../access/access.guard.js";
 import { capabilitiesOf, needsProtectedSession } from "../access/policy.js";
 import { mustProtect, type Principal, SETUP_DAYS } from "../access/principal.js";
 import { AuditLog } from "../audit/audit-log.js";
+import { logoUrl } from "../brand/logos.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { parseInput } from "../http/validation.js";
@@ -147,7 +148,7 @@ export class MeController {
     const [memberships, user, passkeys, preference, session] = await Promise.all([
       this.db.membership.findMany({
         where: { userId: principal.userId, status: "active" },
-        include: { business: { select: { id: true, name: true } } },
+        include: { business: { select: { id: true, name: true, logoKey: true } } },
         orderBy: { createdAt: "asc" },
       }),
       this.db.user.findUniqueOrThrow({ where: { id: principal.userId } }),
@@ -164,7 +165,11 @@ export class MeController {
       id: m.id,
       scope: m.scope,
       role: m.role,
-      business: m.business,
+      business: m.business && {
+        id: m.business.id,
+        name: m.business.name,
+        logoUrl: logoUrl(m.business.logoKey),
+      },
     }));
     const active = summaries.find((m) => m.id === principal.membershipId);
     const started = memberships.find((m) => m.id === principal.membershipId)?.createdAt;

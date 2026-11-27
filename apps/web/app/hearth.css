@@ -4625,3 +4625,10 @@ body {
   margin: 0;
   cursor: pointer;
 }
+
+/* A business's own logo in place of its initial: square, its corners as the mark's. */
+.biz-logo {
+  border-radius: 22%;
+  object-fit: cover;
+  flex: none;
+}

@@ -14,6 +14,7 @@ import type { z } from "zod";
 import { ownerProtected } from "../access/owner-protected.js";
 import { sellingStopped } from "../billing/access-rule.js";
 import { BrandService } from "../brand/brand.service.js";
+import { Logos } from "../brand/logos.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -59,6 +60,7 @@ export class GuestService {
     private readonly db: PrismaService,
     private readonly sync: RouterSync,
     private readonly brand: BrandService,
+    private readonly logos: Logos,
     private readonly packages: PackagesService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
@@ -196,9 +198,9 @@ export class GuestService {
     });
   }
 
-  /** An uploaded image, for the portal page. Null when there is none by that name. */
-  image(venueId: string, file: string): Promise<Uint8Array | null> {
-    return this.brand.image(venueId, file);
+  /** A venue's or a business's logo, for the portal page. Null when there is none by that name. */
+  image(ownerId: string, file: string): Promise<Uint8Array | null> {
+    return this.logos.read(ownerId, file);
   }
 
   /**

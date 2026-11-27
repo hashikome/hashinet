@@ -398,8 +398,20 @@ export interface MembershipSummary {
   id: string;
   scope: MembershipScope;
   role: MembershipRole;
-  /** Null for the platform. */
-  business: { id: string; name: string } | null;
+  /** Null for the platform. Its logo heads the admin for its people; null shows its initial. */
+  business: { id: string; name: string; logoUrl: string | null } | null;
+}
+
+/**
+ * `GET` and `PUT /api/business`, and `PUT` and `DELETE /api/business/logo`: the business's name,
+ * where it is (on its invoices) and its logo (ADR-0009, 1). Its owner changes them.
+ */
+export interface BusinessProfile {
+  name: string;
+  region: Region;
+  area: string;
+  /** Served from the portal's own origin; null while it has none. */
+  logoUrl: string | null;
 }
 
 /**
@@ -1334,6 +1346,9 @@ export const AUDIT_ACTIONS = [
   "portal.theme.default",
   "portal.theme.remove",
   "portal.business.update",
+  "business.profile.update",
+  "business.logo.upload",
+  "business.logo.remove",
   "portal.business.reset",
   "fees.update",
   "billing.payment",

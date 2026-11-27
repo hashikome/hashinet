@@ -86,6 +86,10 @@ export const POLICY = {
   "billing.remind": PLATFORM_STAFF,
   // Businesses: only HashiNet invites them (ADR-0011, 5); its whole team sees who is pending.
   "business.read": PLATFORM_ALL,
+  // A business's own profile, its name, address and logo (ADR-0009, 1): those who reach the whole
+  // business read it; its owner alone changes it.
+  "business.profile.read": WHOLE_BUSINESS,
+  "business.profile.update": ["owner"],
   "business.invite": PLATFORM_STAFF,
   // Service access by hand (ADR-0014, 4): the admin and managers hold and restore along the allowed
   // transitions; only the admin suspends, or makes any other change, as an audited override.

@@ -6,6 +6,8 @@ import { PortalModule } from "../portal/portal.module.js";
 import { RoutersModule } from "../routers/routers.module.js";
 import { BusinessPortalController, VenuePortalController } from "./brand.controller.js";
 import { BrandService } from "./brand.service.js";
+import { BusinessProfileController, BusinessProfiles } from "./business-profile.js";
+import { Logos } from "./logos.js";
 
 const DAY = 24 * 60 * 60_000;
 
@@ -14,11 +16,11 @@ const DAY = 24 * 60 * 60_000;
 class BrandJobs extends ScheduledJobs {
   protected readonly jobs: IntervalJob[];
 
-  constructor(@Inject(APP_CONFIG) config: AppConfig, brand: BrandService) {
+  constructor(@Inject(APP_CONFIG) config: AppConfig, logos: Logos) {
     super(config.jobsEnabled);
     this.jobs = [
       new IntervalJob("brand.sweep", DAY, async () => {
-        await brand.sweep();
+        await logos.sweep();
       }),
     ];
   }
@@ -26,8 +28,8 @@ class BrandJobs extends ScheduledJobs {
 
 @Module({
   imports: [RoutersModule, PortalModule],
-  controllers: [BusinessPortalController, VenuePortalController],
-  providers: [BrandService, BrandJobs],
-  exports: [BrandService],
+  controllers: [BusinessPortalController, VenuePortalController, BusinessProfileController],
+  providers: [BrandService, Logos, BusinessProfiles, BrandJobs],
+  exports: [BrandService, Logos],
 })
 export class BrandModule {}

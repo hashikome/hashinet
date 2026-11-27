@@ -593,7 +593,14 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     with `preview`). Screens: Settings › Captive portal for a business (New venues, or a venue) and
     for the platform (Themes, Starts with, Wording), each beside the phone. Tests: portal and brand
     integration; 208/208.
-  - [ ] (e) Settings › General: the business profile with its logo (business-scopes M5).
+  - [x] (2026-11-28) (e) Settings › General: the business profile (business-scopes M5).
+    `businesses.logo_key` (migration `20261128300000_business_logo`); `GET`/`PUT /api/business` and
+    `PUT`/`DELETE /api/business/logo` (`business.profile.read` for the owner and business managers,
+    `business.profile.update` for the owner). Logos, a venue's or a business's, go through one
+    `Logos` service (re-encode, store under the owner's id, serve at `/api/guest/brand/:ownerId/:file`,
+    sweep daily what nothing references). `/api/me` carries the business's logo, which heads the
+    menu; a venue without its own logo shows the business's on its portal. Screen: Settings ›
+    General, the menu's Settings in the prototype's order. Tests: brand integration; 212/212.
   - [ ] (f) Analytics: usage and sales, computed by the API.
   - [ ] (g) Each role's screens reviewed at 390px first; finish-work; release; acceptance.
 - [ ] Slice 6: online (held until the providers' credentials exist).

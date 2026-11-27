@@ -116,8 +116,9 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   ];
   if (business.length) entries.push({ label: "Business", icon: "team", links: business });
   const settings = [
-    ...(can("package.read") ? [{ href: "/packages", label: "Packages" }] : []),
+    ...(can("business.profile.read") ? [{ href: "/settings/general", label: "General" }] : []),
     ...(can("payment_way.read") ? [{ href: "/settings/payments", label: "Payments" }] : []),
+    ...(can("package.read") ? [{ href: "/packages", label: "Packages" }] : []),
     ...(can("brand.read") && can("brand.update")
       ? [{ href: "/settings/portal", label: "Captive portal" }]
       : []),
