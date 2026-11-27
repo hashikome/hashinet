@@ -50,6 +50,7 @@ export interface VoucherFacts {
   /** What its sessions have used, up and down. */
   usedBytes: bigint;
   pinLocked: boolean;
+  blocked: boolean;
   speed: PackageSpeed;
 }
 
@@ -94,6 +95,7 @@ export function throttledNow(speed: PackageSpeed, usedBytes: bigint, now: Date):
  * HashiNet, and its speed, throttled while its package says so.
  */
 export function terms(voucher: VoucherFacts, now: Date): Answer {
+  if (voucher.blocked) return { accept: false, reason: "voucher_blocked" };
   if (voucher.pinLocked) return { accept: false, reason: "voucher_locked" };
   if (voucher.expiresAt === null) return { accept: false, reason: "not_started" };
   const sessionSeconds = Math.floor((voucher.expiresAt.getTime() - now.getTime()) / 1000);

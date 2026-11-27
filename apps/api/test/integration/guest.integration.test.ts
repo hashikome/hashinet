@@ -301,6 +301,14 @@ describe("the guest portal", () => {
     );
   });
 
+  test("a voucher blocked with a device is refused on any device", async () => {
+    const { router, voucher } = await setting();
+    await t.db.voucher.update({ where: { id: voucher.id }, data: { blockedAt: new Date() } });
+    const reply = await redeem(router.id, { mac: "AA:BB:CC:00:00:09" });
+    expect(reply.status).toBe(403);
+    expect(reply.body.code).toBe("VOUCHER_BLOCKED");
+  });
+
   test("a device its business blocked is refused, whatever the case of its MAC address", async () => {
     const { router } = await setting();
     const device = await t.db.device.create({ data: { macAddress: MAC } });

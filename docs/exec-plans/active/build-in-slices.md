@@ -1072,7 +1072,9 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
     throttles by ending a session whose speed no longer holds (`throttledNow`, one rule with
     RADIUS, which marks a throttled session in its Class). A voucher's data used is its sessions'
     bytes. The sim's `guest-test` still walks the local-user path until step (i).
-  - [ ] (g) Release clears the PIN and its attempts; a block is on the voucher too.
+  - [x] (g) Release clears the PIN and its attempts. Blocking a device blocks the live vouchers it
+    used at that business too (`vouchers.blocked_at`), refused at the portal and by RADIUS on every
+    device, and ends their sessions; unblocking it lifts them.
   - [ ] (h) The portal's PIN screens and Release against the prototype, audited at 390px first.
   - [ ] (i) Two routers on the sim (the sim runs one today), proving the acceptance there.
   - [ ] (j) finish-work, docs (ADR-0015 widened), push on the owner's go, real phones.

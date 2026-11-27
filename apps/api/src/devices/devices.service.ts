@@ -113,9 +113,28 @@ export class DevicesService {
     void this.sync
       .setDeviceBlocked(businessId, device.macAddress, status === "blocked")
       .catch(captureFailure);
+    // The block is on its vouchers too (ADR-0015, 9): a MAC address can change, so a voucher it
+    // used here, still live, is refused on every device until it is unblocked.
+    const vouchers = await this.db.voucher.findMany({
+      where: {
+        devices: { some: { deviceId: id } },
+        venue: { businessId },
+        ...(status === "blocked" ? { status: { in: ["pending_activation", "active"] } } : {}),
+      },
+      select: { id: true },
+    });
+    const voucherIds = vouchers.map((v) => v.id);
+    await this.db.voucher.updateMany({
+      where: { id: { in: voucherIds } },
+      data: { blockedAt: status === "blocked" ? new Date() : null },
+    });
     if (status === "blocked") {
       const connected = await this.db.wifiSession.findMany({
-        where: { deviceId: id, status: "connected", venue: { businessId } },
+        where: {
+          status: "connected",
+          venue: { businessId },
+          OR: [{ deviceId: id }, { voucherId: { in: voucherIds } }],
+        },
         select: { id: true },
       });
       await this.sessions.end(

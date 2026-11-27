@@ -146,6 +146,11 @@ export class GuestService {
     }
     enrichWideEvent({ "voucher.id": voucher.id, "voucher.status": voucher.status });
     refuseIfFinished(voucher);
+    if (voucher.blockedAt !== null) {
+      throw new ForbiddenException(
+        apiError("VOUCHER_BLOCKED", "This voucher cannot use this WiFi."),
+      );
+    }
 
     const { pin } = await this.admit(router, voucher, voucher.package?.deviceLimit ?? 1, input);
     const { expiresAt, givenBackMinutes } = await this.db.voucher.findUniqueOrThrow({

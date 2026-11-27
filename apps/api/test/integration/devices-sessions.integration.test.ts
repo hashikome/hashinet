@@ -84,7 +84,8 @@ async function world() {
   const atMine = await session(mine.id, phone.id, "disconnected", 1);
   const atTheirs = await session(theirs.id, phone.id, "connected", 4);
   await session(theirs.id, only.id, "disconnected", 2);
-  return { own, mine, theirs, phone, only, atMine, atTheirs };
+  await t.db.voucherDevice.create({ data: { voucherId: voucher.id, deviceId: phone.id } });
+  return { own, mine, theirs, phone, only, atMine, atTheirs, voucher };
 }
 
 type Body = Record<string, unknown>;
@@ -148,10 +149,14 @@ describe("devices", () => {
     ).toMatchObject({ status: "terminated", terminationReason: "device_blocked" });
     const stats = ((await c.request("GET", "/api/devices")).body as { stats: Body }).stats;
     expect(stats).toEqual({ total: 2, online: 0, offline: 1, blocked: 1 });
+    // The block is on the voucher it used too: a new address gets nowhere with it.
+    const voucherOf = () => t.db.voucher.findUniqueOrThrow({ where: { id: w.voucher.id } });
+    expect((await voucherOf()).blockedAt).not.toBeNull();
 
     expect((await c.request("PUT", `${path}/status`, { status: "active" })).body).toMatchObject({
       device: { status: "active" },
     });
+    expect((await voucherOf()).blockedAt).toBeNull();
     expect((await c.request("DELETE", path)).status).toBe(204);
     // The sessions stay, unlinked from the forgotten device.
     expect(await t.db.wifiSession.count({ where: { deviceId: null } })).toBe(2);
@@ -287,8 +292,7 @@ describe("blocking is a business's own", () => {
 describe("releasing a voucher", () => {
   test("whoever is at the counter frees a voucher in use: its devices and sessions go, its time runs on", async () => {
     const w = await world();
-    const voucher = await t.db.voucher.findFirstOrThrow({ where: { venueId: w.theirs.id } });
-    await t.db.voucherDevice.create({ data: { voucherId: voucher.id, deviceId: w.phone.id } });
+    const { voucher } = w;
     const c = await owner();
 
     const released = await c.request("POST", `/api/vouchers/${voucher.id}/release`);

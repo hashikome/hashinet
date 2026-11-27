@@ -49,6 +49,7 @@ const VOUCHER_SELECT = {
   expiresAt: true,
   dataLimitGb: true,
   pinLockedAt: true,
+  blockedAt: true,
   package: { select: SPEED_SELECT },
 } as const;
 
@@ -66,6 +67,7 @@ function factsOf(v: VoucherRow, usedBytes: bigint): VoucherFacts {
     dataLimitGb: v.dataLimitGb,
     usedBytes,
     pinLocked: v.pinLockedAt !== null,
+    blocked: v.blockedAt !== null,
     speed: {
       downloadSpeedMbps: p?.downloadSpeedMbps ?? 0,
       uploadSpeedMbps: p?.uploadSpeedMbps ?? null,

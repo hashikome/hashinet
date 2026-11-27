@@ -729,6 +729,9 @@ model Voucher {
   pinWrongTries      Int           @default(0) @map("pin_wrong_tries")
   pinWaitUntil       DateTime?     @map("pin_wait_until") @db.Timestamptz(3)
   pinLockedAt        DateTime?     @map("pin_locked_at") @db.Timestamptz(3)
+  /// Blocked with a device that used it (ADR-0015, 9): a MAC address can change, so the block is on
+  /// the voucher too, refused on every device until the device is unblocked.
+  blockedAt          DateTime?     @map("blocked_at") @db.Timestamptz(3)
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
