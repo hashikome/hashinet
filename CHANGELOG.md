@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Account › Sign-in: each change takes its own proof. The session records which factor proved it:
+  new recovery codes take a passkey or the authenticator app, never a recovery code; replacing the app
+  takes its current code or a recovery code, given just now; someone with neither removes the app with
+  the passkey that stays (`POST /api/me/authenticator/remove`), or contacts support. `/api/me` serves
+  each change's rule, and Confirm offers only the factors it accepts.
+- Adding a passkey has a second step, Try it: the device is asked for the new passkey alone, and "It
+  works" shows once the API has seen it used. Passkeys show when they were last used
+  (`GET /api/me/passkeys`), and a device that already holds one says so. Short flows like this one fit
+  their content (`StepDialog`'s `fit`) at the same width and place.
 - Account › Sign-in: every change opens a dialog over a wider, flat page. Its flows use one shared dialog
   with steps, `StepDialog`: one size and place through every step, where you are in a quiet line, an ×
   at every step, and a question first where closing costs something (the new recovery codes, a

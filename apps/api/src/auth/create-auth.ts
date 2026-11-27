@@ -1,6 +1,6 @@
 import { createHmac, randomInt } from "node:crypto";
 import { passkey } from "@better-auth/passkey";
-import { PROOF_HOURS } from "@hashinet/types";
+import type { ProofAction } from "@hashinet/types";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
@@ -10,6 +10,7 @@ import type { AppConfig } from "../config/config.js";
 import type { PrismaClient } from "../database/client.js";
 import type { EmailSender } from "../email/email-sender.js";
 import { captureFailure } from "../observability/telemetry.js";
+import { proofRequired, provedFor } from "./proof.js";
 import { consumeSignInCode } from "./sign-in-code-budget.js";
 import { SIGN_IN_CODE_MINUTES, signInCodeEmail } from "./sign-in-code-email.js";
 
@@ -58,6 +59,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
         activeMembershipId: { type: "string", required: false, input: false },
         signedInWith: { type: "string", required: false, input: false },
         provedAt: { type: "date", required: false, input: false },
+        provedWith: { type: "string", required: false, input: false },
       },
     },
     telemetry: { enabled: false },
@@ -90,11 +92,13 @@ export function createAuth({ config, db, email }: AuthDependencies) {
               });
             }
             const signedInWith = signInMethodOf(ctx?.path);
+            const proving = PROVING_METHODS.has(signedInWith);
             return {
               data: {
                 ...session,
                 signedInWith,
-                provedAt: PROVING_METHODS.has(signedInWith) ? new Date() : null,
+                provedAt: proving ? new Date() : null,
+                provedWith: proving ? signedInWith : null,
               },
             };
           },
@@ -135,12 +139,13 @@ export function createAuth({ config, db, email }: AuthDependencies) {
             });
           }
         }
-        if (CHANGES_PROTECTION.has(ctx.path)) {
-          // Removing a passkey or making new recovery codes asks for proof first: a passkey, an
-          // authenticator code or a recovery code in the last 2 hours (ADR-0011, 9).
+        const changes = CHANGES_PROTECTION.get(ctx.path);
+        if (changes) {
+          // Removing a passkey or making new recovery codes asks for proof first, from a factor
+          // that change accepts (ADR-0011, 9; `proof.ts`).
           const current = await getSessionFromCtx(ctx);
-          if (!current || !(await provedRecently(db, current.session.id))) {
-            throw new APIError("FORBIDDEN", proofRequired());
+          if (!current || !(await provedFor(db, current.session.id, changes))) {
+            throw new APIError("FORBIDDEN", proofRequired(changes));
           }
         }
         if (ADDS_PROTECTION.has(ctx.path)) {
@@ -151,9 +156,9 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           if (
             current &&
             (await hasProtection(db, current.user.id)) &&
-            !(await provedRecently(db, current.session.id))
+            !(await provedFor(db, current.session.id, "add"))
           ) {
-            throw new APIError("FORBIDDEN", proofRequired());
+            throw new APIError("FORBIDDEN", proofRequired("add"));
           }
         }
       }),
@@ -168,7 +173,17 @@ export function createAuth({ config, db, email }: AuthDependencies) {
           if (proving) {
             await db.session.updateMany({
               where: { id: proving.session.id },
-              data: { provedAt: new Date() },
+              data: { provedAt: new Date(), provedWith: signInMethodOf(ctx.path) },
+            });
+          }
+        }
+        // A passkey that signed in or confirmed a change is marked used: "Try it" reads it back.
+        if (ctx.path === "/passkey/verify-authentication") {
+          const used = credentialOf(ctx.body);
+          if (used !== null) {
+            await db.passkey.updateMany({
+              where: { credentialID: used },
+              data: { lastUsedAt: new Date() },
             });
           }
         }
@@ -187,7 +202,7 @@ export function createAuth({ config, db, email }: AuthDependencies) {
         if (!current) return;
         await db.session.updateMany({
           where: { id: current.session.id, signedInWith: "email_code" },
-          data: { signedInWith: proved, provedAt: new Date() },
+          data: { signedInWith: proved, provedAt: new Date(), provedWith: proved },
         });
       }),
     },
@@ -270,30 +285,19 @@ const PROVES: ReadonlySet<string> = new Set([
   "/passkey/verify-authentication",
 ]);
 
-/** The refusal when a change needs proof the session doesn't have (one code, one message). */
-export const proofRequired = () => ({
-  code: "PROOF_REQUIRED",
-  message: "Confirm it's you with your passkey, authenticator app or a recovery code.",
-});
-
-/** Until when a proof made at `provedAt` holds; null once it has run out, or with none. */
-export function proofHoldsUntil(provedAt: Date | null | undefined): Date | null {
-  if (!provedAt) return null;
-  const until = new Date(provedAt.getTime() + PROOF_HOURS * 3_600_000);
-  return until.getTime() > Date.now() ? until : null;
-}
-
-/** Whether the session proved the person's protection in the last 2 hours. */
-export async function provedRecently(db: PrismaClient, sessionId: string): Promise<boolean> {
-  const row = await db.session.findUnique({ where: { id: sessionId }, select: { provedAt: true } });
-  return proofHoldsUntil(row?.provedAt) !== null;
-}
-
-/** The routes that change the protection a person already has. */
-const CHANGES_PROTECTION: ReadonlySet<string> = new Set([
-  "/passkey/delete-passkey",
-  "/two-factor/generate-backup-codes",
+/** The routes that change the protection a person already has, and the change each one is. */
+const CHANGES_PROTECTION: ReadonlyMap<string, ProofAction> = new Map([
+  ["/passkey/delete-passkey", "removePasskey"],
+  ["/two-factor/generate-backup-codes", "newRecoveryCodes"],
 ]);
+
+/** The credential a passkey ceremony answered with, from the request body; null if none. */
+function credentialOf(body: unknown): string | null {
+  if (typeof body !== "object" || body === null || !("response" in body)) return null;
+  const response: unknown = body.response;
+  if (typeof response !== "object" || response === null || !("id" in response)) return null;
+  return typeof response.id === "string" ? response.id : null;
+}
 
 /** Whether the person already has an authenticator app or a passkey. */
 export async function hasProtection(

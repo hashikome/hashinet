@@ -2,7 +2,8 @@
 
 Status: accepted, 3 November 2026; sign-in protection by role settled on 4 November 2026; the platform's
 top role named admin on 11 November 2026; the 2-hour proof widened to adding a factor on 13 November
-2026; operators' handed-only reach and exclusive moves on 13 November 2026. Replaces the admin and manager roles of ADR-0007, which keeps
+2026; operators' handed-only reach and exclusive moves on 13 November 2026; proof by the factor each change
+accepts on 27 November 2026. Replaces the admin and manager roles of ADR-0007, which keeps
 sign-in itself.
 
 ## Context
@@ -93,12 +94,21 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    staff reach only Account and security; a business's owner or manager can get set up for 7 days
    (onboarding, packages, portal, team), but no venue starts serving and nothing is sold, and after
    the 7 days only Account and security opens. Setting up the authenticator shows the recovery codes once.
-   Replacing the authenticator, making new recovery codes, removing a passkey, and adding a passkey
-   or an authenticator for someone already protected first ask the person to confirm it's them, with
-   a code from the current authenticator, a recovery code (which is then used up) or a passkey, so an
-   unlocked device or a stolen session can't move the second factor elsewhere. A confirmation holds
-   for 2 hours, as a sudo mode does; registering a factor is never a confirmation, except a person's
-   first protection.
+   Changing protection first asks the person to confirm it's them, so an unlocked device or a stolen
+   session can't move the second factor elsewhere. The session records when it proved itself and with
+   which factor, and each change accepts only some factors (`apps/api/src/auth/proof.ts`):
+   - removing a passkey, and adding a passkey or an authenticator for someone already protected: a
+     passkey, a code from the authenticator or a recovery code (which is then used up), for 2 hours,
+     as a sudo mode does;
+   - new recovery codes: a passkey or the authenticator, for 2 hours; never a recovery code, as
+     someone making new ones has lost or used up the old;
+   - replacing the authenticator: a code from the current one or a recovery code, given in the last
+     5 minutes; a passkey alone could swap the app for one an intruder holds;
+   - removing the authenticator, for someone with neither its code nor a recovery code: the passkey
+     that stays, given in the last 5 minutes. Without a passkey, HashiNet's support resets it.
+   Registering a factor is never a confirmation, except a person's first protection. A new passkey
+   can be tried at once: the device is asked for that passkey alone, and the API marks a passkey used
+   when it signs in or confirms a change.
    A passkey counts only with user verification (the device unlock: fingerprint, face, PIN, or a
    password manager's unlock): it is requested as required when a passkey is created and when it signs
    in, and the API rejects any assertion without the user-verified flag (7 November 2026). Business operators sign in

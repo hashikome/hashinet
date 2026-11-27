@@ -263,8 +263,11 @@ respects `prefers-reduced-motion`.
   codes.
 - A dialog with steps is the shared `StepDialog` (`components/hearth/dialog.tsx`; the prototype's
   `flowDialog`): one size through every step (480 by 600, the tallest step's) at one place on the screen,
-  so moving on never resizes or moves it; its name with one quiet line for where you are ("Scan and
-  verify · 2 of 3"); the step below; and the × in its corner, as Sell's dialogs have. Every step closes
+  so moving on never resizes or moves it. That holds where the steps hand work to each other
+  (confirm it's you, scan, then the codes it makes); a short flow whose steps stand alone (add a
+  passkey, then try it) is `fit`: the same width and place, its height its content's, with a floor
+  that keeps its steps one height. It has its name, one quiet line for where you are ("Scan and
+  verify · 2 of 3"), the step below, and the × in its corner, as Sell's dialogs have. Every step closes
   from the ×, Escape or a click outside; where closing costs something (the new recovery codes, a
   replacement's scan once the old app has stopped) it asks first in the same dialog, with Keep going
   first, and Keep going returns to the step as it was. A step's button names what it does ("Confirm

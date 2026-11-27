@@ -6,6 +6,7 @@ export const ACTION_NAME: Record<AuditAction, string> = {
   "membership.role": "Changed a role",
   "membership.remove": "Removed from the team",
   "profile.update": "Updated their profile",
+  "authenticator.remove": "Removed their authenticator",
   "authenticator.replace": "Replaced their authenticator",
   "venue.create": "Added a venue",
   "venue.update": "Changed a venue",

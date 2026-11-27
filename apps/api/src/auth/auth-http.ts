@@ -22,7 +22,6 @@ const ALLOWED = new Set([
   "POST /passkey/verify-registration",
   "GET /passkey/generate-authenticate-options",
   "POST /passkey/verify-authentication",
-  "GET /passkey/list-user-passkeys",
   "POST /passkey/delete-passkey",
 ]);
 

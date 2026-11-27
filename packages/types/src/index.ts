@@ -766,14 +766,42 @@ export interface Me {
     passkeys: number;
     /** While `access` is `setup`: when the 7 days to get set up without protection end. */
     setupEndsAt: Timestamp | null;
-    /**
-     * Until when this session's proof holds: removing a passkey, new recovery codes or replacing
-     * the authenticator ask for proof first after it. Null when it has none.
-     */
+    /** Until when this session's proof holds for the 2-hour changes; null when it has none. */
     provedUntil: Timestamp | null;
-    /** Whether a change to protection, or adding to it, asks for proof first now. */
-    proofNeeded: { change: boolean; add: boolean };
+    /** For each change to protection: whether it asks for proof first now, and what it accepts. */
+    proof: Record<ProofAction, ProofRule>;
   };
+}
+
+/** One of the signed-in person's passkeys, as Account › Sign-in lists it. */
+export interface MyPasskey {
+  id: string;
+  name: string | null;
+  /** The WebAuthn credential, so "Try it" can ask the device for this passkey alone. */
+  credentialId: string;
+  createdAt: Timestamp | null;
+  /** When it last signed in or confirmed a change; null if never. */
+  lastUsedAt: Timestamp | null;
+}
+
+/** The factors that prove a session is the person's own. */
+export type ProofFactor = "passkey" | "authenticator" | "recovery_code";
+
+/** The changes to protection that ask for proof first (ADR-0011, 9). */
+export type ProofAction =
+  | "add"
+  | "removePasskey"
+  | "newRecoveryCodes"
+  | "replaceAuthenticator"
+  | "removeAuthenticator";
+
+export interface ProofRule {
+  /** Whether the session must prove itself before this change, now. */
+  needed: boolean;
+  /** The factors this change accepts, strongest first. */
+  accepts: ProofFactor[];
+  /** How long a proof counts for it: 2 hours, or a few minutes for the ones asked each time. */
+  holdsMinutes: number;
 }
 
 /** Every error the API answers with (Better Auth's `/api/auth` routes keep their own shape). */
@@ -1353,6 +1381,7 @@ export const AUDIT_ACTIONS = [
   "membership.role",
   "membership.remove",
   "profile.update",
+  "authenticator.remove",
   "authenticator.replace",
   "venue.create",
   "venue.update",

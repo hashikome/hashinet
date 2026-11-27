@@ -54,7 +54,7 @@ export function SignIn() {
     if (step !== "email" || !passkeysSupported()) return;
     let live = true;
     PublicKeyCredential.isConditionalMediationAvailable?.()
-      .then((available) => (available && live ? signInWithPasskey(true) : null))
+      .then((available) => (available && live ? signInWithPasskey({ autofill: true }) : null))
       .then((signed) => {
         if (signed !== null && live) router.replace(safeNext(next));
       })

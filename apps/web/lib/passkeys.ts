@@ -4,6 +4,7 @@ import {
   startAuthentication,
   startRegistration,
   WebAuthnAbortService,
+  WebAuthnError,
 } from "@simplewebauthn/browser";
 import { api } from "./api";
 
@@ -12,14 +13,24 @@ export const passkeysSupported = () =>
 
 /**
  * Signs in with a passkey; the device asks for its unlock (user verification is required). With
- * `autofill`, it waits for the person to pick a passkey from the email field's suggestions.
+ * `autofill`, it waits for the person to pick a passkey from the email field's suggestions; with
+ * `only`, the device offers that one passkey alone (a credential ID), as "Try it" does.
  */
-export async function signInWithPasskey(autofill = false): Promise<void> {
+export async function signInWithPasskey({
+  autofill = false,
+  only = null,
+}: {
+  autofill?: boolean;
+  only?: string | null;
+} = {}): Promise<void> {
   const options = await api.get<PublicKeyCredentialRequestOptionsJSON>(
     "/api/auth/passkey/generate-authenticate-options",
   );
   const { clientExtensionResults: _, ...response } = await startAuthentication({
-    optionsJSON: options,
+    optionsJSON:
+      only === null
+        ? options
+        : { ...options, allowCredentials: [{ id: only, type: "public-key" }] },
     useBrowserAutofill: autofill,
   });
   await api.post("/api/auth/passkey/verify-authentication", { response });
@@ -68,3 +79,7 @@ export function deviceName(): string {
 /** The person cancelled or the device refused: not worth an error message of its own. */
 export const cancelled = (error: unknown) =>
   error instanceof Error && (error.name === "NotAllowedError" || error.name === "AbortError");
+
+/** The device already holds a passkey for this person, and refuses a second. */
+export const alreadyOnDevice = (error: unknown) =>
+  error instanceof WebAuthnError && error.code === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED";

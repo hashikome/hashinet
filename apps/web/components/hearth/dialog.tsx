@@ -113,7 +113,8 @@ export interface LeaveQuestion {
 
 /**
  * A dialog with steps (prototype `flowCard`): one size through every step and one place on the screen,
- * so moving on never resizes or moves it; its name with one quiet line for where you are ("Scan and
+ * so moving on never resizes or moves it. A short flow whose steps stand alone (`fit`, as adding a
+ * passkey then trying it) keeps the width and place but fits its content. Then its name with one quiet line for where you are ("Scan and
  * verify · 2 of 3"); the step below; and the × in its corner. Where closing costs something (`leave`),
  * the ×, Escape and a click outside ask first, in the same dialog, and the step is kept for Keep going.
  */
@@ -121,6 +122,7 @@ export function StepDialog({
   title,
   step,
   leave = null,
+  fit = false,
   onClose,
   className = "",
   children,
@@ -129,6 +131,8 @@ export function StepDialog({
   /** Where this step is: its name, its place and how many; null for a flow of one step. */
   step: { name: string; at: number; of: number } | null;
   leave?: LeaveQuestion | null;
+  /** Fits its content rather than the tallest step: for flows whose steps don't hand work on. */
+  fit?: boolean;
   onClose: () => void;
   /** The flow's own look inside, such as Account's (`acct-flow`). */
   className?: string;
@@ -138,7 +142,11 @@ export function StepDialog({
   const stay = () => setLeaving(false);
   const close = leaving ? stay : leave ? () => setLeaving(true) : onClose;
   return (
-    <Dialog label={title} className={`step-dialog ${className}`.trim()} onClose={close}>
+    <Dialog
+      label={title}
+      className={`step-dialog${fit ? " fit" : ""} ${className}`.trim()}
+      onClose={close}
+    >
       <DialogClose onClose={close} />
       {leaving && leave ? (
         <>

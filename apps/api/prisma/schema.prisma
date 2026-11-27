@@ -200,6 +200,8 @@ model Session {
   /// When this session last proved the person's protection (a passkey, an authenticator code or
   /// a recovery code). Changing protection needs proof from the last 2 hours, as sudo mode does.
   provedAt           DateTime?     @map("proved_at") @db.Timestamptz(3)
+  /// Which factor gave that proof: each change accepts only some (ADR-0011, 9).
+  provedWith         SignInMethod? @map("proved_with")
   createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -276,6 +278,8 @@ model Passkey {
   transports   String?
   aaguid       String?   @db.VarChar(36)
   createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(3)
+  /// When it last signed the person in or confirmed a change; written by HashiNet, not the library.
+  lastUsedAt   DateTime? @map("last_used_at") @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

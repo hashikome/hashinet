@@ -177,6 +177,7 @@ describe("sign-in", () => {
       ["POST", "/api/auth/update-user", { name: "x" }],
       ["POST", "/api/auth/email-otp/verify-email", { email: "x@example.com", otp: "1" }],
       ["POST", "/api/auth/passkey/update-passkey", { id: "x", name: "x" }],
+      ["GET", "/api/auth/passkey/list-user-passkeys", null],
     ];
     for (const [method, path, body] of routes) {
       expect((await c.request(method, path, body)).status).toBe(404);
@@ -499,7 +500,11 @@ describe("adding a factor needs fresh proof", () => {
     await signIn(c, "old@example.com");
     // As if this session had signed in with the passkey, three hours ago.
     await t.db.session.updateMany({
-      data: { signedInWith: "passkey", provedAt: new Date(Date.now() - 3 * 3_600_000) },
+      data: {
+        signedInWith: "passkey",
+        provedAt: new Date(Date.now() - 3 * 3_600_000),
+        provedWith: "passkey",
+      },
     });
     const options = await c.request("GET", "/api/auth/passkey/generate-register-options");
     expect(options.status).toBe(403);
@@ -511,6 +516,118 @@ describe("adding a factor needs fresh proof", () => {
     await t.db.session.updateMany({ data: { provedAt: new Date() } });
     expect((await c.request("GET", "/api/auth/passkey/generate-register-options")).status).toBe(
       200,
+    );
+  });
+});
+
+describe("each change takes its own proof (ADR-0011, 9)", () => {
+  const minutesAgo = (n: number) => new Date(Date.now() - n * 60_000);
+  const proveWith = (
+    provedWith: "passkey" | "authenticator" | "recovery_code",
+    provedAt = new Date(),
+  ) => t.db.session.updateMany({ data: { provedWith, provedAt } });
+  const addPasskey = (userId: string) =>
+    t.db.passkey.create({
+      data: {
+        id: Bun.randomUUIDv7(),
+        userId,
+        publicKey: "test-key",
+        credentialID: `test-credential-${userId}`,
+        counter: 0,
+        deviceType: "singleDevice",
+        backedUp: false,
+      },
+    });
+
+  test("new recovery codes take a passkey or the app, never a recovery code", async () => {
+    await platformMember(t.db, { email: "codes@example.com", name: "Codes", role: "admin" });
+    const c = client();
+    await enrollAuthenticator(c, "codes@example.com");
+
+    await proveWith("recovery_code");
+    const refused = await c.request("POST", "/api/auth/two-factor/generate-backup-codes", {});
+    expect(refused.status).toBe(403);
+    expect(refused.body).toMatchObject({ code: "PROOF_REQUIRED" });
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({
+      protection: {
+        proof: { newRecoveryCodes: { needed: true, accepts: ["passkey", "authenticator"] } },
+      },
+    });
+
+    await proveWith("passkey");
+    expect((await c.request("POST", "/api/auth/two-factor/generate-backup-codes", {})).status).toBe(
+      200,
+    );
+  });
+
+  test("replacing the app takes its code or a recovery code, given just now; a passkey can't", async () => {
+    await platformMember(t.db, { email: "rep@example.com", name: "Rep", role: "admin" });
+    const c = client();
+    await enrollAuthenticator(c, "rep@example.com");
+
+    await proveWith("passkey");
+    expect((await c.request("POST", "/api/me/authenticator/replace", {})).status).toBe(403);
+    await proveWith("authenticator", minutesAgo(10));
+    expect((await c.request("POST", "/api/me/authenticator/replace", {})).status).toBe(403);
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({
+      protection: {
+        proof: {
+          replaceAuthenticator: { needed: true, accepts: ["authenticator", "recovery_code"] },
+        },
+      },
+    });
+    expect(await t.db.twoFactor.count()).toBe(1);
+
+    await proveWith("recovery_code");
+    expect((await c.request("POST", "/api/me/authenticator/replace", {})).status).toBe(200);
+    expect(await t.db.twoFactor.count()).toBe(0);
+  });
+
+  test("removing the app takes the passkey that stays, and nothing else", async () => {
+    const person = await platformMember(t.db, {
+      email: "drop@example.com",
+      name: "Drop",
+      role: "admin",
+    });
+    const c = client();
+    await enrollAuthenticator(c, "drop@example.com");
+
+    // No passkey to stay: nothing removes the app this way.
+    await proveWith("passkey");
+    const alone = await c.request("POST", "/api/me/authenticator/remove", {});
+    expect(alone.status).toBe(409);
+    expect(alone.body).toMatchObject({ code: "PASSKEY_REQUIRED" });
+
+    await addPasskey(person.id);
+    expect((await c.request("GET", "/api/me/passkeys")).body).toEqual([
+      expect.objectContaining({
+        credentialId: `test-credential-${person.id}`,
+        lastUsedAt: null,
+      }),
+    ]);
+    await proveWith("authenticator");
+    const withApp = await c.request("POST", "/api/me/authenticator/remove", {});
+    expect(withApp.status).toBe(403);
+    expect(withApp.body).toMatchObject({ code: "PROOF_REQUIRED" });
+    expect(await t.db.twoFactor.count()).toBe(1);
+
+    await proveWith("passkey");
+    const removed = await c.request("POST", "/api/me/authenticator/remove", {});
+    expect(removed.status).toBe(200);
+    expect(removed.body).toMatchObject({ protection: { authenticator: false, passkeys: 1 } });
+    expect(await t.db.twoFactor.count()).toBe(0);
+    expect((await t.db.auditLog.findMany()).map((a) => a.action)).toContain("authenticator.remove");
+    // The passkey goes on protecting the sign-in.
+    expect((await c.request("GET", "/api/me")).body).toMatchObject({ active: { access: "full" } });
+  });
+
+  test("a proof with no factor recorded counts for nothing", async () => {
+    await platformMember(t.db, { email: "bare@example.com", name: "Bare", role: "admin" });
+    const c = client();
+    await enrollAuthenticator(c, "bare@example.com");
+    await t.db.session.updateMany({ data: { provedAt: new Date(), provedWith: null } });
+    expect((await c.request("POST", "/api/auth/two-factor/generate-backup-codes", {})).status).toBe(
+      403,
     );
   });
 });
