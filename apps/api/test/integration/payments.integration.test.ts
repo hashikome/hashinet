@@ -190,6 +190,17 @@ describe("buying on the portal", () => {
     expect(await t.db.payment.count()).toBe(0);
   });
 
+  test("a guest pays the venue's own price", async () => {
+    const { router, pkg } = await setting();
+    await t.db.venuePackage.create({
+      data: { venueId: router.venueId, packageId: pkg.id, priceTsh: 1500 },
+    });
+    expect((await buy(router.id, pkg.id)).status).toBe(200);
+    expect(charges).toEqual([{ phone: PHONE, amount: 1500 }]);
+    const payment = await t.db.payment.findFirstOrThrow();
+    expect(Number(payment.amountTsh)).toBe(1500);
+  });
+
   test("a number cannot be prompted again and again", async () => {
     const { router, pkg } = await setting();
     for (let i = 0; i < 3; i++) {

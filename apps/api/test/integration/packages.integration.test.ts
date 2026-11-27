@@ -302,6 +302,30 @@ describe("packages", () => {
     expect(theirs).toContain("'=HYPERLINK(1),1440,1,2000,Yes,Away");
   });
 
+  test("the counter sells at the venue's own price", async () => {
+    const c = await owner();
+    const businessId = await testBusinessId(t.db);
+    const venue = await t.db.venue.create({
+      data: { businessId, name: "Home", region: "Dar es Salaam", area: "Mbweni" },
+    });
+    await sellingVenue(t.db, venue.id);
+    const pkg = await t.db.package.create({ data: { businessId, ...DAY } });
+    await c.request("PUT", `/api/venues/${venue.id}/packages/${pkg.id}`, {
+      priceTsh: 2500,
+      onSale: true,
+    });
+    const sold = await c.request("POST", "/api/sales", {
+      venueId: venue.id,
+      packageId: pkg.id,
+      method: "cash",
+    });
+    expect(sold.status).toBe(201);
+    const voucher = await t.db.voucher.findFirstOrThrow({ where: { packageId: pkg.id } });
+    expect(Number(voucher.priceTsh)).toBe(2500);
+    const payment = await t.db.payment.findFirstOrThrow();
+    expect(Number(payment.amountTsh)).toBe(2500);
+  });
+
   test("a sold voucher keeps the price it was sold at when the package's price changes", async () => {
     const c = await owner();
     const businessId = await testBusinessId(t.db);
