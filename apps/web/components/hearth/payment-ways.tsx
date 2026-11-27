@@ -35,9 +35,6 @@ export function PayCard({ way }: { way: Pick<PaymentWay, "through" | "number" | 
   );
 }
 
-/** Lipa nambas guests know, offered as the provider is typed; any other can be typed too. */
-const LIPA_PROVIDERS = ["M-Pesa", "Airtel Money", "Yas", "CRDB", "Stanbic"];
-
 /** What a way is, under its name in the table, unless its name already says it. */
 function subOf(w: PaymentWayRecord): string | null {
   if (w.kind === "lipa_namba") return w.label === null ? null : w.through;
@@ -210,7 +207,6 @@ function WayDialog({
         inputMode={numeric ? "numeric" : undefined}
         autoComplete="off"
         value={String(d[key])}
-        list={key === "provider" && d.kind === "lipa_namba" ? "lipa-providers" : undefined}
         onChange={set(key)}
         aria-invalid={errors[key] ? true : undefined}
       />
@@ -220,11 +216,6 @@ function WayDialog({
     d.kind === "lipa_namba" ? (
       <>
         {input("provider", "Provider", "Whose Lipa namba it is, a network or a bank")}
-        <datalist id="lipa-providers">
-          {LIPA_PROVIDERS.map((p) => (
-            <option key={p} value={p} />
-          ))}
-        </datalist>
         {input("number", "Lipa namba", undefined, true)}
         {input("name", "Name it shows", "As a guest's phone shows it when they pay")}
       </>
