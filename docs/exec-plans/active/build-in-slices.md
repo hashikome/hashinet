@@ -601,7 +601,24 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
     sweep daily what nothing references). `/api/me` carries the business's logo, which heads the
     menu; a venue without its own logo shows the business's on its portal. Screen: Settings ›
     General, the menu's Settings in the prototype's order. Tests: brand integration; 212/212.
-  - [ ] (f) Analytics: usage and sales, computed by the API.
+  - [x] (2026-11-28) (f) Analytics: Usage and Sales, computed by the API. `analytics/period.ts`
+    decides the period (Last: yesterday, 7, 30 and 90 days to today, the previous month, quarter
+    and year; Current: today, Monday to Sunday, the month, quarter and year; Custom: two dates,
+    366 days at most), the units it may show (never its own) and the chart's buckets; values stop
+    at today. `GET /api/analytics/sales` (a business's, or `venueId`), `usage` (both scopes) and
+    `platform-sales` (`analytics.platform.read`). Definitions: sales from `revenue_events`, net of
+    refunds; vouchers sold count sales; the average sale is gross over vouchers; a device is a
+    device id, else its MAC, with a session started in the period, returning when seen on two or
+    more days; a session's length is to its end or now, and its data (cumulative per session) is
+    counted on its start day; peak hours are the most distinct devices online in an hour on one day,
+    06:00 to 21:00; HashiNet's fee is each venue's business month by its business's terms, before
+    the minimum. The unused summary, daily-usage, monthly, packages, devices and venues routes and
+    `/api/revenue` went, with `revenue.read`. Screens: Analytics › Usage and Sales (one filter in
+    the address, remembered between them), the platform's Sales, and the venue page's "Sales, last
+    7 days", all on one `LineChart` drawn at its own width. The seed invents 90 days of sales and
+    sessions at Neema Hospitality. Tests: analytics integration and `period.test.ts`; 213/213.
+    Open: Reliability (the prototype's are sample figures); `daily_usage_stats` and
+    `session_usage_samples` have no writer or reader, kept until the owner decides.
   - [ ] (g) Each role's screens reviewed at 390px first; finish-work; release; acceptance.
 - [ ] Slice 6: online (held until the providers' credentials exist).
 - [ ] Slice 7: one voucher, devices online at once, through RADIUS (ADR-0015), with its switch PIN.

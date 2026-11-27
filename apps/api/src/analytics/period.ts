@@ -157,6 +157,7 @@ export function periodOf(query: PeriodQuery, now: { day: string; hour: number })
     start,
     end,
     through: end < now.day ? end : now.day,
+    days: start > now.day ? 0 : daysBetween(start, end < now.day ? end : now.day),
     shows,
     show,
     buckets: bucketsOf(start, end, show).map((b) => ({ ...b, past: past(b) })),

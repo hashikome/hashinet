@@ -1220,6 +1220,8 @@ export interface AnalyticsPeriod {
   start: BusinessDay;
   end: BusinessDay;
   through: BusinessDay;
+  /** The days from `start` to `through`: what "a day on average" divides by; 0 before it starts. */
+  days: number;
   shows: AnalyticsShow[];
   show: AnalyticsShow;
   buckets: { start: string; last: BusinessDay; past: boolean }[];

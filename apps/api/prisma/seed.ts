@@ -7,6 +7,7 @@ import { createPrismaClient } from "../src/database/client.js";
 import { beginOnboarding } from "../src/onboarding/begin.js";
 import { bootstrapPlatform, DEFAULT_PACKAGES } from "../src/platform/bootstrap.js";
 import { copyToBusiness, copyToVenue } from "../src/portal/copy-down.js";
+import { seedHistory } from "./seed-history.js";
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("The seed is for local development only.");
@@ -146,6 +147,13 @@ if ((await db.paymentWay.count({ where: { businessId: neema.id } })) === 0) {
   });
   await db.venue.update({ where: { id: cafe.id }, data: { paymentWayId: till.id } });
 }
+
+// Its history, invented, for Analytics and the venue pages.
+await seedHistory(
+  db,
+  neema.id,
+  neema.venues.map((v) => v.id),
+);
 
 await business(
   "Juma's home",

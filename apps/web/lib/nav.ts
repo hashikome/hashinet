@@ -38,6 +38,13 @@ export const homeOf = (me: Me) => (me.active.scope === "platform" ? "/issues" : 
  */
 export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   const can = (action: string) => me.active.capabilities.includes(action);
+  // Analytics: Usage and Sales, sharing one period (prototype `analytics`).
+  const analytics = can("analytics.read")
+    ? [
+        { href: "/analytics/usage", label: "Usage" },
+        { href: "/analytics/sales", label: "Sales" },
+      ]
+    : [];
   const issues: NavLink[] = can("issue.read")
     ? [{ href: "/issues", label: "Issues", icon: "issues" }]
     : [];
@@ -59,10 +66,17 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
         "/venues": "venues",
         "/routers": "routers",
       };
-      return [...issues, ...manage.map((l) => ({ ...l, icon: icons[l.href] }))];
+      return [
+        ...issues,
+        ...analytics.map((l) => ({ ...l, icon: "analytics" as const })),
+        ...manage.map((l) => ({ ...l, icon: icons[l.href] })),
+      ];
     }
     return [
       ...issues,
+      ...(analytics.length
+        ? [{ label: "Analytics", icon: "analytics" as const, links: analytics }]
+        : []),
       ...(manage.length ? [{ label: "Manage", icon: "manage" as const, links: manage }] : []),
       {
         label: "Platform",
@@ -97,6 +111,7 @@ export function navOf(me: Me, venues: VenueRecord[]): NavEntry[] {
   // Owners also pay HashiNet, so they alone have Billing, beside what guests pay them.
   if (can("billing.read")) top.push({ href: "/billing", label: "Billing", icon: "billing" });
   const entries: NavEntry[] = [...top];
+  if (analytics.length) entries.push({ label: "Analytics", icon: "analytics", links: analytics });
   // Venues (each venue's page), each venue's router, then the devices the venues have seen.
   const one = venues.length === 1;
   const manage = [

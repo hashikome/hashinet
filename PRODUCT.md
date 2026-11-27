@@ -127,6 +127,12 @@ a refund is its own line on the day it is made, so takings show gross, refunds a
 seller's cash to hand over is their cash sales less the cash they gave back. HashiNet's fees are
 monthly, on net sales.
 
+Analytics has Usage and Sales over one period, last, current or chosen dates, by the Dar es Salaam
+day: devices, returning devices, sessions, their length and data, and peak hours from the sessions
+the routers report; takings, vouchers sold, the average sale, takings by venue and what guests buy,
+from the same sales Payments counts. Owners and managers see their venues; HashiNet's team sees
+usage everywhere and sales across businesses with its fees by each business's own terms.
+
 A venue sells only while one of its routers serves guests: set up, reachable and with its own
 internet working, which HashiNet checks from the router itself. Otherwise Sell stays in its place,
 quieter, and says why (offline, no internet, needs attention, or not set up yet), and the guest

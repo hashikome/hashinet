@@ -1,13 +1,15 @@
 "use client";
 
-import type { VenueDetail, VenueOnboarding, VenueTakings } from "@hashinet/types";
+import type { SalesReport, VenueDetail, VenueOnboarding, VenueTakings } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
+import { axisOf } from "@/components/hearth/analytics";
+import { LineChart } from "@/components/hearth/chart";
 import { BusinessMark } from "@/components/hearth/icons";
 import { GettingStarted } from "@/components/hearth/onboarding";
 import { VenueWay } from "@/components/hearth/payment-ways";
 import { SitesPanel } from "@/components/hearth/sites";
-import { Button, CopyText, Figs, Pill } from "@/components/hearth/ui";
+import { Button, CopyText, Figs, Panel, Pill } from "@/components/hearth/ui";
 import { STATUS, sellingPill, VenueDialog } from "@/components/hearth/venues";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
@@ -30,13 +32,16 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
   const data = useLoad("venue", async () => {
     const detail = await api.get<VenueDetail>(`/api/venues/${id}`);
     const settingUp = detail.venue.selling.state === "not-set-up";
-    const [onboarding, takings] = await Promise.all([
+    const [onboarding, takings, week] = await Promise.all([
       settingUp && can("onboarding.read")
         ? api.get<VenueOnboarding>(`/api/venues/${id}/onboarding`)
         : null,
       !settingUp && money ? api.get<VenueTakings>("/api/analytics/venue-takings") : null,
+      !settingUp && money
+        ? api.get<SalesReport>(`/api/analytics/sales?range=last&period=7d&show=day&venueId=${id}`)
+        : null,
     ]);
-    return { ...detail, onboarding, takings };
+    return { ...detail, onboarding, takings, week };
   }, [id, me.active.id]);
   const v = data.data?.venue;
   useEffect(() => {
@@ -56,7 +61,7 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
     );
   }
   if (!data.data || !v) return crumb;
-  const { managers, onboarding, takings } = data.data;
+  const { managers, onboarding, takings, week } = data.data;
   const [status, statusKind] = STATUS[v.status];
   const [routers, routersKind] = sellingPill(v);
   const t = takings?.venues.find((x) => x.venueId === v.id) ?? null;
@@ -134,6 +139,19 @@ export default function VenuePage({ params }: { params: Promise<{ id: string }> 
                 ],
               ]}
             />
+          ) : null}
+          {week ? (
+            <Panel
+              title="Sales, last 7 days"
+              right={<span className="note">{tsh(week.takingsTsh)} this week</span>}
+            >
+              <LineChart
+                values={week.series}
+                axis={axisOf(week.period)}
+                height={220}
+                label={`Takings per day at ${v.name}, ${tsh(week.takingsTsh)} in 7 days`}
+              />
+            </Panel>
           ) : null}
           <VenueWay venueId={v.id} choose={can("venue.payment_way.choose")} />
           <SitesPanel venueId={v.id} venueName={v.name} />

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Analytics (slice 5): Usage and Sales over a period, last, current or chosen dates, shown hourly,
+  daily, weekly or monthly. Usage has devices, sessions, data used, peak hours and the busiest
+  venues; Sales has takings, vouchers sold, the average sale, the best seller, takings by venue and
+  what guests buy. HashiNet's team sees sales across businesses and its fees. A venue's page shows
+  its last 7 days' sales. The old summary and revenue reports, which nothing showed, are gone.
 - Settings › General (slice 5): the business's name, region, area and logo, changed by its owner and
   read by its business managers. The logo heads HashiNet's menu for its people and shows on the
   portal of any venue without its own. Settings lists General, Payments, Packages and Captive portal.
