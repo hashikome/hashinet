@@ -271,7 +271,6 @@ function SignInSettings() {
       {removingApp ? (
         <RemoveApp
           hasPasskey={keys.length > 0}
-          rule={me.protection.proof.removeAuthenticator}
           onClose={() => setRemovingApp(false)}
           onRemoved={async () => {
             setRemovingApp(false);
@@ -475,7 +474,7 @@ function Confirm({
     <>
       <p className="muted">
         This changes how you sign in, so we check it&apos;s really you.
-        {hours > 0 ? ` You won't be asked again for ${hours} hours.` : ""}
+        {hours > 0 ? ` Changes like this won't ask again for ${hours} hours.` : ""}
       </p>
       {byPasskey ? (
         <div className="actions flow-primary">
@@ -701,12 +700,10 @@ function TryPasskey({
  */
 function RemoveApp({
   hasPasskey,
-  rule,
   onClose,
   onRemoved,
 }: {
   hasPasskey: boolean;
-  rule: ProofRule;
   onClose: () => void;
   onRemoved: () => Promise<void>;
 }) {
@@ -754,7 +751,8 @@ function RemoveApp({
             setBusy(true);
             setError("");
             try {
-              if (rule.needed) await signInWithPasskey();
+              // Asked each time: the API takes only a passkey given in the last few minutes.
+              await signInWithPasskey();
               await api.post<Me>("/api/me/authenticator/remove");
               await onRemoved();
             } catch (e) {

@@ -16,10 +16,13 @@ authenticator app or a passkey; a passkey counts only with user verification. Pr
 by the session: one that signed in with an email code alone reaches only Account and security (an
 owner or manager may get set up for their first 7 days, without anything sellable). Once someone
 has an authenticator it is asked for at every email-code sign-in, and no device is trusted to skip
-it. Changing protection (removing a passkey, new recovery codes, replacing the authenticator) and
-adding to protection someone already has need proof from the last 2 hours: a passkey, an
-authenticator code or a recovery code (`sessions.proved_at`). Registering a factor proves nothing,
-except a person's first protection. Recovery codes are eight `XXXX-XXXX` codes without
+it. Changing protection, and adding to protection someone already has, need proof, and the session
+records when and with which factor (`sessions.proved_at`, `proved_with`). Each change accepts only
+some factors (`apps/api/src/auth/proof.ts`, ADR-0011 §9): removing a passkey or adding a factor takes
+any, for 2 hours; new recovery codes take a passkey or the authenticator, for 2 hours; replacing the
+authenticator takes its current code or a recovery code, and removing it takes the passkey that
+stays, each given in the last 5 minutes. Registering a factor proves nothing, except a person's first
+protection. Recovery codes are eight `XXXX-XXXX` codes without
 look-alike characters, each working once.
 
 Every route requires a session unless it is declared public; the API's access policy

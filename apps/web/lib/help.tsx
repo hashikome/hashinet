@@ -558,7 +558,7 @@ export const QUESTIONS: Question[] = [
     for: [...MANAGERS, ...PLATFORM],
     area: "Your account",
     q: "I lost the phone with my authenticator",
-    a: "Sign in with one of your recovery codes, then set it up again in Account and security. No codes left? Contact HashiNet's support: they confirm it's you, then reset it.",
+    a: "Sign in with one of your recovery codes, then replace it in Account and security. No codes, but a passkey? Sign in with the passkey and remove the app there, then set it up again. Neither? Contact HashiNet's support: they confirm it's you, then reset it.",
   },
   {
     for: PLATFORM,
