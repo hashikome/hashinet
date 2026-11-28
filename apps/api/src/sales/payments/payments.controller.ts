@@ -6,7 +6,7 @@ import type {
   PaymentList,
   SaleResult,
 } from "@hashinet/types";
-import { Body, Controller, Get, HttpCode, Post, Query, Req } from "@nestjs/common";
+import { Body, Controller, Get, Header, HttpCode, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
 import { Can, CurrentPrincipal, Public } from "../../core/access/access.guard.js";
 import type { Principal } from "../../core/access/principal.js";
@@ -33,6 +33,8 @@ export class GuestPaymentsController {
 
   @Post("status")
   @HttpCode(200)
+  // It can carry the code and, once, the switch PIN.
+  @Header("Cache-Control", "no-store")
   status(@Body() body: unknown): Promise<GuestPaymentStatus> {
     return this.payments.status(parseInput(paymentStatusInput, body));
   }

@@ -140,6 +140,11 @@ export interface GuestPaymentStatus {
   owed: boolean;
   sms: SmsDelivery | null;
   dst: string | null;
+  /**
+   * The voucher's switch PIN, made when this device was signed in and returned to the paying session
+   * this once (ADR-0015, 4): the portal shows it with the code. Null on every other answer.
+   */
+  switchPin: string | null;
 }
 
 /** `POST /api/guest/session`: a device's time and data, for the router's status pages. */

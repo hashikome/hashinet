@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { createHmac } from "node:crypto";
 import { groupedCode } from "@hashinet/types";
+import { pinMatches } from "../../../src/guest/sign-in/switch-pin.js";
 import { RouterSync } from "../../../src/network/monitor/router-sync.js";
 import {
   MOBILE_MONEY,
@@ -19,6 +20,8 @@ import {
   testBusinessId,
 } from "../people.js";
 
+/** The harness's PIN key (api.ts). */
+const PIN_KEY = Buffer.from("ef".repeat(32), "hex");
 const PAY_SECRET = "pay-secret";
 const SMS_SECRET = "sms-secret";
 const MAC = "AA:BB:CC:00:00:02";
@@ -250,6 +253,25 @@ describe("buying on the portal", () => {
     // Another session has the id at most, and gets nothing, not even that it exists.
     expect((await status(paymentId, "0".repeat(64))).status).toBe(404);
     expect((await post("/api/guest/payments/status", { paymentId })).status).toBe(400);
+  });
+
+  test("the paying session gets the voucher's switch PIN once, and the database only a seal", async () => {
+    const { paymentId, secret } = await started();
+    await report(completed(paymentId));
+    await settled();
+    const first = (await status(paymentId, secret)).body as Record<string, unknown>;
+    expect(first).toMatchObject({ state: "paid", online: true });
+    expect(first.switchPin).toMatch(/^\d{4}$/);
+    const voucher = await t.db.voucher.findFirstOrThrow();
+    // It is the PIN that moves this voucher, not a copy of something else.
+    expect(pinMatches(PIN_KEY, voucher.id, String(first.switchPin), voucher.pinHmac ?? "")).toBe(
+      true,
+    );
+    const row = await t.db.payment.findUniqueOrThrow({ where: { id: paymentId } });
+    expect(row.switchPinSealed).toBeNull();
+
+    await t.db.payment.update({ where: { id: paymentId }, data: { lastCheckedAt: null } });
+    expect((await status(paymentId, secret)).body).toMatchObject({ switchPin: null });
   });
 
   test("only a provider set up here has a webhook", async () => {

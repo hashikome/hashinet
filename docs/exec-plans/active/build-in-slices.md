@@ -1012,9 +1012,8 @@ manager and venue manager each see what their role allows and nothing else.
 **Slice 6, online.** Held until Snippe's and BRIQ's credentials exist (build-hashinet M6).
 Self-service purchase on the portal, payouts, SMS credits, and the owner's request for online
 payments with the platform's review. Accepted as build-hashinet M6 says, then live with a real payment
-and a real message (M8). Open from slice 7: the paid path signs the device in through `admit` and
-discards the switch PIN it returns (`payments.service.ts`), so a paying guest never sees it; the
-receipt must show it once, as the redeem does.
+and a real message (M8). The paid receipt shows the switch PIN once, as the redeem does (built 28
+November 2026, ADR-0015, 4).
 
 **Slice 7, a voucher across a venue's routers.** For every guest and the staff who help them.
 Backend: HashiNet answers every hotspot login through RADIUS over the management tunnel, counting a

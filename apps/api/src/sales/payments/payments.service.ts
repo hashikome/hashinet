@@ -22,7 +22,10 @@ import {
 import type { Principal } from "../../core/access/principal.js";
 import { venueScope } from "../../core/access/venue-scope.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
+import type { AppConfig } from "../../core/config/config.js";
+import { APP_CONFIG } from "../../core/config/config.module.js";
 import { sameBytes } from "../../core/crypto/same-bytes.js";
+import { SecretBox } from "../../core/crypto/secret-box.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
 import { captureFailure } from "../../core/observability/telemetry.js";
@@ -103,7 +106,13 @@ export class PaymentsService {
     private readonly ways: PaymentWaysService,
     @Inject(MOBILE_MONEY) private readonly mobileMoney: MobileMoney,
     @Inject(SMS_SENDER) private readonly texts: Texts,
-  ) {}
+    @Inject(APP_CONFIG) config: AppConfig,
+  ) {
+    this.box = new SecretBox(config.encryptionKey);
+  }
+
+  /** Seals the switch PIN between the sign-in that makes it and the session that reads it. */
+  private readonly box: SecretBox;
 
   /** The provider taking new charges; off until one is set up. A counter sale needs none. */
   private activeGateway(): MobileMoneyGateway {
@@ -223,7 +232,22 @@ export class PaymentsService {
       else if (this.unfinished(row)) await this.settle(row.id);
       row = await this.db.payment.findUniqueOrThrow({ where: { id: row.id }, include });
     }
-    return guestStatus(row);
+    return guestStatus(row, await this.takePin(row));
+  }
+
+  /**
+   * The switch PIN made when the paying device was signed in, to the paying session once: taken
+   * off the payment as it is read, as the redeem returns it once (ADR-0015, 4).
+   */
+  private async takePin(row: PaymentRow): Promise<string | null> {
+    if (row.switchPinSealed === null) return null;
+    const { count } = await this.db.payment.updateMany({
+      where: { id: row.id, switchPinSealed: row.switchPinSealed },
+      data: { switchPinSealed: null },
+    });
+    // A voucher released since has no PIN any more; another read took it first.
+    if (count === 0 || row.voucher?.pinHmac == null) return null;
+    return this.box.open(row.switchPinSealed);
   }
 
   /** Asks the provider about a payment: for a lost webhook, and where there is no webhook. */
@@ -376,22 +400,21 @@ export class PaymentsService {
       const ip = await this.sync.deviceAddress(row.router, row.macAddress);
       if (ip === null) return;
       const admitted = await this.guest
-        .admit(row.router, row.voucher, {
-          mac: row.macAddress,
-          ip,
-          // Self-service payment is held until slice 6, which shows the paid device its PIN.
-          pin: null,
-        })
+        .admit(row.router, row.voucher, { mac: row.macAddress, ip, pin: null })
         // The device has moved or left: its code still works, and it is on its screen.
-        .then(() => true)
         .catch((err: unknown) => {
-          if (err instanceof HttpException) return false;
+          if (err instanceof HttpException) return null;
           throw err;
         });
-      if (admitted) {
+      if (admitted !== null) {
         await this.db.payment.update({
           where: { id: paymentId },
-          data: { signedInAt: new Date(), deviceId: await this.deviceId(row.macAddress) },
+          data: {
+            signedInAt: new Date(),
+            deviceId: await this.deviceId(row.macAddress),
+            // Made at this first sign-in, perhaps from a webhook: kept for the paying session.
+            ...(admitted.pin === null ? {} : { switchPinSealed: this.box.seal(admitted.pin) }),
+          },
         });
       }
     } finally {
@@ -655,7 +678,7 @@ async function firstTime(
   return count > 0;
 }
 
-function guestStatus(row: PaymentRow): GuestPaymentStatus {
+function guestStatus(row: PaymentRow, switchPin: string | null): GuestPaymentStatus {
   const voucher = row.voucher;
   const ended =
     voucher !== null &&
@@ -670,6 +693,7 @@ function guestStatus(row: PaymentRow): GuestPaymentStatus {
     owed: row.status === "paid" && row.routerProvisionedAt === null,
     sms: row.sms?.status ?? null,
     dst: row.destination,
+    switchPin: ended ? null : switchPin,
   };
 }
 

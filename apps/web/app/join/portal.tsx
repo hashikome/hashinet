@@ -127,6 +127,7 @@ const paidAs = (state: GuestPaymentStatus["state"]): GuestPaymentStatus => ({
   owed: false,
   sms: null,
   dst: null,
+  switchPin: null,
 });
 
 /** Where the preview starts: the page, and the purchase it shows. */
@@ -227,6 +228,8 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
   const [phone, setPhone] = useState(preview ? "0712 345 678" : "");
   const [payment, setPayment] = useState<GuestPaymentStarted | null>(start?.payment ?? null);
   const [paid, setPaid] = useState<GuestPaymentStatus | null>(start?.paid ?? null);
+  // One answer carries the switch PIN: it stays on screen after the next.
+  const [paidPin, setPaidPin] = useState<string | null>(null);
   // The preview's context follows the editor's form as it changes.
   const context = preview?.context ?? loaded;
 
@@ -314,6 +317,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
       post<GuestPaymentStatus>("/api/guest/payments/status", payment)
         .then((status) => {
           setPaid(status);
+          if (status.switchPin !== null) setPaidPin(status.switchPin);
           if (status.ended) {
             store.set(PAYMENT_KEY, null);
             setPayment(null);
@@ -482,7 +486,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
             </li>
           </ul>
         ) : null}
-        {paid.code ? <CopyCode code={paid.code} pin={null} /> : null}
+        {paid.code ? <KeepCode code={paid.code} pin={paidPin} /> : null}
         {paid.code && !paid.online ? (
           <button
             className="g-btn alt"
@@ -606,22 +610,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
             </p>
           ) : null}
           <Shown code={digits} />
-          {stage.pin ? (
-            <>
-              <p className="g-label">Switch PIN</p>
-              <p className="g-pinshow">{stage.pin}</p>
-              <CopyCode code={digits} pin={stage.pin} />
-              <p className="g-note">
-                Copy both now: the PIN is shown only once, and you need the code and PIN to come
-                back or to move to another phone.
-              </p>
-            </>
-          ) : (
-            <>
-              <CopyCode code={digits} pin={null} />
-              <p className="g-note">Keep the code: you need it to come back.</p>
-            </>
-          )}
+          <KeepCode code={digits} pin={stage.pin} />
         </>,
       );
     case "terms":
@@ -880,6 +869,26 @@ function Shown({ code }: { code: string }) {
       <div className="g-field">
         <input className="g-input g-mono" id="gshown" readOnly value={groupedCode(code)} />
       </div>
+    </>
+  );
+}
+
+/** The switch PIN when this answer brought it, and how to keep the code (and PIN). */
+function KeepCode({ code, pin }: { code: string; pin: string | null }) {
+  return pin ? (
+    <>
+      <p className="g-label">Switch PIN</p>
+      <p className="g-pinshow">{pin}</p>
+      <CopyCode code={code} pin={pin} />
+      <p className="g-note">
+        Copy both now: the PIN is shown only once, and you need the code and PIN to come back or to
+        move to another phone.
+      </p>
+    </>
+  ) : (
+    <>
+      <CopyCode code={code} pin={null} />
+      <p className="g-note">Keep the code: you need it to come back.</p>
     </>
   );
 }

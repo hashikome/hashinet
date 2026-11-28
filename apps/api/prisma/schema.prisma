@@ -833,6 +833,9 @@ model Payment {
   lastCheckedAt       DateTime?       @map("last_checked_at") @db.Timestamptz(3)
   /// When the router reported the paying device online.
   signedInAt          DateTime?       @map("signed_in_at") @db.Timestamptz(3)
+  /// The switch PIN made when the paying device was signed in, sealed under ENCRYPTION_KEY, until
+  /// the paying session reads it once (ADR-0015, 4).
+  switchPinSealed     String?         @map("switch_pin_sealed")
   metadata            Json?
   createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt           DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)

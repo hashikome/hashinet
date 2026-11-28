@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- A guest who pays on the portal sees the voucher's switch PIN once on the receipt, as a guest who
+  types a code does: made when the paying device is signed in, kept sealed on the payment until the
+  paying session's next status check, then cleared (migration `20261128940000_paid_switch_pin`).
+  The status answer is not cached.
+
 - Mobile money and SMS providers are each one file behind a gateway (`sales/payments/providers/`,
   `sales/sms/providers/`), owning their API, statuses, webhook format and signature, the amounts they
   take and their settings. `PAYMENTS_PROVIDER` and `SMS_PROVIDER` choose the one in use; every

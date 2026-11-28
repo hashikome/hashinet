@@ -24,7 +24,9 @@ router still let one code online on two routers at once.
    - **Made at the first sign-in,** not at printing, so no sheet, export or batch holds it. It is 4
      random digits from a secure generator, unrelated to the code, and never an obvious PIN (0000, 1234).
    - **Shown once,** on the HTTPS response to the sign-in, and never on a router's page or by a MAC
-     address (ADR-0008, decision 7). Only an HMAC of it, with a Docker secret and the voucher's id, is
+     address (ADR-0008, decision 7). A paying device is signed in when its payment settles, perhaps
+     from a webhook: its PIN is then kept sealed (AES-256-GCM, `ENCRYPTION_KEY`) on the payment and
+     handed once to the paying session's next status check, which clears it. Only an HMAC of it, with a Docker secret and the voucher's id, is
      stored, and it goes with a release (an expired voucher keeps it, as an outage's time given back
      can revive it).
    - **Limited, per device:** a device's third wrong PIN on the voucher makes it wait 15 minutes, and
