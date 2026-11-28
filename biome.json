@@ -14,7 +14,7 @@
       "!.agents",
       "!apps/api/src/generated/prisma",
       "!**/*.md",
-      "!apps/api/mikrotik-files"
+      "!apps/api/src/network/provisioning/portal-pages"
     ]
   },
   "formatter": {

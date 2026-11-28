@@ -327,7 +327,8 @@ MikroTik's hotspot intercepts HTTP and serves `hotspot/login.html` from the rout
 filesystem. We replace this with a tiny redirect page that sends the phone to our
 Express portal, passing MikroTik's variables as query parameters.
 
-**Three pages are pushed**, all from `backend/mikrotik-files/` and all listed in `PORTAL_FILES`:
+**Two pages are pushed**, both from `apps/api/src/network/provisioning/portal-pages/` and listed in
+`PORTAL_FILES`:
 
 | File | When the customer sees it |
 | --- | --- |

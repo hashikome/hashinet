@@ -35,12 +35,12 @@ src/
   venues/     venues, sites, packages, payment-ways
   sales/      vouchers, payments, devices, sessions, sms
   guest/      sign-in (a device onto a voucher, the switch PIN), portal, brand
-  network/    routers, tunnel, provisioning (everything that configures a router), mikrotik (the
-              RouterOS client), monitor (live monitor, RouterSync, outages), radius
+  network/    routers, tunnel, provisioning (everything that configures a router, and the hotspot
+              pages it uploads in portal-pages/), mikrotik (the RouterOS client), monitor (live
+              monitor, RouterSync, outages), radius
   analytics/  periods and reports
   generated/  the Prisma client (git-ignored)
 test/integration/<area>/   database tests, by the same areas
-mikrotik-files/            login.html, alogin.html and status.html uploaded to routers
 ```
 
 Router procedures are in [docs/runbooks](../../docs/runbooks/README.md).

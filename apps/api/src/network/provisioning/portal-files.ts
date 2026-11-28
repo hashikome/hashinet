@@ -1,7 +1,6 @@
 /**
- * The hotspot HTML pages (login.html, status.html) that live in
- * `backend/mikrotik-files/`,
- * with the backend address templated in at push time.
+ * The hotspot HTML pages (login.html, status.html) in `portal-pages/` beside this file, with the
+ * backend address templated in at push time.
  *
  * Those files ship with a hardcoded `http://192.168.0.15:4006`. Rather than requiring
  * anyone to hand-edit them when the backend moves (§3.1, §10), we rewrite the base URL
@@ -14,7 +13,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const FILES_DIR = join(HERE, "..", "..", "..", "mikrotik-files");
+const FILES_DIR = join(HERE, "portal-pages");
 
 /**
  * Every page pushed to a router. Adding a name here is all it takes: the `portal-files` step
