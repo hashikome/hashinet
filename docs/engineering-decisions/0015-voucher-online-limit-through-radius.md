@@ -25,8 +25,13 @@ router still let one code online on two routers at once.
      random digits from a secure generator, unrelated to the code, and never an obvious PIN (0000, 1234).
    - **Shown once,** on the HTTPS response to the sign-in, and never on a router's page or by a MAC
      address (ADR-0008, decision 7). Only an HMAC of it, with a Docker secret and the voucher's id, is
-     stored, and it goes when the voucher expires.
-   - **Limited:** five wrong tries wait 15 minutes, and ten lock it until staff release the voucher.
+     stored, and it goes with a release (an expired voucher keeps it, as an outage's time given back
+     can revive it).
+   - **Limited, per device:** a device's third wrong PIN on the voucher makes it wait 15 minutes, and
+     its sixth locks it out of moving the voucher until staff release it. Other devices, and devices
+     already holding a place, go on. As a MAC address costs nothing to change, fifteen wrong PINs on
+     one voucher within the hour, from any devices, make every move to it wait 15 minutes, locking
+     no one out.
    - **The right PIN moves the voucher at once:** the device joins `voucher_devices`, and at the limit the
      API removes the oldest session and reads the new one back.
 5. **A device that has used the voucher comes back alone,** on any router where its address is known, as

@@ -58,8 +58,18 @@ surface:
   device holds.
 - A voucher's switch PIN is 4 digits from a secure generator, never an obvious one, kept only as an
   HMAC under `PIN_KEY` bound to the voucher, and shown once, in the sign-in's HTTPS answer to the
-  device that started it. Five wrong tries wait 15 minutes and ten lock the voucher until staff
-  release it; wrong tries are counted under a lock on the voucher, so racing doesn't add tries.
+  device that started it. Wrong PINs count per device on the voucher: three make that device wait 15
+  minutes, and six lock it out of moving the voucher until staff release it. As a MAC address costs
+  nothing to change, fifteen wrong from any devices within the hour make every move to the voucher
+  wait 15 minutes. Devices holding a place are never stopped. Tries are counted under a lock on the
+  voucher, so racing doesn't add them, and a waiting or locked device is refused before any router
+  call. Expiry keeps the PIN, as an outage's time given back can revive the voucher; a release
+  clears it and the tries.
+- Guests never reach the platform's tunnel address: router setup drops forwarded traffic from the
+  hotspot network to it, ahead of the hotspot's own rules, letting through only the portal's web
+  port when the portal is served from that address (a LAN, the router sim). The tunnel service
+  relays at most 64 RADIUS requests at once and drops the rest, and refuses to start without the
+  tunnel address's IP, which would bind every interface on the host.
 - Only the API signs a device in. The router accepts no login over the network, so nothing can
   guess at it, and setup fails if an http login method is enabled.
 - Everything the router passes to the portal is untrusted, since it travels through the guest's
@@ -77,7 +87,9 @@ Reviewed 30 October 2026. Everything else requires a staff session.
 | `GET /api/health`, `/api/health/ready` | The platform's checks | Says nothing but up or down |
 | `/api/auth/*` (the routes HashiNet uses) | Signing in | ADR-0007: rate limits, one answer, the rest refused |
 | `POST /api/guest/context` | The portal page | Registered router; read-only wording and prices |
-| `POST /api/guest/redeem` | Taking a voucher into use | Attempt limits, a lock on the voucher, its venue, blocked devices, the router seeing the device |
+| `POST /api/guest/redeem` | Taking a voucher into use | Attempt limits, a lock on the voucher, its venue, blocked devices, the router seeing the device; the answer carries the switch PIN, so `no-store` |
+| `POST /api/internal/radius` | The tunnel service relays the routers' RADIUS | Reachable through Traefik; the tunnel-peers bearer secret, then the router's own RADIUS secret on the packet |
+| `GET /api/internal/tunnel-peers` | The tunnel service's peer list | Reachable through Traefik; the tunnel-peers bearer secret |
 | `POST /api/guest/session` | The router's status pages | Time and data only, never a code; any origin, no cookies |
 | `POST /api/guest/payments` | Buying on the portal | Every check before a prompt; limits per number, device and address |
 | `POST /api/guest/payments/status` | The paying session's receipt | Needs the session's secret; without it a payment does not exist |

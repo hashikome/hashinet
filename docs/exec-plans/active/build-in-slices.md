@@ -1010,12 +1010,16 @@ manager and venue manager each see what their role allows and nothing else.
 **Slice 6, online.** Held until Snippe's and BRIQ's credentials exist (build-hashinet M6).
 Self-service purchase on the portal, payouts, SMS credits, and the owner's request for online
 payments with the platform's review. Accepted as build-hashinet M6 says, then live with a real payment
-and a real message (M8).
+and a real message (M8). Open from slice 7: the paid path signs the device in through `admit` and
+discards the switch PIN it returns (`payments.service.ts`), so a paying guest never sees it; the
+receipt must show it once, as the redeem does.
 
 **Slice 7, a voucher across a venue's routers.** For every guest and the staff who help them.
 Backend: HashiNet answers every hotspot login through RADIUS over the management tunnel, counting a
 voucher's devices online at once across the venue's routers; the switch PIN, made at the first
-sign-in, shown once and limited; release clears it too; the time left from HashiNet; router setup
+sign-in, shown once and limited per device (three wrong wait 15 minutes, six lock that device out
+until a release, fifteen on one voucher within the hour make every move wait); release clears it
+too; the time left from HashiNet; router setup
 asks RADIUS (ADR-0015). Proved on the router sim first, then on real phones.
 Accepted live: one code online on one device at a time across two routers; a second phone moves it
 only with the PIN; a release at the counter frees it.
@@ -1053,7 +1057,8 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
     - Bun's `Bun.udpSocket` serves both ports; a small codec of our own (RFC 2865/2866 with
       Message-Authenticator) was accepted by the router, so no package is needed.
   - [x] (b) Schema: a router's RADIUS secret (encrypted); the voucher's PIN HMAC (a new Docker secret
-    key) and its attempts (wrong tries, wait-until, locked); the accounting session id on
+    key); each device's attempts on a voucher in `pin_attempts` (wrong tries, wait-until, locked; the
+voucher's own columns for them went in `20261128900000_pin_attempts`); the accounting session id on
     `wifi_sessions`; admissions.
   - [x] (c) The codec, the relay and the internal route, with unit tests.
   - [x] (d) The API's decisions: the PIN made, shown once, checked and limited at redeem; the
@@ -1072,7 +1077,8 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
     throttles by ending a session whose speed no longer holds (`throttledNow`, one rule with
     RADIUS, which marks a throttled session in its Class). A voucher's data used is its sessions'
     bytes.
-  - [x] (g) Release clears the PIN and its attempts. Blocking a device blocks the live vouchers it
+  - [x] (g) Release clears the PIN, every device's attempts and the voucher's count of them; expiry
+    keeps the PIN, as an outage's time given back can revive the voucher. Blocking a device blocks the live vouchers it
     used at that business too (`vouchers.blocked_at`), refused at the portal and by RADIUS on every
     device, and ends their sessions; unblocking it lifts them.
   - [x] (h) The portal's PIN screens against the prototype: in use (the switch PIN and Move it
@@ -1111,6 +1117,22 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
     HashiNet had ended a session (moved, released, a new speed) with `admin_reset`; a Stop now ends
     only a session still connected and otherwise updates its counters. Open: `demo` runs LAN mode,
     where no sign-in reaches RADIUS, so it shows the portal, not a device getting online.
+  - [x] (2026-11-28) Review fixes. The router sync left the platform's `router-setup:` issue alone; a
+    provisioned router whose setup stopped is set up again each hour. Staff ending a session, and a
+    right PIN moving a voucher, take the device off it (`voucher_devices`), so the router can't sign
+    it back in by MAC before the new device's Start. PIN limits per device, with the voucher-wide
+    backstop, checked before any router call; a holder is never stopped by them. A RADIUS repeat
+    while the first is in flight gets its answer; the live monitor closes only sessions that started
+    before it read the router's list; unblocking one device keeps a voucher another blocked device
+    used blocked; the redeem answer is `no-store`. Setup version 3 adds `firewall-guest-tunnel-drop`:
+    forwarded traffic from the hotspot network to the management address is dropped ahead of the
+    hotspot's rules, under the portal's accept, now its web port alone (tcp). The tunnel service
+    caps relays in flight at 64 and refuses an address with no IP. On the sim (router 1): a guest's
+    UDP datagram to 10.88.0.1:1812 reached the relay before (relay.log 62 to 63 lines) and was
+    dropped after setup (still 63; the drop rule counted it); setup applied 2 changes, then 0;
+    `guest-test` 22/22 in 125 s with the drop on router 1, the portal reached on its web port; then
+    guest 1, signed in by MAC and on the open internet, sent the datagram again: dropped (the rule's
+    count 1 to 2), relay.log unchanged.
   - [ ] (j) finish-work, docs (ADR-0015 widened), push on the owner's go, real phones.
 
 Before the release, outside the code: the host firewall allows UDP 1812-1813 from `wg0` to the

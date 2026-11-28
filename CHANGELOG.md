@@ -6,8 +6,13 @@
   every hotspot login and report every session over RADIUS, relayed by the tunnel service on
   `10.88.0.1:1812-1813` to `/api/internal/radius`; no voucher sits on a router, and a voucher's limit
   is its devices online at once across the venue. The first sign-in gets a switch PIN, shown once; a
-  new device on a voucher in use moves it only with the PIN (five wrong wait 15 minutes, ten lock it
-  until a release), and the oldest device gives up its place. A device comes back by its MAC address
+  new device on a voucher in use moves it only with the PIN, and the oldest device gives up its place
+  and leaves the voucher. Wrong PINs count per device: three wait 15 minutes, six lock that device
+  out until a release; fifteen on one voucher within the hour, from any devices, make every move
+  wait 15 minutes; devices holding a place are never stopped (migration
+  `20261128900000_pin_attempts`). Staff ending a session take its device off the voucher, so it signs
+  in again at the portal. Guests never reach the platform's tunnel address: setup drops their
+  traffic to it, and setup version 3 sets every router up again. A device comes back by its MAC address
   to a free place or its own. Blocking a device blocks the vouchers it used too. Setup is versioned:
   after a release, routers an older setup left are set up again, and one that stops opens a "needs
   setting up again" issue for HashiNet's team. `PIN_KEY` is a new required secret; the host firewall
