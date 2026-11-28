@@ -55,6 +55,10 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
   and after a hub restart that runs the relay from the new path.
 - [ ] Later, not moves (each its own milestone when reached): the upward imports `core/` keeps
   (below); the files over 500 lines split by job.
+- [ ] M11 The API's files over 500 lines, split by job (a long file with one job stays):
+  - [x] (2026-11-28) `network/provisioning/steps.ts` (1,029): the firewall rule-placement toolkit to
+    `firewall-order.ts`, the RouterOS yes/no reader to `ros-client.ts`; the ordered step list (875
+    lines, one job) stays. Every line unchanged but for `export` and two doc comments.
 
 ## Surprises & Discoveries
 

@@ -147,3 +147,6 @@ export function pingTotals(rows: RosRow[]): { sent: number; received: number } {
     received: total("received") ?? rows.filter((r) => r.get("time") !== null).length,
   };
 }
+
+/** A RouterOS yes/no property, as `true`/`yes`. */
+export const yes = (v: string | null) => v === "true" || v === "yes";

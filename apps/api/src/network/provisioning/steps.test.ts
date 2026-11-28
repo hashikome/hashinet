@@ -1,14 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import type { ProvisionContext } from "./context.js";
 import { dialectFor } from "./dialect.js";
-import type { RouterProfile } from "./probe.js";
-import { type RosClient, RosRow, toRows } from "./ros-client.js";
 import {
   addRuleFirst,
   moveRuleAheadOfHotspotRules,
-  PROVISION_STEPS,
   ruleAheadOfHotspotRules,
-} from "./steps.js";
+} from "./firewall-order.js";
+import type { RouterProfile } from "./probe.js";
+import { type RosClient, RosRow, toRows } from "./ros-client.js";
+import { PROVISION_STEPS } from "./steps.js";
 
 /**
  * The `place-before` regression.
