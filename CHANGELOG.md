@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The router sim runs two routers (or more) at one venue, `--router <n>`, on the management tunnel,
+  with the tunnel service's RADIUS relay in the hub. `guest-test` proves a voucher across them
+  through RADIUS: the switch PIN, a move only with it, a release at the counter, a return by MAC and
+  the cut-off at expiry. A router's accounting Stop no longer replaces why HashiNet ended a session
+  (moved to another device, released, a new speed) with "admin reset".
 - Invoices are never deleted. Removing a site cancels its unpaid invoice, and an onboarding package
   made free cancels its unpaid one: kept with its number, shown as Cancelled on Billing and its PDF,
   never owed, reminded or paid against, and the owner is emailed why. A venue charged again gets a

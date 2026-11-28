@@ -1071,7 +1071,7 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
     monitor no longer opens sessions (accounting does); it updates and closes them by MAC, and
     throttles by ending a session whose speed no longer holds (`throttledNow`, one rule with
     RADIUS, which marks a throttled session in its Class). A voucher's data used is its sessions'
-    bytes. The sim's `guest-test` still walks the local-user path until step (i).
+    bytes.
   - [x] (g) Release clears the PIN and its attempts. Blocking a device blocks the live vouchers it
     used at that business too (`vouchers.blocked_at`), refused at the portal and by RADIUS on every
     device, and ends their sessions; unblocking it lifts them.
@@ -1080,7 +1080,37 @@ otherwise it lands on the portal. Retransmits get the same reply; accounting is 
     code and PIN, which then stays on the page rather than redirecting. Screens without a field sit in
     the middle of the space below the venue's name. The editor's preview lists the four new pages;
     the default terms and the Release dialog name the switch PIN.
-  - [ ] (i) Two routers on the sim (the sim runs one today), proving the acceptance there.
+  - [x] (2026-11-28) (i) Two routers on the sim, proving the acceptance there. The sim runs any
+    number of routers at one venue (`--router <n>`: each its own overlay, sockets, forwarded ports,
+    user network, guest VM with its own MAC, and tunnel address 10.88.0.n+1), all on the tunnel; the
+    hub has a peer per router and runs the real relay (`serveRadius`) on 10.88.0.1:1812-1813 to the
+    sim API, which runs in the hub with no target override and a generated `TUNNEL_SYNC_SECRET`.
+    Run: reset and `bootstrap --tunnel` on routers 1 and 2 (about 60 s each), `hub up` (handshakes
+    from both), `setup` on each (15 changes, about 19 s), again (0 changes), `verify` 6 pass and the
+    no-activity warning (7 pass after the test), then `guest-test` 22/22 in 126 s:
+    - Guest 1 on router 1: address, the portal, the redirect naming router 1, HTTPS blocked, a direct
+      POST of the code refused, an unseen device refused (400 `DEVICE_NOT_ON_NETWORK`, clock not
+      started). Redeemed through the walled garden: 200 in about 2.1 s (4.6 s under load 100),
+      `switchPin` 4 digits, router 1's user the code, no local users; its accounting Start opened
+      the `wifi_sessions` row (`acct_session_id` 8000000e).
+    - The same code from guest 2 on router 2: 409 `PIN_REQUIRED`; a wrong PIN 400 `PIN_WRONG`,
+      one try counted; the right PIN 200 in about 2.1 s, no new PIN, guest 2 online, router 2's
+      accounting opened its session; router 1's session ended (`moved_to_another_device`, 9978
+      bytes from its Stop) and guest 1 stayed on the portal while it kept asking each second.
+      Guest 1 leaving router 1 and coming back by MAC: RADIUS rejected it (rejects 3→4).
+    - Release (`VouchersService.release` as the sim owner; the sim has no staff sign-in): guest 2's
+      session ended (`voucher_released`), devices 0, PIN cleared; guest 1 then signed in with the
+      code alone and got a new PIN. Gone from router 1 (session, cookie, host) and back, guest 1
+      was signed in by its MAC through RADIUS in under a second (`login-by` mac, user its MAC, a
+      new accounting session), no portal. A 1-minute voucher on router 2 was cut off by its
+      Session-Timeout (`expired`, `session_timeout`).
+    Found: RouterOS's `/radius monitor` "accepts" counts Accounting-Responses too (a sign-in adds
+    2, a Stop 1); RouterOS doesn't ask RADIUS again for a host it still knows, so a device moved off
+    a router stays on its portal until its host entry goes; BusyBox `nc` hangs up at the end of its
+    input, before the reply. Fixed (a real bug the sim showed): the router's Stop overwrote why
+    HashiNet had ended a session (moved, released, a new speed) with `admin_reset`; a Stop now ends
+    only a session still connected and otherwise updates its counters. Open: `demo` runs LAN mode,
+    where no sign-in reaches RADIUS, so it shows the portal, not a device getting online.
   - [ ] (j) finish-work, docs (ADR-0015 widened), push on the owner's go, real phones.
 
 Before the release, outside the code: the host firewall allows UDP 1812-1813 from `wg0` to the
