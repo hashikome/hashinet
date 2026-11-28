@@ -1,7 +1,7 @@
 import type { SecretBox } from "../../core/crypto/secret-box.js";
 import type { PrismaService } from "../../core/database/prisma.service.js";
 import type { Prisma } from "../../generated/prisma/client.js";
-import { deviceLimitOf } from "../../vouchers/voucher-devices.js";
+import { deviceLimitOf } from "../../sales/vouchers/voucher-devices.js";
 import { normalMac } from "../mac.js";
 import {
   type Answer,

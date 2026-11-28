@@ -8,9 +8,9 @@ import type {
 } from "@hashinet/types";
 import { Body, Controller, Get, HttpCode, Post, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
-import { Can, CurrentPrincipal, Public } from "../core/access/access.guard.js";
-import type { Principal } from "../core/access/principal.js";
-import { parseInput } from "../core/http/validation.js";
+import { Can, CurrentPrincipal, Public } from "../../core/access/access.guard.js";
+import type { Principal } from "../../core/access/principal.js";
+import { parseInput } from "../../core/http/validation.js";
 import {
   paymentListInput,
   paymentStatusInput,

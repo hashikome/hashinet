@@ -1,7 +1,7 @@
 import type { PortalContent, PortalLook } from "@hashinet/types";
 import { z } from "zod";
 import { oneLine, paragraph } from "../core/http/validation.js";
-import { mobileNumber } from "../payments/payment-input.js";
+import { mobileNumber } from "../sales/payments/payment-input.js";
 
 /** HashiNet's own, until the platform saves its own: what a new business's portal starts with. */
 export const HASHINET_PORTAL: PortalContent = {

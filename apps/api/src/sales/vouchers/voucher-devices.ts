@@ -1,4 +1,4 @@
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma } from "../../generated/prisma/client.js";
 
 /** How many of a voucher's devices may be online at once, across its venue's routers (ADR-0015). */
 export function deviceLimitOf(pkg: { deviceLimit: number } | null): number {

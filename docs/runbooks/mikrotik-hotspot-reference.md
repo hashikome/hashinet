@@ -784,7 +784,7 @@ credentials from the `routers` table.
 | `apps/api/src/network/radius/`               | The RADIUS codec and HashiNet's answer to every login and session report |
 | `apps/tunnel/src/radius-relay.ts`            | Relays the routers' RADIUS from the tunnel address to the API           |
 | `apps/api/src/network/monitor/live-monitor.ts` | Polls routers: counters, sessions a router no longer lists, throttling  |
-| `apps/api/src/vouchers/voucher-expiry.ts`    | Ends expired vouchers, their sessions and switch PINs                    |
+| `apps/api/src/sales/vouchers/voucher-expiry.ts` | Ends expired vouchers, their sessions and switch PINs                    |
 
 ### 13.5 Automatic triggers
 

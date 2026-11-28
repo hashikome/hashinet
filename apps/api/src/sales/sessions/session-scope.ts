@@ -1,6 +1,6 @@
-import type { Principal } from "../core/access/principal.js";
-import { venueScope } from "../core/access/venue-scope.js";
-import type { WifiSessionWhereInput } from "../generated/prisma/models.js";
+import type { Principal } from "../../core/access/principal.js";
+import { venueScope } from "../../core/access/venue-scope.js";
+import type { WifiSessionWhereInput } from "../../generated/prisma/models.js";
 
 /**
  * Sessions the staff member may see: every one for an admin, those at a manager's venues

@@ -1,8 +1,8 @@
 import { describe, expect, spyOn, test } from "bun:test";
-import { RouterSync } from "../../src/network/monitor/router-sync.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, testBusinessId } from "./people.js";
+import { RouterSync } from "../../../src/network/monitor/router-sync.js";
+import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi();

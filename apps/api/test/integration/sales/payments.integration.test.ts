@@ -3,19 +3,19 @@ import { createHmac } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { groupedCode } from "@hashinet/types";
-import { SMS_SENDER, type SmsSender } from "../../src/messaging/sms-sender.js";
-import { RouterSync } from "../../src/network/monitor/router-sync.js";
-import { MOBILE_MONEY, type MobileMoneyGateway } from "../../src/payments/mobile-money.js";
-import { PaymentsService } from "../../src/payments/payments.service.js";
-import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
+import { RouterSync } from "../../../src/network/monitor/router-sync.js";
+import { MOBILE_MONEY, type MobileMoneyGateway } from "../../../src/sales/payments/mobile-money.js";
+import { PaymentsService } from "../../../src/sales/payments/payments.service.js";
+import { SMS_SENDER, type SmsSender } from "../../../src/sales/sms/sms-sender.js";
+import { browser, enrollAuthenticatorFor, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
 import {
   businessMember,
   platformMember,
   protectedOwner,
   sellingVenue,
   testBusinessId,
-} from "./people.js";
+} from "../people.js";
 
 const PAY_SECRET = "pay-secret";
 const SMS_SECRET = "sms-secret";

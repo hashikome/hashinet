@@ -1,6 +1,6 @@
-import { enrichWideEvent } from "../core/observability/wide-event.js";
-import type { PrismaClient } from "../generated/prisma/client.js";
-import type { RouterSync } from "../network/monitor/router-sync.js";
+import { enrichWideEvent } from "../../core/observability/wide-event.js";
+import type { PrismaClient } from "../../generated/prisma/client.js";
+import type { RouterSync } from "../../network/monitor/router-sync.js";
 
 /**
  * Ends vouchers whose time is up, and the sessions they hold. The router ends a session at its

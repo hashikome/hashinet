@@ -1,15 +1,15 @@
 import type { AuditAction, DeviceList, DeviceRecord } from "@hashinet/types";
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { z } from "zod";
-import type { Principal } from "../core/access/principal.js";
-import { AuditLog } from "../core/audit/audit-log.js";
-import { PrismaService } from "../core/database/prisma.service.js";
-import { apiError } from "../core/http/error-envelope.js";
-import { captureFailure } from "../core/observability/telemetry.js";
-import { bytes } from "../core/records/records.js";
-import type { Device } from "../generated/prisma/client.js";
-import type { DeviceWhereInput } from "../generated/prisma/models.js";
-import { RouterSync } from "../network/monitor/router-sync.js";
+import type { Principal } from "../../core/access/principal.js";
+import { AuditLog } from "../../core/audit/audit-log.js";
+import { PrismaService } from "../../core/database/prisma.service.js";
+import { apiError } from "../../core/http/error-envelope.js";
+import { captureFailure } from "../../core/observability/telemetry.js";
+import { bytes } from "../../core/records/records.js";
+import type { Device } from "../../generated/prisma/client.js";
+import type { DeviceWhereInput } from "../../generated/prisma/models.js";
+import { RouterSync } from "../../network/monitor/router-sync.js";
 import { sessionScope } from "../sessions/session-scope.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 

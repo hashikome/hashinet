@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normalizeTzPhone } from "../core/phone.js";
+import { normalizeTzPhone } from "../../core/phone.js";
 
 export const mobileNumber = z.string().transform((value, ctx) => {
   const phone = normalizeTzPhone(value);

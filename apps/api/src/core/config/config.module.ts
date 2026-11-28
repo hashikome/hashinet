@@ -6,19 +6,19 @@ import {
   R2BrandStore,
 } from "../../brand/brand-store.js";
 import {
-  BriqSmsSender,
-  NoSmsSender,
-  OutboxSmsSender,
-  SMS_SENDER,
-  type SmsSender,
-} from "../../messaging/sms-sender.js";
-import {
   FakeGateway,
   MOBILE_MONEY,
   type MobileMoneyGateway,
   NoGateway,
   SnippeGateway,
-} from "../../payments/mobile-money.js";
+} from "../../sales/payments/mobile-money.js";
+import {
+  BriqSmsSender,
+  NoSmsSender,
+  OutboxSmsSender,
+  SMS_SENDER,
+  type SmsSender,
+} from "../../sales/sms/sms-sender.js";
 import {
   EMAIL_SENDER,
   type EmailSender,

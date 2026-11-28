@@ -1,9 +1,9 @@
 import type { SessionList, SessionResponse } from "@hashinet/types";
 import { Controller, Get, Header, HttpCode, Param, Post, Query } from "@nestjs/common";
-import { Can, CurrentPrincipal } from "../core/access/access.guard.js";
-import type { Principal } from "../core/access/principal.js";
-import { idParam } from "../core/http/id-param.js";
-import { parseInput } from "../core/http/validation.js";
+import { Can, CurrentPrincipal } from "../../core/access/access.guard.js";
+import type { Principal } from "../../core/access/principal.js";
+import { idParam } from "../../core/http/id-param.js";
+import { parseInput } from "../../core/http/validation.js";
 import { SessionsService, sessionQuery } from "./sessions.service.js";
 
 @Controller("api/sessions")
