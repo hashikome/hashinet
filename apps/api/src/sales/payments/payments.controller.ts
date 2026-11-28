@@ -11,12 +11,14 @@ import type { Request } from "express";
 import { Can, CurrentPrincipal, Public } from "../../core/access/access.guard.js";
 import type { Principal } from "../../core/access/principal.js";
 import { parseInput } from "../../core/http/validation.js";
+import { CounterSales } from "./counter-sales.js";
 import {
   paymentListInput,
   paymentStatusInput,
   saleInput,
   startPaymentInput,
 } from "./payment-input.js";
+import { PaymentLists } from "./payment-lists.js";
 import { PaymentsService } from "./payments.service.js";
 
 /** A guest buying on the portal. Public, like the rest of `/api/guest/*`. */
@@ -42,7 +44,11 @@ export class GuestPaymentsController {
 
 @Controller("api")
 export class PaymentsController {
-  constructor(private readonly payments: PaymentsService) {}
+  constructor(
+    private readonly payments: PaymentsService,
+    private readonly lists: PaymentLists,
+    private readonly sales: CounterSales,
+  ) {}
 
   /** What this installation can offer, so the admin shows only what works. */
   @Get("capabilities")
@@ -54,19 +60,19 @@ export class PaymentsController {
   @Get("payments")
   @Can("payment.read")
   async list(@CurrentPrincipal() staff: Principal, @Query() query: unknown): Promise<PaymentList> {
-    return { payments: await this.payments.list(staff, parseInput(paymentListInput, query)) };
+    return { payments: await this.lists.list(staff, parseInput(paymentListInput, query)) };
   }
 
   @Get("customers")
   @Can("customer.read")
   async customers(@CurrentPrincipal() staff: Principal): Promise<CustomerList> {
-    return { customers: await this.payments.customers(staff) };
+    return { customers: await this.lists.customers(staff) };
   }
 
   /** The code is in this response: it is what staff read out, or print. */
   @Post("sales")
   @Can("sale.record")
   sale(@CurrentPrincipal() staff: Principal, @Body() body: unknown): Promise<SaleResult> {
-    return this.payments.recordSale(staff, parseInput(saleInput, body));
+    return this.sales.recordSale(staff, parseInput(saleInput, body));
   }
 }

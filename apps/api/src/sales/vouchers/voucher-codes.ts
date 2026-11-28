@@ -1,5 +1,6 @@
 import { randomInt } from "node:crypto";
 import { CODE_LENGTH } from "@hashinet/types";
+import type { PrismaService } from "../../core/database/prisma.service.js";
 
 /**
  * A voucher code (ADR-0008: 12 digits, 10^12 codes, about 40 bits) from a cryptographic
@@ -31,4 +32,16 @@ export async function generateCodes(
   }
   if (codes.size < count) throw new Error("Could not generate unique voucher codes");
   return [...codes];
+}
+
+/** A code no voucher has yet: drawn, and drawn again for any a voucher already holds. */
+export async function unusedCode(db: PrismaService): Promise<string> {
+  const [code = ""] = await generateCodes(1, async (candidates) => {
+    const taken = await db.voucher.findMany({
+      where: { code: { in: candidates } },
+      select: { code: true },
+    });
+    return new Set(taken.map((t) => t.code));
+  });
+  return code;
 }

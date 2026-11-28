@@ -64,6 +64,11 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
     `billing-accounts.ts` (`BillingAccounts`); an invoice's API shape and its query to
     `invoice-record.ts`. Lines unchanged but for the cross-class calls and the class headers; the
     map gains only the two providers; the billing and venue integration tests pass.
+  - [x] (2026-11-28) `sales/payments/payments.service.ts` (715): the online purchase stays
+    (`PaymentsService`); the counter sale to `counter-sales.ts` (`CounterSales`); staff's lists to
+    `payment-lists.ts` (`PaymentLists`). Drawing an unused voucher code, written twice, is one
+    `unusedCode` in `sales/vouchers/voucher-codes.ts`. The sales integration tests pass; the map
+    gains only the two providers.
 
 ## Surprises & Discoveries
 

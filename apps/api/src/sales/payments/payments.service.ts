@@ -1,17 +1,13 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
   type Capabilities,
-  type CustomerRecord,
   type GuestPaymentStarted,
   type GuestPaymentStatus,
   groupedCode,
-  type PaymentRecord,
-  type SaleResult,
 } from "@hashinet/types";
 import {
   BadGatewayException,
   BadRequestException,
-  ConflictException,
   HttpException,
   HttpStatus,
   Inject,
@@ -19,8 +15,6 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
-import type { Principal } from "../../core/access/principal.js";
-import { venueScope } from "../../core/access/venue-scope.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
 import type { AppConfig } from "../../core/config/config.js";
 import { APP_CONFIG } from "../../core/config/config.module.js";
@@ -34,23 +28,17 @@ import { Prisma } from "../../generated/prisma/client.js";
 import { countFailure, isLimited } from "../../guest/sign-in/attempts.js";
 import { GuestService, safeDestination } from "../../guest/sign-in/guest.service.js";
 import { RouterSync } from "../../network/monitor/router-sync.js";
-import { SERVING } from "../../network/routers/router-journey.js";
 import { PackagesService } from "../../venues/packages/packages.service.js";
 import { PaymentWaysService } from "../../venues/payment-ways/payment-ways.service.js";
 import { SMS_SENDER, type Texts } from "../sms/sender.js";
-import { generateCodes } from "../vouchers/voucher-codes.js";
+import { unusedCode } from "../vouchers/voucher-codes.js";
 import {
   type ChargeState,
   MOBILE_MONEY,
   type MobileMoney,
   type MobileMoneyGateway,
 } from "./gateway.js";
-import type {
-  PaymentListInput,
-  PaymentStatusInput,
-  SaleInput,
-  StartPaymentInput,
-} from "./payment-input.js";
+import type { PaymentStatusInput, StartPaymentInput } from "./payment-input.js";
 
 const WINDOW_SECONDS = 600;
 /** Each attempt prompts a real phone, so these guard people, not only the provider's bill. */
@@ -68,7 +56,8 @@ const PROVISION_WINDOW_MS = 7 * 24 * 3_600_000;
 const SMS_CONFIRM_MS = 10 * 60_000;
 const BATCH = 50;
 
-const include = {
+/** What a payment is read with, for the guest's status and staff's lists alike. */
+export const PAYMENT_INCLUDE = {
   voucher: true,
   package: true,
   router: true,
@@ -76,16 +65,11 @@ const include = {
   sms: true,
 } as const;
 
-type PaymentRow = Prisma.PaymentGetPayload<{ include: typeof include }>;
+export type PaymentRow = Prisma.PaymentGetPayload<{ include: typeof PAYMENT_INCLUDE }>;
 
 const notFound = () => new NotFoundException(apiError("NOT_FOUND", "That payment does not exist."));
 
 const hash = (text: string) => createHash("sha256").update(text).digest("hex");
-
-/** Who may see a payment: an admin all of them, a manager their venues' (finding 3). */
-function inScope(staff: Principal): Prisma.PaymentWhereInput {
-  return staff.scope === "platform" ? {} : { venue: venueScope(staff) };
-}
 
 /**
  * Money to access. Everything that can finish a payment (the webhook, the reconcile job, a
@@ -102,8 +86,8 @@ export class PaymentsService {
     private readonly sync: RouterSync,
     private readonly guest: GuestService,
     private readonly packages: PackagesService,
-    private readonly audit: AuditLog,
-    private readonly ways: PaymentWaysService,
+    readonly _audit: AuditLog,
+    readonly _ways: PaymentWaysService,
     @Inject(MOBILE_MONEY) private readonly mobileMoney: MobileMoney,
     @Inject(SMS_SENDER) private readonly texts: Texts,
     @Inject(APP_CONFIG) config: AppConfig,
@@ -214,7 +198,10 @@ export class PaymentsService {
    * whoever started the purchase and nobody else, never to a request naming an id or a device.
    */
   async status(input: PaymentStatusInput): Promise<GuestPaymentStatus> {
-    let row = await this.db.payment.findUnique({ where: { id: input.paymentId }, include });
+    let row = await this.db.payment.findUnique({
+      where: { id: input.paymentId },
+      include: PAYMENT_INCLUDE,
+    });
     if (
       row?.sessionSecretHash == null ||
       !sameBytes(Buffer.from(row.sessionSecretHash), Buffer.from(hash(input.secret)))
@@ -230,7 +217,10 @@ export class PaymentsService {
       });
       if (row.status === "pending") await this.check(row);
       else if (this.unfinished(row)) await this.settle(row.id);
-      row = await this.db.payment.findUniqueOrThrow({ where: { id: row.id }, include });
+      row = await this.db.payment.findUniqueOrThrow({
+        where: { id: row.id },
+        include: PAYMENT_INCLUDE,
+      });
     }
     return guestStatus(row, await this.takePin(row));
   }
@@ -308,7 +298,10 @@ export class PaymentsService {
     amount: number | null,
     event: { provider: string; id: string } | null,
   ): Promise<void> {
-    const row = await this.db.payment.findUnique({ where: { id: paymentId }, include });
+    const row = await this.db.payment.findUnique({
+      where: { id: paymentId },
+      include: PAYMENT_INCLUDE,
+    });
     if (row === null || row.status === "paid") return;
     if (amount !== null && amount !== Number(row.amountTsh)) {
       // Never grant on a mismatch: this needs a person, and staff see why it is stuck.
@@ -320,7 +313,7 @@ export class PaymentsService {
       captureFailure(new Error(`Payment ${paymentId}: the amount reported does not match`));
       return;
     }
-    const [code = ""] = await generateCodes(1, (candidates) => this.takenCodes(candidates));
+    const code = await unusedCode(this.db);
 
     const done = await this.db.$transaction(async (tx) => {
       if (event !== null && !(await firstTime(tx, event))) return false;
@@ -384,7 +377,10 @@ export class PaymentsService {
     if (this.settling.has(paymentId)) return;
     this.settling.add(paymentId);
     try {
-      const row = await this.db.payment.findUnique({ where: { id: paymentId }, include });
+      const row = await this.db.payment.findUnique({
+        where: { id: paymentId },
+        include: PAYMENT_INCLUDE,
+      });
       if (row === null || row.status !== "paid" || row.voucher === null) return;
       await this.sendCode(row);
       if (row.venueId === null) return;
@@ -487,7 +483,7 @@ export class PaymentsService {
         providerReference: { not: null },
         createdAt: { lt: new Date(now - RECONCILE_AFTER_MS) },
       },
-      include,
+      include: PAYMENT_INCLUDE,
       // The longest unasked first, so stuck payments cannot crowd out new ones.
       orderBy: { lastCheckedAt: { sort: "asc", nulls: "first" } },
       take: BATCH,
@@ -525,144 +521,8 @@ export class PaymentsService {
     });
   }
 
-  /**
-   * A sale staff record: the money has changed hands, so no prompt reaches a phone. The voucher
-   * is shown to them, and sent if there is a number.
-   */
-  async recordSale(staff: Principal, input: SaleInput): Promise<SaleResult> {
-    // What the venue sells, in the seller's scope, and whether a router can take a voucher.
-    const [sold, serving] = await Promise.all([
-      this.packages.onSaleIn(staff, input.venueId),
-      this.db.router.count({ where: { venueId: input.venueId, ...SERVING } }),
-    ]);
-    // A voucher with no router to take it sells nothing a guest can use.
-    if (serving === 0) {
-      throw new ConflictException(
-        apiError(
-          "VENUE_NOT_SERVING",
-          "This venue has no router serving guests right now, so it can't sell.",
-        ),
-      );
-    }
-    const pkg = sold.find((p) => p.id === input.packageId) ?? null;
-    if (pkg === null) {
-      throw new BadRequestException(
-        apiError("VALIDATION_FAILED", "Check the highlighted fields.", {
-          packageId: "is not on sale at this venue",
-        }),
-      );
-    }
-    // By mobile money the guest pays the venue's way, so a sale needs one and keeps what was read out.
-    const paidTo =
-      input.method === "mobile_money" ? (await this.ways.resolve(input.venueId)).way : null;
-    if (input.method === "mobile_money" && paidTo === null) {
-      throw new ConflictException(
-        apiError(
-          "NO_PAYMENT_WAY",
-          "This business has no way to pay by mobile money yet. Sell for cash, or add one in Settings › Payments.",
-        ),
-      );
-    }
-    const [code = ""] = await generateCodes(1, (candidates) => this.takenCodes(candidates));
-    const { phone } = input;
-    const payment = await this.db.$transaction(async (tx) => {
-      const customer =
-        phone === null
-          ? null
-          : await tx.customer.upsert({ where: { phone }, create: { phone }, update: {} });
-      const voucher = await tx.voucher.create({
-        data: {
-          code,
-          packageId: pkg.id,
-          venueId: input.venueId,
-          priceTsh: pkg.priceTsh,
-          durationMinutes: pkg.durationMinutes,
-          dataLimitGb: pkg.dataLimitGb,
-        },
-      });
-      return tx.payment.create({
-        data: {
-          provider: input.method === "cash" ? "cash" : "mobile_money",
-          status: "paid",
-          paidAt: new Date(),
-          packageId: pkg.id,
-          venueId: input.venueId,
-          voucherId: voucher.id,
-          customerId: customer?.id ?? null,
-          phone,
-          amountTsh: pkg.priceTsh,
-          recordedById: staff.membershipId,
-          paidThrough: paidTo?.through ?? null,
-          paidToNumber: paidTo?.number ?? null,
-          paidToName: paidTo?.name ?? null,
-        },
-      });
-    });
-    await this.audit.record(staff, {
-      ...(await this.audit.atVenue(input.venueId)),
-      action: "sale.record",
-      target: { type: "payment", id: payment.id },
-      change: { before: {}, after: { method: input.method } },
-    });
-    // The money is in hand, so the seller never waits on a router or a text: they settle after the
-    // answer (ADR-0010, 2), and the guest's sign-in confirms the voucher with the router regardless.
-    void this.settle(payment.id).catch(captureFailure);
-    return { paymentId: payment.id, code, texted: phone !== null && this.texts.active !== null };
-  }
-
   capabilities(): Capabilities {
     return { mobileMoney: this.mobileMoney.active !== null, sms: this.texts.active !== null };
-  }
-
-  async list(staff: Principal, input: PaymentListInput): Promise<PaymentRecord[]> {
-    const owed = { status: "paid", routerProvisionedAt: null } as const;
-    const rows = await this.db.payment.findMany({
-      where: {
-        ...inScope(staff),
-        ...(input.status === "owed" ? owed : input.status === null ? {} : { status: input.status }),
-      },
-      include,
-      orderBy: { createdAt: "desc" },
-      take: input.limit,
-    });
-    return rows.map(paymentRecord);
-  }
-
-  /** Who has paid, within what this staff member may see. */
-  async customers(staff: Principal): Promise<CustomerRecord[]> {
-    const scope: Prisma.PaymentWhereInput = {
-      ...inScope(staff),
-      status: "paid",
-      customerId: { not: null },
-    };
-    const totals = await this.db.payment.groupBy({
-      by: ["customerId"],
-      where: scope,
-      _count: { _all: true },
-      _sum: { amountTsh: true },
-      _max: { paidAt: true },
-      orderBy: { _max: { paidAt: "desc" } },
-      take: 200,
-    });
-    const people = await this.db.customer.findMany({
-      where: { id: { in: totals.map((t) => t.customerId ?? "") } },
-    });
-    const phones = new Map(people.map((p) => [p.id, p.phone]));
-    return totals.map((t) => ({
-      id: t.customerId ?? "",
-      phone: phones.get(t.customerId ?? "") ?? "",
-      payments: t._count._all,
-      totalTsh: (t._sum.amountTsh ?? new Prisma.Decimal(0)).toFixed(2),
-      lastPaidAt: t._max.paidAt?.toISOString() ?? null,
-    }));
-  }
-
-  private async takenCodes(candidates: string[]): Promise<Set<string>> {
-    const taken = await this.db.voucher.findMany({
-      where: { code: { in: candidates } },
-      select: { code: true },
-    });
-    return new Set(taken.map((v) => v.code));
   }
 }
 
@@ -694,22 +554,5 @@ function guestStatus(row: PaymentRow, switchPin: string | null): GuestPaymentSta
     sms: row.sms?.status ?? null,
     dst: row.destination,
     switchPin: ended ? null : switchPin,
-  };
-}
-
-function paymentRecord(row: PaymentRow): PaymentRecord {
-  return {
-    id: row.id,
-    phone: row.phone,
-    amountTsh: row.amountTsh.toFixed(2),
-    provider: row.provider,
-    status: row.status,
-    packageName: row.package?.name ?? null,
-    venueName: row.venue?.name ?? null,
-    createdAt: row.createdAt.toISOString(),
-    paidAt: row.paidAt?.toISOString() ?? null,
-    owed: row.status === "paid" && row.routerProvisionedAt === null,
-    provisionError: row.provisionError,
-    sms: row.sms?.status ?? null,
   };
 }

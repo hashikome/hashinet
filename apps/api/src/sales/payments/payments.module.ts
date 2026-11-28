@@ -6,6 +6,8 @@ import { GuestModule } from "../../guest/sign-in/guest.module.js";
 import { RoutersModule } from "../../network/routers/routers.module.js";
 import { PackagesModule } from "../../venues/packages/packages.module.js";
 import { PaymentWaysModule } from "../../venues/payment-ways/payment-ways.module.js";
+import { CounterSales } from "./counter-sales.js";
+import { PaymentLists } from "./payment-lists.js";
 import { PaymentWebhooksController } from "./payment-webhooks.controller.js";
 import { GuestPaymentsController, PaymentsController } from "./payments.controller.js";
 import { PaymentsService } from "./payments.service.js";
@@ -26,6 +28,6 @@ class PaymentJobs extends ScheduledJobs {
 @Module({
   imports: [RoutersModule, PackagesModule, PaymentWaysModule, GuestModule],
   controllers: [GuestPaymentsController, PaymentsController, PaymentWebhooksController],
-  providers: [PaymentsService, PaymentJobs],
+  providers: [PaymentsService, CounterSales, PaymentLists, PaymentJobs],
 })
 export class PaymentsModule {}
