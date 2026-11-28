@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The web's largest files are split by job, and the guest portal lives in `components/guest/portal/`
+  (the `/join` route and the editor's preview both use it). The router hotspot pages moved from
+  `apps/api/mikrotik-files` to `apps/api/src/network/provisioning/portal-pages`. No behaviour changes.
+
 - The API's largest files are split by job: the firewall rule placement out of the setup steps;
   invoices into issuing, reminders and Billing's reads; the counter sale and staff's payment lists
   out of the online purchase; router issues out of the issues workflow; running a router's setup out

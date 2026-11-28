@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GuestPortal } from "./portal";
+import { GuestPortal } from "@/components/guest/portal/guest-portal";
 
 export const metadata: Metadata = {
   title: "Connect to the WiFi",

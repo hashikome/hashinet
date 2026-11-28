@@ -80,10 +80,26 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
   - (2026-11-28) Kept whole: `guest/sign-in/guest.service.ts` (556), signing a device onto a voucher
     (redeem, admit, the claim and the PIN checks, about 300 lines) with the portal's small reads that
     share its router lookup; `packages/types/src/platform.ts` (539), one area's contract.
-- [ ] M12 The web's files over 500 lines (`join/portal.tsx` 959, the sign-in page 921, the packages
-  page 791, `components/guest/portal-editor.tsx` 773, the router page 636, `lib/help.tsx` 590, the
-  onboarding steps 562, the issue page 548, `components/sales/sell.tsx` 526), each read for its jobs
-  and split where it holds several, proved by verbatim lines, `next build` and a look at each screen.
+- [x] (2026-11-28) M12 The web's files over 500 lines, split by job with
+  `ref/restructure/split-decls.py` (moves named declarations verbatim, wires imports both ways):
+  - the guest portal moved out of the `/join` route into `components/guest/portal/` (the route and the
+    editor's preview both use it; a component importing a route was backwards): `guest-portal.tsx`
+    (the stage machine, 696 lines, one component kept whole), `portal-parts.tsx` (frame, messages,
+    code and PIN, PIN entry), `portal-preview.ts` (the preview's sample states);
+  - the sign-in settings page: its flows in `flows.tsx` (with the flow definitions),
+    `passkey-flows.tsx` and `authenticator-flows.tsx`;
+  - packages: its dialogs in `dialogs.tsx`; the portal editor: the platform's in
+    `platform-portal-editor.tsx`; the router page: `add-router.tsx`, `hotspot-port-dialog.tsx`; the
+    onboarding steps: `onboarding-forms.tsx`; the issue page: `issue-dialogs.tsx`, `router-steps.tsx`;
+    `components/sales/sell.tsx`: the dialog and its steps in `sell-dialog.tsx`.
+  - Kept whole: `lib/help.tsx` (590), help content.
+  - Proof: every line unchanged but for `export` and Biome's re-wraps; verify; `next build`'s 35
+    routes identical; each screen looked at in the dev app (the sign-in settings and a flow, packages,
+    the captive portal editor with the preview's online, in-use and paid states, an onboarding and a
+    router issue, the router page and its port dialog), no console exceptions. Not looked at: the sell
+    dialog, which needs a seller's session.
+  - Cycles kept, both function-only and safe at load: the sell provider renders the dialog, which
+    uses the provider's types and methods; the confirm step and the authenticator scan use each other.
 
 ## Surprises & Discoveries
 
