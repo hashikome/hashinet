@@ -4,7 +4,9 @@ import { APP_CONFIG } from "../../core/config/config.module.js";
 import { IntervalJob, ScheduledJobs } from "../../core/jobs/interval-job.js";
 import { businessDayOf, monthBefore } from "../../core/time/business-day.js";
 import { IssuesModule } from "../issues/issues.module.js";
+import { BillReminders } from "./bill-reminders.js";
 import { BillingController } from "./billing.controller.js";
+import { BillingAccounts } from "./billing-accounts.js";
 import { BillingEvents } from "./billing-events.js";
 import { BillingSettings } from "./billing-settings.js";
 import { BILLING_STARTS, Invoices } from "./invoices.js";
@@ -25,6 +27,7 @@ class BillingJobs extends ScheduledJobs {
   constructor(
     @Inject(APP_CONFIG) config: AppConfig,
     invoices: Invoices,
+    reminders: BillReminders,
     access: ServiceAccessService,
   ) {
     super(config.jobsEnabled);
@@ -34,9 +37,9 @@ class BillingJobs extends ScheduledJobs {
         if (period >= BILLING_STARTS) await invoices.issueMonth(period);
         await invoices.issueMissingOnboarding();
         // Due today and unpaid: its owners hear, once.
-        await invoices.remindDue();
+        await reminders.remindDue();
         // What each owner owes, as an issue at the top of theirs.
-        await invoices.syncBillIssues();
+        await reminders.syncBillIssues();
         // Overdue bills move each business's access, up to read-only and back (ADR-0014, 2).
         await access.sync();
       }),
@@ -52,6 +55,8 @@ class BillingJobs extends ScheduledJobs {
     BillingEvents,
     BillingSettings,
     Invoices,
+    BillReminders,
+    BillingAccounts,
     BillPayments,
     OwnerMail,
     ServiceAccessService,

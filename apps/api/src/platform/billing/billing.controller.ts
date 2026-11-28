@@ -21,10 +21,11 @@ import { Can, CurrentPrincipal } from "../../core/access/access.guard.js";
 import type { Principal } from "../../core/access/principal.js";
 import { idParam } from "../../core/http/id-param.js";
 import { parseInput } from "../../core/http/validation.js";
+import { BillReminders } from "./bill-reminders.js";
+import { BillingAccounts } from "./billing-accounts.js";
 import { BillingEvents } from "./billing-events.js";
 import { BillingSettings, billingSettingsInput } from "./billing-settings.js";
 import { invoicePdf } from "./invoice-pdf.js";
-import { Invoices } from "./invoices.js";
 import { BillPayments, recordPaymentInput } from "./payments.js";
 import { ServiceAccessService } from "./service-access.js";
 
@@ -45,7 +46,8 @@ const overviewQuery = z
 export class BillingController {
   constructor(
     private readonly settings: BillingSettings,
-    private readonly invoices: Invoices,
+    private readonly accounts: BillingAccounts,
+    private readonly reminders: BillReminders,
     private readonly payments: BillPayments,
     private readonly access: ServiceAccessService,
     private readonly events: BillingEvents,
@@ -75,14 +77,14 @@ export class BillingController {
     @Query() query: unknown,
   ): Promise<BillingAccount> {
     const { businessId } = parseInput(accountQuery, query);
-    return this.invoices.account(staff, businessId ?? null);
+    return this.accounts.account(staff, businessId ?? null);
   }
 
   @Get("overview")
   @Can("billing.overview")
   async overview(@Query() query: unknown): Promise<BillingOverview> {
     const { from, to } = parseInput(overviewQuery, query);
-    return this.invoices.overview(from && to ? { from, to } : null);
+    return this.accounts.overview(from && to ? { from, to } : null);
   }
 
   /** Money a business paid, as it arrived: on an invoice, or the oldest first. */
@@ -94,7 +96,7 @@ export class BillingController {
     await this.payments.record(staff, input);
     // Its bill issue, and its access restored at once rather than at the next hour.
     await Promise.all([
-      this.invoices.syncBillIssues(input.businessId),
+      this.reminders.syncBillIssues(input.businessId),
       this.access.sync(input.businessId),
       // What it paid for opens: a venue's extra site reaches its routers.
       this.events.paid(input.businessId),
@@ -106,7 +108,7 @@ export class BillingController {
   @HttpCode(204)
   @Can("billing.remind")
   async remind(@CurrentPrincipal() staff: Principal, @Body() body: unknown): Promise<void> {
-    await this.invoices.remind(staff, parseInput(remindInput, body).businessId);
+    await this.reminders.remind(staff, parseInput(remindInput, body).businessId);
   }
 
   /** The invoice as a PDF, downloaded as a file named by its number. */
@@ -116,7 +118,7 @@ export class BillingController {
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
   ): Promise<StreamableFile> {
-    const invoice = await this.invoices.get(staff, id);
+    const invoice = await this.accounts.get(staff, id);
     const bytes = await invoicePdf(invoice, await this.settings.get());
     return new StreamableFile(bytes, {
       type: "application/pdf",
@@ -131,6 +133,6 @@ export class BillingController {
     @CurrentPrincipal() staff: Principal,
     @Param("id", idParam()) id: string,
   ): Promise<InvoiceResponse> {
-    return this.invoices.get(staff, id);
+    return this.accounts.get(staff, id);
   }
 }

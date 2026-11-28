@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { BillingAccount, BillingOverview, InvoiceRecord, IssueList } from "@hashinet/types";
 import { addDays, businessDayOf } from "../../../src/core/time/business-day.js";
+import { BillReminders } from "../../../src/platform/billing/bill-reminders.js";
 import { Invoices } from "../../../src/platform/billing/invoices.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "../api.js";
 import { useTestDatabase } from "../harness.js";
@@ -435,10 +436,10 @@ describe("reminders", () => {
     // On 7 December, still unpaid: one reminder, however often the job runs.
     const dueDay = new Date(Date.UTC(2026, 11, 7, 6));
     const mark = api.email.sent.length;
-    await invoices.remindDue(new Date(Date.UTC(2026, 11, 6, 6)));
+    await api.app.get(BillReminders).remindDue(new Date(Date.UTC(2026, 11, 6, 6)));
     expect(api.email.sent.length).toBe(mark);
-    await invoices.remindDue(dueDay);
-    await invoices.remindDue(dueDay);
+    await api.app.get(BillReminders).remindDue(dueDay);
+    await api.app.get(BillReminders).remindDue(dueDay);
     await Bun.sleep(50);
     expect(api.email.sent.slice(mark).filter((m) => m.to === "owner@example.com")).toHaveLength(1);
   });

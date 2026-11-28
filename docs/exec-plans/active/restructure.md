@@ -59,6 +59,11 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
   - [x] (2026-11-28) `network/provisioning/steps.ts` (1,029): the firewall rule-placement toolkit to
     `firewall-order.ts`, the RouterOS yes/no reader to `ros-client.ts`; the ordered step list (875
     lines, one job) stays. Every line unchanged but for `export` and two doc comments.
+  - [x] (2026-11-28) `platform/billing/invoices.ts` (764): issuing stays (`Invoices`); bill issues,
+    reminders and what a business owes to `bill-reminders.ts` (`BillReminders`); Billing's reads to
+    `billing-accounts.ts` (`BillingAccounts`); an invoice's API shape and its query to
+    `invoice-record.ts`. Lines unchanged but for the cross-class calls and the class headers; the
+    map gains only the two providers; the billing and venue integration tests pass.
 
 ## Surprises & Discoveries
 
