@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  type ApiError,
   CODE_LENGTH,
   type GuestContext,
   type GuestPaymentStarted,
@@ -10,6 +9,7 @@ import {
   type RedeemResult,
 } from "@hashinet/types";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { ApiRequestError, errorFrom } from "@/lib/api";
 import { clock, weekday } from "@/lib/dates";
 import { formatDuration } from "@/lib/duration";
 import { tsh } from "@/lib/money";
@@ -62,17 +62,10 @@ function fromRouter(): FromRouter | null {
 const dialed = (phone: string) =>
   `0${phone.replace(/^\+255/, "")}`.replace(/^(\d{4})(\d{3})(\d+)$/, "$1 $2 $3");
 
-/** The API's refusal: `code` says what happened, `message` is written for the guest. */
-class Refused extends Error {
-  constructor(
-    readonly code: string,
-    message: string,
-    readonly details: Record<string, string> | null = null,
-  ) {
-    super(message);
-  }
-}
-
+/**
+ * Same-origin, as the router lets a guest reach only the portal's own address. A refusal is the
+ * API's error: `code` says what happened, `message` is written for the guest.
+ */
 async function post<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
     method: "POST",
@@ -81,24 +74,15 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
   // A proxy in the way can answer with a page, not the API's JSON.
   const data: unknown = await response.json().catch(() => null);
-  if (!response.ok || data === null) {
-    const refusal = data as Partial<ApiError> | null;
-    throw new Refused(
-      refusal?.code ?? "ERROR",
-      refusal?.message ?? "Something went wrong. Try again.",
-      refusal?.details ?? null,
-    );
-  }
+  if (!response.ok || data === null) throw errorFrom(response.status, data);
   return data as T;
 }
 
 /** "Friday 18:04": when a voucher ends, in Dar es Salaam time. */
 const until = (iso: string) => `${weekday(iso)} ${clock(iso)}`;
 /** "15 minutes" until `iso`, at least one. */
-const minutesUntil = (iso: string) => {
-  const m = Math.max(1, Math.ceil((new Date(iso).getTime() - Date.now()) / 60_000));
-  return `${m} minute${m === 1 ? "" : "s"}`;
-};
+const minutesUntil = (iso: string) =>
+  formatDuration(Math.max(1, Math.ceil((new Date(iso).getTime() - Date.now()) / 60_000)));
 /** "23h 59m" left until `iso`. */
 function left(iso: string): string {
   const minutes = Math.max(0, Math.round((Date.parse(iso) - Date.now()) / 60_000));
@@ -297,12 +281,11 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
           window.setTimeout(() => window.location.replace(dst), 1800);
         }
       } catch (err) {
-        const refused =
-          err instanceof Refused ? err : new Refused("ERROR", "Something went wrong. Try again.");
+        const refused = err instanceof ApiRequestError ? err : errorFrom(0, null);
         if (refused.code === "ROUTER_NOT_CONFIRMED") setStage({ kind: "sign-failed" });
         else if (refused.code === "PIN_REQUIRED") setStage({ kind: "in-use", error: null });
         else if (refused.code === "PIN_WRONG") {
-          setStage({ kind: "in-use", error: "That PIN isn't right. Check it and try again." });
+          setStage({ kind: "in-use", error: refused.message });
         } else if (refused.code === "PIN_WAIT") {
           setStage({ kind: "pin-wait", until: refused.details?.until ?? new Date().toISOString() });
         } else if (refused.code === "PIN_LOCKED") setStage({ kind: "pin-locked" });
@@ -364,7 +347,7 @@ export function GuestPortal({ preview = null }: { preview?: Preview | null }) {
       setPayment(started);
     } catch (err) {
       setError(
-        err instanceof Refused && err.code === "VALIDATION_FAILED"
+        err instanceof ApiRequestError && err.code === "VALIDATION_FAILED"
           ? "Enter a mobile number, like 0712 345 678."
           : err instanceof Error
             ? err.message

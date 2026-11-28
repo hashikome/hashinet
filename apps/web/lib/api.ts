@@ -14,7 +14,8 @@ export class ApiRequestError extends Error {
   }
 }
 
-function errorFrom(status: number, body: unknown): ApiRequestError {
+/** The API's error envelope as an error; a body that isn't one reads as "Something went wrong". */
+export function errorFrom(status: number, body: unknown): ApiRequestError {
   const error = (typeof body === "object" && body !== null ? body : {}) as Partial<ApiError>;
   return new ApiRequestError(
     status,
