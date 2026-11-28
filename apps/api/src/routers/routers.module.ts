@@ -38,6 +38,7 @@ export class BackgroundJobs extends ScheduledJobs {
     expiry: VoucherExpiry,
     outages: RouterOutages,
     live: LiveHub,
+    routers: RoutersService,
   ) {
     super(config.jobsEnabled);
     this.jobs = [
@@ -58,6 +59,11 @@ export class BackgroundJobs extends ScheduledJobs {
       }),
       new IntervalJob("voucher.expiry", MINUTE, async () => {
         await expiry.runOnce();
+      }),
+      // At start, so a release's routers are set up again straight away; hourly after, for one
+      // that was offline or stopped (it has an issue meanwhile).
+      new IntervalJob("router.setup-again", 60 * MINUTE, async () => {
+        await routers.setUpAgainAfterRelease();
       }),
     ];
   }

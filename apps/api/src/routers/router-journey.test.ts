@@ -3,14 +3,16 @@ import {
   conditionOf,
   routerJourney,
   SETUP_STALE_MS,
+  SETUP_VERSION,
   type StoredSetup,
+  setupVersionOf,
   wifiNameOf,
   worstCondition,
 } from "./router-journey.js";
 
 const now = new Date("2026-11-01T10:00:00Z");
 const idle = { status: "offline", setupStartedAt: null, setupPhase: null, lastSetupAt: null };
-const passed: StoredSetup = { ok: true, phases: [], blockers: [] };
+const passed: StoredSetup = { ok: true, version: 2, phases: [], blockers: [] };
 
 describe("a venue's WiFi name", () => {
   test("its routers' network name, else the venue's own", () => {
@@ -34,7 +36,7 @@ describe("a router's journey", () => {
     const blockers = [{ reason: "No internet", fix: "Check the uplink" }];
     const journey = routerJourney(
       { ...idle, status: "online" },
-      { ok: false, phases: [], blockers },
+      { ok: false, version: null, phases: [], blockers },
       now,
     );
     expect(journey.stage).toBe("set-up");
@@ -82,5 +84,16 @@ describe("a router's condition", () => {
     expect(worstCondition(["serving", "serving"])).toBe("serving");
     expect(worstCondition(["serving", "offline"])).toBe("offline");
     expect(worstCondition(["offline", "needs-attention"])).toBe("needs-attention");
+  });
+});
+
+describe("the setup a router passed", () => {
+  test("by version: none, before versions were kept, and this release's", () => {
+    expect(setupVersionOf(null)).toBe(0);
+    expect(setupVersionOf({ ok: false, phases: [], blockers: [] })).toBe(0);
+    expect(setupVersionOf({ ok: true, phases: [], blockers: [] })).toBe(1);
+    expect(setupVersionOf({ ok: true, version: SETUP_VERSION, phases: [], blockers: [] })).toBe(
+      SETUP_VERSION,
+    );
   });
 });

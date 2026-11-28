@@ -8,8 +8,8 @@ import {
   type IssuePerson,
   type IssueRecord,
   type MembershipRole,
-  ROUTER_CONDITIONS,
-  type RouterCondition,
+  ROUTER_ISSUE_CAUSES,
+  type RouterIssueCause,
 } from "@hashinet/types";
 import {
   BadRequestException,
@@ -588,7 +588,7 @@ export class IssuesService {
         : (row.venue?.business ?? null),
       venue: row.venue ? { id: row.venue.id, name: row.venue.name } : null,
       router: row.router,
-      cause: ROUTER_CONDITIONS.find((c) => c === row.cause) ?? null,
+      cause: ROUTER_ISSUE_CAUSES.find((c) => c === row.cause) ?? null,
       overdue: row.kind === "bill_due" && row.cause === "overdue",
       access:
         (row.kind === "bill_due" || row.kind === "selling_paused") && row.business
@@ -619,7 +619,7 @@ export type IssueOpening = Workspace & {
   routerId: string | null;
   holderId: string | null;
   /** What took a router issue's router down, or a bill's "due" or "overdue"; null for other kinds. */
-  cause: RouterCondition | "due" | "overdue" | null;
+  cause: RouterIssueCause | "due" | "overdue" | null;
 };
 
 /** Opens an issue unless one is open for its key in the workspace; idempotent. */

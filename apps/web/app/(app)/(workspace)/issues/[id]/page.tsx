@@ -363,7 +363,34 @@ function RouterSteps({ detail, lock }: { detail: IssueDetail; lock: ReactNode | 
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const routerHref = issue.venue ? `/venues/${issue.venue.id}/router` : "/issues";
-  const steps: [string, ReactNode, ReactNode][] = [
+  const openRouter = (
+    <Link key="r" className="btn secondary" href={routerHref}>
+      <span>Open router</span>
+    </Link>
+  );
+  // HashiNet set it up again after an update and the setup stopped (prototype `setupFailed`): until it
+  // is set up, guests at this router can't get online.
+  const setupSteps: [string, ReactNode, ReactNode][] = [
+    [
+      "Set up again",
+      "HashiNet's update needs every router set up again, and this one stopped. Run it again from the router page: it applies only what is left.",
+      openRouter,
+    ],
+    [
+      contact ? "Ask the venue" : "Check the venue",
+      <>
+        Power and internet line first: a router that loses its line stops mid-setup.
+        {contact ? <Contact contact={contact} /> : null}
+      </>,
+      null,
+    ],
+    [
+      "If it stops at the same step",
+      "The router page's checks say what fails. Until it is set up, guests at this router can't get online.",
+      null,
+    ],
+  ];
+  const offlineSteps: [string, ReactNode, ReactNode][] = [
     [
       "Run the checks",
       "HashiNet tries the tunnel and the router's API. Once it serves again, this issue closes by itself.",
@@ -400,11 +427,10 @@ function RouterSteps({ detail, lock }: { detail: IssueDetail; lock: ReactNode | 
     [
       "If it comes back wrong",
       "When it reconnects but a check fails, set it up again from its router page.",
-      <Link key="r" className="btn secondary" href={routerHref}>
-        <span>Open router</span>
-      </Link>,
+      openRouter,
     ],
   ];
+  const steps = issue.cause === "needs-setup" ? setupSteps : offlineSteps;
   return (
     <Panel title="What to do">
       <ol className="todo checklist setup-steps">

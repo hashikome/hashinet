@@ -62,10 +62,24 @@ export function wifiNameOf(venueName: string, routers: Pick<VenueRouter, "ssid">
   return routers.map((r) => r.ssid?.trim() ?? "").find((name) => name !== "") ?? venueName;
 }
 
+/**
+ * What setup does, as a number: a router set up by an older one is set up again after a release
+ * (2: hotspot logins through RADIUS, ADR-0015). Raise it when a release changes what setup applies
+ * in a way routers already serving must have.
+ */
+export const SETUP_VERSION = 2;
+
+/** The setup a router last passed, by version; 1 for one set up before versions were kept. */
+export function setupVersionOf(last: unknown): number {
+  if (!passedSetup(last) || typeof last !== "object" || last === null) return 0;
+  return "version" in last && typeof last.version === "number" ? last.version : 1;
+}
+
 /** What a setup run leaves on the router, as the router's page and its condition read it. */
 export function storedSetup(report: SetupReport): StoredSetup {
   return {
     ok: report.ok,
+    version: report.ok ? SETUP_VERSION : null,
     phases: report.phases,
     blockers: report.blockers.map((b) => ({ reason: b.reason, fix: b.fix ?? null })),
   };
@@ -77,6 +91,8 @@ export const SETUP_STALE_MS = 10 * 60 * 1000;
 /** What a finished setup leaves on the router. */
 export interface StoredSetup {
   ok: boolean;
+  /** The setup version it passed (`SETUP_VERSION`); null when it didn't pass. */
+  version: number | null;
   phases: { id: string; title: string; status: RouterSetupPhase["status"]; detail: string }[];
   blockers: { reason: string; fix: string | null }[];
 }

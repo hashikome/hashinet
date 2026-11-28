@@ -57,11 +57,13 @@ export function issueTitle(i: IssueRecord): string {
   switch (i.kind) {
     case "router_offline":
       // Said as what took it down: "has no internet" reads truer than "offline" for a router that answers.
-      return i.cause === "no-internet"
-        ? `${i.router?.name ?? "A router"} ${open ? "has" : "had"} no internet`
-        : i.cause === "needs-attention"
-          ? `${i.router?.name ?? "A router"} ${open ? "needs" : "needed"} attention`
-          : `${i.router?.name ?? "A router"} ${open ? "is" : "was"} offline`;
+      return i.cause === "needs-setup"
+        ? `${i.router?.name ?? "A router"} ${open ? "needs" : "needed"} setting up again`
+        : i.cause === "no-internet"
+          ? `${i.router?.name ?? "A router"} ${open ? "has" : "had"} no internet`
+          : i.cause === "needs-attention"
+            ? `${i.router?.name ?? "A router"} ${open ? "needs" : "needed"} attention`
+            : `${i.router?.name ?? "A router"} ${open ? "is" : "was"} offline`;
     case "venue_package":
       return open ? `Confirm ${venue}'s package` : `${venue}'s package was agreed`;
     case "venue_setup":
@@ -109,6 +111,7 @@ export function issuePill(i: IssueRecord): [string, PillKind] {
   if (i.stalled) return ["Stalled", "bad"];
   if (i.kind === "bill_due") return i.overdue ? ["Overdue", "bad"] : ["Due", "wait"];
   if (i.kind === "selling_paused") return paused(i) ? ["Paused", "bad"] : ["Overdue", "wait"];
+  if (i.kind === "router_offline" && i.cause === "needs-setup") return ["Setup failed", "bad"];
   return i.kind === "router_offline" ? ["Offline", "bad"] : ["Waiting", "wait"];
 }
 

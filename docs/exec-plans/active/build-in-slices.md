@@ -1120,8 +1120,11 @@ that hasn't been set up again admits no one. Decided by the owner (27 November 2
 starts, the API sets up again every router whose setup is older than it, and a router that fails
 raises an issue; this session adds the PIN key to the secrets repository and the stack and the
 firewall rule to the deploy runbook and infra, each shown to the owner before it is pushed or applied.
-The two portal states for the PIN's limits (#guest-pinwait, #guest-pinlocked) wait for the owner's
-look in the prototype before the slice goes on.
+The two portal states for the PIN's limits were approved (28 November 2026). Built: each passed setup
+records its version (`SETUP_VERSION`, 2 for RADIUS); a job at start, then hourly, sets up again every
+router a passed setup of an older version left, one at a time, and one that stops opens a platform
+`router_offline` issue with cause `needs-setup` ("needs setting up again"), which a passing setup
+resolves. Its issue screen follows the prototype's `setupFailed` issue, pending the owner's look.
 
 Within each slice the order is: schema, then the API with its tests, then the screens against the
 prototype, each built with design-build and audited with design-audit at 1280 and 375 pixels in light

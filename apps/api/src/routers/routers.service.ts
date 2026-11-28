@@ -24,7 +24,7 @@ import { toJsonValue } from "../database/json.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
-import { IssuesService } from "../issues/issues.service.js";
+import { IssuesService, PLATFORM_WORKSPACE } from "../issues/issues.service.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { routerRecord } from "../serializers/records.js";
 import { RouterError } from "../services/mikrotik-errors.js";
@@ -52,7 +52,14 @@ import type {
   RouterInput,
   testConnectionInput,
 } from "./router-input.js";
-import { routerJourney, SETUP_STALE_MS, type StoredSetup, storedSetup } from "./router-journey.js";
+import {
+  routerJourney,
+  SETUP_STALE_MS,
+  SETUP_VERSION,
+  type StoredSetup,
+  setupVersionOf,
+  storedSetup,
+} from "./router-journey.js";
 import { TUNNEL_ALLOCATOR, type TunnelAllocator } from "./tunnel-allocator.js";
 
 const withVenue = { venue: { select: { name: true } } } as const;
@@ -74,7 +81,7 @@ export interface ProbeResult {
 /** A run that threw before its phases could report. */
 function stoppedSetup(err: unknown): StoredSetup {
   const reason = err instanceof RouterError ? err.message : "Setup stopped unexpectedly.";
-  return { ok: false, phases: [], blockers: [{ reason, fix: null }] };
+  return { ok: false, version: null, phases: [], blockers: [{ reason, fix: null }] };
 }
 
 @Injectable()
@@ -387,6 +394,33 @@ export class RoutersService {
     return this.journey(staff, id);
   }
 
+  /**
+   * After a release whose setup routers must have (`SETUP_VERSION`), every router set up before by an
+   * older one is set up again, one at a time (owner's decision, slice 7). One that stops raises an
+   * issue for HashiNet's team; a later setup that passes, this or by hand, resolves it.
+   */
+  async setUpAgainAfterRelease(): Promise<void> {
+    const routers = await this.db.router.findMany({
+      where: { provisionedAt: { not: null } },
+      select: { id: true, lastSetup: true },
+      orderBy: { createdAt: "asc" },
+    });
+    const stale = new Date(Date.now() - SETUP_STALE_MS);
+    for (const router of routers) {
+      const version = setupVersionOf(router.lastSetup);
+      // Never set up, or set up by this release already: nothing to do.
+      if (version === 0 || version >= SETUP_VERSION) continue;
+      const { count } = await this.db.router.updateMany({
+        where: {
+          id: router.id,
+          OR: [{ setupStartedAt: null }, { setupStartedAt: { lt: stale } }],
+        },
+        data: { setupStartedAt: new Date(), setupPhase: null },
+      });
+      if (count === 1) await this.runSetup(router.id, false);
+    }
+  }
+
   private async runSetup(id: string, force: boolean): Promise<void> {
     const outcome = await setupRouter(id, this.store, {
       force,
@@ -403,6 +437,34 @@ export class RoutersService {
         setupPhase: null,
       },
     });
+    await this.keepSetupIssue(id, outcome.ok);
+  }
+
+  /**
+   * A router whose setup stopped after it had served signs no one in: an issue for HashiNet's team
+   * until a setup passes. A router never set up yet has its venue's setup issue instead.
+   */
+  private async keepSetupIssue(id: string, ok: boolean): Promise<void> {
+    const router = await this.db.router.findUniqueOrThrow({
+      where: { id },
+      select: { venueId: true, provisionedAt: true },
+    });
+    const key = `router-setup:${id}`;
+    const open = await this.db.issue.findFirst({
+      where: { scope: "platform", key, status: "open" },
+      select: { id: true, cause: true },
+    });
+    const wanted =
+      !ok && router.provisionedAt !== null
+        ? {
+            kind: "router_offline" as const,
+            venueId: router.venueId,
+            routerId: id,
+            holderId: null,
+            cause: "needs-setup" as const,
+          }
+        : null;
+    await this.issues.keep(PLATFORM_WORKSPACE, key, open, wanted, { reason: "set_up" });
   }
 
   async provision(staff: Principal, id: string, dryRun: boolean): Promise<ProvisionReport> {

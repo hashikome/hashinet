@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { RouterJourney } from "@hashinet/types";
+import { SETUP_VERSION } from "../../src/routers/router-journey.js";
+import { RoutersService } from "../../src/routers/routers.service.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, scheduledSetup, testBusinessId } from "./people.js";
@@ -360,5 +362,62 @@ describe("routers", () => {
       await c.request("POST", `/api/routers/${id}/bootstrap-script`, { gatewayIp: "127.0.0.254" })
     ).body as { script: string };
     expect(script.script).toContain("gateway=127.0.0.254");
+  });
+});
+
+describe("a release's routers are set up again", () => {
+  test("one set up by an older setup is set up again; one that stops raises an issue for HashiNet", async () => {
+    const home = await venue();
+    const older = await t.db.router.create({
+      data: {
+        ...ROUTER,
+        venueId: home.id,
+        provisionedAt: new Date("2026-11-01T10:00:00Z"),
+        // Passed, before versions were kept: version 1.
+        lastSetup: { ok: true, phases: [], blockers: [] },
+      },
+    });
+    const current = await t.db.router.create({
+      data: {
+        ...ROUTER,
+        name: "Garden",
+        venueId: home.id,
+        provisionedAt: new Date("2026-11-01T10:00:00Z"),
+        lastSetup: { ok: true, version: SETUP_VERSION, phases: [], blockers: [] },
+      },
+    });
+    const never = await t.db.router.create({ data: { ...ROUTER, name: "New", venueId: home.id } });
+
+    await api.app.get(RoutersService).setUpAgainAfterRelease();
+
+    // Unreachable here, so it stops: the issue says it needs setting up again.
+    const tried = await t.db.router.findUniqueOrThrow({ where: { id: older.id } });
+    expect(tried.lastSetup).toMatchObject({ ok: false, version: null });
+    expect(tried.setupStartedAt).toBeNull();
+    const issues = await t.db.issue.findMany();
+    expect(issues).toEqual([
+      expect.objectContaining({
+        scope: "platform",
+        kind: "router_offline",
+        cause: "needs-setup",
+        routerId: older.id,
+        status: "open",
+      }),
+    ]);
+    // The current one and the one never set up are left alone.
+    expect(
+      (await t.db.router.findUniqueOrThrow({ where: { id: current.id } })).lastSetupAt,
+    ).toBeNull();
+    expect(
+      (await t.db.router.findUniqueOrThrow({ where: { id: never.id } })).lastSetupAt,
+    ).toBeNull();
+
+    // Trying again keeps the one issue.
+    await t.db.router.update({
+      where: { id: older.id },
+      data: { lastSetup: { ok: true, phases: [], blockers: [] } },
+    });
+    await api.app.get(RoutersService).setUpAgainAfterRelease();
+    expect(await t.db.issue.count({ where: { status: "open" } })).toBe(1);
   });
 });

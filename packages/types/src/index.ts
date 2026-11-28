@@ -572,8 +572,8 @@ export interface IssueRecord {
   business: { id: string; name: string } | null;
   venue: { id: string; name: string } | null;
   router: { id: string; name: string } | null;
-  /** What took a router issue's router down when it opened; null for other kinds. */
-  cause: RouterCondition | null;
+  /** Why a router issue opened; null for other kinds. */
+  cause: RouterIssueCause | null;
   /** A bill issue: something owed is past its due date. */
   overdue: boolean;
   /** A bill issue or a selling-paused one: its business's access, and when its bills pause
@@ -947,6 +947,13 @@ export const ROUTER_CONDITIONS = [
   "needs-attention",
 ] as const;
 export type RouterCondition = (typeof ROUTER_CONDITIONS)[number];
+
+/**
+ * Why a router issue opened: what took its router down, or `needs-setup` for a router HashiNet set
+ * up again after an update whose setup stopped.
+ */
+export const ROUTER_ISSUE_CAUSES = [...ROUTER_CONDITIONS, "needs-setup"] as const;
+export type RouterIssueCause = (typeof ROUTER_ISSUE_CAUSES)[number];
 
 export type RouterSetupPhaseStatus = "pending" | "running" | "pass" | "warn" | "fail" | "skipped";
 
