@@ -62,7 +62,8 @@ no portal and its old session removed in 0.08 seconds. An arp-ping answered in 0
 in 0.54 once the device had gone; a plain ping is not a usable check, as it timed out with the device there.
 
 How it is built (slice 7): the tunnel service, which alone sees a router's tunnel address, relays
-each RADIUS packet to the API with that address; the API checks the router's own secret and answers
+each RADIUS packet to the API with that address, through Traefik on the same server (never out
+through Cloudflare, so a login doesn't depend on the internet round trip); the API checks the router's own secret and answers
 from the database inside the router's 3-second timeout (`apps/api/src/network/radius`). The portal's sign-in
 leaves a one-minute admission that the router's request for that code and device takes; the slow
 checks (the PIN, its limits, ARP-pinging the device holding a place) happen at the sign-in, not in

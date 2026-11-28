@@ -98,6 +98,8 @@ services:
     environment:
       RELEASE_ATTEMPT: ${RELEASE_ATTEMPT}
       PORTAL_ORIGIN: https://${PUBLIC_HOST}
+      # Traefik on this host: the relays reach the API without leaving the server.
+      API_ADDRESS: 127.0.0.1:443
       TUNNEL_ADDRESS: ${TUNNEL_ADDRESS:?TUNNEL_ADDRESS_required}
       TUNNEL_PRIVATE_KEY_FILE: /run/secrets/tunnel_private_key
       TUNNEL_SYNC_SECRET_FILE: /run/secrets/tunnel_sync_secret

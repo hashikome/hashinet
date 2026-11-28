@@ -61,6 +61,10 @@ router sees the one address it accepts. Every 20 seconds it reads the peer list 
 portal pages from `10.88.0.1:8080`, which relays those paths and nothing else, and send every hotspot
 login and session report by RADIUS to `10.88.0.1:1812-1813`, which it relays to
 `/api/internal/radius` ([ADR-0015](../engineering-decisions/0015-voucher-online-limit-through-radius.md)).
+All three calls (peers, portal pages, RADIUS) go to Traefik on the same host, `API_ADDRESS`
+(`127.0.0.1:443`), never out through Cloudflare: TLS and the route still name `hashinet.hashikome.com`,
+so the certificate is checked and Traefik routes them as any request, and a router's login is answered
+without leaving the server, inside the 3 seconds it waits.
 
 The host firewall is infra's (`infra/scripts/prepare-host.py`, an nftables table of its own): it
 accepts everything that doesn't arrive on `eth0`, so `wg0` reaches the relay and RADIUS, and on an

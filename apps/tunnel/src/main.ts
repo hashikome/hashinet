@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { apiThrough } from "./api.js";
 import { parsePeers, peerChanges, relayPath, relayResponse, tunnelIpOf } from "./peers.js";
 import { serveRadius } from "./radius-relay.js";
 
@@ -17,6 +18,8 @@ function required(name: string): string {
 }
 
 const portalOrigin = required("PORTAL_ORIGIN");
+// Traefik on this server: the API is reached without leaving it.
+const api = apiThrough(required("API_ADDRESS"), portalOrigin);
 const address = required("TUNNEL_ADDRESS");
 // Checked before anything starts: the relays listen on it alone.
 const tunnelIp = tunnelIpOf(address);
@@ -43,7 +46,7 @@ function bringUp(): void {
 }
 
 async function syncPeers(): Promise<void> {
-  const response = await fetch(`${portalOrigin}/api/internal/tunnel-peers`, {
+  const response = await api("/api/internal/tunnel-peers", {
     signal: AbortSignal.timeout(10_000),
     headers: { Authorization: `Bearer ${syncSecret}`, "User-Agent": "hashinet-tunnel" },
   });
@@ -67,7 +70,7 @@ await sync();
 setInterval(sync, SYNC_MS);
 
 // Reached only from the tunnel: these listen on the tunnel address alone.
-await serveRadius(tunnelIp, portalOrigin, syncSecret);
+await serveRadius(tunnelIp, api, syncSecret);
 Bun.serve({
   hostname: tunnelIp,
   port: 8080,
@@ -76,7 +79,7 @@ Bun.serve({
     if (request.method !== "GET" || !relayPath(pathname)) {
       return new Response(null, { status: 404 });
     }
-    const upstream = await fetch(`${portalOrigin}${pathname}`, {
+    const upstream = await api(pathname, {
       signal: AbortSignal.timeout(20_000),
       headers: { "User-Agent": "hashinet-tunnel" },
     });

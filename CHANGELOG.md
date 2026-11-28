@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The tunnel service reaches the API through Traefik on the same server (`API_ADDRESS`,
+  `127.0.0.1:443`), not out through Cloudflare: router logins (RADIUS), the peer list and the portal
+  pages no longer depend on the internet round trip. TLS still verifies the public host's certificate.
+
 - `apps/api/src/core` imports no area: sign-in (Better Auth) is in `core/auth`, the account API in
   `people/account`, what service access allows in `core/access/service-pause.ts`, the live hub in
   `network/live`, and the router and venue records beside their areas. No behaviour changes.

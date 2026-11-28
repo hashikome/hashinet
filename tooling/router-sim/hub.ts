@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
+import { apiAt } from "../../apps/tunnel/src/api.js";
 import { serveRadius } from "../../apps/tunnel/src/radius-relay.js";
 import { tunneled } from "./setup.ts";
 import {
@@ -25,7 +26,7 @@ export async function relay(): Promise<void> {
   if (!IN_HUB) throw new Error("The relay runs in the hub: `bun run router-sim hub up` starts it.");
   const { syncSecret } = readState();
   if (!syncSecret) throw new Error("No sync secret: run `bun run router-sim hub up`.");
-  await serveRadius(TUNNEL.serverIp, `http://127.0.0.1:${BACKEND_PORT}`, syncSecret);
+  await serveRadius(TUNNEL.serverIp, apiAt(`http://127.0.0.1:${BACKEND_PORT}`), syncSecret);
   console.log(`RADIUS relay on ${TUNNEL.serverIp}:1812-1813 to the sim API.`);
   await new Promise(() => {});
 }

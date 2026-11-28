@@ -60,7 +60,8 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 - One API service with background jobs, every minute unless noted: voucher expiry, router issues
   kept in step with the routers, venues' setups closed by their first guest, payments whose report
   never came, and hourly (and at start) routers an older setup left set up again.
-- The tunnel service relays the routers' RADIUS to the API; the API answers from the database.
+- The tunnel service relays the routers' RADIUS to the API through Traefik on the same host; the
+  API answers from the database.
 - Live session and provisioning updates reach the admin over a WebSocket.
 
 ## Deployment shape
