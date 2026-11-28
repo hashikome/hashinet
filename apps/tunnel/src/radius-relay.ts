@@ -33,23 +33,45 @@ export async function relayPacket(
   return typeof body.reply === "string" ? Buffer.from(body.reply, "base64") : null;
 }
 
+/**
+ * Relays in flight at once. A router asks a few times a second at most, so more than this is a flood:
+ * what arrives beyond it is dropped, as a router's retry covers a lost request.
+ */
+export const MAX_IN_FLIGHT = 64;
+
+/** Runs each job while fewer than `max` are in flight; drops the rest, returning false. */
+export function limitInFlight(max: number): (job: () => Promise<void>) => boolean {
+  let inFlight = 0;
+  return (job) => {
+    if (inFlight >= max) return false;
+    inFlight += 1;
+    job().finally(() => {
+      inFlight -= 1;
+    });
+    return true;
+  };
+}
+
 /** Listens on the tunnel address for both RADIUS ports and relays each packet. */
 export async function serveRadius(hostname: string, origin: string, secret: string): Promise<void> {
+  const run = limitInFlight(MAX_IN_FLIGHT);
   for (const port of RADIUS_PORTS) {
     await Bun.udpSocket({
       hostname,
       port,
       socket: {
         data(socket, data, fromPort, fromAddress) {
-          relayPacket(fetch, origin, secret, fromAddress, data)
-            .then((reply) => {
-              if (reply) socket.send(reply, fromPort, fromAddress);
-            })
-            .catch((err: unknown) =>
-              console.error(
-                err instanceof Error ? `RADIUS relay: ${err.message}` : "RADIUS relay failed",
+          run(() =>
+            relayPacket(fetch, origin, secret, fromAddress, data)
+              .then((reply) => {
+                if (reply) socket.send(reply, fromPort, fromAddress);
+              })
+              .catch((err: unknown) =>
+                console.error(
+                  err instanceof Error ? `RADIUS relay: ${err.message}` : "RADIUS relay failed",
+                ),
               ),
-            );
+          );
         },
       },
     });

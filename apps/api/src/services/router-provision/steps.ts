@@ -740,6 +740,12 @@ async function allowedSiteRows(ros: RosClient) {
   return rows.filter((row) => row.get("comment")?.startsWith(tagFor(ALLOWED_SITE)));
 }
 
+/** The portal's port, which is all of its address a guest needs. */
+function portalPort(ctx: ProvisionContext): string {
+  const url = new URL(ctx.endpoints.portal.origin);
+  return url.port || (url.protocol === "https:" ? "443" : "80");
+}
+
 const firewallForward: ProvisionStep = {
   id: "firewall-forward-backend",
   title: "Firewall — hotspot clients → backend (§5)",
@@ -754,6 +760,8 @@ const firewallForward: ProvisionStep = {
       chain: "forward",
       "src-address": ctx.hotspot.network,
       "dst-address": ctx.endpoints.portal.host,
+      protocol: "tcp",
+      "dst-port": portalPort(ctx),
       action: "accept",
     });
     // Position counts: an accept below the hotspot's reject never runs.
@@ -768,10 +776,14 @@ const firewallForward: ProvisionStep = {
       if (existing?.get(".id")) await ros.remove("/ip/firewall/filter", rowId(existing));
       return;
     }
+    // The portal's web port alone: served from the management address, as on a LAN, anything
+    // more would open the tunnel's other services to guests (firewall-guest-tunnel-drop).
     const params = [
       "=chain=forward",
       `=src-address=${ctx.hotspot.network}`,
       `=dst-address=${ctx.endpoints.portal.host}`,
+      "=protocol=tcp",
+      `=dst-port=${portalPort(ctx)}`,
       "=action=accept",
     ];
     // Must precede the hotspot's own reject rules, or hotspot clients never reach the backend
@@ -785,6 +797,66 @@ const firewallForward: ProvisionStep = {
     await moveRuleAheadOfHotspotRules(ros, "/ip/firewall/filter", "firewall-forward-backend");
   },
 };
+
+/**
+ * Guests reach nothing at the platform's management address, the tunnel's end: its RADIUS relay and
+ * file relay are for routers. Ahead of the hotspot's rules, so it holds for guests signed in or not,
+ * and below the portal's accept, which lets the portal's web port through when the portal is served
+ * from that address (a LAN, the router sim).
+ */
+const firewallGuestTunnelDrop: ProvisionStep = {
+  id: "firewall-guest-tunnel-drop",
+  title: "Firewall — hotspot clients never reach the management address",
+  critical: true,
+  appliesTo: (ctx) => ctx.profile.capabilities.hotspot,
+  async check({ ros, ctx }) {
+    const row = await ros.findByTag("/ip/firewall/filter", "firewall-guest-tunnel-drop");
+    const correct = matches(row, {
+      chain: "forward",
+      "src-address": ctx.hotspot.network,
+      "dst-address": ctx.endpoints.management.ip,
+      action: "drop",
+    });
+    return (
+      correct &&
+      (await ruleAheadOfHotspotRules(ros, "/ip/firewall/filter", "firewall-guest-tunnel-drop")) &&
+      (await portalAcceptAbove(ros, "firewall-guest-tunnel-drop"))
+    );
+  },
+  async apply({ ros, ctx }) {
+    const menu = "/ip/firewall/filter";
+    const existing = await ros.findByTag(menu, "firewall-guest-tunnel-drop");
+    const params = [
+      "=chain=forward",
+      `=src-address=${ctx.hotspot.network}`,
+      `=dst-address=${ctx.endpoints.management.ip}`,
+      "=action=drop",
+    ];
+    if (existing?.get(".id")) await ros.set(menu, rowId(existing), params);
+    else await addRuleFirst(ros, menu, "firewall-guest-tunnel-drop", params);
+    await moveRuleAheadOfHotspotRules(ros, menu, "firewall-guest-tunnel-drop");
+    // The portal's accept goes just above the drop, which keeps it ahead of the hotspot's rules.
+    if (!(await portalAcceptAbove(ros, "firewall-guest-tunnel-drop"))) {
+      const rows = await ros.print(menu);
+      const accept = rows.find((r) => r.get("comment") === tagFor("firewall-forward-backend"));
+      const drop = rows.find((r) => r.get("comment") === tagFor("firewall-guest-tunnel-drop"));
+      if (accept && drop) {
+        await ros.exec(`${menu}/move`, [
+          `=numbers=${rowId(accept)}`,
+          `=destination=${rowId(drop)}`,
+        ]);
+      }
+    }
+  },
+};
+
+/** Whether the portal's accept, when there is one, comes before the rule tagged `stepId`. */
+export async function portalAcceptAbove(ros: RosClient, stepId: string): Promise<boolean> {
+  const rows = await ros.print("/ip/firewall/filter");
+  const accept = rows.findIndex((r) => r.get("comment") === tagFor("firewall-forward-backend"));
+  const mine = rows.findIndex((r) => r.get("comment") === tagFor(stepId));
+  return accept === -1 || (mine !== -1 && accept < mine);
+}
 
 const firewallInput: ProvisionStep = {
   id: "firewall-input-backend",
@@ -962,6 +1034,8 @@ export const PROVISION_STEPS: ProvisionStep[] = [
   walledGarden,
   venueAllowedSites,
   firewallForward,
+  // After the portal's accept, which it must stay below.
+  firewallGuestTunnelDrop,
   firewallInput,
   natMasquerade,
   ipBinding,

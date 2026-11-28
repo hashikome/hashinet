@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parsePeers, peerChanges, relayPath, relayResponse } from "./peers.js";
+import { parsePeers, peerChanges, relayPath, relayResponse, tunnelIpOf } from "./peers.js";
 
 const key = (c: string) => `${c.repeat(43)}=`;
 
@@ -38,5 +38,13 @@ describe("the tunnel's peers", () => {
     expect(relayed.headers.get("Content-Encoding")).toBeNull();
     expect(relayed.headers.get("Content-Type")).toBe("text/html");
     expect(await relayed.text()).toBe("<html>");
+  });
+});
+
+describe("the tunnel address", () => {
+  test("gives the IP the relays listen on, and refuses one without an IP", () => {
+    expect(tunnelIpOf("10.88.0.1/24")).toBe("10.88.0.1");
+    expect(tunnelIpOf("10.88.0.1")).toBe("10.88.0.1");
+    for (const bad of ["/24", " /24", "", "wg0/24"]) expect(() => tunnelIpOf(bad)).toThrow();
   });
 });

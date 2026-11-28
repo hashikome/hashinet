@@ -64,10 +64,10 @@ export function wifiNameOf(venueName: string, routers: Pick<VenueRouter, "ssid">
 
 /**
  * What setup does, as a number: a router set up by an older one is set up again after a release
- * (2: hotspot logins through RADIUS, ADR-0015). Raise it when a release changes what setup applies
- * in a way routers already serving must have.
+ * (2: hotspot logins through RADIUS, ADR-0015; 3: guests kept from the management address). Raise
+ * it when a release changes what setup applies in a way routers already serving must have.
  */
-export const SETUP_VERSION = 2;
+export const SETUP_VERSION = 3;
 
 /** The setup a router last passed, by version; 1 for one set up before versions were kept. */
 export function setupVersionOf(last: unknown): number {

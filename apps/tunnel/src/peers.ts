@@ -45,3 +45,14 @@ export async function relayResponse(upstream: Response): Promise<Response> {
     headers: { "Content-Type": contentType },
   });
 }
+
+/**
+ * The tunnel address's IP, which the RADIUS relay and the file relay listen on. Refused when it has
+ * none: an empty hostname would bind every interface on the host's network.
+ */
+export function tunnelIpOf(address: string): string {
+  const ip = address.split("/")[0]?.trim() ?? "";
+  if (!ADDRESS.test(ip))
+    throw new Error("TUNNEL_ADDRESS must start with the tunnel's IPv4 address");
+  return ip;
+}

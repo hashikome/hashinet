@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { parsePeers, peerChanges, relayPath, relayResponse } from "./peers.js";
+import { parsePeers, peerChanges, relayPath, relayResponse, tunnelIpOf } from "./peers.js";
 import { serveRadius } from "./radius-relay.js";
 
 /**
@@ -18,6 +18,8 @@ function required(name: string): string {
 
 const portalOrigin = required("PORTAL_ORIGIN");
 const address = required("TUNNEL_ADDRESS");
+// Checked before anything starts: the relays listen on it alone.
+const tunnelIp = tunnelIpOf(address);
 const keyFile = required("TUNNEL_PRIVATE_KEY_FILE");
 const syncSecret = readFileSync(required("TUNNEL_SYNC_SECRET_FILE"), "utf8").trim();
 if (syncSecret === "") throw new Error("TUNNEL_SYNC_SECRET_FILE points to an empty secret file");
@@ -65,7 +67,6 @@ await sync();
 setInterval(sync, SYNC_MS);
 
 // Reached only from the tunnel: these listen on the tunnel address alone.
-const tunnelIp = address.split("/")[0] ?? "";
 await serveRadius(tunnelIp, portalOrigin, syncSecret);
 Bun.serve({
   hostname: tunnelIp,

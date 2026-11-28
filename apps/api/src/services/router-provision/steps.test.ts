@@ -397,3 +397,129 @@ describe("an open guest WiFi", () => {
     expect(step.critical).toBe(false);
   });
 });
+
+/**
+ * Guests reach nothing at the management address (the tunnel's end, whose RADIUS relay is for
+ * routers), except the portal's web port when the portal is served from it, as on the router sim.
+ */
+describe("guests and the management address", () => {
+  const step = (id: string) => {
+    const found = PROVISION_STEPS.find((s) => s.id === id);
+    if (!found) throw new Error(`no step ${id}`);
+    return found;
+  };
+
+  /** A filter list that adds, sets and moves as RouterOS does. */
+  function filterList(initial: Record<string, string>[]) {
+    let rows = initial.map((r) => ({ ...r }));
+    let next = 100;
+    const params = (list: string[]) =>
+      Object.fromEntries(
+        list.map((p) => {
+          const [key = "", ...value] = p.slice(1).split("=");
+          return [key, value.join("=")];
+        }),
+      );
+    const ros = {
+      print: async () => toRows(rows),
+      findByTag: async (_menu: string, id: string) => {
+        const row = rows.find((r) => r.comment === `wbs:${id}`);
+        return row ? new RosRow(row) : null;
+      },
+      add: async (_menu: string, list: string[]) => {
+        const { "place-before": before, ...fields } = params(list);
+        const row = { ".id": `*${next++}`, dynamic: "false", ...fields };
+        const at = rows.findIndex((r) => r[".id"] === before);
+        rows.splice(at === -1 ? rows.length : at, 0, row);
+        return null;
+      },
+      set: async (_menu: string, id: string, list: string[]) => {
+        rows = rows.map((r) => (r[".id"] === id ? { ...r, ...params(list) } : r));
+      },
+      exec: async (_command: string, list: string[]) => {
+        const { numbers, destination } = params(list);
+        const row = rows.find((r) => r[".id"] === numbers);
+        if (!row) return [];
+        rows = rows.filter((r) => r !== row);
+        rows.splice(
+          rows.findIndex((r) => r[".id"] === destination),
+          0,
+          row,
+        );
+        return [];
+      },
+    } as unknown as RosClient;
+    return { ros, order: () => rows.map((r) => r.comment ?? r[".id"]), rows: () => rows };
+  }
+
+  const hotspotRules = () => [
+    { ".id": "*1", dynamic: "true", comment: "hotspot" },
+    { ".id": "*2", dynamic: "false", comment: "place hotspot rules here" },
+  ];
+  const profile = { capabilities: { hotspot: true } };
+  const lanPortal = {
+    endpoints: {
+      management: { url: "http://10.88.0.1:4006", ip: "10.88.0.1" },
+      portal: { origin: "http://10.88.0.1:4006", host: "10.88.0.1", hostIsIp: true },
+    },
+    hotspot: { network: "10.5.50.0/24" },
+    profile,
+  } as unknown as ProvisionContext;
+  const hostPortal = {
+    ...lanPortal,
+    endpoints: {
+      management: { url: "http://10.88.0.1:4006", ip: "10.88.0.1" },
+      portal: { origin: "https://portal.example.com", host: "portal.example.com", hostIsIp: false },
+    },
+  } as unknown as ProvisionContext;
+
+  test("a portal at the management address: its web port above the drop, both ahead of the hotspot's rules", async () => {
+    const list = filterList(hotspotRules());
+    for (const id of ["firewall-forward-backend", "firewall-guest-tunnel-drop"]) {
+      await step(id).apply({ ros: list.ros, ctx: lanPortal });
+    }
+    expect(list.order().slice(0, 2)).toEqual([
+      "wbs:firewall-forward-backend",
+      "wbs:firewall-guest-tunnel-drop",
+    ]);
+    expect(list.rows()[0]).toMatchObject({ protocol: "tcp", "dst-port": "4006" });
+    expect(list.rows()[1]).toMatchObject({
+      chain: "forward",
+      "src-address": "10.5.50.0/24",
+      "dst-address": "10.88.0.1",
+      action: "drop",
+    });
+    // A second run changes nothing.
+    for (const id of ["firewall-forward-backend", "firewall-guest-tunnel-drop"]) {
+      expect(await step(id).check({ ros: list.ros, ctx: lanPortal })).toBe(true);
+    }
+  });
+
+  test("the drop below the portal's accept fails its check, and apply puts the accept back above", async () => {
+    const list = filterList([
+      {
+        ".id": "*8",
+        comment: "wbs:firewall-guest-tunnel-drop",
+        chain: "forward",
+        "src-address": "10.5.50.0/24",
+        "dst-address": "10.88.0.1",
+        action: "drop",
+      },
+      { ".id": "*9", comment: "wbs:firewall-forward-backend" },
+      ...hotspotRules(),
+    ]);
+    const drop = step("firewall-guest-tunnel-drop");
+    expect(await drop.check({ ros: list.ros, ctx: lanPortal })).toBe(false);
+    await drop.apply({ ros: list.ros, ctx: lanPortal });
+    expect(await drop.check({ ros: list.ros, ctx: lanPortal })).toBe(true);
+  });
+
+  test("a host-name portal: the drop alone, ahead of the hotspot's rules", async () => {
+    const list = filterList(hotspotRules());
+    const drop = step("firewall-guest-tunnel-drop");
+    expect(await drop.check({ ros: list.ros, ctx: hostPortal })).toBe(false);
+    await drop.apply({ ros: list.ros, ctx: hostPortal });
+    expect(list.order()[0]).toBe("wbs:firewall-guest-tunnel-drop");
+    expect(await drop.check({ ros: list.ros, ctx: hostPortal })).toBe(true);
+  });
+});

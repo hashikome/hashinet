@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { relayPacket } from "./radius-relay.js";
+import { limitInFlight, relayPacket } from "./radius-relay.js";
 
 describe("the RADIUS relay", () => {
   test("sends the packet and its sender to the API, and returns the API's reply as it came", async () => {
@@ -38,5 +38,22 @@ describe("the RADIUS relay", () => {
       new Uint8Array(),
     );
     expect(refused).toBeNull();
+  });
+});
+
+describe("relays in flight", () => {
+  test("beyond the cap a packet is dropped, and room comes back as relays finish", async () => {
+    const run = limitInFlight(2);
+    const finish: (() => void)[] = [];
+    const job = () =>
+      new Promise<void>((done) => {
+        finish.push(done);
+      });
+    expect(run(job)).toBe(true);
+    expect(run(job)).toBe(true);
+    expect(run(job)).toBe(false);
+    finish[0]?.();
+    await Bun.sleep(0);
+    expect(run(job)).toBe(true);
   });
 });
