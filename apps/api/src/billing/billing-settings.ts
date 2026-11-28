@@ -1,11 +1,11 @@
 import type { BillingSettingsRecord, FeeTerms } from "@hashinet/types";
 import { Injectable } from "@nestjs/common";
 import { z } from "zod";
-import type { Principal } from "../access/principal.js";
-import { AuditLog } from "../audit/audit-log.js";
-import { PrismaService } from "../database/prisma.service.js";
+import type { Principal } from "../core/access/principal.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { oneLine } from "../core/http/validation.js";
 import type { BillingSetting } from "../generated/prisma/client.js";
-import { oneLine } from "../http/validation.js";
 
 /** Today's terms (ADR-0013, 3), until the platform admin saves others. */
 export const DEFAULT_FEE_TERMS: FeeTerms = {

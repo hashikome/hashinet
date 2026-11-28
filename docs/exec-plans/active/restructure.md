@@ -1,0 +1,170 @@
+# Group the code by what the product does
+
+This ExecPlan is a living document. Maintain it according to `PLANS.md`. Keep `Progress`,
+`Surprises & Discoveries`, `Decision Log` and `Outcomes & Retrospective` current as work proceeds.
+
+## Purpose / Big Picture
+
+`apps/api/src` holds 37 folders side by side: features (`vouchers`, `billing`), plumbing (`http`,
+`database`) and grab-bags (`services` with 5,359 lines of router code, `utils`, `serializers`). A reader
+can't tell which belong together, and a new piece has no obvious home. After this plan, the API is
+eight areas that follow the product, the tests, the shared types, the web's components and the router
+sim follow the same areas, and the grab-bags are gone. Nothing behaves differently: every slice is a
+move, proved unchanged.
+
+Asked for by the owner (28 November 2026) before the provider-neutral payment and SMS gateways, so
+those land in their final homes (`sales/payments/providers/`, `sales/sms/providers/`).
+
+## Progress
+
+- [x] (2026-11-28) Survey, grouping tested against the import graph, shape approved by the owner.
+- [x] (2026-11-28) M1 `core/`: what every area uses. 49 files moved (6 integration tests to
+  `test/integration/core/`), 3 dead files removed; verify, 234 integration tests and the route and
+  module map identical to the baseline.
+- [ ] M2 `network/`: the routers.
+- [ ] M3 `platform/`: HashiNet running businesses.
+- [ ] M4 `people/`.
+- [ ] M5 `venues/`.
+- [ ] M6 `sales/`.
+- [ ] M7 `guest/`, and `analytics/` alone; the root holds only bootstrap.
+- [ ] M8 `packages/types/src/index.ts` (1,803 lines) split by area.
+- [ ] M9 The web's components: primitives and areas.
+- [ ] M10 `tooling/router-sim.ts` (1,816 lines) split into its parts.
+- [ ] Later, not moves (each its own milestone when reached): the upward imports `core/` keeps
+  (below); the files over 500 lines split by job.
+
+## Surprises & Discoveries
+
+- (2026-11-28) `utils/retry.ts` and `utils/duration.ts` have no users in the API (only their own
+  tests); the web's `lib/duration.ts` only names the API copy in a stale comment. Removed in M1.
+- (2026-11-28) The web's `lib/duration.ts` still describes a `backend/` that rendered the portal
+  (`DURATION_BUCKETS`); the API has no such code. Left for an upkeep pass, not a move.
+- (2026-11-28) `access` (96 imports from other folders) and `audit` (23) are used by every feature,
+  so they are foundations, not "people" features: with them in `core/`, imports between areas fell
+  from about 450 to about 100.
+
+## Decision Log
+
+- (2026-11-28) Eight areas, each a folder of the feature folders it groups (owner):
+
+  ```text
+  apps/api/src/
+    main.ts  entrypoint.ts  app.module.ts     bootstrap only
+    generated/        the Prisma client (unchanged; git-ignored)
+    core/             config database http observability jobs crypto email health live
+                      access (the one policy)  audit (the log)  time  records  phone.ts
+    people/           auth team invitations
+    platform/         businesses onboarding billing issues bootstrap
+    venues/           venues sites packages payment-ways
+    sales/            vouchers payments devices sessions sms
+    guest/            sign-in portal brand
+    network/          routers tunnel provisioning mikrotik monitor radius mac.ts
+    analytics/
+  ```
+
+- (2026-11-28) Folders inside an area keep their files' names; a slice renames a folder only where
+  the old name stops making sense in its area (`services/router-provision` is `network/provisioning`,
+  `messaging` is `sales/sms`, `guest` is `guest/sign-in`, `serializers/records.ts` is
+  `core/records/records.ts`, `platform/` is `platform/bootstrap/`).
+- (2026-11-28) Moves only. A move touches imports, paths that name files (scripts, Dockerfiles,
+  docs) and the codemap, and nothing else. Breaking a cycle or an upward import changes code, so it
+  is a later milestone, not part of a move.
+
+## Context And Orientation
+
+The API is NestJS on Bun with Prisma; each feature folder has its module, controller and service.
+Integration tests live in `apps/api/test/integration/` and import from `src`; unit tests sit beside
+their source. `tooling/router-sim.ts` imports API internals by relative path. The web never imports
+the API (`ARCHITECTURE.md`, dependency rules); it reads `@hashinet/types`.
+
+What `core/` still imports from areas above it, kept by the moves and named for a later milestone:
+`config/config.module.ts` builds the payment, SMS and email adapters and the brand store (the seam the
+provider-neutral gateways will move into each area's module); `records/records.ts` reads billing and
+router helpers; `http` reads the brand's upload limits; `access` reads auth and billing; `audit`
+reads analytics' periods. Two-way pairs between areas after the moves: platform and venues, guest and
+venues, counter and network, counter and guest, network and platform.
+
+## Plan Of Work
+
+Each milestone moves one area on the branch `restructure`, one commit each:
+
+1. Write the slice's map (`old new` per line) and run the move tool:
+   `bun ref/restructure/move.ts <map>`. It `git mv`s each file (history follows) and rewrites every
+   relative import pointing at a moved file, and the moved files' own relative imports, including the
+   tests and `tooling/`. The tool lives in git-ignored `ref/`; its method is the paragraph above, so
+   it can be rewritten if `ref/` is gone.
+2. Fix what names a moved path outside TypeScript: `apps/api/package.json` scripts,
+   `apps/api/Dockerfile`, `.dockerignore`, `biome.json`, `AGENTS.md`, `ARCHITECTURE.md` (codemap and
+   dependency rules), `docs/SECURITY.md`, ADRs and runbooks that name `apps/api/src/...`.
+3. Move the area's integration tests to `apps/api/test/integration/<area>/` in the same slice.
+4. Prove it (below), update this plan's Progress, commit.
+
+The slice maps:
+
+- **M1 core:** `config database http observability jobs crypto email health live access audit` to
+  `core/<same>`; `serializers` to `core/records`; `analytics/business-day.ts` (and its test) to
+  `core/time/`; `utils/phone.ts` to `core/phone.ts`; `utils/retry.ts`, `utils/duration.ts` and
+  `utils/duration.test.ts` deleted.
+- **M2 network:** `routers` to `network/routers`, with `tunnel-allocator.ts`,
+  `tunnel-peers.controller.ts` and `tunnel-secret.ts` to `network/tunnel/`;
+  `services/router-provision` to `network/provisioning`; `services/mikrotik*.ts`,
+  `router-credentials.ts`, `router-log.ts` to `network/mikrotik/`; `services/live-monitor.ts`,
+  `router-sync.ts` and `routers/router-outages.ts` to `network/monitor/`; `radius` to
+  `network/radius`; `utils/mac.ts` to `network/mac.ts`.
+- **M3 platform:** `businesses onboarding billing issues` to `platform/<same>`; `platform/bootstrap*`
+  to `platform/bootstrap/`.
+- **M4 people:** `auth team invitations` to `people/<same>`.
+- **M5 venues:** `venues sites packages payment-ways` to `venues/<same>`.
+- **M6 sales:** `vouchers payments devices sessions` to `sales/<same>`; `messaging` to `sales/sms`.
+- **M7 guest and analytics:** `guest` to `guest/sign-in`; `portal brand` to `guest/<same>`;
+  `analytics` stays, alone. `utils/` and `services/` are empty and gone.
+- **M8 types:** `packages/types/src/index.ts` into one file per area, `index.ts` exporting them as
+  the package's entry (consumers keep importing `@hashinet/types`).
+- **M9 web:** `components/hearth/` into `components/ui/` (`ui dialog confirm-dialog icons chart
+  shell auth-frame always-dark protect`) and `components/<area>/` (`sales/` sell, voucher-actions,
+  voucher-card; `platform/` billing, record-payment, service-access, bill-paused, onboarding;
+  `venues/` venues, sites, payment-ways; `guest/` portal-editor, logo-picker; `analytics/`
+  analytics). Imports use the `@/` alias already configured.
+- **M10 router sim:** `tooling/router-sim.ts` into `tooling/router-sim/` by part (the router, the
+  guest, the hub, the command line), `package.json`'s `router-sim` script pointing at it.
+
+## Concrete Steps
+
+From the repository root, for each API slice:
+
+```bash
+bun ref/restructure/move.ts ref/restructure/m1.txt
+bun run verify
+bun run test:integration
+cd apps/api && JOBS_ENABLED=false bun <scratch>/route-map.ts > map-after.txt && diff map-baseline.txt map-after.txt
+```
+
+`route-map.ts` boots the app (port 0, jobs off) and prints every HTTP route and every module's
+providers and controllers, sorted; module and provider names are class names, so the listing is
+independent of file paths. Baseline (2026-11-28, `e9abcac`): 134 routes, 134 providers, 34
+controllers.
+
+## Validation And Acceptance
+
+Each slice: `bun run verify` passes; `bun run test:integration` passes (run alone when the machine is
+loaded: the 5-second timeouts flake under load, not the moves); the route and module map is
+identical to the baseline; `git grep` finds no path under `apps/api/src` that names the old location.
+After M2: the router sim's `guest-test` passes once. After M8: the package's emitted declarations are
+identical. After M9: `next build`'s route list is identical. The release after the merge is the last
+proof: the same live checks as any release.
+
+## Idempotence And Recovery
+
+A slice is one commit; `git reset --hard HEAD~1` on the branch undoes a bad one. The move tool
+refuses to run if a destination exists, so it can't half-apply twice. `main` is untouched until the
+whole plan (or a finished prefix of it) is merged with `--ff-only`.
+
+## Artifacts And Notes
+
+Import-graph test (2026-11-28): with this grouping, 437 of 554 cross-folder imports cross area
+lines, of which about 340 point down into `core/`.
+
+## Interfaces And Dependencies
+
+No interface changes: routes, providers, the database, `@hashinet/types`' public names and the web's
+pages are the same before and after.

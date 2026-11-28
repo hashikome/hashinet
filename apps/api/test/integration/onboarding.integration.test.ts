@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { IssueDetail, IssueList, VenueOnboarding } from "@hashinet/types";
-import { businessDayOf } from "../../src/analytics/business-day.js";
+import { businessDayOf } from "../../src/core/time/business-day.js";
 import { OnboardingService } from "../../src/onboarding/onboarding.service.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";

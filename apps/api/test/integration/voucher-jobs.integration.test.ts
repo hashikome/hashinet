@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
-import { AuditLog } from "../../src/audit/audit-log.js";
-import { SecretBox } from "../../src/crypto/secret-box.js";
+import { AuditLog } from "../../src/core/audit/audit-log.js";
+import { SecretBox } from "../../src/core/crypto/secret-box.js";
 import { RouterAccess } from "../../src/services/router-credentials.js";
 import { RouterSync } from "../../src/services/router-sync.js";
 import { VoucherExpiry } from "../../src/vouchers/voucher-expiry.js";

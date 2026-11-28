@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { AuditLog } from "../audit/audit-log.js";
-import { PrismaService } from "../database/prisma.service.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { captureFailure } from "../core/observability/telemetry.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { IssuesService } from "../issues/issues.service.js";
-import { captureFailure } from "../observability/telemetry.js";
 
 const MINUTE_MS = 60_000;
 

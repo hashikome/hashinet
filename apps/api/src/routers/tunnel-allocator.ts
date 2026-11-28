@@ -1,4 +1,4 @@
-import type { SecretBox } from "../crypto/secret-box.js";
+import type { SecretBox } from "../core/crypto/secret-box.js";
 import { Prisma, type PrismaClient } from "../generated/prisma/client.js";
 import { intToIpv4, ipv4ToInt } from "../services/router-provision/ipv4.js";
 import { generateWireguardKeyPair } from "../services/router-provision/tunnel.js";

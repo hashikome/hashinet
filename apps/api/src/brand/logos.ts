@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import { PrismaService } from "../database/prisma.service.js";
-import { apiError } from "../http/error-envelope.js";
-import { captureFailure } from "../observability/telemetry.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { captureFailure } from "../core/observability/telemetry.js";
 import { NotAnImageError, processLogo } from "./brand-images.js";
 import { BRAND_STORE, type BrandStore } from "./brand-store.js";
 

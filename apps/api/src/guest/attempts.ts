@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../database/client.js";
+import type { PrismaClient } from "../core/database/client.js";
 
 /** The client or a transaction: a limit counted inside one commits with it. */
 type Db = Pick<PrismaClient, "rateLimit" | "$executeRaw">;

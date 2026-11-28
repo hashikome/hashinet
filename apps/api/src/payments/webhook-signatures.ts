@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { sameBytes } from "../crypto/same-bytes.js";
+import { sameBytes } from "../core/crypto/same-bytes.js";
 
 const STALE_SECONDS = 300;
 

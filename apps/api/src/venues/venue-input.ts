@@ -1,6 +1,6 @@
 import { REGIONS } from "@hashinet/types";
 import { z } from "zod";
-import { oneLine } from "../http/validation.js";
+import { oneLine } from "../core/http/validation.js";
 
 const line = oneLine;
 

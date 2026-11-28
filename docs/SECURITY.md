@@ -26,7 +26,7 @@ protection. Recovery codes are eight `XXXX-XXXX` codes without
 look-alike characters, each working once.
 
 Every route requires a session unless it is declared public; the API's access policy
-(`apps/api/src/access/policy.ts`) decides what each role may do, from the session's active
+(`apps/api/src/core/access/policy.ts`) decides what each role may do, from the session's active
 membership, and every query a venue role can reach is scoped to its venues. Hiding a control in the
 web is never the check.
 
@@ -162,5 +162,5 @@ to decrypt. They are never returned to clients.
 
 Logs and Sentry receive only allowlisted wide-event fields, and every string is redacted of
 voucher codes, credentials, connection-string passwords, emails, MAC addresses and phone
-numbers (`src/observability/redact.ts`). Sentry collects no request data: every
+numbers (`apps/api/src/core/observability/redact.ts`). Sentry collects no request data: every
 `dataCollection` category is off, because Sentry 11 collects them by default.

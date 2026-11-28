@@ -1,9 +1,9 @@
-import { loadConfig } from "./config/config.js";
+import { loadConfig } from "./core/config/config.js";
 import {
   captureFailure,
   initializeTelemetry,
   shutdownTelemetry,
-} from "./observability/telemetry.js";
+} from "./core/observability/telemetry.js";
 
 // Telemetry starts before the application module graph is imported, so a failure while
 // building it is reported like any other.

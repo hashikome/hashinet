@@ -1,9 +1,9 @@
 import { Body, Controller, Headers, HttpCode, Inject, Post } from "@nestjs/common";
 import { z } from "zod";
-import { Public } from "../access/access.guard.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { parseInput } from "../http/validation.js";
+import { Public } from "../core/access/access.guard.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { parseInput } from "../core/http/validation.js";
 import { requireTunnelSecret } from "../routers/tunnel-secret.js";
 import { RadiusService } from "./radius.service.js";
 

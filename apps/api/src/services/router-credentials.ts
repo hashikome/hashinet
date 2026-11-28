@@ -1,4 +1,4 @@
-import type { SecretBox } from "../crypto/secret-box.js";
+import type { SecretBox } from "../core/crypto/secret-box.js";
 import type { Router } from "../generated/prisma/client.js";
 import type { RouterCredentials } from "./mikrotik.js";
 

@@ -1,14 +1,14 @@
 import type { AuditAction, VenueRecord } from "@hashinet/types";
 import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
-import type { Principal } from "../access/principal.js";
-import { venueScope } from "../access/venue-scope.js";
-import { AuditLog } from "../audit/audit-log.js";
 import { BrandService } from "../brand/brand.service.js";
-import { PrismaService } from "../database/prisma.service.js";
-import { apiError } from "../http/error-envelope.js";
+import type { Principal } from "../core/access/principal.js";
+import { venueScope } from "../core/access/venue-scope.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { venueRecord } from "../core/records/records.js";
 import { OnboardingService } from "../onboarding/onboarding.service.js";
 import { copyToVenue } from "../portal/copy-down.js";
-import { venueRecord } from "../serializers/records.js";
 import { venueNotFound } from "./venue-errors.js";
 import type { VenueInput } from "./venue-input.js";
 

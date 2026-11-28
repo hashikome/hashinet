@@ -1,5 +1,5 @@
+import { enrichWideEvent } from "../core/observability/wide-event.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
-import { enrichWideEvent } from "../observability/wide-event.js";
 import type { RouterSync } from "../services/router-sync.js";
 
 /**

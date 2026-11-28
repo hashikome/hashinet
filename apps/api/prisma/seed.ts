@@ -2,8 +2,8 @@
 // example.com addresses, so the screens can be checked against it. Safe to run again.
 // Run with `bun run db:seed`. Production starts from `bun run platform:bootstrap` instead.
 import type { BusinessRole, Region } from "@hashinet/types";
-import { loadConfig } from "../src/config/config.js";
-import { createPrismaClient } from "../src/database/client.js";
+import { loadConfig } from "../src/core/config/config.js";
+import { createPrismaClient } from "../src/core/database/client.js";
 import { beginOnboarding } from "../src/onboarding/begin.js";
 import { bootstrapPlatform, DEFAULT_PACKAGES } from "../src/platform/bootstrap.js";
 import { copyToBusiness, copyToVenue } from "../src/portal/copy-down.js";

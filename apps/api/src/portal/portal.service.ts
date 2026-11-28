@@ -1,11 +1,11 @@
 import type { AuditAction, PlatformPortal, PortalContent, PortalTheme } from "@hashinet/types";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import type { z } from "zod";
-import type { Principal } from "../access/principal.js";
-import { AuditLog } from "../audit/audit-log.js";
-import { PrismaService } from "../database/prisma.service.js";
+import type { Principal } from "../core/access/principal.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
 import { Prisma, type PortalTheme as ThemeRow } from "../generated/prisma/client.js";
-import { apiError } from "../http/error-envelope.js";
 import { contentOf, HASHINET_PORTAL, type themeInput } from "./portal-input.js";
 
 const themeNotFound = () => new NotFoundException(apiError("NOT_FOUND", "There is no such theme."));

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../database/client.js";
+import type { PrismaClient } from "../core/database/client.js";
 
 /** The packages every new business starts with (ADR-0011, 10), in the order they are shown. */
 export const DEFAULT_PACKAGES = [

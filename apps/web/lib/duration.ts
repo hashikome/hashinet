@@ -1,10 +1,6 @@
 /**
  * Package and voucher durations, in **whole minutes**.
  *
- * Mirrors `backend/src/utils/duration.ts` — keep the two in step, because the captive portal renders
- * from the backend copy and the admin UI from this one, and a customer comparing the portal card
- * with the admin list must see the same words.
- *
  * Durations were whole *hours* until 2026-08-12 (`0014_duration_minutes.sql`), which made a
  * 30-minute bundle impossible to express. If you find a `durationHours` anywhere, it is a missed
  * call site.

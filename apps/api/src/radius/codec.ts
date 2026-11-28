@@ -1,5 +1,5 @@
 import { createHash, createHmac } from "node:crypto";
-import { sameBytes } from "../crypto/same-bytes.js";
+import { sameBytes } from "../core/crypto/same-bytes.js";
 
 /**
  * RADIUS packets (RFC 2865 and 2866), as much as HashiNet's routers use: an Access-Request with a PAP

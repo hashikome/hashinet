@@ -11,19 +11,19 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import type { z } from "zod";
-import { ownerProtected } from "../access/owner-protected.js";
 import { sellingStopped } from "../billing/access-rule.js";
 import { BrandService } from "../brand/brand.service.js";
 import { Logos } from "../brand/logos.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { PrismaService } from "../database/prisma.service.js";
+import { ownerProtected } from "../core/access/owner-protected.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { enrichWideEvent } from "../core/observability/wide-event.js";
+import { bytes } from "../core/records/records.js";
 import type { Prisma, Router, Voucher } from "../generated/prisma/client.js";
-import { apiError } from "../http/error-envelope.js";
-import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { bytesUsed } from "../radius/access-decision.js";
-import { bytes } from "../serializers/records.js";
 import { ROUTER_REACH } from "../services/router-credentials.js";
 import { RouterSync } from "../services/router-sync.js";
 import { deviceLimitOf, takeDevicesOff } from "../vouchers/voucher-devices.js";

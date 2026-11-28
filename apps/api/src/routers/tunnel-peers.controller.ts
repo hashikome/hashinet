@@ -1,8 +1,8 @@
 import { Controller, Get, Headers, Inject } from "@nestjs/common";
-import { Public } from "../access/access.guard.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { PrismaService } from "../database/prisma.service.js";
+import { Public } from "../core/access/access.guard.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { PrismaService } from "../core/database/prisma.service.js";
 import { requireTunnelSecret } from "./tunnel-secret.js";
 
 /**

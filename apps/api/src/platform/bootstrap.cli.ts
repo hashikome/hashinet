@@ -1,6 +1,6 @@
 import { parseArgs } from "node:util";
-import { loadConfig } from "../config/config.js";
-import { createPrismaClient } from "../database/client.js";
+import { loadConfig } from "../core/config/config.js";
+import { createPrismaClient } from "../core/database/client.js";
 import { bootstrapPlatform } from "./bootstrap.js";
 
 // bun run platform:bootstrap --email admin@example.com --name "Admin"

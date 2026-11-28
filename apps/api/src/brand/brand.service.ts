@@ -1,20 +1,20 @@
 import type { AuditAction, GuestContext, PortalEditor, PortalLook } from "@hashinet/types";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { Principal } from "../access/principal.js";
-import { venueScope } from "../access/venue-scope.js";
-import { AuditLog } from "../audit/audit-log.js";
 import { sellingStopped } from "../billing/access-rule.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { PrismaService } from "../database/prisma.service.js";
+import type { Principal } from "../core/access/principal.js";
+import { venueScope } from "../core/access/venue-scope.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { packageRecord } from "../core/records/records.js";
 import type { Package, ServiceAccess, Venue } from "../generated/prisma/client.js";
 import { guestContext } from "../guest/guest-context.js";
-import { apiError } from "../http/error-envelope.js";
 import { onSalePackages } from "../packages/on-sale.js";
 import { platformLook, portalOf, templateOf } from "../portal/copy-down.js";
 import { PortalService } from "../portal/portal.service.js";
 import { lookOf } from "../portal/portal-input.js";
-import { packageRecord } from "../serializers/records.js";
 import { venueNotFound } from "../venues/venue-errors.js";
 import { Logos, logoUrl } from "./logos.js";
 

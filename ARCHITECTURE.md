@@ -35,15 +35,14 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 | `apps/api` | NestJS API on Bun: business rules, authorization, router provisioning and sync, background jobs, persistence (Prisma, `prisma/schema.prisma`) |
 | `apps/api/src/radius` | Every hotspot login and session report from the routers, relayed by the tunnel service (ADR-0015): the RADIUS codec, who may be online on which voucher, accounting into sessions |
 | `apps/api/src/services`, `routers`, `vouchers` | Router provisioning and dialects (setup versioned; a release's routers set up again), `RouterSync`, `LiveMonitor`, tunnel allocation, voucher expiry |
-| `apps/api/src/payments`, `vouchers`, `payment-ways`, `devices`, `sessions`, `audit` | The counter: a sale makes its voucher (ADR-0017), refunds and release, a business's ways to pay and each venue's choice, devices blocked per business, live sessions, and the audit log with its filters |
+| `apps/api/src/payments`, `vouchers`, `payment-ways`, `devices`, `sessions` | The counter: a sale makes its voucher (ADR-0017), refunds and release, a business's ways to pay and each venue's choice, devices blocked per business, and live sessions |
 | `apps/api/src/billing` | What businesses pay HashiNet (ADR-0013): fee terms and where to pay, the fee rules (`fee.ts`), invoices issued once a month and on a package's confirmation, payments allocated to invoices, reminders, each owner's bill issue, and service access by bills or by hand (`access-rule.ts`, `service-access.ts`, ADR-0014) |
-| `apps/api/src/access`, `team`, `invitations` | The access policy (one table of actions per role), rank, sign-in protection, and the people of each workspace by invitation |
+| `apps/api/src/team`, `invitations` | Sign-in protection, and the people of each workspace by invitation |
 | `apps/api/src/issues`, `onboarding`, `businesses` | Issues per workspace (claimed, handed, taken over by rank, every step logged; router issues kept in step with the routers), a venue's way to serving (its package, then its setup), and the businesses as HashiNet's team sees them, guests as counts only |
 | `apps/api/src/venues`, `sites`, `packages` | Venues and each venue's page, its sites open before paying (one free, each more a slot invoiced once and opened when paid, pushed to its routers), and packages: the business's, sold at every venue at its price unless a venue has its own or stopped selling one (`on-sale.ts`, the one rule), and a venue's own |
 | `apps/api/src/portal`, `brand`, `guest` | The captive portal copied down (`copy-down.ts`): the platform's content and themes start a business's, which starts each venue's; each venue's and business's logo (`logos.ts`: re-encoded, stored, served on the portal's origin, swept when unreferenced); the business profile; the guest context the portal and the editor's preview share (`guest-context.ts`) |
 | `apps/api/src/analytics` | Periods decided by the API (`period.ts`), and the reports over them (`reports.ts`): sales from `revenue_events`, usage from sessions, sales across businesses with HashiNet's fees; a business's day and Payments' received list |
-| `apps/api/src/observability`, `jobs`, `config` | Telemetry and wide events, interval jobs, validated configuration and secrets |
-| `apps/api/src/serializers` | Database rows to `@hashinet/types` records: the only place Prisma types become API shapes |
+| `apps/api/src/core` | What every area uses: validated configuration and secrets (`config`), the Prisma client (`database`), HTTP plumbing (`http`), telemetry and wide events (`observability`), interval jobs (`jobs`), `crypto`, `email`, `health`, the live WebSocket hub (`live`), the access policy (`access`: one table of actions per role, rank), the audit log and its filters (`audit`), business days (`time`), phone numbers, and database rows to `@hashinet/types` records (`records`: the only place Prisma types become API shapes) |
 | `apps/web` | Next.js: sign-in and invitations, the dashboard (a business's and HashiNet's team's), Account and security, Help, and the captive portal; screens built from `prototypes/hearth-design/prototype/` on its stylesheet (`app/hearth.css`) and building blocks (`components/hearth/`) |
 | `packages/types` | The API's JSON contract, shared by the API and the web |
 | `tooling/router-sim.ts` | A virtual MikroTik, guest and tunnel hub for testing against real RouterOS |
@@ -52,7 +51,7 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 ## Dependency rules
 
 - The web reaches data only through the API; it never imports Prisma or API internals.
-- Prisma rows leave the API only through `src/serializers`, as `@hashinet/types` records.
+- Prisma rows leave the API only through `src/core/records`, as `@hashinet/types` records.
 - Only the API talks to routers.
 - Router-specific behaviour lives in the provisioning dialect, nowhere else.
 

@@ -6,17 +6,17 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import { z } from "zod";
-import type { Principal } from "../access/principal.js";
-import { AuditLog } from "../audit/audit-log.js";
 import { BillingEvents } from "../billing/billing-events.js";
 import { BillingSettings } from "../billing/billing-settings.js";
 import { lockBusiness } from "../billing/business-lock.js";
 import { Invoices } from "../billing/invoices.js";
-import { PrismaService } from "../database/prisma.service.js";
+import type { Principal } from "../core/access/principal.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { oneLine } from "../core/http/validation.js";
+import { captureFailure } from "../core/observability/telemetry.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { apiError } from "../http/error-envelope.js";
-import { oneLine } from "../http/validation.js";
-import { captureFailure } from "../observability/telemetry.js";
 import { RouterSync } from "../services/router-sync.js";
 import { VenuesService } from "../venues/venues.service.js";
 import { openHosts, openSites, slotPaid } from "./open-sites.js";

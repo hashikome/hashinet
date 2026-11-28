@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { UnauthorizedException } from "@nestjs/common";
-import { apiError } from "../http/error-envelope.js";
+import { apiError } from "../core/http/error-envelope.js";
 
 const digest = (text: string) => createHash("sha256").update(text).digest();
 

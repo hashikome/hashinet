@@ -7,12 +7,12 @@ import {
 } from "@hashinet/types";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { z } from "zod";
-import type { Principal } from "../access/principal.js";
-import { businessScope, venueScope } from "../access/venue-scope.js";
-import { AuditLog } from "../audit/audit-log.js";
-import { PrismaService } from "../database/prisma.service.js";
-import { apiError } from "../http/error-envelope.js";
-import { packageRecord } from "../serializers/records.js";
+import type { Principal } from "../core/access/principal.js";
+import { businessScope, venueScope } from "../core/access/venue-scope.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { packageRecord } from "../core/records/records.js";
 import { VenuesService } from "../venues/venues.service.js";
 import { onSalePackages, venueCatalogue } from "./on-sale.js";
 import type { PackageInput } from "./package-input.js";

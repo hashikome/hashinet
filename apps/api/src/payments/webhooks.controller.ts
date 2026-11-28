@@ -10,12 +10,12 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { Public } from "../access/access.guard.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { apiError } from "../http/error-envelope.js";
+import { Public } from "../core/access/access.guard.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { enrichWideEvent } from "../core/observability/wide-event.js";
 import { SmsReports } from "../messaging/sms-reports.js";
-import { enrichWideEvent } from "../observability/wide-event.js";
 import { chargeState } from "./mobile-money.js";
 import { PaymentsService } from "./payments.service.js";
 import { validPaymentSignature, validSmsSignature } from "./webhook-signatures.js";

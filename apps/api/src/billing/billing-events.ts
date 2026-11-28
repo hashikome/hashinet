@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { captureFailure } from "../observability/telemetry.js";
+import { captureFailure } from "../core/observability/telemetry.js";
 
 type Listener = (businessId: string) => Promise<void>;
 

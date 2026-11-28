@@ -1,5 +1,5 @@
 import type { InvoiceRecord } from "@hashinet/types";
-import type { EmailMessage } from "../email/email-sender.js";
+import type { EmailMessage } from "../core/email/email-sender.js";
 
 const MONTHS = [
   "January",

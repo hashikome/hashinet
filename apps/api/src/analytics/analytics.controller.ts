@@ -7,9 +7,9 @@ import type {
   VenueTakings,
 } from "@hashinet/types";
 import { Controller, Get, Query } from "@nestjs/common";
-import { Can, CurrentPrincipal } from "../access/access.guard.js";
-import type { Principal } from "../access/principal.js";
-import { parseInput } from "../http/validation.js";
+import { Can, CurrentPrincipal } from "../core/access/access.guard.js";
+import type { Principal } from "../core/access/principal.js";
+import { parseInput } from "../core/http/validation.js";
 import { AnalyticsService, receivedQuery, todayQuery } from "./analytics.service.js";
 import { periodQuery } from "./period.js";
 import { AnalyticsReports } from "./reports.js";

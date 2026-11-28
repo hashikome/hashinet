@@ -13,13 +13,13 @@ import {
   Res,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { Public } from "../access/access.guard.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { PrismaService } from "../database/prisma.service.js";
-import { apiError } from "../http/error-envelope.js";
-import { idParam } from "../http/id-param.js";
-import { parseInput } from "../http/validation.js";
+import { Public } from "../core/access/access.guard.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { idParam } from "../core/http/id-param.js";
+import { parseInput } from "../core/http/validation.js";
 import { backendSettings } from "../routers/backend-settings.js";
 import { resolveBackendEndpoints } from "../services/router-provision/context.js";
 import {

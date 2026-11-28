@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../database/prisma.service.js";
+import { PrismaService } from "../core/database/prisma.service.js";
 import type { SmsStatus } from "../generated/prisma/client.js";
 
 const STATUS: Record<string, SmsStatus> = {

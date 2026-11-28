@@ -43,5 +43,5 @@ before each test (`apps/api/test/integration/harness.ts`). Create the database o
 - Voucher codes and prefixes are upper-case and emails lower-case (`CHECK` constraints):
   RouterOS compares hotspot usernames case-sensitively, so input is normalised before lookup.
 - Instants are `timestamptz` in UTC; business days are computed in `Africa/Dar_es_Salaam`
-  (`src/analytics/business-day.ts`), never with a fixed offset.
+  (`apps/api/src/core/time/business-day.ts`), never with a fixed offset.
 - Money is `DECIMAL` in TSH and leaves the API as an exact decimal string.

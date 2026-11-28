@@ -1,5 +1,5 @@
+import { BUSINESS_TIME_ZONE } from "../core/time/business-day.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { BUSINESS_TIME_ZONE } from "./business-day.js";
 
 /**
  * HashiNet's one definition of revenue, as a SQL CTE named `revenue_events`

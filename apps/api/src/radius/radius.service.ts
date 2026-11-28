@@ -1,5 +1,5 @@
-import type { SecretBox } from "../crypto/secret-box.js";
-import type { PrismaService } from "../database/prisma.service.js";
+import type { SecretBox } from "../core/crypto/secret-box.js";
+import type { PrismaService } from "../core/database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { normalMac } from "../utils/mac.js";
 import { deviceLimitOf } from "../vouchers/voucher-devices.js";

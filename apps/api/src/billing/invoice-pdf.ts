@@ -8,7 +8,7 @@ import type {
   InvoiceState,
 } from "@hashinet/types";
 import PDFDocument from "pdfkit";
-import { businessDayOf } from "../analytics/business-day.js";
+import { businessDayOf } from "../core/time/business-day.js";
 import { invoiceSubject, longDay, tsh } from "./invoice-emails.js";
 
 /**

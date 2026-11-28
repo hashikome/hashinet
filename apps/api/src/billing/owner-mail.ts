@@ -1,10 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { PrismaService } from "../database/prisma.service.js";
-import { EMAIL_SENDER, type EmailMessage, type EmailSender } from "../email/email-sender.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { EMAIL_SENDER, type EmailMessage, type EmailSender } from "../core/email/email-sender.js";
+import { captureFailure } from "../core/observability/telemetry.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { captureFailure } from "../observability/telemetry.js";
 
 /** A business's active owners: who is billed, and who hears of it. */
 export const OWNERS = {

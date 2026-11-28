@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
-import { SecretBox } from "../../src/crypto/secret-box.js";
+import { SecretBox } from "../../src/core/crypto/secret-box.js";
 import { TunnelAllocator } from "../../src/routers/tunnel-allocator.js";
 import { useTestDatabase } from "./harness.js";
 import { testBusinessId } from "./people.js";

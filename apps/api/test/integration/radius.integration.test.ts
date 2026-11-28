@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createHash, createHmac, randomBytes } from "node:crypto";
-import { SecretBox } from "../../src/crypto/secret-box.js";
+import { SecretBox } from "../../src/core/crypto/secret-box.js";
 import { ATTR, CODE, decode, int, text, u32 } from "../../src/radius/codec.js";
 import { RadiusService } from "../../src/radius/radius.service.js";
 import { recordClients } from "../../src/services/live-monitor.js";

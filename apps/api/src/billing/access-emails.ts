@@ -1,5 +1,5 @@
 import type { ServiceAccess, ServiceAccessReason } from "@hashinet/types";
-import type { EmailMessage } from "../email/email-sender.js";
+import type { EmailMessage } from "../core/email/email-sender.js";
 import { type AccessByBills, sellingStopped } from "./access-rule.js";
 import { longDay, tsh } from "./invoice-emails.js";
 

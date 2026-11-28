@@ -1,7 +1,7 @@
 import { Inject, Injectable, Module } from "@nestjs/common";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { IntervalJob, ScheduledJobs } from "../jobs/interval-job.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { IntervalJob, ScheduledJobs } from "../core/jobs/interval-job.js";
 import { IssuesController } from "./issues.controller.js";
 import { IssuesService } from "./issues.service.js";
 

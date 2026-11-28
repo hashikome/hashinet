@@ -1,5 +1,5 @@
-import type { Principal } from "../access/principal.js";
-import { venueScope } from "../access/venue-scope.js";
+import type { Principal } from "../core/access/principal.js";
+import { venueScope } from "../core/access/venue-scope.js";
 import type { WifiSessionWhereInput } from "../generated/prisma/models.js";
 
 /**

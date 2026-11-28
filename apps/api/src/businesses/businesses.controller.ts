@@ -6,15 +6,15 @@ import type {
   ServiceAccessDetail,
 } from "@hashinet/types";
 import { Body, Controller, Get, NotFoundException, Param, Put } from "@nestjs/common";
-import { Can, CurrentPrincipal } from "../access/access.guard.js";
-import { allows } from "../access/policy.js";
-import type { Principal } from "../access/principal.js";
 import { accessChangeInput, ServiceAccessService } from "../billing/service-access.js";
-import { PrismaService } from "../database/prisma.service.js";
+import { Can, CurrentPrincipal } from "../core/access/access.guard.js";
+import { allows } from "../core/access/policy.js";
+import type { Principal } from "../core/access/principal.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { idParam } from "../core/http/id-param.js";
+import { parseInput } from "../core/http/validation.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { apiError } from "../http/error-envelope.js";
-import { idParam } from "../http/id-param.js";
-import { parseInput } from "../http/validation.js";
 import { VENUE_FACTS, type VenueFacts, venueStage } from "../onboarding/onboarding-stage.js";
 import { routerCondition, worstCondition } from "../routers/router-journey.js";
 

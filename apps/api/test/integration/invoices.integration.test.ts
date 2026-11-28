@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { BillingAccount, BillingOverview, InvoiceRecord, IssueList } from "@hashinet/types";
-import { addDays, businessDayOf } from "../../src/analytics/business-day.js";
 import { Invoices } from "../../src/billing/invoices.js";
+import { addDays, businessDayOf } from "../../src/core/time/business-day.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, sellingVenue, testBusinessId } from "./people.js";

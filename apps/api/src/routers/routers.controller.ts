@@ -17,10 +17,10 @@ import {
   Query,
 } from "@nestjs/common";
 import { z } from "zod";
-import { Can, CurrentPrincipal } from "../access/access.guard.js";
-import type { Principal } from "../access/principal.js";
-import { idParam } from "../http/id-param.js";
-import { parseInput } from "../http/validation.js";
+import { Can, CurrentPrincipal } from "../core/access/access.guard.js";
+import type { Principal } from "../core/access/principal.js";
+import { idParam } from "../core/http/id-param.js";
+import { parseInput } from "../core/http/validation.js";
 import {
   bootstrapInput,
   hotspotPortInput,

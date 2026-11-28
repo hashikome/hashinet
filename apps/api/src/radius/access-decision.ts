@@ -1,4 +1,4 @@
-import { businessHourOf } from "../analytics/business-day.js";
+import { businessHourOf } from "../core/time/business-day.js";
 import { packageCanThrottle, rateLimitFor, throttledRateLimitFor } from "../services/mikrotik.js";
 import { normalMac } from "../utils/mac.js";
 

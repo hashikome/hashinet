@@ -1,8 +1,8 @@
 import { Inject, Injectable, Module } from "@nestjs/common";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { IntervalJob, ScheduledJobs } from "../core/jobs/interval-job.js";
 import { GuestModule } from "../guest/guest.module.js";
-import { IntervalJob, ScheduledJobs } from "../jobs/interval-job.js";
 import { SmsReports } from "../messaging/sms-reports.js";
 import { PackagesModule } from "../packages/packages.module.js";
 import { PaymentWaysModule } from "../payment-ways/payment-ways.module.js";

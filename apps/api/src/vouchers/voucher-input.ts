@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { oneLine } from "../http/validation.js";
+import { oneLine } from "../core/http/validation.js";
 import { mobileNumber } from "../payments/payment-input.js";
 
 const STATUSES = ["unused", "pending_activation", "active", "expired", "used", "refunded"] as const;

@@ -1,14 +1,14 @@
 import type { VoucherList, VoucherListItem } from "@hashinet/types";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import type { z } from "zod";
-import type { Principal } from "../access/principal.js";
-import { venueScope } from "../access/venue-scope.js";
-import { AuditLog } from "../audit/audit-log.js";
-import { PrismaService } from "../database/prisma.service.js";
+import type { Principal } from "../core/access/principal.js";
+import { venueScope } from "../core/access/venue-scope.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { voucherRecord } from "../core/records/records.js";
 import type { VoucherWhereInput } from "../generated/prisma/models.js";
 import { PIN_RELEASED } from "../guest/switch-pin.js";
-import { apiError } from "../http/error-envelope.js";
-import { voucherRecord } from "../serializers/records.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 import type { listQuery, refundInput } from "./voucher-input.js";
 

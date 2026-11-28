@@ -14,19 +14,19 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { z } from "zod";
-import type { Principal } from "../access/principal.js";
-import { assignableRoles, outranks } from "../access/rank.js";
-import { AuditLog } from "../audit/audit-log.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { PrismaService } from "../database/prisma.service.js";
-import { EMAIL_SENDER, type EmailSender } from "../email/email-sender.js";
-import { apiError } from "../http/error-envelope.js";
+import type { Principal } from "../core/access/principal.js";
+import { assignableRoles, outranks } from "../core/access/rank.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { EMAIL_SENDER, type EmailSender } from "../core/email/email-sender.js";
+import { apiError } from "../core/http/error-envelope.js";
+import { captureFailure } from "../core/observability/telemetry.js";
 import { memberInvitationEmail } from "../invitations/invitation-emails.js";
 import { INVITATION_HOURS, newInvitationToken } from "../invitations/invitation-token.js";
 import { invitationRecordOf, pending } from "../invitations/invitations.service.js";
 import { IssuesService } from "../issues/issues.service.js";
-import { captureFailure } from "../observability/telemetry.js";
 
 const venueIds = z.array(z.uuid()).max(50).default([]);
 

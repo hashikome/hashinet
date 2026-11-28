@@ -7,12 +7,17 @@ import type {
 } from "@hashinet/types";
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { z } from "zod";
-import type { Principal } from "../access/principal.js";
-import { venueScope } from "../access/venue-scope.js";
-import { PrismaService } from "../database/prisma.service.js";
+import type { Principal } from "../core/access/principal.js";
+import { venueScope } from "../core/access/venue-scope.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
+import {
+  addDays,
+  businessDayOf,
+  businessDaySql,
+  businessDayStart,
+} from "../core/time/business-day.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { apiError } from "../http/error-envelope.js";
-import { addDays, businessDayOf, businessDaySql, businessDayStart } from "./business-day.js";
 import {
   businessMonthSql,
   moneySum,

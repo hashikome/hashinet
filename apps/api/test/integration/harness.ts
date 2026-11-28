@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { createPrismaClient, type PrismaClient } from "../../src/database/client.js";
+import { createPrismaClient, type PrismaClient } from "../../src/core/database/client.js";
 
 /**
  * Integration tests run against `hashinet_test` (the compose.yml PostgreSQL), migrated once per

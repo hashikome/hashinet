@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, expect } from "bun:test";
 import { createHmac } from "node:crypto";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { loadConfig } from "../../src/config/config.js";
-import type { EmailMessage, EmailSender } from "../../src/email/email-sender.js";
+import { loadConfig } from "../../src/core/config/config.js";
+import type { EmailMessage, EmailSender } from "../../src/core/email/email-sender.js";
 import { bootstrap } from "../../src/main.js";
 import { TEST_DATABASE_URL } from "./harness.js";
 

@@ -11,7 +11,11 @@ import type {
   OnboardingLineKind,
 } from "@hashinet/types";
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import type { Principal } from "../access/principal.js";
+import { REVENUE_EVENTS } from "../analytics/revenue-events.js";
+import type { Principal } from "../core/access/principal.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { apiError } from "../core/http/error-envelope.js";
 import {
   addDays,
   businessDayOf,
@@ -19,12 +23,8 @@ import {
   dateOf,
   monthOf,
   nextMonth,
-} from "../analytics/business-day.js";
-import { REVENUE_EVENTS } from "../analytics/revenue-events.js";
-import { AuditLog } from "../audit/audit-log.js";
-import { PrismaService } from "../database/prisma.service.js";
+} from "../core/time/business-day.js";
 import { type InvoiceKind, Prisma } from "../generated/prisma/client.js";
-import { apiError } from "../http/error-envelope.js";
 import { IssuesService } from "../issues/issues.service.js";
 import { passedSetup } from "../routers/router-journey.js";
 import { BillingSettings, businessFeeTerms } from "./billing-settings.js";

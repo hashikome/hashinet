@@ -1,5 +1,5 @@
 import type { InvoiceState } from "@hashinet/types";
-import { businessDayOf, dateOf } from "../analytics/business-day.js";
+import { businessDayOf, dateOf } from "../core/time/business-day.js";
 
 /**
  * Where an invoice stands on `today`: paid in full, or overdue once its due date has passed with

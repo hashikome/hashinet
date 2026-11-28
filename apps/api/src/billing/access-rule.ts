@@ -1,5 +1,5 @@
 import type { SellingPause, ServiceAccess } from "@hashinet/types";
-import { addDays } from "../analytics/business-day.js";
+import { addDays } from "../core/time/business-day.js";
 import { invoiceState } from "./invoice-state.js";
 
 /** A business can't sell while it is read-only or suspended (ADR-0014, 2). */

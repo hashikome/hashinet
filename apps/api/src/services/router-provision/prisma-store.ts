@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
-import type { SecretBox } from "../../crypto/secret-box.js";
-import { toJsonValue } from "../../database/json.js";
+import type { SecretBox } from "../../core/crypto/secret-box.js";
+import { toJsonValue } from "../../core/database/json.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
 import { openHosts } from "../../sites/open-sites.js";
 import type { RouterAccess } from "../router-credentials.js";

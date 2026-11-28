@@ -1,5 +1,5 @@
 import { getLogger } from "@logtape/logtape";
-import type { AuditLog } from "../audit/audit-log.js";
+import type { AuditLog } from "../core/audit/audit-log.js";
 import type { PrismaClient, Router } from "../generated/prisma/client.js";
 import { passedSetup } from "../routers/router-journey.js";
 import {

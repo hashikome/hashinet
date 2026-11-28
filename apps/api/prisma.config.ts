@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { defineConfig } from "prisma/config";
-import { readSecret } from "./src/config/secret.js";
+import { readSecret } from "./src/core/config/secret.js";
 
 // Prisma 7 does not read .env, and Bun does not load it when running Prisma's binary. Local
 // development keeps its values in apps/api/.env; containers have none and use their secrets.

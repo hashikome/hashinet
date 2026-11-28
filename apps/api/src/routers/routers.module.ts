@@ -1,12 +1,12 @@
 import { Inject, Injectable, Module } from "@nestjs/common";
-import { AuditLog } from "../audit/audit-log.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { SecretBox } from "../crypto/secret-box.js";
-import { PrismaService } from "../database/prisma.service.js";
+import { AuditLog } from "../core/audit/audit-log.js";
+import type { AppConfig } from "../core/config/config.js";
+import { APP_CONFIG } from "../core/config/config.module.js";
+import { SecretBox } from "../core/crypto/secret-box.js";
+import { PrismaService } from "../core/database/prisma.service.js";
+import { IntervalJob, ScheduledJobs } from "../core/jobs/interval-job.js";
+import { LiveHub } from "../core/live/live-hub.js";
 import { IssuesModule } from "../issues/issues.module.js";
-import { IntervalJob, ScheduledJobs } from "../jobs/interval-job.js";
-import { LiveHub } from "../live/live-hub.js";
 import {
   HEALTH_CHECK_INTERVAL_MS,
   IDLE_POLL_EVERY_N_TICKS,
