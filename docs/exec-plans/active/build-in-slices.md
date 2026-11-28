@@ -1117,22 +1117,31 @@ voucher's own columns for them went in `20261128900000_pin_attempts`); the accou
     HashiNet had ended a session (moved, released, a new speed) with `admin_reset`; a Stop now ends
     only a session still connected and otherwise updates its counters. Open: `demo` runs LAN mode,
     where no sign-in reaches RADIUS, so it shows the portal, not a device getting online.
-  - [x] (2026-11-28) Review fixes. The router sync left the platform's `router-setup:` issue alone; a
+  - [x] (2026-11-28) Review fixes. The router sync leaves the platform's setup issue alone; a
     provisioned router whose setup stopped is set up again each hour. Staff ending a session, and a
     right PIN moving a voucher, take the device off it (`voucher_devices`), so the router can't sign
     it back in by MAC before the new device's Start. PIN limits per device, with the voucher-wide
     backstop, checked before any router call; a holder is never stopped by them. A RADIUS repeat
     while the first is in flight gets its answer; the live monitor closes only sessions that started
     before it read the router's list; unblocking one device keeps a voucher another blocked device
-    used blocked; the redeem answer is `no-store`. Setup version 3 adds `firewall-guest-tunnel-drop`:
-    forwarded traffic from the hotspot network to the management address is dropped ahead of the
-    hotspot's rules, under the portal's accept, now its web port alone (tcp). The tunnel service
+    used blocked; the redeem answer is `no-store`. Setup version 3 drops forwarded traffic from the
+    hotspot network to the management address (`firewall-guest-tunnel-drop`) ahead of the hotspot's
+    rules, under the portal's accept, now its web port alone (tcp); one step
+    (`firewall-forward-backend`) checks and applies the two as an ordered pair. The tunnel service
     caps relays in flight at 64 and refuses an address with no IP. On the sim (router 1): a guest's
     UDP datagram to 10.88.0.1:1812 reached the relay before (relay.log 62 to 63 lines) and was
     dropped after setup (still 63; the drop rule counted it); setup applied 2 changes, then 0;
     `guest-test` 22/22 in 125 s with the drop on router 1, the portal reached on its web port; then
     guest 1, signed in by MAC and on the open internet, sent the datagram again: dropped (the rule's
     count 1 to 2), relay.log unchanged.
+  - [x] (2026-11-28) Simplify (finish-work). A setup that stopped after a release is its own issue
+    kind, `router_setup`; the voucher-wide PIN wait is kept on the voucher (`wrong_pins`,
+    `wrong_pins_since`, `pin_wait_until`), cleared by a release, instead of in `rate_limits`; the
+    guests' firewall rules are one step. The `old-voucher-users` step, which removes the local users
+    and package profiles RADIUS replaced, stays for this release's setup: remove it once every router
+    has passed setup version 3. On the sim (router 1), with both guest rules removed by hand: setup
+    applied 1 change (the accept above the drop, both above the hotspot's placeholder), then 0;
+    `guest-test` 22/22 in 124 s with 12-digit codes.
   - [ ] (j) finish-work, docs (ADR-0015 widened), push on the owner's go, real phones.
 
 Before the release, outside the code: the host firewall allows UDP 1812-1813 from `wg0` to the
@@ -1145,8 +1154,7 @@ firewall rule to the deploy runbook and infra, each shown to the owner before it
 The two portal states for the PIN's limits were approved (28 November 2026). Built: each passed setup
 records its version (`SETUP_VERSION`, 2 for RADIUS); a job at start, then hourly, sets up again every
 router a passed setup of an older version left, one at a time, and one that stops opens a platform
-`router_offline` issue with cause `needs-setup` ("needs setting up again"), which a passing setup
-resolves. Its issue screen follows the prototype's `setupFailed` issue, pending the owner's look.
+`router_setup` issue ("needs setting up again"), which a passing setup resolves. Its issue screen follows the prototype's `setupFailed` issue, pending the owner's look.
 
 Within each slice the order is: schema, then the API with its tests, then the screens against the
 prototype, each built with design-build and audited with design-audit at 1280 and 375 pixels in light

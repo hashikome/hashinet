@@ -251,19 +251,6 @@ describe("changing the portal origin", () => {
     expect(calls.some((c) => c.startsWith("set "))).toBe(false);
     expect(calls.at(-1)).toContain("=dst-host=portal.example.com");
   });
-
-  test("a host-name portal wants no address forward rule, and removes a stale one", async () => {
-    const stale = { ".id": "*7", "dst-address": "10.0.2.2" };
-    expect(
-      await step("firewall-forward-backend").check({ ...recordingRos(stale), ctx: hostPortal }),
-    ).toBe(false);
-    const { ros, calls } = recordingRos(stale);
-    await step("firewall-forward-backend").apply({ ros, ctx: hostPortal });
-    expect(calls).toEqual(["remove /ip/firewall/filter *7"]);
-    expect(
-      await step("firewall-forward-backend").check({ ...recordingRos(null), ctx: hostPortal }),
-    ).toBe(true);
-  });
 });
 
 describe("a venue's allowed sites", () => {
@@ -436,6 +423,9 @@ describe("guests and the management address", () => {
       set: async (_menu: string, id: string, list: string[]) => {
         rows = rows.map((r) => (r[".id"] === id ? { ...r, ...params(list) } : r));
       },
+      remove: async (_menu: string, id: string) => {
+        rows = rows.filter((r) => r[".id"] !== id);
+      },
       exec: async (_command: string, list: string[]) => {
         const { numbers, destination } = params(list);
         const row = rows.find((r) => r[".id"] === numbers);
@@ -473,11 +463,12 @@ describe("guests and the management address", () => {
     },
   } as unknown as ProvisionContext;
 
+  const guests = () => step("firewall-forward-backend");
+
   test("a portal at the management address: its web port above the drop, both ahead of the hotspot's rules", async () => {
     const list = filterList(hotspotRules());
-    for (const id of ["firewall-forward-backend", "firewall-guest-tunnel-drop"]) {
-      await step(id).apply({ ros: list.ros, ctx: lanPortal });
-    }
+    expect(await guests().check({ ros: list.ros, ctx: lanPortal })).toBe(false);
+    await guests().apply({ ros: list.ros, ctx: lanPortal });
     expect(list.order().slice(0, 2)).toEqual([
       "wbs:firewall-forward-backend",
       "wbs:firewall-guest-tunnel-drop",
@@ -490,12 +481,10 @@ describe("guests and the management address", () => {
       action: "drop",
     });
     // A second run changes nothing.
-    for (const id of ["firewall-forward-backend", "firewall-guest-tunnel-drop"]) {
-      expect(await step(id).check({ ros: list.ros, ctx: lanPortal })).toBe(true);
-    }
+    expect(await guests().check({ ros: list.ros, ctx: lanPortal })).toBe(true);
   });
 
-  test("the drop below the portal's accept fails its check, and apply puts the accept back above", async () => {
+  test("the drop above the portal's accept fails the check, and apply puts the accept back above", async () => {
     const list = filterList([
       {
         ".id": "*8",
@@ -508,18 +497,24 @@ describe("guests and the management address", () => {
       { ".id": "*9", comment: "wbs:firewall-forward-backend" },
       ...hotspotRules(),
     ]);
-    const drop = step("firewall-guest-tunnel-drop");
-    expect(await drop.check({ ros: list.ros, ctx: lanPortal })).toBe(false);
-    await drop.apply({ ros: list.ros, ctx: lanPortal });
-    expect(await drop.check({ ros: list.ros, ctx: lanPortal })).toBe(true);
+    expect(await guests().check({ ros: list.ros, ctx: lanPortal })).toBe(false);
+    await guests().apply({ ros: list.ros, ctx: lanPortal });
+    expect(list.order().slice(0, 2)).toEqual([
+      "wbs:firewall-forward-backend",
+      "wbs:firewall-guest-tunnel-drop",
+    ]);
+    expect(await guests().check({ ros: list.ros, ctx: lanPortal })).toBe(true);
   });
 
-  test("a host-name portal: the drop alone, ahead of the hotspot's rules", async () => {
-    const list = filterList(hotspotRules());
-    const drop = step("firewall-guest-tunnel-drop");
-    expect(await drop.check({ ros: list.ros, ctx: hostPortal })).toBe(false);
-    await drop.apply({ ros: list.ros, ctx: hostPortal });
+  test("a host-name portal: the drop alone, ahead of the hotspot's rules, and a stale accept goes", async () => {
+    const list = filterList([
+      { ".id": "*7", comment: "wbs:firewall-forward-backend", "dst-address": "10.0.2.2" },
+      ...hotspotRules(),
+    ]);
+    expect(await guests().check({ ros: list.ros, ctx: hostPortal })).toBe(false);
+    await guests().apply({ ros: list.ros, ctx: hostPortal });
     expect(list.order()[0]).toBe("wbs:firewall-guest-tunnel-drop");
-    expect(await drop.check({ ros: list.ros, ctx: hostPortal })).toBe(true);
+    expect(list.order()).not.toContain("wbs:firewall-forward-backend");
+    expect(await guests().check({ ros: list.ros, ctx: hostPortal })).toBe(true);
   });
 });

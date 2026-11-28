@@ -54,6 +54,7 @@ import {
 import { probeVerify } from "../apps/api/src/services/router-provision/verify.js";
 import { RouterSync } from "../apps/api/src/services/router-sync.js";
 import { SessionsService } from "../apps/api/src/sessions/sessions.service.js";
+import { generateCode } from "../apps/api/src/vouchers/voucher-codes.js";
 import { VouchersService } from "../apps/api/src/vouchers/vouchers.service.js";
 import { serveRadius } from "../apps/tunnel/src/radius-relay.js";
 
@@ -882,7 +883,8 @@ async function issueVoucher(db: PrismaClient, venueId: string, minutes: number):
       priceTsh: "500",
     },
   });
-  const code = `SIM${randomPassword(6).toUpperCase()}`;
+  // A real code, so the sim signs in as a guest's card would.
+  const code = generateCode();
   await db.voucher.create({
     data: { code, venueId, packageId: pkg.id, priceTsh: pkg.priceTsh, durationMinutes: minutes },
   });
@@ -1244,13 +1246,8 @@ async function pollFor<T>(ask: () => Promise<T | null>, seconds: number): Promis
 }
 
 /** Waits until `ok` holds or the time is up, and returns whether it held. */
-async function waitUntil(ok: () => Promise<boolean>, seconds: number, everyMs = 2_000) {
-  const deadline = Date.now() + seconds * 1000;
-  while (Date.now() < deadline) {
-    if (await ok()) return true;
-    await Bun.sleep(everyMs);
-  }
-  return ok();
+async function waitUntil(ok: () => Promise<boolean>, seconds: number): Promise<boolean> {
+  return (await pollFor(async () => ((await ok()) ? true : null), seconds)) !== null;
 }
 
 /**
