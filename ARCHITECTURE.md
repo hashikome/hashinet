@@ -43,7 +43,7 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 | `apps/api/src/analytics` | Periods decided by the API (`period.ts`), and the reports over them (`reports.ts`): sales from `revenue_events`, usage from sessions, sales across businesses with HashiNet's fees; a business's day and Payments' received list |
 | `apps/web` | Next.js: sign-in and invitations, the dashboard (a business's and HashiNet's team's), Account and security, Help, and the captive portal; screens built from `prototypes/hearth-design/prototype/` on its stylesheet (`app/hearth.css`); building blocks in `components/ui/`, the app's frame in `components/app/`, and each area's components in `components/<area>/`, named as the API's areas |
 | `packages/types` | The API's JSON contract, shared by the API and the web: one file per API area (`core.ts` … `analytics.ts`), `index.ts` its entry |
-| `tooling/router-sim.ts` | A virtual MikroTik, guest and tunnel hub for testing against real RouterOS |
+| `tooling/router-sim/` | A virtual MikroTik, guest and tunnel hub for testing against real RouterOS: settings and saved state (`sim.ts`), the VM and its serial console (`vm.ts`), onboarding, setup and verify, the guest VM, the guest test, the hub, and the commands (`main.ts`) |
 | `docs/` | Design documents, decisions, plans and runbooks |
 
 ## Dependency rules

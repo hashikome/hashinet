@@ -47,7 +47,12 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 - [x] (2026-11-28) M9 The web's components: `components/hearth/` into `ui/` (primitives, importing
   no area), `app/shell.tsx` (the frame, which holds the sell flow) and one folder per area; 24 files
   moved, 66 importers rewritten; verify, and `next build`'s 35 routes identical.
-- [ ] M10 `tooling/router-sim.ts` (1,816 lines) split into its parts.
+- [x] (2026-11-28) M10 `tooling/router-sim.ts` (1,816 lines) into `tooling/router-sim/`: `sim.ts`
+  (settings, the `--router` choice, saved state; imports no sibling, so it runs first), `vm.ts`,
+  `onboarding.ts`, `setup.ts`, `guest.ts`, `guest-test.ts` (529 lines), `hub.ts`, `main.ts` (the
+  commands), with `ref/restructure/split-sim.py`. Every non-import line is unchanged but for `export`,
+  `ROOT` one folder deeper and the two strings naming the sim's own path; `guest-test` 22/22 before
+  and after a hub restart that runs the relay from the new path.
 - [ ] Later, not moves (each its own milestone when reached): the upward imports `core/` keeps
   (below); the files over 500 lines split by job.
 
@@ -55,6 +60,10 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 
 - (2026-11-28) `utils/retry.ts` and `utils/duration.ts` have no users in the API (only their own
   tests); the web's `lib/duration.ts` only names the API copy in a stale comment. Removed in M1.
+- (2026-11-28) The router sim computed its root from its own folder and named its own path in two
+  strings (the hub runs it in a container): splitting a file into a folder moves both one level.
+  Its destructured `command` and `args` escaped the splitter's declaration pattern; they moved to
+  `sim.ts` with the argument parsing.
 - (2026-11-28) The shell imports the sell flow (`SellProvider`), so it is not a primitive: it is the
   app's frame, above the areas, in `components/app/`. The move tool's first M9 run rewrote nothing:
   it tried `.ts` but not `.tsx` for an extensionless specifier; undone, fixed, rerun.

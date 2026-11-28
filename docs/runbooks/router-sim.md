@@ -21,7 +21,7 @@ which needs a physical board (build plan M8).
   unzip chr-$V.img.zip
   ```
 
-  Changing the version means updating `ROS_VERSION` in `tooling/router-sim.ts`.
+  Changing the version means updating `ROS_VERSION` in `tooling/router-sim/sim.ts`.
 
 The free CHR licence caps throughput at 1 Mbps, which is irrelevant to the sim.
 

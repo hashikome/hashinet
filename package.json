@@ -22,7 +22,7 @@
     "test": "bun run --filter '*' test && bun test tooling",
     "build": "bun run --filter '*' build",
     "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build",
-    "router-sim": "bun tooling/router-sim.ts",
+    "router-sim": "bun tooling/router-sim/main.ts",
     "db:deploy": "bun run --filter @hashinet/api db:deploy",
     "db:seed": "bun run --filter @hashinet/api db:seed",
     "test:integration": "bun run --filter @hashinet/api test:integration"
