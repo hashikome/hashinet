@@ -48,7 +48,18 @@ surface:
   staff is recorded in the audit log.
 - A voucher code is the hotspot username and password. It goes from the portal to the API and
   from the API to the router, never over the WiFi in clear, and no API response carries it
-  ([ADR-0008](engineering-decisions/0008-captive-portal.md)).
+  ([ADR-0008](engineering-decisions/0008-captive-portal.md)). No voucher is stored on a router.
+- Routers ask HashiNet for every login over RADIUS, through the management tunnel only
+  ([ADR-0015](engineering-decisions/0015-voucher-online-limit-through-radius.md)). The tunnel service
+  listens on the platform's tunnel address and relays each packet with the router's tunnel address to
+  an internal route under its own secret; the API answers only a known router whose request is signed
+  with that router's own secret (Message-Authenticator required), and a code only with the one-minute
+  admission the portal's sign-in left. A device coming back by MAC address takes no place another
+  device holds.
+- A voucher's switch PIN is 4 digits from a secure generator, never an obvious one, kept only as an
+  HMAC under `PIN_KEY` bound to the voucher, and shown once, in the sign-in's HTTPS answer to the
+  device that started it. Five wrong tries wait 15 minutes and ten lock the voucher until staff
+  release it; wrong tries are counted under a lock on the voucher, so racing doesn't add tries.
 - Only the API signs a device in. The router accepts no login over the network, so nothing can
   guess at it, and setup fails if an http login method is enabled.
 - Everything the router passes to the portal is untrusted, since it travels through the guest's

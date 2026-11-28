@@ -2,6 +2,8 @@
 
 Status: accepted, 30 October 2026, as proved in the router sim. Amends ADR-0006 (decision 3).
 Decision 3 narrowed 25 November 2026: a voucher's QR code joins the WiFi and carries no code.
+Decisions 4, 6, 8, 9 and 10 changed 28 November 2026 by ADR-0015: routers ask HashiNet through RADIUS,
+and no voucher sits on a router.
 
 ## Context
 
@@ -27,10 +29,11 @@ the router is HTTP, and query strings reach proxy logs.
    four, about as hard to guess as the letters it replaces; the portal opens the number keypad and
    groups the digits. The portal has no scanner. Opened anywhere but through the router, it says to
    join the WiFi.
-4. **Only the API signs a device in.** The hotspot has `login-by=mac-cookie` and no http method,
-   so the router accepts no code over the network: a direct POST is refused even with the right
-   one. The portal sends the code to the API over its own origin, and the API runs
-   `/ip hotspot active login` on the management link. The code never crosses the WiFi to the
+4. **Only the API signs a device in.** The hotspot has `login-by=mac,mac-cookie` through RADIUS and
+   no http method, so the router accepts no code over the network: a direct POST is refused even with
+   the right one. The portal sends the code to the API over its own origin, and the API runs
+   `/ip hotspot active login` on the management link; the router asks HashiNet, which accepts the
+   code only with the admission that sign-in just left (ADR-0015). The code never crosses the WiFi to the
    router, nothing can guess at the router, and the portal posts nothing from https to http. The
    router's login page does nothing but redirect, and `alogin.html` is gone because no browser
    logs in. Provisioning probes the command and refuses a board without it; verification fails if
@@ -39,26 +42,25 @@ the router is HTTP, and query strings reach proxy logs.
    API checks them against the router's host table once the code is known to be good, and before
    the voucher's clock starts: a cookie is never planted for a device that is not there. After
    the login it reads the active session back, and only then does the voucher go `active`.
-6. **A device comes back by the router's MAC cookie,** so nothing returns a code for a MAC. Every
-   package has a router profile whose cookie lasts as long as the package, because the router's
-   default is 3 days. On RouterOS 7.25 removing an active session also deletes its cookie, so
-   where a device must stay on (a new speed), the live monitor signs it back in itself.
+6. **A device comes back by its MAC address,** which the router sends to HashiNet through RADIUS,
+   so nothing returns a code for a MAC: HashiNet lets it back to a free place or its own, and
+   otherwise it lands on the portal (ADR-0015, 5). Where a device must take new terms (a new speed),
+   the live monitor ends its session and it comes back on them.
 7. **The router's pages hold no code.** They are served in clear over the WiFi, so `status.html`
    does not use `$(username)`, and asks the API for time and data by router and device. A forged
    MAC reads a remaining time and never a code.
-8. **Sessions open from what the router reports,** in the live monitor, not at redemption: a
-   returning device never passes the portal. The device limit is `voucher_devices`, written under a
-   lock on the voucher.
+8. **Sessions open from what the router reports,** its RADIUS accounting, not at redemption: a
+   returning device never passes the portal. A voucher's limit is its devices online at once
+   (ADR-0015, 2), counted under a lock on the voucher.
 9. **A block is at the router** (`ip-binding type=blocked`), on every router, re-applied by
-   `syncRouter`; a portal check alone would not stop a device whose cookie is still valid. After a
+   `syncBlocks`, and on the vouchers the device used (ADR-0015, 9). After a
    device that sent traffic while blocked is unblocked, the router takes about 50 seconds to
    accept it again.
 
-10. **A voucher works on every router at its venue** (how it is limited: ADR-0015). Vouchers belong to the venue and only the API
-    signs a device in, so the API holds a voucher's time left and its devices wherever the guest is. On
-    another of the venue's routers it puts the voucher there with the time left, reads it back as any
-    new access must, and counts devices across the venue, so one code can never exceed its limit by
-    moving. Each router is its own hotspot, so a device signs in again when it moves.
+10. **A voucher works on every router at its venue** (how it is limited: ADR-0015). Vouchers belong
+    to the venue and only the API signs a device in, so HashiNet holds a voucher's time left and its
+    devices wherever the guest is, and answers every router's request from that. Each router is its
+    own hotspot, so a device signs in again when it moves.
 
 ## Why not CHAP
 

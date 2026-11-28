@@ -33,7 +33,8 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 | Path | Responsibility |
 | --- | --- |
 | `apps/api` | NestJS API on Bun: business rules, authorization, router provisioning and sync, background jobs, persistence (Prisma, `prisma/schema.prisma`) |
-| `apps/api/src/services`, `routers`, `vouchers` | Router provisioning and dialects, `RouterSync`, `LiveMonitor`, tunnel allocation, voucher expiry and reconciliation |
+| `apps/api/src/radius` | Every hotspot login and session report from the routers, relayed by the tunnel service (ADR-0015): the RADIUS codec, who may be online on which voucher, accounting into sessions |
+| `apps/api/src/services`, `routers`, `vouchers` | Router provisioning and dialects (setup versioned; a release's routers set up again), `RouterSync`, `LiveMonitor`, tunnel allocation, voucher expiry |
 | `apps/api/src/payments`, `vouchers`, `payment-ways`, `devices`, `sessions`, `audit` | The counter: a sale makes its voucher (ADR-0017), refunds and release, a business's ways to pay and each venue's choice, devices blocked per business, live sessions, and the audit log with its filters |
 | `apps/api/src/billing` | What businesses pay HashiNet (ADR-0013): fee terms and where to pay, the fee rules (`fee.ts`), invoices issued once a month and on a package's confirmation, payments allocated to invoices, reminders, each owner's bill issue, and service access by bills or by hand (`access-rule.ts`, `service-access.ts`, ADR-0014) |
 | `apps/api/src/access`, `team`, `invitations` | The access policy (one table of actions per role), rank, sign-in protection, and the people of each workspace by invitation |
@@ -57,9 +58,10 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 
 ## Runtime
 
-- One API service with background jobs, every minute unless noted: voucher expiry and
-  reconciliation of anything the router has not confirmed, router issues kept in step with the
-  routers, venues' setups closed by their first guest, and payments whose report never came.
+- One API service with background jobs, every minute unless noted: voucher expiry, router issues
+  kept in step with the routers, venues' setups closed by their first guest, payments whose report
+  never came, and hourly (and at start) routers an older setup left set up again.
+- The tunnel service relays the routers' RADIUS to the API; the API answers from the database.
 - Live session and provisioning updates reach the admin over a WebSocket.
 
 ## Deployment shape

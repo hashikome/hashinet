@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Slice 7: one voucher across a venue's routers, through RADIUS (ADR-0015). Routers ask HashiNet for
+  every hotspot login and report every session over RADIUS, relayed by the tunnel service on
+  `10.88.0.1:1812-1813` to `/api/internal/radius`; no voucher sits on a router, and a voucher's limit
+  is its devices online at once across the venue. The first sign-in gets a switch PIN, shown once; a
+  new device on a voucher in use moves it only with the PIN (five wrong wait 15 minutes, ten lock it
+  until a release), and the oldest device gives up its place. A device comes back by its MAC address
+  to a free place or its own. Blocking a device blocks the vouchers it used too. Setup is versioned:
+  after a release, routers an older setup left are set up again, and one that stops opens a "needs
+  setting up again" issue for HashiNet's team. `PIN_KEY` is a new required secret; the host firewall
+  must allow UDP 1812-1813 on `wg0` (deploy runbook). Removed: the voucher push to routers, the
+  voucher reconciler and its backlog route, per-user router limits, kicks by code. A package's data
+  limit is enforced as a cap, counted from its sessions.
 - The router sim runs two routers (or more) at one venue, `--router <n>`, on the management tunnel,
   with the tunnel service's RADIUS relay in the hub. `guest-test` proves a voucher across them
   through RADIUS: the switch PIN, a move only with it, a release at the counter, a return by MAC and
