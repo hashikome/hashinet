@@ -10,6 +10,8 @@
     "outDir": "dist",
     "rootDir": ".",
     "noEmit": true,
+    // packages/types names its own files with .ts, which Bun, Turbopack and TypeScript all resolve.
+    "allowImportingTsExtensions": true,
     "allowJs": true,
     // NestJS dependency injection reads constructor parameter types from decorator metadata.
     "experimentalDecorators": true,

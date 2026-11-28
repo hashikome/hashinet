@@ -8,6 +8,8 @@
     "emitDecoratorMetadata": true,
     "strict": true,
     "noEmit": true,
+    // packages/types names its own files with .ts, which Bun, Turbopack and TypeScript all resolve.
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },

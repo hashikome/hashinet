@@ -42,7 +42,7 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 | `apps/api/src/network` | The routers: their records and journey (`routers`), the management tunnel's addresses and peers (`tunnel`), provisioning and its dialects, setup versioned so a release's routers are set up again (`provisioning`), the RouterOS client (`mikrotik`), and the live monitor, `RouterSync` and outages (`monitor`); `radius` answers every hotspot login and session report from the routers, relayed by the tunnel service (ADR-0015): the RADIUS codec, who may be online on which voucher, accounting into sessions |
 | `apps/api/src/analytics` | Periods decided by the API (`period.ts`), and the reports over them (`reports.ts`): sales from `revenue_events`, usage from sessions, sales across businesses with HashiNet's fees; a business's day and Payments' received list |
 | `apps/web` | Next.js: sign-in and invitations, the dashboard (a business's and HashiNet's team's), Account and security, Help, and the captive portal; screens built from `prototypes/hearth-design/prototype/` on its stylesheet (`app/hearth.css`) and building blocks (`components/hearth/`) |
-| `packages/types` | The API's JSON contract, shared by the API and the web |
+| `packages/types` | The API's JSON contract, shared by the API and the web: one file per API area (`core.ts` … `analytics.ts`), `index.ts` its entry |
 | `tooling/router-sim.ts` | A virtual MikroTik, guest and tunnel hub for testing against real RouterOS |
 | `docs/` | Design documents, decisions, plans and runbooks |
 

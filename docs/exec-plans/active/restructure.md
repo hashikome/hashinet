@@ -37,7 +37,13 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 - [x] (2026-11-28) M7 `guest/` (sign-in, portal, brand), and `analytics/` alone; the root holds
   only bootstrap. 30 files moved (every integration test now sits in its area's folder, the shared
   harness at the root); the codemap and `apps/api/README.md` show the eight areas.
-- [ ] M8 `packages/types/src/index.ts` (1,803 lines) split by area.
+- [x] (2026-11-28) M8 `packages/types/src/index.ts` (1,803 lines) split by area, with
+  `ref/restructure/split-types.py`: its 136 top-level declarations byte-identical before and after,
+  all 163 exported names still exported (a probe file referencing each from `index.ts` typechecks; a
+  missing name fails it), and every workspace typechecks. `platform.ts` is the largest at 539 lines.
+  The files import each other with `.ts` specifiers (`allowImportingTsExtensions` in the root, API and
+  web tsconfigs, all `noEmit`): the API's NodeNext needs an extension and Turbopack doesn't map `.js`
+  to `.ts` inside a workspace package.
 - [ ] M9 The web's components: primitives and areas.
 - [ ] M10 `tooling/router-sim.ts` (1,816 lines) split into its parts.
 - [ ] Later, not moves (each its own milestone when reached): the upward imports `core/` keeps
@@ -162,8 +168,8 @@ controllers.
 Each slice: `bun run verify` passes; `bun run test:integration` passes (run alone when the machine is
 loaded: the 5-second timeouts flake under load, not the moves); the route and module map is
 identical to the baseline; `git grep` finds no path under `apps/api/src` that names the old location.
-After M2: the router sim's `guest-test` passes once. After M8: the package's emitted declarations are
-identical. After M9: `next build`'s route list is identical. The release after the merge is the last
+After M2: the router sim's `guest-test` passes once. After M8: the package's declarations are byte-identical and its exported names unchanged (TypeScript
+7 emits no declarations through a JS API, so this replaces the emitted-declarations diff). After M9: `next build`'s route list is identical. The release after the merge is the last
 proof: the same live checks as any release.
 
 ## Idempotence And Recovery
