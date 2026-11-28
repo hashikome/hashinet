@@ -84,9 +84,9 @@ export interface AppConfig {
 const url = z.url({ protocol: /^https?$/ });
 
 /** `data/email/` at the repository root (git-ignored), wherever the API is started from. */
-const DEFAULT_OUTBOX_DIR = fileURLToPath(new URL("../../../../data/email/", import.meta.url));
-const DEFAULT_SMS_DIR = fileURLToPath(new URL("../../../../data/sms/", import.meta.url));
-const DEFAULT_BRAND_DIR = fileURLToPath(new URL("../../../../data/brand/", import.meta.url));
+const DEFAULT_OUTBOX_DIR = fileURLToPath(new URL("../../../../../data/email/", import.meta.url));
+const DEFAULT_SMS_DIR = fileURLToPath(new URL("../../../../../data/sms/", import.meta.url));
+const DEFAULT_BRAND_DIR = fileURLToPath(new URL("../../../../../data/brand/", import.meta.url));
 
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

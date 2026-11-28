@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { join } from "node:path";
 import { loadConfig } from "./config.js";
 
 const BASE = {
@@ -9,6 +10,17 @@ const BASE = {
 };
 
 describe("loadConfig", () => {
+  test("the outboxes and the brand store default to data/ at the repository root", () => {
+    // The defaults are found from config.ts's own place, so a move that changes its depth breaks
+    // them (it did once); the root comes from git here, independently of that place.
+    const root = Bun.spawnSync(["git", "rev-parse", "--show-toplevel"]).stdout.toString().trim();
+    const config = loadConfig(BASE);
+    expect(config.email.outboxDir).toBe(join(root, "data/email/"));
+    expect(config.sms.outboxDir).toBe(join(root, "data/sms/"));
+    expect(config.brand.storeDir).toBe(join(root, "data/brand/"));
+  });
+
+
   test("defaults fill everything optional", () => {
     const config = loadConfig(BASE);
     expect(config.port).toBe(4006);
