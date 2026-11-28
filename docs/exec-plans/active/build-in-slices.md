@@ -625,7 +625,9 @@ payments; guests buy online once Snippe's and BRIQ's credentials exist.
   - [ ] (g) Each role's screens reviewed at 390px first; finish-work; release; acceptance.
 - [ ] Slice 6: online (held until the providers' credentials exist).
 - [ ] Slice 7: one voucher, devices online at once, through RADIUS (ADR-0015), with its switch PIN.
-  Steps (a) to (j) under Plan Of Work.
+  Steps (a) to (j) under Plan Of Work. Implemented, reviewed (code, security, simplify) and proved on
+  two simulated routers (28 November 2026); waiting on the owner's go to push, then the release items
+  and real phones.
 
 Each slice records, separately: implemented and `bun run verify` passing locally; published (pushed,
 CI green); deployed (Dokploy running the new image); accepted live (the slice's acceptance, done on
@@ -1142,7 +1144,10 @@ voucher's own columns for them went in `20261128900000_pin_attempts`); the accou
     has passed setup version 3. On the sim (router 1), with both guest rules removed by hand: setup
     applied 1 change (the accept above the drop, both above the hotspot's placeholder), then 0;
     `guest-test` 22/22 in 124 s with 12-digit codes.
-  - [ ] (j) finish-work, docs (ADR-0015 widened), push on the owner's go, real phones.
+  - [ ] (j) finish-work done on the branch (code and security reviews fixed, simplify applied, ADR-0008
+    and ADR-0015 widened, the "Setup failed" issue checked in the app); left: the push on the owner's
+    go, the release items (PIN key secret, the RADIUS firewall rule), the handbook once pushed, and
+    real phones.
 
 Before the release, outside the code: the host firewall allows UDP 1812-1813 from `wg0` to the
 platform's tunnel address (deploy runbook); the PIN key secret exists in the secrets repository and
