@@ -58,6 +58,10 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 - (2026-11-28) The move tool let a folder's line override files named on their own lines; M2's
   tunnel and outage files landed in `network/routers` and were moved on in the same slice. The tool
   now lets an explicit file win.
+- (2026-11-28) M3 to M6 committed `apps` and `docs` only, leaving the move tool's rewrites of
+  `tooling/router-sim.ts` uncommitted (verify passed, since it checks the working tree); they are
+  committed after M8. Each slice now stages everything with `git add -A`, after `git status` shows
+  nothing that isn't the slice's.
 - (2026-11-28) `access` (96 imports from other folders) and `audit` (23) are used by every feature,
   so they are foundations, not "people" features: with them in `core/`, imports between areas fell
   from about 450 to about 100.

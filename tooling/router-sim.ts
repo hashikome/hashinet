@@ -52,10 +52,10 @@ import {
 } from "../apps/api/src/network/provisioning/tunnel.js";
 import { probeVerify } from "../apps/api/src/network/provisioning/verify.js";
 import { storedSetup } from "../apps/api/src/network/routers/router-journey.js";
-import { bootstrapPlatform } from "../apps/api/src/platform/bootstrap.js";
-import { SessionsService } from "../apps/api/src/sessions/sessions.service.js";
-import { generateCode } from "../apps/api/src/vouchers/voucher-codes.js";
-import { VouchersService } from "../apps/api/src/vouchers/vouchers.service.js";
+import { bootstrapPlatform } from "../apps/api/src/platform/bootstrap/bootstrap.js";
+import { SessionsService } from "../apps/api/src/sales/sessions/sessions.service.js";
+import { generateCode } from "../apps/api/src/sales/vouchers/voucher-codes.js";
+import { VouchersService } from "../apps/api/src/sales/vouchers/vouchers.service.js";
 import { serveRadius } from "../apps/tunnel/src/radius-relay.js";
 
 const ROOT = resolve(import.meta.dir, "..");
