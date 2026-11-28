@@ -107,6 +107,26 @@ describe("Issues", () => {
     }
   });
 
+  test("a setup that stopped keeps its own issue: the router sync leaves keys it doesn't keep", async () => {
+    const cafe = await venue();
+    const router = await servedRouter(cafe.id, "online");
+    await api.app.get(IssuesService).open({
+      scope: "platform",
+      businessId: null,
+      kind: "router_offline",
+      key: `router-setup:${router.id}`,
+      venueId: cafe.id,
+      routerId: router.id,
+      holderId: null,
+      cause: "needs-setup",
+    });
+    await sync();
+    expect(await t.db.issue.findFirstOrThrow()).toMatchObject({
+      key: `router-setup:${router.id}`,
+      status: "open",
+    });
+  });
+
   test("claim, note, hand, release and take over, each on the log, by rank", async () => {
     const owner = await businessMember(t.db, {
       email: "owner@example.com",

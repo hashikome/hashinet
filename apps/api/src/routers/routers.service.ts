@@ -395,9 +395,11 @@ export class RoutersService {
   }
 
   /**
-   * After a release whose setup routers must have (`SETUP_VERSION`), every router set up before by an
-   * older one is set up again, one at a time (owner's decision, slice 7). One that stops raises an
-   * issue for HashiNet's team; a later setup that passes, this or by hand, resolves it.
+   * After a release whose setup routers must have (`SETUP_VERSION`), every router set up before
+   * (provisioned) whose last passed setup is older is set up again, one at a time (owner's decision,
+   * slice 7), and so is one whose last run stopped, each hour until one passes. One that stops raises
+   * an issue for HashiNet's team; a later setup that passes, this or by hand, resolves it. A router
+   * never provisioned is its onboarding's to set up.
    */
   async setUpAgainAfterRelease(): Promise<void> {
     const routers = await this.db.router.findMany({
@@ -407,9 +409,8 @@ export class RoutersService {
     });
     const stale = new Date(Date.now() - SETUP_STALE_MS);
     for (const router of routers) {
-      const version = setupVersionOf(router.lastSetup);
-      // Never set up, or set up by this release already: nothing to do.
-      if (version === 0 || version >= SETUP_VERSION) continue;
+      // A run that stopped passed no version (0), so it is tried again.
+      if (setupVersionOf(router.lastSetup) >= SETUP_VERSION) continue;
       const { count } = await this.db.router.updateMany({
         where: {
           id: router.id,

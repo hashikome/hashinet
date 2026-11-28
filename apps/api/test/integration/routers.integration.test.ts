@@ -366,7 +366,7 @@ describe("routers", () => {
 });
 
 describe("a release's routers are set up again", () => {
-  test("one set up by an older setup is set up again; one that stops raises an issue for HashiNet", async () => {
+  test("one set up by an older setup is set up again, and again while it stops; it raises an issue for HashiNet", async () => {
     const home = await venue();
     const older = await t.db.router.create({
       data: {
@@ -412,12 +412,16 @@ describe("a release's routers are set up again", () => {
       (await t.db.router.findUniqueOrThrow({ where: { id: never.id } })).lastSetupAt,
     ).toBeNull();
 
-    // Trying again keeps the one issue.
-    await t.db.router.update({
-      where: { id: older.id },
-      data: { lastSetup: { ok: true, phases: [], blockers: [] } },
-    });
+    // The next hour tries the one that stopped again, and keeps the one issue.
+    const firstTry = tried.lastSetupAt?.getTime() ?? 0;
+    await Bun.sleep(5);
     await api.app.get(RoutersService).setUpAgainAfterRelease();
+    const retried = await t.db.router.findUniqueOrThrow({ where: { id: older.id } });
+    expect(retried.lastSetupAt?.getTime() ?? 0).toBeGreaterThan(firstTry);
+    expect(retried.lastSetup).toMatchObject({ ok: false, version: null });
     expect(await t.db.issue.count({ where: { status: "open" } })).toBe(1);
+    expect(
+      (await t.db.router.findUniqueOrThrow({ where: { id: never.id } })).lastSetupAt,
+    ).toBeNull();
   });
 });

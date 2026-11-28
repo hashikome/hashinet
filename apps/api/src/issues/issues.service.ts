@@ -297,8 +297,10 @@ export class IssuesService {
           ...JOURNEY_SELECT,
         },
       }),
+      // Only the issues this keeps (`router:<id>`): another kind of router issue, such as a setup
+      // that stopped (`router-setup:<id>`), is resolved by its own journey.
       this.db.issue.findMany({
-        where: { kind: "router_offline", status: "open" },
+        where: { kind: "router_offline", status: "open", key: { startsWith: "router:" } },
         select: { scope: true, businessId: true, key: true },
       }),
     ]);
