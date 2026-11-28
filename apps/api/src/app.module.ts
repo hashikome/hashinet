@@ -10,8 +10,6 @@ import { HealthController } from "./core/health/health.controller.js";
 import { GuestModule } from "./guest/guest.module.js";
 import { RadiusModule } from "./network/radius/radius.module.js";
 import { RoutersModule } from "./network/routers/routers.module.js";
-import { PackagesModule } from "./packages/packages.module.js";
-import { PaymentWaysModule } from "./payment-ways/payment-ways.module.js";
 import { PaymentsModule } from "./payments/payments.module.js";
 import { AuthModule } from "./people/auth/auth.module.js";
 import { InvitationsModule } from "./people/invitations/invitations.module.js";
@@ -22,8 +20,10 @@ import { IssuesModule } from "./platform/issues/issues.module.js";
 import { OnboardingModule } from "./platform/onboarding/onboarding.module.js";
 import { PortalModule } from "./portal/portal.module.js";
 import { SessionsModule } from "./sessions/sessions.module.js";
-import { SitesModule } from "./sites/sites.module.js";
-import { VenuesModule } from "./venues/venues.module.js";
+import { PackagesModule } from "./venues/packages/packages.module.js";
+import { PaymentWaysModule } from "./venues/payment-ways/payment-ways.module.js";
+import { SitesModule } from "./venues/sites/sites.module.js";
+import { VenuesModule } from "./venues/venues/venues.module.js";
 import { VouchersModule } from "./vouchers/vouchers.module.js";
 
 @Module({})

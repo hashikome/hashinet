@@ -10,12 +10,12 @@ import { apiError } from "../core/http/error-envelope.js";
 import { packageRecord } from "../core/records/records.js";
 import type { Package, ServiceAccess, Venue } from "../generated/prisma/client.js";
 import { guestContext } from "../guest/guest-context.js";
-import { onSalePackages } from "../packages/on-sale.js";
 import { sellingStopped } from "../platform/billing/access-rule.js";
 import { platformLook, portalOf, templateOf } from "../portal/copy-down.js";
 import { PortalService } from "../portal/portal.service.js";
 import { lookOf } from "../portal/portal-input.js";
-import { venueNotFound } from "../venues/venue-errors.js";
+import { onSalePackages } from "../venues/packages/on-sale.js";
+import { venueNotFound } from "../venues/venues/venue-errors.js";
 import { Logos, logoUrl } from "./logos.js";
 
 const noTemplate = () =>

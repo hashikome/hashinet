@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { IssueList, VenueSites } from "@hashinet/types";
-import { openHosts } from "../../src/sites/open-sites.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+import { openHosts } from "../../../src/venues/sites/open-sites.js";
+import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, platformMember, testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi();

@@ -1,4 +1,4 @@
-import type { Package, Prisma, PrismaClient } from "../generated/prisma/client.js";
+import type { Package, Prisma, PrismaClient } from "../../generated/prisma/client.js";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 

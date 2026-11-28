@@ -1,5 +1,5 @@
 import { NotFoundException } from "@nestjs/common";
-import { apiError } from "../core/http/error-envelope.js";
+import { apiError } from "../../core/http/error-envelope.js";
 
 /** A venue outside the reader's reach is answered as not found, never as forbidden. */
 export const venueNotFound = () =>

@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { RoutersModule } from "../network/routers/routers.module.js";
+import { RoutersModule } from "../../network/routers/routers.module.js";
 import { VenuesModule } from "../venues/venues.module.js";
 import { PackagesController, VenuePackagesController } from "./packages.controller.js";
 import { PackagesService } from "./packages.service.js";

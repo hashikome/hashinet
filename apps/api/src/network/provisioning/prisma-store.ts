@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { SecretBox } from "../../core/crypto/secret-box.js";
 import { toJsonValue } from "../../core/database/json.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
-import { openHosts } from "../../sites/open-sites.js";
+import { openHosts } from "../../venues/sites/open-sites.js";
 import type { RouterAccess } from "../mikrotik/router-credentials.js";
 import type { BackendSettings } from "./context.js";
 import type { RouterStore } from "./store.js";

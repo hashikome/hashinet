@@ -29,7 +29,8 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
   integration tests, the map identical, the bootstrap command starting from its new path.
 - [x] (2026-11-28) M4 `people/`: auth, team, invitations. 18 files moved (3 integration tests);
   verify, 234 integration tests, the map identical.
-- [ ] M5 `venues/`.
+- [x] (2026-11-28) M5 `venues/`: venues, sites, packages, payment-ways. 20 files moved (3
+  integration tests); verify, 234 integration tests, the map identical.
 - [ ] M6 `sales/`.
 - [ ] M7 `guest/`, and `analytics/` alone; the root holds only bootstrap.
 - [ ] M8 `packages/types/src/index.ts` (1,803 lines) split by area.
