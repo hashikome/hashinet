@@ -95,8 +95,10 @@ export class SessionsService {
   }
 
   /**
-   * Ends a session and drops it from the venue's routers. The voucher stays valid, so the
-   * device can sign in again; to stop it, block the device.
+   * Ends a session, drops it from the venue's routers and takes its device off the voucher, or the
+   * router would sign it back in by its address through RADIUS. The voucher stays valid: the device
+   * signs in again at the portal, with the switch PIN as for any device new to it. To stop it, block
+   * the device.
    */
   async terminate(staff: Principal, id: string) {
     const session = await this.get(staff, id);
@@ -105,6 +107,19 @@ export class SessionsService {
       throw new ConflictException(
         apiError("SESSION_NOT_ACTIVE", "That session has already ended."),
       );
+    }
+    const row = await this.db.wifiSession.findUniqueOrThrow({
+      where: { id },
+      select: { voucherId: true, deviceId: true, macAddress: true },
+    });
+    if (row.voucherId !== null) {
+      await this.db.voucherDevice.deleteMany({
+        where: {
+          voucherId: row.voucherId,
+          // A removed device's sessions keep no device id: its address still names it.
+          device: row.deviceId === null ? { macAddress: row.macAddress } : { id: row.deviceId },
+        },
+      });
     }
     await this.audit.record(staff, {
       ...(await this.audit.atVenue(session.venueId)),

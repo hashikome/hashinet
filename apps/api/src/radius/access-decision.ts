@@ -49,7 +49,6 @@ export interface VoucherFacts {
   dataLimitGb: number | null;
   /** What its sessions have used, up and down. */
   usedBytes: bigint;
-  pinLocked: boolean;
   blocked: boolean;
   speed: PackageSpeed;
 }
@@ -92,11 +91,11 @@ export function throttledNow(speed: PackageSpeed, usedBytes: bigint, now: Date):
 
 /**
  * Whether a device may be online on `voucher` now, and on what terms (ADR-0015): time left from
- * HashiNet, and its speed, throttled while its package says so.
+ * HashiNet, and its speed, throttled while its package says so. Wrong switch PINs never stop a
+ * device here: they stop only moves to a new device, which the portal checks.
  */
 export function terms(voucher: VoucherFacts, now: Date): Answer {
   if (voucher.blocked) return { accept: false, reason: "voucher_blocked" };
-  if (voucher.pinLocked) return { accept: false, reason: "voucher_locked" };
   if (voucher.expiresAt === null) return { accept: false, reason: "not_started" };
   const sessionSeconds = Math.floor((voucher.expiresAt.getTime() - now.getTime()) / 1000);
   if (sessionSeconds <= 0) return { accept: false, reason: "expired" };

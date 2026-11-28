@@ -26,23 +26,18 @@ describe("the switch PIN", () => {
     expect(pinMatches(Buffer.alloc(32, 8), "v1", "1942", stored)).toBe(false);
   });
 
-  test("five wrong wait 15 minutes; ten lock it", () => {
+  test("a device's third wrong PIN waits 15 minutes; its sixth locks it", () => {
     const now = new Date("2026-11-28T10:00:00Z");
-    expect(afterWrongPin(0, now)).toEqual({
-      pinWrongTries: 1,
-      pinWaitUntil: null,
-      pinLockedAt: null,
+    expect(afterWrongPin(0, now)).toEqual({ wrongTries: 1, waitUntil: null, lockedAt: null });
+    expect(afterWrongPin(1, now)).toEqual({ wrongTries: 2, waitUntil: null, lockedAt: null });
+    expect(afterWrongPin(2, now)).toEqual({
+      wrongTries: 3,
+      waitUntil: new Date("2026-11-28T10:15:00Z"),
+      lockedAt: null,
     });
-    expect(afterWrongPin(4, now).pinWaitUntil).toEqual(new Date("2026-11-28T10:15:00Z"));
-    expect(afterWrongPin(5, now)).toEqual({
-      pinWrongTries: 6,
-      pinWaitUntil: null,
-      pinLockedAt: null,
-    });
-    expect(afterWrongPin(9, now)).toEqual({
-      pinWrongTries: 10,
-      pinWaitUntil: null,
-      pinLockedAt: now,
-    });
+    expect(afterWrongPin(3, now)).toEqual({ wrongTries: 4, waitUntil: null, lockedAt: null });
+    expect(afterWrongPin(5, now)).toEqual({ wrongTries: 6, waitUntil: null, lockedAt: now });
+    // Never past the lock, which the table's CHECK holds to.
+    expect(afterWrongPin(6, now).wrongTries).toBe(6);
   });
 });

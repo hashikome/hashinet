@@ -135,8 +135,8 @@ export class VouchersService {
 
   /**
    * Frees a voucher in use for the guest who shows it at the counter, when their phone changed or
-   * its PIN was lost or locked (ADR-0015, 6): its devices, their sessions and its switch PIN are
-   * cleared, so the next device signs in with the code alone and gets a new PIN; its time keeps
+   * its PIN was lost or locked (ADR-0015, 6): its devices, their sessions, its switch PIN and the
+   * wrong tries against it are cleared, so the next device signs in with the code alone and gets a new PIN; its time keeps
    * running.
    */
   async release(staff: Principal, id: string): Promise<VoucherListItem> {
@@ -154,10 +154,14 @@ export class VouchersService {
       "voucher_released",
     );
     const freed = await this.db.voucherDevice.deleteMany({ where: { voucherId: id } });
-    await this.db.voucher.update({
-      where: { id },
-      data: { pinHmac: null, pinWrongTries: 0, pinWaitUntil: null, pinLockedAt: null },
-    });
+    // Its PIN goes, and with it every device's wrong tries and the voucher's own count of them.
+    await this.db.$transaction([
+      this.db.voucher.update({ where: { id }, data: { pinHmac: null } }),
+      this.db.pinAttempt.deleteMany({ where: { voucherId: id } }),
+      this.db.rateLimit.deleteMany({
+        where: { key: { in: [`pin:voucher:${id}`, `pin:voucher-wait:${id}`] } },
+      }),
+    ]);
     await this.audit.record(staff, {
       ...(await this.audit.atVenue(voucher.venueId)),
       action: "voucher.release",

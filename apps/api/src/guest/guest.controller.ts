@@ -44,6 +44,8 @@ export class GuestController {
 
   @Post("redeem")
   @HttpCode(200)
+  // Its answer carries the switch PIN, a credential: no cache keeps it.
+  @Header("Cache-Control", "no-store")
   redeem(@Body() body: unknown, @Req() request: Request): Promise<RedeemResult> {
     return this.guest.redeem(parseInput(redeemInput, body), request.ip ?? null);
   }

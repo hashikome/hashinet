@@ -48,7 +48,6 @@ const VOUCHER_SELECT = {
   id: true,
   expiresAt: true,
   dataLimitGb: true,
-  pinLockedAt: true,
   blockedAt: true,
   package: { select: SPEED_SELECT },
 } as const;
@@ -66,7 +65,6 @@ function factsOf(v: VoucherRow, usedBytes: bigint): VoucherFacts {
     deviceLimit: p?.deviceLimit ?? 1,
     dataLimitGb: v.dataLimitGb,
     usedBytes,
-    pinLocked: v.pinLockedAt !== null,
     blocked: v.blockedAt !== null,
     speed: {
       downloadSpeedMbps: p?.downloadSpeedMbps ?? 0,
@@ -81,7 +79,7 @@ function factsOf(v: VoucherRow, usedBytes: bigint): VoucherFacts {
 }
 
 /** What a voucher's sessions have used, up and down. */
-export async function usedBytesOf(
+async function usedBytesOf(
   db: Pick<PrismaService, "wifiSession">,
   voucherId: string,
 ): Promise<bigint> {
@@ -115,7 +113,8 @@ const bytes = (packet: Packet, octets: number, gigawords: number) =>
  * no answer at all.
  */
 export class RadiusService {
-  private readonly recent = new Map<string, { answer: Buffer | null; at: number }>();
+  /** Answers by request, kept from before the request is decided, so a repeat waits for it. */
+  private readonly recent = new Map<string, { answer: Promise<Buffer | null>; at: number }>();
 
   constructor(
     private readonly db: PrismaService,
@@ -148,23 +147,37 @@ export class RadiusService {
     const seen = this.recent.get(key);
     if (seen) return seen.answer;
 
-    let answer: Buffer | null = null;
+    // A router repeats a request while the first is still being decided; deciding it again would
+    // find the admission used up and refuse it.
+    const answer = this.answer(
+      { id: router.id, venueId: router.venueId, businessId: router.venue.businessId },
+      packet,
+      secret,
+      now,
+    );
+    this.recent.set(key, { answer, at: now.getTime() });
+    // One that failed is decided afresh when it is repeated.
+    answer.catch(() => this.recent.delete(key));
+    return answer;
+  }
+
+  private async answer(
+    router: { id: string; venueId: string; businessId: string },
+    packet: Packet,
+    secret: Buffer,
+    now: Date,
+  ): Promise<Buffer | null> {
     if (packet.code === CODE.accessRequest) {
-      const decided = await this.access(
-        { id: router.id, venueId: router.venueId, businessId: router.venue.businessId },
-        packet,
-        secret,
-        now,
-      );
-      answer = decided.accept
+      const decided = await this.access(router, packet, secret, now);
+      return decided.accept
         ? reply(CODE.accessAccept, packet, this.acceptAttributes(decided), secret)
         : reply(CODE.accessReject, packet, [], secret);
-    } else if (packet.code === CODE.accountingRequest) {
-      await this.account({ id: router.id, venueId: router.venueId }, packet, now);
-      answer = reply(CODE.accountingResponse, packet, [], secret);
     }
-    this.recent.set(key, { answer, at: now.getTime() });
-    return answer;
+    if (packet.code === CODE.accountingRequest) {
+      await this.account(router, packet, now);
+      return reply(CODE.accountingResponse, packet, [], secret);
+    }
+    return null;
   }
 
   private forgetOld(nowMs: number): void {

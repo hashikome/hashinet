@@ -168,6 +168,34 @@ describe("devices", () => {
   });
 });
 
+describe("a voucher two blocked devices used", () => {
+  test("stays blocked until neither device is", async () => {
+    const w = await world();
+    const c = await owner();
+    const second = await t.db.device.create({ data: { macAddress: "AA:BB:CC:00:01:02" } });
+    await t.db.wifiSession.create({
+      data: {
+        venueId: w.theirs.id,
+        deviceId: second.id,
+        macAddress: second.macAddress,
+        status: "disconnected",
+      },
+    });
+    await t.db.voucherDevice.create({ data: { voucherId: w.voucher.id, deviceId: second.id } });
+    const status = (id: string, value: "active" | "blocked") =>
+      c.request("PUT", `/api/devices/${id}/status`, { status: value });
+    const blockedAt = async () =>
+      (await t.db.voucher.findUniqueOrThrow({ where: { id: w.voucher.id } })).blockedAt;
+
+    expect((await status(w.phone.id, "blocked")).status).toBe(200);
+    expect((await status(second.id, "blocked")).status).toBe(200);
+    expect((await status(w.phone.id, "active")).status).toBe(200);
+    expect(await blockedAt()).not.toBeNull();
+    expect((await status(second.id, "active")).status).toBe(200);
+    expect(await blockedAt()).toBeNull();
+  });
+});
+
 describe("blocking is a business's own", () => {
   test("an operator blocks a device seen at their venue, for the whole business", async () => {
     const w = await world();
@@ -294,11 +322,20 @@ describe("releasing a voucher", () => {
     const w = await world();
     const { voucher } = w;
     const c = await owner();
+    // A device locked out by wrong PINs, and the voucher's own count of them.
+    await t.db.pinAttempt.create({
+      data: { voucherId: voucher.id, deviceId: w.only.id, wrongTries: 6, lockedAt: new Date() },
+    });
+    await t.db.rateLimit.create({
+      data: { key: `pin:voucher:${voucher.id}`, count: 15, lastRequest: BigInt(Date.now()) },
+    });
 
     const released = await c.request("POST", `/api/vouchers/${voucher.id}/release`);
     expect(released.status).toBe(200);
     expect(released.body).toMatchObject({ voucher: { status: "active" } });
     expect(await t.db.voucherDevice.count({ where: { voucherId: voucher.id } })).toBe(0);
+    expect(await t.db.pinAttempt.count({ where: { voucherId: voucher.id } })).toBe(0);
+    expect(await t.db.rateLimit.count({ where: { key: { contains: voucher.id } } })).toBe(0);
     expect(
       await t.db.wifiSession.findUniqueOrThrow({ where: { id: w.atTheirs.id } }),
     ).toMatchObject({ status: "terminated", terminationReason: "voucher_released" });
@@ -410,5 +447,18 @@ describe("sessions", () => {
     expect(again.status).toBe(409);
     expect(again.body).toMatchObject({ code: "SESSION_NOT_ACTIVE" });
     expect((await t.db.auditLog.findMany()).map((a) => a.action)).toEqual(["session.terminate"]);
+  });
+
+  test("ending a session takes its device off the voucher, so the router can't sign it back in", async () => {
+    const w = await world();
+    const c = await owner();
+    expect((await c.request("POST", `/api/sessions/${w.atTheirs.id}/terminate`)).status).toBe(200);
+    expect(
+      await t.db.voucherDevice.count({ where: { voucherId: w.voucher.id, deviceId: w.phone.id } }),
+    ).toBe(0);
+    // The voucher stays: it is still in use, for the device to sign in to again at the portal.
+    expect((await t.db.voucher.findUniqueOrThrow({ where: { id: w.voucher.id } })).status).toBe(
+      "active",
+    );
   });
 });

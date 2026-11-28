@@ -24,10 +24,18 @@ import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { bytes } from "../serializers/records.js";
 import { RouterSync } from "../services/router-sync.js";
-import { countFailure, isLimited } from "./attempts.js";
+import { countFailure, isLimited, limitedUntil } from "./attempts.js";
 import { guestContext } from "./guest-context.js";
 import type { contextInput, redeemInput, sessionInput } from "./guest-input.js";
-import { afterWrongPin, makePin, pinHmac, pinMatches } from "./switch-pin.js";
+import {
+  afterWrongPin,
+  makePin,
+  PIN_WAIT_MINUTES,
+  pinHmac,
+  pinMatches,
+  VOUCHER_WRONG_PIN_WINDOW_SECONDS,
+  VOUCHER_WRONG_PINS,
+} from "./switch-pin.js";
 
 const WINDOW_SECONDS = 600;
 /** A venue's guests share one public address, so this is generous; the code length is the wall. */
@@ -40,7 +48,18 @@ const refuse = (code: string, message: string) => new BadRequestException(apiErr
 /** How long a sign-in's admission waits for the router's RADIUS request. */
 const ADMISSION_SECONDS = 60;
 
-type Holder = { id: string; macAddress: string; ipAddress: string | null; router: Router | null };
+type Holder = {
+  id: string;
+  deviceId: string | null;
+  macAddress: string;
+  ipAddress: string | null;
+  router: Router | null;
+};
+
+/** A voucher's wrong PINs from any device, within the hour, and the wait they start. */
+const voucherWrongPins = (voucherId: string) => `pin:voucher:${voucherId}`;
+const voucherPinWait = (voucherId: string) => `pin:voucher-wait:${voucherId}`;
+const PIN_WAIT_SECONDS = PIN_WAIT_MINUTES * 60;
 
 const pinLocked = () =>
   new HttpException(
@@ -201,6 +220,22 @@ export class GuestService {
     deviceLimit: number,
     device: { mac: string; ip: string; pin: string | null },
   ): Promise<{ pin: string | null }> {
+    // A device that would need the PIN while it, or the voucher, waits or is locked is refused from
+    // the database before any router is asked; the claim checks again under the voucher's lock.
+    if (voucher.status !== "unused" && voucher.pinHmac !== null) {
+      const known = await this.db.device.findUnique({
+        where: { macAddress: device.mac },
+        select: {
+          id: true,
+          vouchers: { where: { voucherId: voucher.id }, select: { deviceId: true } },
+        },
+      });
+      if (known === null || known.vouchers.length === 0) {
+        const barred = await this.pinBarrier(this.db, voucher.id, known?.id ?? null, new Date());
+        if (barred.refused) throw barred.refused;
+      }
+    }
+
     // Asked only once a code is good, so the public route cannot be used to reach a router at will,
     // and before the claim, so the clock never starts for a device that is not here.
     const present = await this.sync.deviceOnNetwork(router, device);
@@ -217,18 +252,14 @@ export class GuestService {
     const holders = await this.db.wifiSession.findMany({
       where: { voucherId: voucher.id, status: "connected", macAddress: { not: device.mac } },
       orderBy: { startedAt: "asc" },
-      select: { id: true, macAddress: true, ipAddress: true, router: true },
+      select: { id: true, deviceId: true, macAddress: true, ipAddress: true, router: true },
     });
-    const gone = new Set<string>();
-    for (const h of holders) {
-      if (
-        h.router &&
-        h.ipAddress &&
-        (await this.sync.stillThere(h.router, h.ipAddress)) === false
-      ) {
-        gone.add(h.id);
-      }
-    }
+    const answers = await Promise.all(
+      holders.map(async (h) =>
+        h.router && h.ipAddress ? this.sync.stillThere(h.router, h.ipAddress) : null,
+      ),
+    );
+    const gone = new Set(holders.filter((_, i) => answers[i] === false).map((h) => h.id));
 
     const claimed = await this.claim(voucher, device, deviceLimit, router, holders, gone);
     if (claimed.refused) throw claimed.refused;
@@ -301,8 +332,9 @@ export class GuestService {
    * two devices at once can't both take the last place and two sign-ins can't both start its clock.
    * A new device on a voucher in use, or a known one whose places all hold devices still there,
    * needs the switch PIN; a wrong one is counted, and committed, before it is refused. The right one
-   * moves the voucher: the oldest device online gives up its place. Leaves the admission the
-   * router's RADIUS request takes.
+   * moves the voucher: the oldest device online gives up its place. A device that gives up its place
+   * leaves the voucher, so it can't come back by its address before the new device's session opens;
+   * it signs in again at the portal. Leaves the admission the router's RADIUS request takes.
    */
   private async claim(
     voucher: Voucher,
@@ -328,7 +360,7 @@ export class GuestService {
       const full = live.length >= deviceLimit;
 
       if (current.status !== "unused" && current.pinHmac !== null && (!known || full)) {
-        const refused = await this.checkPin(tx, current, input.pin, now);
+        const refused = await this.checkPin(tx, current, device.id, input.pin, now);
         if (refused) return { refused, displaced: [], pin: null };
       }
       const displaced = [
@@ -342,6 +374,15 @@ export class GuestService {
             status: "terminated",
             endedAt: now,
             terminationReason: "moved_to_another_device",
+          },
+        });
+        await tx.voucherDevice.deleteMany({
+          where: {
+            voucherId: voucher.id,
+            OR: [
+              { deviceId: { in: displaced.flatMap((h) => (h.deviceId ? [h.deviceId] : [])) } },
+              { device: { macAddress: { in: displaced.map((h) => h.macAddress) } } },
+            ],
           },
         });
       }
@@ -368,7 +409,7 @@ export class GuestService {
       if (pin !== null) {
         await tx.voucher.update({
           where: { id: voucher.id },
-          data: { pinHmac: pinHmac(this.config.pinKey, voucher.id, pin), pinWrongTries: 0 },
+          data: { pinHmac: pinHmac(this.config.pinKey, voucher.id, pin) },
         });
       }
       const admission = {
@@ -386,19 +427,46 @@ export class GuestService {
   }
 
   /**
-   * The switch PIN, checked: locked, waiting, missing and wrong are refused; a wrong one is counted
-   * (five wait 15 minutes, ten lock it). The right one starts the count again. Null when it may go on.
+   * Whether a move to the voucher waits or is refused, before a PIN is looked at: this device locked
+   * (six wrong) or waiting (three), or the voucher waiting after fifteen wrong from any devices in
+   * the hour. Returns this device's attempts too, for the count.
+   */
+  private async pinBarrier(
+    db: Prisma.TransactionClient,
+    voucherId: string,
+    deviceId: string | null,
+    now: Date,
+  ): Promise<{ refused: HttpException | null; wrongTries: number }> {
+    const attempt =
+      deviceId === null
+        ? null
+        : await db.pinAttempt.findUnique({
+            where: { voucherId_deviceId: { voucherId, deviceId } },
+          });
+    const wrongTries = attempt?.wrongTries ?? 0;
+    if (attempt?.lockedAt) return { refused: pinLocked(), wrongTries };
+    if (attempt?.waitUntil && attempt.waitUntil > now) {
+      return { refused: pinWait(attempt.waitUntil), wrongTries };
+    }
+    const until = await limitedUntil(db, voucherPinWait(voucherId), 1, PIN_WAIT_SECONDS);
+    return { refused: until ? pinWait(until) : null, wrongTries };
+  }
+
+  /**
+   * The switch PIN, checked for the device asking: locked, waiting, missing and wrong are refused. A
+   * wrong one counts against that device (three wait 15 minutes, six lock it until a release) and
+   * against the voucher, whose fifteenth in the hour makes every move wait. The right one starts the
+   * device's count again. Null when it may go on.
    */
   private async checkPin(
     tx: Prisma.TransactionClient,
     voucher: Voucher,
+    deviceId: string,
     pin: string | null,
     now: Date,
   ): Promise<HttpException | null> {
-    if (voucher.pinLockedAt !== null) return pinLocked();
-    if (voucher.pinWaitUntil !== null && voucher.pinWaitUntil > now) {
-      return pinWait(voucher.pinWaitUntil);
-    }
+    const barred = await this.pinBarrier(tx, voucher.id, deviceId, now);
+    if (barred.refused) return barred.refused;
     if (pin === null) {
       return new ConflictException(
         apiError(
@@ -407,20 +475,37 @@ export class GuestService {
         ),
       );
     }
+    const key = { voucherId_deviceId: { voucherId: voucher.id, deviceId } };
     if (
       voucher.pinHmac !== null &&
       pinMatches(this.config.pinKey, voucher.id, pin, voucher.pinHmac)
     ) {
-      await tx.voucher.update({
-        where: { id: voucher.id },
-        data: { pinWrongTries: 0, pinWaitUntil: null },
+      await tx.pinAttempt.updateMany({
+        where: { voucherId: voucher.id, deviceId },
+        data: { wrongTries: 0, waitUntil: null },
       });
       return null;
     }
-    const after = afterWrongPin(voucher.pinWrongTries, now);
-    await tx.voucher.update({ where: { id: voucher.id }, data: after });
-    if (after.pinLockedAt) return pinLocked();
-    if (after.pinWaitUntil) return pinWait(after.pinWaitUntil);
+    const after = afterWrongPin(barred.wrongTries, now);
+    await tx.pinAttempt.upsert({
+      where: key,
+      create: { voucherId: voucher.id, deviceId, ...after },
+      update: after,
+    });
+    await countFailure(tx, voucherWrongPins(voucher.id), VOUCHER_WRONG_PIN_WINDOW_SECONDS);
+    const voucherFull = await limitedUntil(
+      tx,
+      voucherWrongPins(voucher.id),
+      VOUCHER_WRONG_PINS,
+      VOUCHER_WRONG_PIN_WINDOW_SECONDS,
+    );
+    if (voucherFull) await countFailure(tx, voucherPinWait(voucher.id), PIN_WAIT_SECONDS);
+    if (after.lockedAt) return pinLocked();
+    if (after.waitUntil) return pinWait(after.waitUntil);
+    const until = voucherFull
+      ? await limitedUntil(tx, voucherPinWait(voucher.id), 1, PIN_WAIT_SECONDS)
+      : null;
+    if (until) return pinWait(until);
     return refuse("PIN_WRONG", "That PIN isn't right. Check it and try again.");
   }
 

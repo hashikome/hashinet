@@ -99,13 +99,13 @@ describe("voucher expiry", () => {
     expect(closed.endedAt).not.toBeNull();
   });
 
-  test("forgets an expired voucher's switch PIN", async () => {
+  test("keeps an expired voucher's switch PIN, for an outage's time given back to revive it with", async () => {
     await venueWithVouchers([{ code: "WIFI-PIN", status: "active", expiresIn: -60_000 }]);
     await t.db.voucher.update({ where: { code: "WIFI-PIN" }, data: { pinHmac: "a".repeat(64) } });
     await services().expiry.runOnce();
-    expect(
-      (await t.db.voucher.findUniqueOrThrow({ where: { code: "WIFI-PIN" } })).pinHmac,
-    ).toBeNull();
+    expect((await t.db.voucher.findUniqueOrThrow({ where: { code: "WIFI-PIN" } })).pinHmac).toBe(
+      "a".repeat(64),
+    );
   });
 });
 

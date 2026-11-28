@@ -3,9 +3,10 @@ import { enrichWideEvent } from "../observability/wide-event.js";
 import type { RouterSync } from "../services/router-sync.js";
 
 /**
- * Ends vouchers whose time is up, and the sessions they hold, and forgets their switch PINs. The
- * router ends a session at its Session-Timeout itself; this keeps the records truthful, and takes
- * off any device still online on one.
+ * Ends vouchers whose time is up, and the sessions they hold. The router ends a session at its
+ * Session-Timeout itself; this keeps the records truthful, and takes off any device still online on
+ * one. A switch PIN stays, since an outage's time given back can make the voucher work again, and
+ * only a release clears it (ADR-0015, 4).
  */
 export class VoucherExpiry {
   constructor(
@@ -53,11 +54,11 @@ export class VoucherExpiry {
     await this.db.$transaction([
       this.db.voucher.updateMany({
         where: { id: { in: usedIds } },
-        data: { status: "used", pinHmac: null },
+        data: { status: "used" },
       }),
       this.db.voucher.updateMany({
         where: { id: { in: lapsedIds } },
-        data: { status: "expired", pinHmac: null },
+        data: { status: "expired" },
       }),
     ]);
     for (const s of online) if (s.router) await this.sync.endSession(s.router, s.macAddress);

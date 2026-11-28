@@ -1,9 +1,18 @@
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 
-/** Wrong PINs in a row that make a voucher wait, and that lock it until staff release it. */
-export const PIN_WAIT_AFTER = 5;
-export const PIN_LOCK_AFTER = 10;
+/**
+ * A device's wrong PINs in a row on a voucher that make it wait, and that lock it out of moving the
+ * voucher until a release (ADR-0015, 4). Other devices, and those holding a place, go on.
+ */
+export const PIN_WAIT_AFTER = 3;
+export const PIN_LOCK_AFTER = 6;
 export const PIN_WAIT_MINUTES = 15;
+/**
+ * A voucher's wrong PINs from any devices within the hour that make every move to it wait: a MAC
+ * address costs nothing to change, so the per-device count alone doesn't limit guessing.
+ */
+export const VOUCHER_WRONG_PINS = 15;
+export const VOUCHER_WRONG_PIN_WINDOW_SECONDS = 3600;
 
 /** All one digit, a straight run either way, or one pair twice: what someone would try first. */
 export function obviousPin(pin: string): boolean {
@@ -34,20 +43,16 @@ export function pinMatches(key: Buffer, voucherId: string, pin: string, stored: 
   return given.length === kept.length && timingSafeEqual(given, kept);
 }
 
-/** After a wrong PIN: the count, and a wait or a lock when it reaches one. */
+/** After a device's wrong PIN: its count, and a wait or a lock when it reaches one. */
 export function afterWrongPin(
   tries: number,
   now: Date,
-): {
-  pinWrongTries: number;
-  pinWaitUntil: Date | null;
-  pinLockedAt: Date | null;
-} {
+): { wrongTries: number; waitUntil: Date | null; lockedAt: Date | null } {
   const count = Math.min(tries + 1, PIN_LOCK_AFTER);
   return {
-    pinWrongTries: count,
-    pinWaitUntil:
+    wrongTries: count,
+    waitUntil:
       count === PIN_WAIT_AFTER ? new Date(now.getTime() + PIN_WAIT_MINUTES * 60_000) : null,
-    pinLockedAt: count >= PIN_LOCK_AFTER ? now : null,
+    lockedAt: count >= PIN_LOCK_AFTER ? now : null,
   };
 }

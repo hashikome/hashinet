@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { createHash, createHmac, randomBytes } from "node:crypto";
 import { SecretBox } from "../../src/crypto/secret-box.js";
 import { ATTR, CODE, decode, int, text, u32 } from "../../src/radius/codec.js";
+import { RadiusService } from "../../src/radius/radius.service.js";
+import { recordClients } from "../../src/services/live-monitor.js";
 import { useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { testBusinessId } from "./people.js";
@@ -200,6 +202,50 @@ describe("RADIUS from the routers (ADR-0015)", () => {
     expect((await relay(macLogin("AA:BB:CC:DD:EE:FF"))).reply?.code).toBe(CODE.accessReject);
   });
 
+  test("a device holding its place comes back by its address while wrong PINs lock others out", async () => {
+    const { voucher, router, device } = await seed();
+    await t.db.wifiSession.create({
+      data: {
+        voucherId: voucher.id,
+        routerId: router.id,
+        venueId: router.venueId,
+        deviceId: device.id,
+        macAddress: MAC,
+        status: "connected",
+      },
+    });
+    const guesser = await t.db.device.create({ data: { macAddress: OTHER } });
+    await t.db.pinAttempt.create({
+      data: { voucherId: voucher.id, deviceId: guesser.id, wrongTries: 6, lockedAt: new Date() },
+    });
+    // Even the holder's own lock, were it to have one, stops only a move.
+    await t.db.pinAttempt.create({
+      data: { voucherId: voucher.id, deviceId: device.id, wrongTries: 6, lockedAt: new Date() },
+    });
+    expect((await relay(macLogin())).reply?.code).toBe(CODE.accessAccept);
+  });
+
+  test("a repeat of a request still being decided gets the same answer", async () => {
+    const { router, voucher, device } = await seed();
+    await t.db.radiusAdmission.create({
+      data: {
+        voucherId: voucher.id,
+        routerId: router.id,
+        deviceId: device.id,
+        macAddress: MAC,
+        expiresAt: new Date(Date.now() + 60_000),
+      },
+    });
+    const packet = signIn();
+    const radius = api.app.get(RadiusService);
+    const [first, repeat] = await Promise.all([
+      radius.handle(PEER, packet),
+      radius.handle(PEER, packet),
+    ]);
+    expect(first === null ? null : decode(first).code).toBe(CODE.accessAccept);
+    expect(repeat === null ? null : decode(repeat).code).toBe(CODE.accessAccept);
+  });
+
   test("accounting opens, counts and ends a session, once per session id", async () => {
     const { voucher } = await seed();
     const START = 1,
@@ -257,5 +303,39 @@ describe("RADIUS from the routers (ADR-0015)", () => {
       terminationReason: "moved_to_another_device",
       downloadBytes: 14001n,
     });
+  });
+});
+
+describe("the live monitor and accounting", () => {
+  test("a session whose Start came after the router's list was read is not closed as gone", async () => {
+    const { router, voucher } = await seed();
+    const readAt = new Date(Date.now() - 1000);
+    const late = await t.db.wifiSession.create({
+      data: {
+        voucherId: voucher.id,
+        routerId: router.id,
+        venueId: router.venueId,
+        macAddress: OTHER,
+        status: "connected",
+        startedAt: new Date(),
+      },
+    });
+    const left = await t.db.wifiSession.create({
+      data: {
+        voucherId: voucher.id,
+        routerId: router.id,
+        venueId: router.venueId,
+        macAddress: MAC,
+        status: "connected",
+        startedAt: new Date(Date.now() - 60_000),
+      },
+    });
+    await recordClients(t.db, router.id, [], readAt);
+    expect((await t.db.wifiSession.findUniqueOrThrow({ where: { id: late.id } })).status).toBe(
+      "connected",
+    );
+    expect((await t.db.wifiSession.findUniqueOrThrow({ where: { id: left.id } })).status).toBe(
+      "disconnected",
+    );
   });
 });

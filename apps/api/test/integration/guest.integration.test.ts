@@ -237,9 +237,26 @@ describe("the guest portal", () => {
       terminationReason: "moved_to_another_device",
     });
     expect(await t.db.radiusAdmission.count({ where: { macAddress: other.mac } })).toBe(1);
+    // The right PIN starts the device's count again.
+    expect(await t.db.pinAttempt.findFirstOrThrow()).toMatchObject({ wrongTries: 0 });
+    // The device it moved from is off the voucher: it signs in again at the portal, not by its
+    // address before the new device's session opens.
     expect(
-      (await t.db.voucher.findUniqueOrThrow({ where: { id: voucher.id } })).pinWrongTries,
+      await t.db.voucherDevice.count({
+        where: { voucherId: voucher.id, device: { macAddress: "AA:BB:CC:00:00:02" } },
+      }),
     ).toBe(0);
+  });
+
+  test("its answer, which carries the PIN, is never cached", async () => {
+    const { router } = await setting(1);
+    const r = await fetch(`${api.url}/api/guest/redeem`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ router: router.id, mac: MAC, ip: "10.5.50.20", code: "482716936518" }),
+    });
+    expect(r.status).toBe(200);
+    expect(r.headers.get("cache-control")).toBe("no-store");
   });
 
   test("two devices at once: the second finds the voucher in use, never free", async () => {
@@ -252,29 +269,93 @@ describe("the guest portal", () => {
     expect(replies.find((r) => r.status === 409)?.body.code).toBe("PIN_REQUIRED");
   });
 
-  test("five wrong PINs wait 15 minutes; ten lock the voucher", async () => {
+  test("a device's third wrong PIN waits 15 minutes and its sixth locks it out; others still move it", async () => {
     const { router, voucher } = await setting(1);
     const pin = String((await redeem(router.id, { mac: "AA:BB:CC:00:00:02" })).body.switchPin);
+    await online(voucher.id, router.id, "AA:BB:CC:00:00:02", "10.5.50.2");
+    answering.add("10.5.50.2");
     const wrong = pin === "0517" ? "0518" : "0517";
-    const other = { mac: "AA:BB:CC:00:00:03", ip: "10.5.50.3", pin: wrong };
-    for (let i = 1; i < 5; i++)
-      expect((await redeem(router.id, other)).body.code).toBe("PIN_WRONG");
-    const waiting = await redeem(router.id, other);
+    const guesser = { mac: "AA:BB:CC:00:00:03", ip: "10.5.50.3", pin: wrong };
+    for (let i = 1; i < 3; i++)
+      expect((await redeem(router.id, guesser)).body.code).toBe("PIN_WRONG");
+    const waiting = await redeem(router.id, guesser);
     expect(waiting.status).toBe(429);
     expect(waiting.body).toMatchObject({
       code: "PIN_WAIT",
       details: { until: expect.any(String) },
     });
-    // Even the right PIN waits.
-    expect((await redeem(router.id, { ...other, pin })).body.code).toBe("PIN_WAIT");
+    // That device waits, even with the right PIN; another device doesn't.
+    expect((await redeem(router.id, { ...guesser, pin })).body.code).toBe("PIN_WAIT");
+    const bystander = { mac: "AA:BB:CC:00:00:04", ip: "10.5.50.4" };
+    expect((await redeem(router.id, { ...bystander, pin: wrong })).body.code).toBe("PIN_WRONG");
 
-    await t.db.voucher.update({ where: { id: voucher.id }, data: { pinWaitUntil: new Date() } });
-    for (let i = 6; i < 10; i++)
-      expect((await redeem(router.id, other)).body.code).toBe("PIN_WRONG");
-    const locked = await redeem(router.id, other);
+    await t.db.pinAttempt.updateMany({
+      where: { device: { macAddress: guesser.mac } },
+      data: { waitUntil: new Date() },
+    });
+    for (let i = 4; i < 6; i++)
+      expect((await redeem(router.id, guesser)).body.code).toBe("PIN_WRONG");
+    const locked = await redeem(router.id, guesser);
     expect(locked.status).toBe(423);
     expect(locked.body.code).toBe("PIN_LOCKED");
-    expect((await redeem(router.id, { ...other, pin })).body.code).toBe("PIN_LOCKED");
+    expect((await redeem(router.id, { ...guesser, pin })).body.code).toBe("PIN_LOCKED");
+
+    // The holder stays online throughout; another device moves it with the right PIN.
+    expect(ended).toEqual([]);
+    expect((await redeem(router.id, { ...bystander, pin })).status).toBe(200);
+    expect(ended).toEqual(["AA:BB:CC:00:00:02"]);
+  });
+
+  test("a device waiting or locked out costs no router call", async () => {
+    const { router, voucher } = await setting(1);
+    await redeem(router.id, { mac: "AA:BB:CC:00:00:02" });
+    const guesser = await t.db.device.create({ data: { macAddress: "AA:BB:CC:00:00:03" } });
+    await t.db.pinAttempt.create({
+      data: { voucherId: voucher.id, deviceId: guesser.id, wrongTries: 6, lockedAt: new Date() },
+    });
+    let asked = 0;
+    const sync = api.app.get(RouterSync);
+    sync.deviceOnNetwork = async () => {
+      asked += 1;
+      return true;
+    };
+    sync.stillThere = async () => {
+      asked += 1;
+      return true;
+    };
+    const reply = await redeem(router.id, {
+      mac: guesser.macAddress,
+      ip: "10.5.50.3",
+      pin: "0517",
+    });
+    expect(reply.body.code).toBe("PIN_LOCKED");
+    expect(asked).toBe(0);
+  });
+
+  test("fifteen wrong PINs in the hour from rotating addresses make every move wait, not the holder", async () => {
+    const { router, voucher } = await setting(1);
+    const pin = String((await redeem(router.id, { mac: "AA:BB:CC:00:00:02" })).body.switchPin);
+    await online(voucher.id, router.id, "AA:BB:CC:00:00:02", "10.5.50.2");
+    answering.add("10.5.50.2");
+    const wrong = pin === "0517" ? "0518" : "0517";
+    const replies: string[] = [];
+    for (let i = 0; i < 15; i++) {
+      const mac = `AA:BB:CC:00:01:${String(i).padStart(2, "0")}`;
+      replies.push(
+        String((await redeem(router.id, { mac, ip: "10.5.50.9", pin: wrong })).body.code),
+      );
+    }
+    expect(replies.slice(0, 14).every((c) => c === "PIN_WRONG")).toBe(true);
+    expect(replies[14]).toBe("PIN_WAIT");
+    // A fresh device with the right PIN waits too.
+    const fresh = await redeem(router.id, { mac: "AA:BB:CC:00:02:01", ip: "10.5.50.8", pin });
+    expect(fresh.status).toBe(429);
+    expect(fresh.body).toMatchObject({ code: "PIN_WAIT", details: { until: expect.any(String) } });
+    // The holder is not moved, and signs in again on its own place without a PIN.
+    expect(ended).toEqual([]);
+    expect((await redeem(router.id, { mac: "AA:BB:CC:00:00:02", ip: "10.5.50.2" })).status).toBe(
+      200,
+    );
   });
 
   test("a device that used the voucher comes back without the PIN to a free place, or one whose holder has gone", async () => {

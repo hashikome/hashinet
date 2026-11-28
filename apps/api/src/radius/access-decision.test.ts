@@ -10,7 +10,6 @@ const voucher = (over: Partial<VoucherFacts> = {}): VoucherFacts => ({
   deviceLimit: 1,
   dataLimitGb: null,
   usedBytes: 0n,
-  pinLocked: false,
   blocked: false,
   speed: {
     downloadSpeedMbps: 5,
@@ -73,7 +72,7 @@ describe("the terms of a place", () => {
     });
   });
 
-  test("expired, not started or locked is refused", () => {
+  test("expired, not started or blocked is refused", () => {
     expect(terms(voucher({ expiresAt: NOW }), NOW)).toEqual({ accept: false, reason: "expired" });
     expect(terms(voucher({ expiresAt: null }), NOW)).toEqual({
       accept: false,
@@ -82,10 +81,6 @@ describe("the terms of a place", () => {
     expect(terms(voucher({ blocked: true }), NOW)).toEqual({
       accept: false,
       reason: "voucher_blocked",
-    });
-    expect(terms(voucher({ pinLocked: true }), NOW)).toEqual({
-      accept: false,
-      reason: "voucher_locked",
     });
   });
 });

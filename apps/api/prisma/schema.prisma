@@ -691,8 +691,9 @@ model Device {
   payments         Payment[]
   sessions         WifiSession[]
 
-  blocks     DeviceBlock[]
-  admissions RadiusAdmission[]
+  blocks      DeviceBlock[]
+  admissions  RadiusAdmission[]
+  pinAttempts PinAttempt[]
 
   @@map("devices")
 }
@@ -722,13 +723,9 @@ model Voucher {
   /// When it was refunded, while not used yet (ADR-0017, 7).
   refundedAt         DateTime?     @map("refunded_at") @db.Timestamptz(3)
   /// The switch PIN (ADR-0015, 4): an HMAC of it under a Docker secret and the voucher's id, made at
-  /// the first sign-in and shown once; null before then, after a release, and once it expires.
+  /// the first sign-in and shown once; null before then and after a release. It outlives the
+  /// voucher's expiry, as an outage's time given back can revive the voucher.
   pinHmac            String?       @map("pin_hmac") @db.VarChar(64)
-  /// Wrong PINs in a row: five wait 15 minutes (`pinWaitUntil`), ten lock it (`pinLockedAt`) until
-  /// staff release it. A right PIN starts the count again.
-  pinWrongTries      Int           @default(0) @map("pin_wrong_tries")
-  pinWaitUntil       DateTime?     @map("pin_wait_until") @db.Timestamptz(3)
-  pinLockedAt        DateTime?     @map("pin_locked_at") @db.Timestamptz(3)
   /// Blocked with a device that used it (ADR-0015, 9): a MAC address can change, so the block is on
   /// the voucher too, refused on every device until the device is unblocked.
   blockedAt          DateTime?     @map("blocked_at") @db.Timestamptz(3)
@@ -743,6 +740,7 @@ model Voucher {
   sessions         WifiSession[]
   refund           Refund?
   admissions       RadiusAdmission[]
+  pinAttempts      PinAttempt[]
 
   @@index([status])
   @@index([packageId])
@@ -764,6 +762,28 @@ model VoucherDevice {
   @@id([voucherId, deviceId])
   @@index([deviceId])
   @@map("voucher_devices")
+}
+
+/// A device's wrong switch PINs on a voucher (ADR-0015, 4): three wait 15 minutes, six lock that
+/// device out of moving the voucher until a release, which clears the voucher's rows. Other devices,
+/// and those holding a place, are not affected. Written under a lock on the voucher.
+model PinAttempt {
+  id         String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  voucherId  String    @map("voucher_id") @db.Uuid
+  deviceId   String    @map("device_id") @db.Uuid
+  /// Wrong PINs in a row (CHECK 0 to 6); a right one starts the count again.
+  wrongTries Int       @default(0) @map("wrong_tries")
+  waitUntil  DateTime? @map("wait_until") @db.Timestamptz(3)
+  lockedAt   DateTime? @map("locked_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  device  Device  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([voucherId, deviceId])
+  @@index([deviceId])
+  @@map("pin_attempts")
 }
 
 model Payment {

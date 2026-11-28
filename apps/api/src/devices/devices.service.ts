@@ -114,12 +114,15 @@ export class DevicesService {
       .setDeviceBlocked(businessId, device.macAddress, status === "blocked")
       .catch(captureFailure);
     // The block is on its vouchers too (ADR-0015, 9): a MAC address can change, so a voucher it
-    // used here, still live, is refused on every device until it is unblocked.
+    // used here, still live, is refused on every device until it is unblocked, and stays refused
+    // while another device that used it is still blocked here.
     const vouchers = await this.db.voucher.findMany({
       where: {
         devices: { some: { deviceId: id } },
         venue: { businessId },
-        ...(status === "blocked" ? { status: { in: ["pending_activation", "active"] } } : {}),
+        ...(status === "blocked"
+          ? { status: { in: ["pending_activation", "active"] } }
+          : { NOT: { devices: { some: { device: { blocks: { some: { businessId } } } } } } }),
       },
       select: { id: true },
     });

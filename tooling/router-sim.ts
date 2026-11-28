@@ -1338,6 +1338,13 @@ async function guestTest(): Promise<void> {
     const code = await issueVoucher(db, one.router.venueId, 30);
     const voucherRow = () => db.voucher.findUniqueOrThrow({ where: { code } });
     const voucherId = (await voucherRow()).id;
+    /** The wrong PINs counted against guest 2's device on the voucher. */
+    const wrongTries = async () =>
+      (
+        await db.pinAttempt.findFirst({
+          where: { voucherId, device: { macAddress: simRouter(2).guest.mac } },
+        })
+      )?.wrongTries ?? 0;
     const direct = await g1.shell.run(
       `wget -q -T 8 -O /dev/null --post-data 'username=${code}&password=${code}&dst=' 'http://${HOTSPOT_GATEWAY}/login' 2>&1 | head -c 200`,
       30_000,
@@ -1425,7 +1432,7 @@ async function guestTest(): Promise<void> {
     );
     const wrong = String((Number(pin ?? "0") + 1) % 10_000).padStart(4, "0");
     const wrongTry = await g2.redeem(code, wrong);
-    const tries = (await voucherRow()).pinWrongTries;
+    const tries = await wrongTries();
     record(
       "A wrong PIN is refused and counted: PIN_WRONG",
       wrongTry.status === 400 && wrongTry.code === "PIN_WRONG" && tries === 1,
@@ -1439,7 +1446,7 @@ async function guestTest(): Promise<void> {
     record(
       "The right PIN moves it to guest 2 on router 2, which signs in through RADIUS",
       moved.status === 200 && online2.internet && /"switchPin":null/.test(moved.text),
-      `${moved.status} in ${moveMs} ms, no new PIN; guest 2 sees ${describe(online2)}; wrong tries ${(await voucherRow()).pinWrongTries}`,
+      `${moved.status} in ${moveMs} ms, no new PIN; guest 2 sees ${describe(online2)}; wrong tries ${await wrongTries()}`,
     );
     const s2Row = await pollFor(
       () =>

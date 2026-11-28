@@ -1,7 +1,6 @@
 import { getLogger } from "@logtape/logtape";
-import type { PrismaClient, Router } from "../generated/prisma/client.js";
+import type { PrismaClient } from "../generated/prisma/client.js";
 import { throttledNow } from "../radius/access-decision.js";
-import { usedBytesOf } from "../radius/radius.service.js";
 import {
   closeConnection,
   connectToRouter,
@@ -75,6 +74,8 @@ export class LiveMonitor {
         let conn: MikroTikConn | null = null;
         try {
           conn = await connectToRouter(creds);
+          // Taken before the list is read: a session that opens after it is not on it.
+          const readAt = new Date();
           const [clients, uptimeSeconds, internet] = await Promise.all([
             getActiveClients(conn),
             getSystemUptimeSeconds(conn),
@@ -96,7 +97,7 @@ export class LiveMonitor {
           });
           await recordInternet(this.db, router.id, internet);
 
-          await this.recordClients(router, clients);
+          await recordClients(this.db, router.id, clients, readAt);
           await this.applyThrottle(conn, router.id, clients);
         } catch (err) {
           logger.error("Poll failed for router {router}", {
@@ -111,38 +112,6 @@ export class LiveMonitor {
         } finally {
           if (conn) await closeConnection(conn);
         }
-      }),
-    );
-  }
-
-  /**
-   * Brings this router's sessions in line with what it reports: the counters of those online, and
-   * an end for those it no longer lists (a lost accounting Stop). Sessions open from accounting, by
-   * device address, since a device back by its address shows that as its user (ADR-0015).
-   */
-  private async recordClients(router: Router, clients: MikroTikActiveClient[]): Promise<void> {
-    const sessions = await this.db.wifiSession.findMany({
-      where: { routerId: router.id, status: "connected" },
-      select: { id: true, macAddress: true },
-    });
-    const byMac = new Map(clients.map((c) => [c.mac, c]));
-    const gone = sessions.filter((s) => !byMac.has(s.macAddress)).map((s) => s.id);
-    if (gone.length > 0) {
-      await this.db.wifiSession.updateMany({
-        where: { id: { in: gone } },
-        data: { status: "disconnected", endedAt: new Date() },
-      });
-    }
-    await Promise.allSettled(
-      sessions.flatMap((s) => {
-        const client = byMac.get(s.macAddress);
-        if (!client) return [];
-        return [
-          this.db.wifiSession.update({
-            where: { id: s.id },
-            data: { uploadBytes: BigInt(client.bytesIn), downloadBytes: BigInt(client.bytesOut) },
-          }),
-        ];
       }),
     );
   }
@@ -211,9 +180,23 @@ export class LiveMonitor {
     for (const [sessionId, retryAt] of this.throttleBackoff) {
       if (retryAt <= now.getTime()) this.throttleBackoff.delete(sessionId);
     }
+    const voucherIds = [
+      ...new Set(sessions.flatMap((s) => (s.voucherId === null ? [] : [s.voucherId]))),
+    ];
+    const usage =
+      voucherIds.length === 0
+        ? []
+        : await this.db.wifiSession.groupBy({
+            by: ["voucherId"],
+            where: { voucherId: { in: voucherIds } },
+            _sum: { uploadBytes: true, downloadBytes: true },
+          });
+    const usedBy = new Map(
+      usage.map((u) => [u.voucherId, (u._sum.uploadBytes ?? 0n) + (u._sum.downloadBytes ?? 0n)]),
+    );
     for (const session of sessions) {
       if (!session.package || session.voucherId === null) continue;
-      const used = await usedBytesOf(this.db, session.voucherId);
+      const used = usedBy.get(session.voucherId) ?? 0n;
       if (throttledNow(session.package, used, now) === session.isThrottled) {
         this.throttleBackoff.delete(session.id);
         continue;
@@ -237,6 +220,46 @@ export class LiveMonitor {
       }
     }
   }
+}
+
+/**
+ * Brings a router's sessions in line with what it reported at `readAt`: the counters of those
+ * online, and an end for those it no longer lists (a lost accounting Stop). Only sessions that
+ * started before the list was read can be missing from it. Sessions open from accounting, by device
+ * address, since a device back by its address shows that as its user (ADR-0015).
+ */
+export async function recordClients(
+  db: Pick<PrismaClient, "wifiSession">,
+  routerId: string,
+  clients: MikroTikActiveClient[],
+  readAt: Date,
+): Promise<void> {
+  const sessions = await db.wifiSession.findMany({
+    where: { routerId, status: "connected" },
+    select: { id: true, macAddress: true, startedAt: true },
+  });
+  const byMac = new Map(clients.map((c) => [c.mac, c]));
+  const gone = sessions
+    .filter((s) => !byMac.has(s.macAddress) && s.startedAt < readAt)
+    .map((s) => s.id);
+  if (gone.length > 0) {
+    await db.wifiSession.updateMany({
+      where: { id: { in: gone }, status: "connected" },
+      data: { status: "disconnected", endedAt: new Date() },
+    });
+  }
+  await Promise.allSettled(
+    sessions.flatMap((s) => {
+      const client = byMac.get(s.macAddress);
+      if (!client) return [];
+      return [
+        db.wifiSession.update({
+          where: { id: s.id },
+          data: { uploadBytes: BigInt(client.bytesIn), downloadBytes: BigInt(client.bytesOut) },
+        }),
+      ];
+    }),
+  );
 }
 
 /**
