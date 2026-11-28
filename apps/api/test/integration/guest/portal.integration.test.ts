@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { PlatformPortal } from "@hashinet/types";
-import { copyToBusiness } from "../../src/portal/copy-down.js";
-import { HASHINET_PORTAL } from "../../src/portal/portal-input.js";
-import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { platformMember, testBusinessId } from "./people.js";
+import { copyToBusiness } from "../../../src/guest/portal/copy-down.js";
+import { HASHINET_PORTAL } from "../../../src/guest/portal/portal-input.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { platformMember, testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi();

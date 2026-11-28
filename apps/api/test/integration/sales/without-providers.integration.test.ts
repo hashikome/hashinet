@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, protectedOwner, sellingVenue, testBusinessId } from "./people.js";
+import { browser, enrollAuthenticatorFor, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, protectedOwner, sellingVenue, testBusinessId } from "../people.js";
 
 /**
  * No provider credentials: what launches. A sale at the counter needs neither provider: the money

@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { RoutersModule } from "../network/routers/routers.module.js";
+import { RoutersModule } from "../../network/routers/routers.module.js";
 import { PortalController } from "./portal.controller.js";
 import { PortalService } from "./portal.service.js";
 

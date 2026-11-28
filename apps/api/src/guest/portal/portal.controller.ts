@@ -1,9 +1,9 @@
 import type { PlatformPortal } from "@hashinet/types";
 import { Body, Controller, Delete, Get, Param, Post, Put } from "@nestjs/common";
-import { Can, CurrentPrincipal } from "../core/access/access.guard.js";
-import type { Principal } from "../core/access/principal.js";
-import { idParam } from "../core/http/id-param.js";
-import { parseInput } from "../core/http/validation.js";
+import { Can, CurrentPrincipal } from "../../core/access/access.guard.js";
+import type { Principal } from "../../core/access/principal.js";
+import { idParam } from "../../core/http/id-param.js";
+import { parseInput } from "../../core/http/validation.js";
 import { PortalService } from "./portal.service.js";
 import { contentInput, themeInput } from "./portal-input.js";
 

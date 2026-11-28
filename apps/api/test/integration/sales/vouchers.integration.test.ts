@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { VenueRecord } from "@hashinet/types";
-import { Prisma } from "../../src/generated/prisma/client.js";
-import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, sellingVenue, testBusinessId } from "./people.js";
+import { Prisma } from "../../../src/generated/prisma/client.js";
+import { browser, type Client, enrollAuthenticatorFor, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, sellingVenue, testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi();

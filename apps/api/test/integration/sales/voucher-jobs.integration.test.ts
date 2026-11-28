@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { randomBytes } from "node:crypto";
-import { AuditLog } from "../../src/core/audit/audit-log.js";
-import { SecretBox } from "../../src/core/crypto/secret-box.js";
-import { RouterAccess } from "../../src/network/mikrotik/router-credentials.js";
-import { RouterSync } from "../../src/network/monitor/router-sync.js";
-import { VoucherExpiry } from "../../src/sales/vouchers/voucher-expiry.js";
-import { useTestDatabase } from "./harness.js";
-import { testBusinessId } from "./people.js";
+import { AuditLog } from "../../../src/core/audit/audit-log.js";
+import { SecretBox } from "../../../src/core/crypto/secret-box.js";
+import { RouterAccess } from "../../../src/network/mikrotik/router-credentials.js";
+import { RouterSync } from "../../../src/network/monitor/router-sync.js";
+import { VoucherExpiry } from "../../../src/sales/vouchers/voucher-expiry.js";
+import { useTestDatabase } from "../harness.js";
+import { testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 

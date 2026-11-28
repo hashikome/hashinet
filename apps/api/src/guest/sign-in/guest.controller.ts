@@ -13,20 +13,20 @@ import {
   Res,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { Public } from "../core/access/access.guard.js";
-import type { AppConfig } from "../core/config/config.js";
-import { APP_CONFIG } from "../core/config/config.module.js";
-import { PrismaService } from "../core/database/prisma.service.js";
-import { apiError } from "../core/http/error-envelope.js";
-import { idParam } from "../core/http/id-param.js";
-import { parseInput } from "../core/http/validation.js";
-import { resolveBackendEndpoints } from "../network/provisioning/context.js";
+import { Public } from "../../core/access/access.guard.js";
+import type { AppConfig } from "../../core/config/config.js";
+import { APP_CONFIG } from "../../core/config/config.module.js";
+import { PrismaService } from "../../core/database/prisma.service.js";
+import { apiError } from "../../core/http/error-envelope.js";
+import { idParam } from "../../core/http/id-param.js";
+import { parseInput } from "../../core/http/validation.js";
+import { resolveBackendEndpoints } from "../../network/provisioning/context.js";
 import {
   PORTAL_FILES,
   type PortalFileName,
   renderPortalFile,
-} from "../network/provisioning/portal-files.js";
-import { backendSettings } from "../network/routers/backend-settings.js";
+} from "../../network/provisioning/portal-files.js";
+import { backendSettings } from "../../network/routers/backend-settings.js";
 import { GuestService } from "./guest.service.js";
 import { contextInput, redeemInput, sessionInput } from "./guest-input.js";
 

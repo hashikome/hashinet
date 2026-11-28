@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
 import type { Request } from "express";
-import { MAX_UPLOAD_BYTES } from "../../brand/brand-images.js";
+import { MAX_UPLOAD_BYTES } from "../../guest/brand/brand-images.js";
 import { apiError } from "./error-envelope.js";
 
 const tooLarge = () =>

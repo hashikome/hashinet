@@ -6,9 +6,9 @@ import {
   FRONTEND_ORIGIN,
   signInWithCode,
   useApi,
-} from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+} from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, platformMember, testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi();

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { RouterSync } from "../../src/network/monitor/router-sync.js";
-import { useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { protectedOwner, testBusinessId } from "./people.js";
+import { RouterSync } from "../../../src/network/monitor/router-sync.js";
+import { useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { protectedOwner, testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi({ ROUTER_MANAGEMENT_URL: "http://10.0.2.2:8080" });

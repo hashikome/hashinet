@@ -11,14 +11,14 @@ import {
 } from "@nestjs/common";
 import type { Request } from "express";
 import { z } from "zod";
-import { Can, CurrentPrincipal } from "../core/access/access.guard.js";
-import type { Principal } from "../core/access/principal.js";
-import { AuditLog } from "../core/audit/audit-log.js";
-import { PrismaService } from "../core/database/prisma.service.js";
-import { apiError } from "../core/http/error-envelope.js";
-import { readUpload } from "../core/http/upload.js";
-import { oneLine, parseInput } from "../core/http/validation.js";
-import type { Business } from "../generated/prisma/client.js";
+import { Can, CurrentPrincipal } from "../../core/access/access.guard.js";
+import type { Principal } from "../../core/access/principal.js";
+import { AuditLog } from "../../core/audit/audit-log.js";
+import { PrismaService } from "../../core/database/prisma.service.js";
+import { apiError } from "../../core/http/error-envelope.js";
+import { readUpload } from "../../core/http/upload.js";
+import { oneLine, parseInput } from "../../core/http/validation.js";
+import type { Business } from "../../generated/prisma/client.js";
 import { Logos, logoUrl } from "./logos.js";
 
 export const profileInput = z.object({

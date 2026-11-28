@@ -16,9 +16,9 @@ import { apiError } from "../../core/http/error-envelope.js";
 import { oneLine } from "../../core/http/validation.js";
 import { captureFailure } from "../../core/observability/telemetry.js";
 import { normalizeTzPhone } from "../../core/phone.js";
+import { copyToBusiness, copyToVenue } from "../../guest/portal/copy-down.js";
 import { BillingSettings, feeTermsColumns } from "../../platform/billing/billing-settings.js";
 import { OnboardingService } from "../../platform/onboarding/onboarding.service.js";
-import { copyToBusiness, copyToVenue } from "../../portal/copy-down.js";
 import { businessInvitationEmail } from "./invitation-emails.js";
 import { digestOf, INVITATION_HOURS, newInvitationToken } from "./invitation-token.js";
 

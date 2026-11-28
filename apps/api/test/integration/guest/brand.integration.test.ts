@@ -3,11 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { GuestContext, PortalEditor, PortalLook } from "@hashinet/types";
 import sharp from "sharp";
-import { Logos } from "../../src/brand/logos.js";
-import { HASHINET_COLOURS, HASHINET_PORTAL } from "../../src/portal/portal-input.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, sellingVenue, testBusinessId } from "./people.js";
+import { Logos } from "../../../src/guest/brand/logos.js";
+import { HASHINET_COLOURS, HASHINET_PORTAL } from "../../../src/guest/portal/portal-input.js";
+import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, sellingVenue, testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 const BRAND_DIR = join(tmpdir(), `hashinet-brand-${Date.now()}`);

@@ -1,11 +1,11 @@
 import type { PortalEditor } from "@hashinet/types";
 import { Body, Controller, Delete, Get, Param, Put, Req } from "@nestjs/common";
 import type { Request } from "express";
-import { Can, CurrentPrincipal } from "../core/access/access.guard.js";
-import type { Principal } from "../core/access/principal.js";
-import { idParam } from "../core/http/id-param.js";
-import { readUpload } from "../core/http/upload.js";
-import { parseInput } from "../core/http/validation.js";
+import { Can, CurrentPrincipal } from "../../core/access/access.guard.js";
+import type { Principal } from "../../core/access/principal.js";
+import { idParam } from "../../core/http/id-param.js";
+import { readUpload } from "../../core/http/upload.js";
+import { parseInput } from "../../core/http/validation.js";
 import { lookInput } from "../portal/portal-input.js";
 import { BrandService } from "./brand.service.js";
 

@@ -34,7 +34,9 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 - [x] (2026-11-28) M6 `sales/`: vouchers, payments, devices, sessions, sms (was messaging). 28
   files moved (3 integration tests); verify, 234 integration tests (3 payment tests timed out once at
   load 13 and passed alone and on a rerun), the map identical.
-- [ ] M7 `guest/`, and `analytics/` alone; the root holds only bootstrap.
+- [x] (2026-11-28) M7 `guest/` (sign-in, portal, brand), and `analytics/` alone; the root holds
+  only bootstrap. 30 files moved (every integration test now sits in its area's folder, the shared
+  harness at the root); the codemap and `apps/api/README.md` show the eight areas.
 - [ ] M8 `packages/types/src/index.ts` (1,803 lines) split by area.
 - [ ] M9 The web's components: primitives and areas.
 - [ ] M10 `tooling/router-sim.ts` (1,816 lines) split into its parts.

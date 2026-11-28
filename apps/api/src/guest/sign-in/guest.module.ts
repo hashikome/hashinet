@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
+import { RoutersModule } from "../../network/routers/routers.module.js";
+import { PackagesModule } from "../../venues/packages/packages.module.js";
 import { BrandModule } from "../brand/brand.module.js";
-import { RoutersModule } from "../network/routers/routers.module.js";
-import { PackagesModule } from "../venues/packages/packages.module.js";
 import {
   GuestBrandController,
   GuestController,

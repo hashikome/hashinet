@@ -2,7 +2,7 @@ import { Inject, Injectable, Module } from "@nestjs/common";
 import type { AppConfig } from "../../core/config/config.js";
 import { APP_CONFIG } from "../../core/config/config.module.js";
 import { IntervalJob, ScheduledJobs } from "../../core/jobs/interval-job.js";
-import { GuestModule } from "../../guest/guest.module.js";
+import { GuestModule } from "../../guest/sign-in/guest.module.js";
 import { RoutersModule } from "../../network/routers/routers.module.js";
 import { PackagesModule } from "../../venues/packages/packages.module.js";
 import { PaymentWaysModule } from "../../venues/payment-ways/payment-ways.module.js";

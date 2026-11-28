@@ -4,7 +4,7 @@ import type {
   Prisma,
   PrismaClient,
   VenuePortal,
-} from "../generated/prisma/client.js";
+} from "../../generated/prisma/client.js";
 import { contentOf, HASHINET_COLOURS, HASHINET_PORTAL, lookOf } from "./portal-input.js";
 
 type Db = PrismaClient | Prisma.TransactionClient;

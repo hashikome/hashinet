@@ -27,17 +27,19 @@ Copy the root `.env.example` to `apps/api/.env` and set `ENCRYPTION_KEY` and `BE
 
 ```
 src/
-  entrypoint.ts, main.ts   telemetry, then the Nest application and its middleware
-  auth/                    Better Auth, the staff guard, venue scope
-  venues/ routers/ packages/ vouchers/ sessions/ devices/
-  analytics/ portal/ team/ audit/
-  live/                    the /ws/live hub
-  http/                    error shape, wide events, origin check, validation
-  network/
-    mikrotik/              the RouterOS API client
-    provisioning/          everything that configures a router
-    monitor/               the live monitor, RouterSync and outages
-    radius/                every hotspot login and session report
+  entrypoint.ts, main.ts, app.module.ts   telemetry, then the Nest application and its middleware
+  core/       what every area uses: config, database, http, observability, jobs, crypto, email,
+              health, live (the /ws/live hub), access (the one policy), audit, time, records
+  people/     auth, team, invitations
+  platform/   HashiNet running businesses: businesses, onboarding, billing, issues, bootstrap
+  venues/     venues, sites, packages, payment-ways
+  sales/      vouchers, payments, devices, sessions, sms
+  guest/      sign-in (a device onto a voucher, the switch PIN), portal, brand
+  network/    routers, tunnel, provisioning (everything that configures a router), mikrotik (the
+              RouterOS client), monitor (live monitor, RouterSync, outages), radius
+  analytics/  periods and reports
+  generated/  the Prisma client (git-ignored)
+test/integration/<area>/   database tests, by the same areas
 mikrotik-files/            login.html, alogin.html and status.html uploaded to routers
 ```
 

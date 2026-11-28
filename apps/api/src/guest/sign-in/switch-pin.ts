@@ -1,5 +1,5 @@
 import { createHmac, randomInt } from "node:crypto";
-import { sameBytes } from "../core/crypto/same-bytes.js";
+import { sameBytes } from "../../core/crypto/same-bytes.js";
 
 /**
  * A device's wrong PINs in a row on a voucher that make it wait, and that lock it out of moving the

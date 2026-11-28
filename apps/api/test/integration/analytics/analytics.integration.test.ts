@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember, testBusinessId } from "./people.js";
+import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, platformMember, testBusinessId } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi();

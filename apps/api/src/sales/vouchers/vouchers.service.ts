@@ -8,7 +8,7 @@ import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
 import { voucherRecord } from "../../core/records/records.js";
 import type { VoucherWhereInput } from "../../generated/prisma/models.js";
-import { PIN_RELEASED } from "../../guest/switch-pin.js";
+import { PIN_RELEASED } from "../../guest/sign-in/switch-pin.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 import type { listQuery, refundInput } from "./voucher-input.js";
 

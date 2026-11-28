@@ -4,7 +4,7 @@ import {
   type BrandStore,
   DiskBrandStore,
   R2BrandStore,
-} from "../../brand/brand-store.js";
+} from "../../guest/brand/brand-store.js";
 import {
   FakeGateway,
   MOBILE_MONEY,

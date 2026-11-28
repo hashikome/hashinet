@@ -1,6 +1,6 @@
 import { normalCode } from "@hashinet/types";
 import { z } from "zod";
-import { normalMac } from "../network/mac.js";
+import { normalMac } from "../../network/mac.js";
 
 const MAC = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
