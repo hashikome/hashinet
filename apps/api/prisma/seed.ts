@@ -4,8 +4,8 @@
 import type { BusinessRole, Region } from "@hashinet/types";
 import { loadConfig } from "../src/core/config/config.js";
 import { createPrismaClient } from "../src/core/database/client.js";
-import { beginOnboarding } from "../src/onboarding/begin.js";
-import { bootstrapPlatform, DEFAULT_PACKAGES } from "../src/platform/bootstrap.js";
+import { bootstrapPlatform, DEFAULT_PACKAGES } from "../src/platform/bootstrap/bootstrap.js";
+import { beginOnboarding } from "../src/platform/onboarding/begin.js";
 import { copyToBusiness, copyToVenue } from "../src/portal/copy-down.js";
 import { seedHistory } from "./seed-history.js";
 

@@ -6,10 +6,6 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 import { z } from "zod";
-import { BillingEvents } from "../billing/billing-events.js";
-import { BillingSettings } from "../billing/billing-settings.js";
-import { lockBusiness } from "../billing/business-lock.js";
-import { Invoices } from "../billing/invoices.js";
 import type { Principal } from "../core/access/principal.js";
 import { AuditLog } from "../core/audit/audit-log.js";
 import { PrismaService } from "../core/database/prisma.service.js";
@@ -18,6 +14,10 @@ import { oneLine } from "../core/http/validation.js";
 import { captureFailure } from "../core/observability/telemetry.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { RouterSync } from "../network/monitor/router-sync.js";
+import { BillingEvents } from "../platform/billing/billing-events.js";
+import { BillingSettings } from "../platform/billing/billing-settings.js";
+import { lockBusiness } from "../platform/billing/business-lock.js";
+import { Invoices } from "../platform/billing/invoices.js";
 import { VenuesService } from "../venues/venues.service.js";
 import { openHosts, openSites, slotPaid } from "./open-sites.js";
 

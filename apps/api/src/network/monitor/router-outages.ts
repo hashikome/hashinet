@@ -3,7 +3,7 @@ import { AuditLog } from "../../core/audit/audit-log.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { captureFailure } from "../../core/observability/telemetry.js";
 import { Prisma } from "../../generated/prisma/client.js";
-import { IssuesService } from "../../issues/issues.service.js";
+import { IssuesService } from "../../platform/issues/issues.service.js";
 
 const MINUTE_MS = 60_000;
 

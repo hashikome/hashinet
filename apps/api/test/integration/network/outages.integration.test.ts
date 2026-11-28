@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import type { GuestContext, RouterList, VenueRecord } from "@hashinet/types";
-import { IssuesService } from "../../../src/issues/issues.service.js";
 import { recordInternet } from "../../../src/network/monitor/live-monitor.js";
 import { RouterOutages } from "../../../src/network/monitor/router-outages.js";
+import { IssuesService } from "../../../src/platform/issues/issues.service.js";
 import { browser, enrollAuthenticatorFor, useApi } from "../api.js";
 import { useTestDatabase } from "../harness.js";
 import { businessMember, protectedOwner, testBusinessId } from "../people.js";

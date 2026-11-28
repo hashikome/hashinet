@@ -1,6 +1,5 @@
 import type { AuditAction, GuestContext, PortalEditor, PortalLook } from "@hashinet/types";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { sellingStopped } from "../billing/access-rule.js";
 import type { Principal } from "../core/access/principal.js";
 import { venueScope } from "../core/access/venue-scope.js";
 import { AuditLog } from "../core/audit/audit-log.js";
@@ -12,6 +11,7 @@ import { packageRecord } from "../core/records/records.js";
 import type { Package, ServiceAccess, Venue } from "../generated/prisma/client.js";
 import { guestContext } from "../guest/guest-context.js";
 import { onSalePackages } from "../packages/on-sale.js";
+import { sellingStopped } from "../platform/billing/access-rule.js";
 import { platformLook, portalOf, templateOf } from "../portal/copy-down.js";
 import { PortalService } from "../portal/portal.service.js";
 import { lookOf } from "../portal/portal-input.js";

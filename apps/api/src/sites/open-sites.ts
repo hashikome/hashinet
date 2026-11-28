@@ -1,5 +1,5 @@
-import { paidOf } from "../billing/business-lock.js";
 import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import { paidOf } from "../platform/billing/business-lock.js";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 

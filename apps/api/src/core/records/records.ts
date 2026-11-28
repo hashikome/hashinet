@@ -6,7 +6,6 @@ import type {
   VenueRecord,
   VoucherRecord,
 } from "@hashinet/types";
-import { sellingStopped } from "../../billing/access-rule.js";
 import type {
   Package,
   Router,
@@ -24,6 +23,7 @@ import {
   type VenueRouter,
   wifiNameOf,
 } from "../../network/routers/router-journey.js";
+import { sellingStopped } from "../../platform/billing/access-rule.js";
 
 /**
  * The only place database rows become API records (`@hashinet/types`): decimals as strings,

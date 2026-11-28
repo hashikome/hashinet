@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { BrandModule } from "../brand/brand.module.js";
 import { RoutersModule } from "../network/routers/routers.module.js";
-import { OnboardingModule } from "../onboarding/onboarding.module.js";
+import { OnboardingModule } from "../platform/onboarding/onboarding.module.js";
 import { VenuesController } from "./venues.controller.js";
 import { VenuesService } from "./venues.service.js";
 

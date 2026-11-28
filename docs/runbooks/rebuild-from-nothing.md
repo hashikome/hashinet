@@ -21,7 +21,7 @@ Cloudflare and Google Cloud, as infra's documents describe.
 | 7 | DNS: `hashinet.hashikome.com` proxied, `wg.hashikome.com` DNS-only | infra's OpenTofu plan, M3 | **no**: Cloudflare dashboard |
 | 8 | The R2 bucket for venue logos and backgrounds, and its scoped key (its two Docker secrets) | infra's OpenTofu plan, M3 | **no**: Cloudflare dashboard |
 | 9 | A release: push `main` (or re-run its last release). The migration stack applies every migration, including the one that keeps the runtime role off `_prisma_migrations`; the application stack follows | `.github/workflows`, `deploy/` | yes |
-| 10 | Data: restore the latest `hashinet-postgres` snapshot, then re-apply step 3; or, on an empty start, `bun run platform:bootstrap --email <email> --name <name>` in the API container | infra's restore workflow (milestone 3); `apps/api/src/platform/bootstrap.cli.ts` | restore: **no** (milestone 3); bootstrap: yes |
+| 10 | Data: restore the latest `hashinet-postgres` snapshot, then re-apply step 3; or, on an empty start, `bun run platform:bootstrap --email <email> --name <name>` in the API container | infra's restore workflow (milestone 3); `apps/api/src/platform/bootstrap/bootstrap.cli.ts` | restore: **no** (milestone 3); bootstrap: yes |
 | 11 | Monitors: Uptime Kuma on `/api/health` and `/join` | workspace's Kuma task | **no**: made by hand |
 | 12 | Routers: restored data keeps their tunnel keys and they reconnect by themselves; on an empty start, set each one up again from its venue's router page ([router-onboarding.md](router-onboarding.md)) | HashiNet | yes |
 

@@ -11,7 +11,6 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import type { z } from "zod";
-import { sellingStopped } from "../billing/access-rule.js";
 import { BrandService } from "../brand/brand.service.js";
 import { Logos } from "../brand/logos.js";
 import { ownerProtected } from "../core/access/owner-protected.js";
@@ -26,6 +25,7 @@ import { ROUTER_REACH } from "../network/mikrotik/router-credentials.js";
 import { RouterSync } from "../network/monitor/router-sync.js";
 import { bytesUsed } from "../network/radius/access-decision.js";
 import { PackagesService } from "../packages/packages.service.js";
+import { sellingStopped } from "../platform/billing/access-rule.js";
 import { deviceLimitOf, takeDevicesOff } from "../vouchers/voucher-devices.js";
 import { countFailure, isLimited } from "./attempts.js";
 import { guestContext } from "./guest-context.js";

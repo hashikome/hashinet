@@ -24,7 +24,9 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 - [x] (2026-11-28) M2 `network/`: the routers. 58 files moved (5 integration tests to
   `test/integration/network/`); verify, 234 integration tests, the map identical, and the router sim's
   `guest-test` 22/22 on two RouterOS 7.25 routers.
-- [ ] M3 `platform/`: HashiNet running businesses.
+- [x] (2026-11-28) M3 `platform/`: HashiNet running businesses. 36 files moved (6 integration
+  tests to `test/integration/platform/`), the `platform:bootstrap` script repointed; verify, 234
+  integration tests, the map identical, the bootstrap command starting from its new path.
 - [ ] M4 `people/`.
 - [ ] M5 `venues/`.
 - [ ] M6 `sales/`.

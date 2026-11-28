@@ -6,7 +6,6 @@ import {
 } from "@hashinet/types";
 import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { z } from "zod";
-import { BillingSettings, feeTermsColumns } from "../billing/billing-settings.js";
 import type { Principal } from "../core/access/principal.js";
 import { AuditLog } from "../core/audit/audit-log.js";
 import type { AppConfig } from "../core/config/config.js";
@@ -17,7 +16,8 @@ import { apiError } from "../core/http/error-envelope.js";
 import { oneLine } from "../core/http/validation.js";
 import { captureFailure } from "../core/observability/telemetry.js";
 import { normalizeTzPhone } from "../core/phone.js";
-import { OnboardingService } from "../onboarding/onboarding.service.js";
+import { BillingSettings, feeTermsColumns } from "../platform/billing/billing-settings.js";
+import { OnboardingService } from "../platform/onboarding/onboarding.service.js";
 import { copyToBusiness, copyToVenue } from "../portal/copy-down.js";
 import { businessInvitationEmail } from "./invitation-emails.js";
 import { digestOf, INVITATION_HOURS, newInvitationToken } from "./invitation-token.js";

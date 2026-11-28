@@ -26,7 +26,7 @@ import { apiError } from "../../core/http/error-envelope.js";
 import { captureFailure } from "../../core/observability/telemetry.js";
 import { routerRecord } from "../../core/records/records.js";
 import type { Prisma } from "../../generated/prisma/client.js";
-import { IssuesService, PLATFORM_WORKSPACE } from "../../issues/issues.service.js";
+import { IssuesService, PLATFORM_WORKSPACE } from "../../platform/issues/issues.service.js";
 import { RouterError } from "../mikrotik/mikrotik-errors.js";
 import { RouterAccess } from "../mikrotik/router-credentials.js";
 import { RouterLogger } from "../mikrotik/router-log.js";

@@ -26,7 +26,7 @@ import { captureFailure } from "../core/observability/telemetry.js";
 import { memberInvitationEmail } from "../invitations/invitation-emails.js";
 import { INVITATION_HOURS, newInvitationToken } from "../invitations/invitation-token.js";
 import { invitationRecordOf, pending } from "../invitations/invitations.service.js";
-import { IssuesService } from "../issues/issues.service.js";
+import { IssuesService } from "../platform/issues/issues.service.js";
 
 const venueIds = z.array(z.uuid()).max(50).default([]);
 

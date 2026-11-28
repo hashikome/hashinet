@@ -6,7 +6,7 @@ import { SecretBox } from "../../core/crypto/secret-box.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { IntervalJob, ScheduledJobs } from "../../core/jobs/interval-job.js";
 import { LiveHub } from "../../core/live/live-hub.js";
-import { IssuesModule } from "../../issues/issues.module.js";
+import { IssuesModule } from "../../platform/issues/issues.module.js";
 import { VoucherExpiry } from "../../vouchers/voucher-expiry.js";
 import { RouterAccess } from "../mikrotik/router-credentials.js";
 import {

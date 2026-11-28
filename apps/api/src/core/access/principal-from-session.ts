@@ -1,5 +1,5 @@
 import type { Auth } from "../../auth/create-auth.js";
-import { pauseOf } from "../../billing/access-rule.js";
+import { pauseOf } from "../../platform/billing/access-rule.js";
 import type { PrismaClient } from "../database/client.js";
 import { accessLevel, type Principal, type SignInMethod } from "./principal.js";
 import { resolveMembership } from "./resolve-membership.js";
