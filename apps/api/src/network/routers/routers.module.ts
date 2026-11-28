@@ -21,6 +21,7 @@ import { PrismaRouterStore } from "../provisioning/prisma-store.js";
 import { TUNNEL_ALLOCATOR, TunnelAllocator } from "../tunnel/tunnel-allocator.js";
 import { TunnelPeersController } from "../tunnel/tunnel-peers.controller.js";
 import { backendSettings } from "./backend-settings.js";
+import { RouterSetup } from "./router-setup.js";
 import { RoutersController } from "./routers.controller.js";
 import { RoutersService } from "./routers.service.js";
 
@@ -38,7 +39,7 @@ class BackgroundJobs extends ScheduledJobs {
     expiry: VoucherExpiry,
     outages: RouterOutages,
     live: LiveHub,
-    routers: RoutersService,
+    setup: RouterSetup,
   ) {
     super(config.jobsEnabled);
     this.jobs = [
@@ -63,7 +64,7 @@ class BackgroundJobs extends ScheduledJobs {
       // At start, so a release's routers are set up again straight away; hourly after, for one
       // that was offline or stopped (it has an issue meanwhile).
       new IntervalJob("router.setup-again", 60 * MINUTE, async () => {
-        await routers.setUpAgainAfterRelease();
+        await setup.setUpAgainAfterRelease();
       }),
     ];
   }
@@ -121,6 +122,7 @@ class BackgroundJobs extends ScheduledJobs {
             }),
     },
     RoutersService,
+    RouterSetup,
     RouterOutages,
     LiveHub,
     BackgroundJobs,

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { RouterJourney } from "@hashinet/types";
 import { SETUP_VERSION } from "../../../src/network/routers/router-journey.js";
-import { RoutersService } from "../../../src/network/routers/routers.service.js";
+import { RouterSetup } from "../../../src/network/routers/router-setup.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "../api.js";
 import { useTestDatabase } from "../harness.js";
 import { businessMember, platformMember, scheduledSetup, testBusinessId } from "../people.js";
@@ -388,7 +388,7 @@ describe("a release's routers are set up again", () => {
     });
     const never = await t.db.router.create({ data: { ...ROUTER, name: "New", venueId: home.id } });
 
-    await api.app.get(RoutersService).setUpAgainAfterRelease();
+    await api.app.get(RouterSetup).setUpAgainAfterRelease();
 
     // Unreachable here, so it stops: the issue says it needs setting up again.
     const tried = await t.db.router.findUniqueOrThrow({ where: { id: older.id } });
@@ -415,7 +415,7 @@ describe("a release's routers are set up again", () => {
     // The next hour tries the one that stopped again, and keeps the one issue.
     const firstTry = tried.lastSetupAt?.getTime() ?? 0;
     await Bun.sleep(5);
-    await api.app.get(RoutersService).setUpAgainAfterRelease();
+    await api.app.get(RouterSetup).setUpAgainAfterRelease();
     const retried = await t.db.router.findUniqueOrThrow({ where: { id: older.id } });
     expect(retried.lastSetupAt?.getTime() ?? 0).toBeGreaterThan(firstTry);
     expect(retried.lastSetup).toMatchObject({ ok: false, version: null });

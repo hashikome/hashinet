@@ -27,6 +27,7 @@ import {
   routerInput,
   testConnectionInput,
 } from "./router-input.js";
+import { RouterSetup } from "./router-setup.js";
 import { RoutersService } from "./routers.service.js";
 
 const listQuery = z.object({ venueId: z.uuid().nullable().default(null) });
@@ -36,7 +37,10 @@ const flagOf = (value: unknown) => parseInput(flag, value ?? "0");
 
 @Controller("api/routers")
 export class RoutersController {
-  constructor(private readonly routers: RoutersService) {}
+  constructor(
+    private readonly routers: RoutersService,
+    private readonly routerSetup: RouterSetup,
+  ) {}
 
   @Get()
   @Can("router.read")
@@ -152,7 +156,7 @@ export class RoutersController {
     @Param("id", idParam()) id: string,
     @Query("force") force: unknown,
   ) {
-    return this.routers.startSetup(staff, id, flagOf(force));
+    return this.routerSetup.startSetup(staff, id, flagOf(force));
   }
 
   @Get(":id/journey")
@@ -169,12 +173,12 @@ export class RoutersController {
     @Param("id", idParam()) id: string,
     @Query("dryRun") dryRun: unknown,
   ) {
-    return this.routers.provision(staff, id, flagOf(dryRun));
+    return this.routerSetup.provision(staff, id, flagOf(dryRun));
   }
 
   @Get(":id/provision/latest")
   @Can("router.check")
   latestProvision(@CurrentPrincipal() staff: Principal, @Param("id", idParam()) id: string) {
-    return this.routers.latestProvision(staff, id);
+    return this.routerSetup.latestProvision(staff, id);
   }
 }

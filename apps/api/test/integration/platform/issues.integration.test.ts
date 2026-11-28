@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { IssueDetail, IssueList } from "@hashinet/types";
-import { setupIssueKey } from "../../../src/network/routers/routers.service.js";
+import { setupIssueKey } from "../../../src/network/routers/router-setup.js";
 import { IssuesService } from "../../../src/platform/issues/issues.service.js";
 import { RouterIssues } from "../../../src/platform/issues/router-issues.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "../api.js";

@@ -73,6 +73,10 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
     routers, and their logged steps, to `router-issues.ts` (`RouterIssues`, the same job); the issues
     workflow (590 lines, one job) stays. The issue and network integration tests pass; the map gains
     only `RouterIssues`.
+  - [x] (2026-11-28) `network/routers/routers.service.ts` (622): running setup (from the router's
+    page, again after a release, the setup issue, the provision runs) to `router-setup.ts`
+    (`RouterSetup`, with `setupIssueKey`); records and checks stay. The network, issue and
+    onboarding integration tests pass; the map gains only `RouterSetup`.
 
 ## Surprises & Discoveries
 
