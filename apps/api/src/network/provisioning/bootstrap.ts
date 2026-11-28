@@ -22,8 +22,8 @@
  */
 
 import { randomBytes } from "node:crypto";
+import { intToIpv4, ipv4ToInt } from "../../core/net/ipv4.js";
 import { DEFAULT_DNS } from "./context.js";
-import { intToIpv4, ipv4ToInt } from "./ipv4.js";
 import { type ManagementTunnel, tunnelLines } from "./tunnel.js";
 
 export interface BootstrapInput {

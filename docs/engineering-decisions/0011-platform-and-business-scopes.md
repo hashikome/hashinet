@@ -96,7 +96,7 @@ sells vouchers at its counter, and it gives Hashikome's own helpers nothing betw
    the 7 days only Account and security opens. Setting up the authenticator shows the recovery codes once.
    Changing protection first asks the person to confirm it's them, so an unlocked device or a stolen
    session can't move the second factor elsewhere. The session records when it proved itself and with
-   which factor, and each change accepts only some factors (`apps/api/src/people/auth/proof.ts`):
+   which factor, and each change accepts only some factors (`apps/api/src/core/auth/proof.ts`):
    - removing a passkey, and adding a passkey or an authenticator for someone already protected: a
      passkey, a code from the authenticator or a recovery code (which is then used up), for 2 hours,
      as a sudo mode does;

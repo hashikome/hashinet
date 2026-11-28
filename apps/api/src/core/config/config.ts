@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { intToIpv4, ipv4ToInt } from "../../network/provisioning/ipv4.js";
+import { intToIpv4, ipv4ToInt } from "../net/ipv4.js";
 import { readSecret } from "./secret.js";
 
 /**

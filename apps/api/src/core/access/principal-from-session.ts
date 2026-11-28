@@ -1,8 +1,8 @@
-import type { Auth } from "../../people/auth/create-auth.js";
-import { pauseOf } from "../../platform/billing/access-rule.js";
+import type { Auth } from "../auth/create-auth.js";
 import type { PrismaClient } from "../database/client.js";
 import { accessLevel, type Principal, type SignInMethod } from "./principal.js";
 import { resolveMembership } from "./resolve-membership.js";
+import { pauseOf } from "./service-pause.js";
 
 /**
  * The principal for a request's session, or null when there is no session or the person has no

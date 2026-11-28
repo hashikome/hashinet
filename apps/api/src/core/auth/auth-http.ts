@@ -1,6 +1,6 @@
 import { toNodeHandler } from "better-auth/node";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import { apiError } from "../../core/http/error-envelope.js";
+import { apiError } from "../http/error-envelope.js";
 import { AUTH_BASE_PATH, type Auth } from "./create-auth.js";
 
 /**

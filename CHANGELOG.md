@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `apps/api/src/core` imports no area: sign-in (Better Auth) is in `core/auth`, the account API in
+  `people/account`, what service access allows in `core/access/service-pause.ts`, the live hub in
+  `network/live`, and the router and venue records beside their areas. No behaviour changes.
+
 - The web's largest files are split by job, and the guest portal lives in `components/guest/portal/`
   (the `/join` route and the editor's preview both use it). The router hotspot pages moved from
   `apps/api/mikrotik-files` to `apps/api/src/network/provisioning/portal-pages`. No behaviour changes.

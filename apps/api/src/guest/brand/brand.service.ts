@@ -1,13 +1,13 @@
 import type { AuditAction, GuestContext, PortalEditor, PortalLook } from "@hashinet/types";
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../../core/access/principal.js";
+import { sellingStopped } from "../../core/access/service-pause.js";
 import { venueScope } from "../../core/access/venue-scope.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
 import { packageRecord } from "../../core/records/records.js";
 import type { Package, ServiceAccess, Venue } from "../../generated/prisma/client.js";
-import { sellingStopped } from "../../platform/billing/access-rule.js";
 import { MOBILE_MONEY, type MobileMoney } from "../../sales/payments/gateway.js";
 import { onSalePackages } from "../../venues/packages/on-sale.js";
 import { venueNotFound } from "../../venues/venues/venue-errors.js";

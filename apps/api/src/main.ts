@@ -2,6 +2,8 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { appModule } from "./app.module.js";
+import { authHttpMiddleware } from "./core/auth/auth-http.js";
+import { type Auth, BETTER_AUTH } from "./core/auth/create-auth.js";
 import type { AppConfig } from "./core/config/config.js";
 import type { EmailSender } from "./core/email/email-sender.js";
 import { ErrorEnvelopeFilter } from "./core/http/error-envelope.js";
@@ -11,9 +13,7 @@ import {
   requireTrustedOrigin,
   revalidateByDefault,
 } from "./core/http/http-middleware.js";
-import { LiveHub } from "./core/live/live-hub.js";
-import { authHttpMiddleware } from "./people/auth/auth-http.js";
-import { type Auth, BETTER_AUTH } from "./people/auth/create-auth.js";
+import { LiveHub } from "./network/live/live-hub.js";
 
 export interface BootstrapOptions {
   /** Port to listen on; 0 picks a free one (tests). */

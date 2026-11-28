@@ -22,13 +22,13 @@ import { z } from "zod";
 import { type Action, allows } from "../../core/access/policy.js";
 import type { Principal } from "../../core/access/principal.js";
 import { outranks } from "../../core/access/rank.js";
+import { sellingStopped } from "../../core/access/service-pause.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
 import { oneLine } from "../../core/http/validation.js";
 import { businessDayOf, dateOf } from "../../core/time/business-day.js";
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
 import type { IssueKind } from "../../generated/prisma/enums.js";
-import { sellingStopped } from "../billing/access-rule.js";
 
 const DAY_MS = 86_400_000;
 

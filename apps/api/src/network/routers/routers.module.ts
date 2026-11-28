@@ -5,9 +5,9 @@ import { APP_CONFIG } from "../../core/config/config.module.js";
 import { SecretBox } from "../../core/crypto/secret-box.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { IntervalJob, ScheduledJobs } from "../../core/jobs/interval-job.js";
-import { LiveHub } from "../../core/live/live-hub.js";
 import { IssuesModule } from "../../platform/issues/issues.module.js";
 import { VoucherExpiry } from "../../sales/vouchers/voucher-expiry.js";
+import { LiveHub } from "../live/live-hub.js";
 import { RouterAccess } from "../mikrotik/router-credentials.js";
 import {
   HEALTH_CHECK_INTERVAL_MS,

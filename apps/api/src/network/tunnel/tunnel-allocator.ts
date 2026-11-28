@@ -1,6 +1,6 @@
 import type { SecretBox } from "../../core/crypto/secret-box.js";
+import { intToIpv4, ipv4ToInt } from "../../core/net/ipv4.js";
 import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
-import { intToIpv4, ipv4ToInt } from "../provisioning/ipv4.js";
 import { generateWireguardKeyPair } from "../provisioning/tunnel.js";
 
 /** The platform side of the management tunnel (ADR-0006). */

@@ -1,5 +1,5 @@
 import { PROOF_HOURS, type ProofAction, type ProofFactor, type ProofRule } from "@hashinet/types";
-import type { PrismaClient } from "../../core/database/client.js";
+import type { PrismaClient } from "../database/client.js";
 
 const ANY: ProofFactor[] = ["passkey", "authenticator", "recovery_code"];
 

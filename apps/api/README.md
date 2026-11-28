@@ -28,14 +28,15 @@ Copy the root `.env.example` to `apps/api/.env` and set `ENCRYPTION_KEY` and `BE
 ```
 src/
   entrypoint.ts, main.ts, app.module.ts   telemetry, then the Nest application and its middleware
-  core/       what every area uses: config, database, http, observability, jobs, crypto, email,
-              health, live (the /ws/live hub), access (the one policy), audit, time, records
-  people/     auth, team, invitations
+  core/       what every area uses, importing none: config, database, auth (Better Auth), http,
+              observability, jobs, crypto, email, health, net, access (the one policy), audit,
+              time, records
+  people/     account, team, invitations
   platform/   HashiNet running businesses: businesses, onboarding, billing, issues, bootstrap
   venues/     venues, sites, packages, payment-ways
   sales/      vouchers, payments, devices, sessions, sms
   guest/      sign-in (a device onto a voucher, the switch PIN), portal, brand
-  network/    routers, tunnel, provisioning (everything that configures a router, and the hotspot
+  network/    live (the /ws/live hub), routers, tunnel, provisioning (everything that configures a router, and the hotspot
               pages it uploads in portal-pages/), mikrotik (the RouterOS client), monitor (live
               monitor, RouterSync, outages), radius
   analytics/  periods and reports

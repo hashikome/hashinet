@@ -7,13 +7,13 @@ import type {
 } from "@hashinet/types";
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../core/access/principal.js";
+import { sellingStopped } from "../core/access/service-pause.js";
 import { venueScope } from "../core/access/venue-scope.js";
 import { PrismaService } from "../core/database/prisma.service.js";
 import { apiError } from "../core/http/error-envelope.js";
 import { addDays, BUSINESS_TIME_ZONE, businessNow } from "../core/time/business-day.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { sellingOf } from "../network/routers/router-journey.js";
-import { sellingStopped } from "../platform/billing/access-rule.js";
 import { businessFeeTerms } from "../platform/billing/billing-settings.js";
 import { feeOnSales } from "../platform/billing/fee.js";
 import { instantsOf, type PeriodQuery, periodOf } from "./period.js";

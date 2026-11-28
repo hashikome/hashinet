@@ -5,12 +5,12 @@ import { venueScope } from "../../core/access/venue-scope.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
-import { venueRecord } from "../../core/records/records.js";
 import { BrandService } from "../../guest/brand/brand.service.js";
 import { copyToVenue } from "../../guest/portal/copy-down.js";
 import { OnboardingService } from "../../platform/onboarding/onboarding.service.js";
 import { venueNotFound } from "./venue-errors.js";
 import type { VenueInput } from "./venue-input.js";
+import { venueRecord } from "./venue-record.js";
 
 /** What its routers say about it: how many, whether it sells, and the WiFi it broadcasts. */
 const VENUE_COUNTS = {

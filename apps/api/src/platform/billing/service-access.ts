@@ -8,6 +8,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import { z } from "zod";
 import { allows } from "../../core/access/policy.js";
 import type { Principal } from "../../core/access/principal.js";
+import { sellingStopped } from "../../core/access/service-pause.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
@@ -16,7 +17,7 @@ import { addDays, businessDayOf, dateOf } from "../../core/time/business-day.js"
 import type { Prisma } from "../../generated/prisma/client.js";
 import { IssuesService } from "../issues/issues.service.js";
 import { accessByBillsEmail, accessByHandEmail } from "./access-emails.js";
-import { type AccessByBills, accessByBills, type FeesBill, sellingStopped } from "./access-rule.js";
+import { type AccessByBills, accessByBills, type FeesBill } from "./access-rule.js";
 import { lockBusiness } from "./business-lock.js";
 import { OwnerMail } from "./owner-mail.js";
 

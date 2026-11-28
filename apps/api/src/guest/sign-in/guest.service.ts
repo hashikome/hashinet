@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import type { z } from "zod";
 import { ownerProtected } from "../../core/access/owner-protected.js";
+import { sellingStopped } from "../../core/access/service-pause.js";
 import type { AppConfig } from "../../core/config/config.js";
 import { APP_CONFIG } from "../../core/config/config.module.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
@@ -22,7 +23,6 @@ import type { Prisma, Router, Voucher } from "../../generated/prisma/client.js";
 import { ROUTER_REACH } from "../../network/mikrotik/router-credentials.js";
 import { RouterSync } from "../../network/monitor/router-sync.js";
 import { bytesUsed } from "../../network/radius/access-decision.js";
-import { sellingStopped } from "../../platform/billing/access-rule.js";
 import { MOBILE_MONEY, type MobileMoney } from "../../sales/payments/gateway.js";
 import { deviceLimitOf, takeDevicesOff } from "../../sales/vouchers/voucher-devices.js";
 import { PackagesService } from "../../venues/packages/packages.service.js";

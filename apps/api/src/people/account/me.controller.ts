@@ -21,10 +21,6 @@ import { AccountRoute, CurrentPrincipal } from "../../core/access/access.guard.j
 import { capabilitiesOf, needsProtectedSession } from "../../core/access/policy.js";
 import { mustProtect, type Principal, SETUP_DAYS } from "../../core/access/principal.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
-import { PrismaService } from "../../core/database/prisma.service.js";
-import { apiError } from "../../core/http/error-envelope.js";
-import { parseInput } from "../../core/http/validation.js";
-import { logoUrl } from "../../guest/brand/logos.js";
 import {
   PROOF_ACTIONS,
   proofHoldsUntil,
@@ -32,7 +28,11 @@ import {
   proofRequired,
   proofRule,
   provedFor,
-} from "./proof.js";
+} from "../../core/auth/proof.js";
+import { PrismaService } from "../../core/database/prisma.service.js";
+import { apiError } from "../../core/http/error-envelope.js";
+import { parseInput } from "../../core/http/validation.js";
+import { logoUrl } from "../../guest/brand/logos.js";
 
 const profileInput = z
   .object({

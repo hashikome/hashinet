@@ -8,9 +8,9 @@
  */
 
 import { networkInterfaces } from "node:os";
+import { intToIpv4, ipv4ToInt } from "../../core/net/ipv4.js";
 import type { Router } from "../../generated/prisma/client.js";
 import type { Dialect } from "./dialect.js";
-import { intToIpv4, ipv4ToInt } from "./ipv4.js";
 import type { RouterProfile } from "./probe.js";
 
 type RouterRow = Router;

@@ -1,38 +1,16 @@
-import type {
-  PackageRecord,
-  Region,
-  RouterRecord,
-  SessionRecord,
-  VenueRecord,
-  VoucherRecord,
-} from "@hashinet/types";
-import type {
-  Package,
-  Router,
-  ServiceAccess,
-  Venue,
-  Voucher,
-  WifiSession,
-} from "../../generated/prisma/client.js";
-import { DEFAULT_HOTSPOT_NETWORK } from "../../network/provisioning/context.js";
-import {
-  conditionOf,
-  routerJourney,
-  type StoredSetup,
-  sellingOf,
-  type VenueRouter,
-  wifiNameOf,
-} from "../../network/routers/router-journey.js";
-import { sellingStopped } from "../../platform/billing/access-rule.js";
+import type { PackageRecord, SessionRecord, VoucherRecord } from "@hashinet/types";
+import type { Package, Voucher, WifiSession } from "../../generated/prisma/client.js";
 
 /**
- * The only place database rows become API records (`@hashinet/types`): decimals as strings,
- * timestamps as ISO 8601 UTC, byte counters as numbers. Each function returns the full record
- * type, so a field added to either side fails the typecheck until it is mapped.
+ * Database rows as API records (`@hashinet/types`), and the conventions every record follows:
+ * decimals as strings, timestamps as ISO 8601 UTC, byte counters as numbers. Each function returns
+ * the full record type, so a field added to either side fails the typecheck until it is mapped.
+ * An area whose record needs its own rules maps it beside them (`router-record.ts`,
+ * `venue-record.ts`, `invoice-record.ts`) with these helpers.
  */
 
-const iso = (date: Date): string => date.toISOString();
-const isoOrNull = (date: Date | null): string | null => (date ? date.toISOString() : null);
+export const iso = (date: Date): string => date.toISOString();
+export const isoOrNull = (date: Date | null): string | null => (date ? date.toISOString() : null);
 
 /** Byte counters fit in a JavaScript number far beyond any voucher (2^53 bytes is 8 PB). */
 export function bytes(value: bigint): number {
@@ -79,69 +57,6 @@ export function voucherRecord(row: Voucher): VoucherRecord {
     activatedAt: isoOrNull(row.activatedAt),
     expiresAt: isoOrNull(row.expiresAt),
     refundedAt: isoOrNull(row.refundedAt),
-    createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-  };
-}
-
-export function venueRecord(
-  row: Venue,
-  routers: VenueRouter[],
-  access: ServiceAccess,
-): VenueRecord {
-  return {
-    id: row.id,
-    name: row.name,
-    businessId: row.businessId,
-    region: row.region as Region,
-    area: row.area,
-    status: row.status,
-    routerCount: routers.length,
-    // A business that can't sell sells nowhere, whatever its routers do.
-    selling: sellingStopped(access) ? { state: "paused" } : sellingOf(routers),
-    wifiName: wifiNameOf(row.name, routers),
-    createdAt: iso(row.createdAt),
-    updatedAt: iso(row.updatedAt),
-  };
-}
-
-/** An allowlist, so a column added later (a key, a secret) stays out until it is mapped. */
-export function routerRecord(
-  row: Router & { venue: { name: string } },
-  /** Whether the reader sets up routers: only they see the setup command. */
-  managesRouters: boolean,
-): RouterRecord {
-  const stage = routerJourney(row, row.lastSetup as StoredSetup | null).stage;
-  return {
-    id: row.id,
-    venueId: row.venueId,
-    venueName: row.venue.name,
-    name: row.name,
-    model: row.model,
-    identity: row.identity,
-    ipAddress: row.ipAddress,
-    hotspotGatewayIp: row.hotspotGatewayIp,
-    macAddress: row.macAddress,
-    apiUsername: row.apiUsername,
-    hasApiPassword: row.apiPasswordEncrypted !== null,
-    enableHotspot: row.enableHotspot,
-    hotspotName: row.hotspotName,
-    hotspotInterface: row.hotspotInterface,
-    ssid: row.ssid,
-    // The network setup uses: its own, or the default it falls back to.
-    networkRange: row.networkRange?.includes("/") ? row.networkRange : DEFAULT_HOTSPOT_NETWORK,
-    provisioningCommand: managesRouters ? row.provisioningCommand : null,
-    tunnelAddress: row.tunnelAddress,
-    rosVersion: row.rosVersion,
-    architecture: row.architecture,
-    provisionedAt: isoOrNull(row.provisionedAt),
-    lastSeenAt: isoOrNull(row.lastSeenAt),
-    failedSyncs: row.failedSyncs,
-    uptimeSeconds: row.uptimeSeconds,
-    connectedDevices: row.connectedDevices,
-    status: row.status,
-    stage,
-    condition: conditionOf(stage, row.status, row.internetOk),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
   };

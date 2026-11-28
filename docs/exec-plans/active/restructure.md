@@ -53,8 +53,12 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
   commands), with `ref/restructure/split-sim.py`. Every non-import line is unchanged but for `export`,
   `ROOT` one folder deeper and the two strings naming the sim's own path; `guest-test` 22/22 before
   and after a hub restart that runs the relay from the new path.
-- [ ] Later, not moves (each its own milestone when reached): the upward imports `core/` keeps
-  (below); the files over 500 lines split by job.
+- [x] (2026-11-28) M13 `core/` imports no area. Sign-in infrastructure (Better Auth, its HTTP
+  handler, sign-in codes, which factors a change accepts) to `core/auth/`, the account API to
+  `people/account/`; what a business's service access allows (`sellingStopped`, `pauseOf`) to
+  `core/access/service-pause.ts`; the live hub to `network/live/`; the upload helper to `guest/brand/`;
+  IPv4 arithmetic to `core/net/`; the router and venue records to their areas (`router-record.ts`,
+  `venue-record.ts`). ARCHITECTURE states the rule.
 - [x] (2026-11-28) M11 The API's files over 500 lines, split by job (a long file with one job stays):
   - [x] (2026-11-28) `network/provisioning/steps.ts` (1,029): the firewall rule-placement toolkit to
     `firewall-order.ts`, the RouterOS yes/no reader to `ros-client.ts`; the ordered step list (875
@@ -164,12 +168,8 @@ Integration tests live in `apps/api/test/integration/` and import from `src`; un
 their source. `tooling/router-sim.ts` imports API internals by relative path. The web never imports
 the API (`ARCHITECTURE.md`, dependency rules); it reads `@hashinet/types`.
 
-What `core/` still imports from areas above it, kept by the moves and named for a later milestone
-(`config/config.module.ts` building the payment and SMS adapters and the brand store went with the
-provider gateways, 28 November 2026; `config/config.ts` still reads `network/provisioning/ipv4.ts`); `records/records.ts` reads billing and
-router helpers; `http` reads the brand's upload limits; `access` reads auth and billing; `audit`
-reads analytics' periods. Two-way pairs between areas after the moves: platform and venues, guest and
-venues, counter and network, counter and guest, network and platform.
+`core/` imports no area (M13). Two-way pairs between areas remain where the product has them: platform
+and venues, guest and venues, sales and network, sales and guest, network and platform.
 
 ## Plan Of Work
 

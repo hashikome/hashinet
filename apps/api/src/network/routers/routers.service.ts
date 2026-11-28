@@ -24,7 +24,6 @@ import { toJsonValue } from "../../core/database/json.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
 import { captureFailure } from "../../core/observability/telemetry.js";
-import { routerRecord } from "../../core/records/records.js";
 import { IssuesService } from "../../platform/issues/issues.service.js";
 import { RouterError } from "../mikrotik/mikrotik-errors.js";
 import { RouterAccess } from "../mikrotik/router-credentials.js";
@@ -50,6 +49,7 @@ import type {
   testConnectionInput,
 } from "./router-input.js";
 import { routerJourney, type StoredSetup } from "./router-journey.js";
+import { routerRecord } from "./router-record.js";
 
 const withVenue = { venue: { select: { name: true } } } as const;
 

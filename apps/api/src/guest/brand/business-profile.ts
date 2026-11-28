@@ -16,10 +16,10 @@ import type { Principal } from "../../core/access/principal.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
-import { readUpload } from "../../core/http/upload.js";
 import { oneLine, parseInput } from "../../core/http/validation.js";
 import type { Business } from "../../generated/prisma/client.js";
 import { Logos, logoUrl } from "./logos.js";
+import { readUpload } from "./upload.js";
 
 export const profileInput = z.object({
   name: oneLine(160).min(1, "is required"),

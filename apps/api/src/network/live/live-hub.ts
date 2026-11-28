@@ -4,16 +4,16 @@ import type { LiveMessage } from "@hashinet/types";
 import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } from "@nestjs/common";
 import { fromNodeHeaders } from "better-auth/node";
 import { type WebSocket, WebSocketServer } from "ws";
-import { onRouterLog, type RouterLogEvent } from "../../network/mikrotik/router-log.js";
-import type { HotspotUpdate } from "../../network/monitor/live-monitor.js";
-import { type Auth, BETTER_AUTH } from "../../people/auth/create-auth.js";
-import { allows } from "../access/policy.js";
-import { principalFromSession } from "../access/principal-from-session.js";
-import { venueScope } from "../access/venue-scope.js";
-import type { AppConfig } from "../config/config.js";
-import { APP_CONFIG } from "../config/config.module.js";
-import { PrismaService } from "../database/prisma.service.js";
-import { captureFailure } from "../observability/telemetry.js";
+import { allows } from "../../core/access/policy.js";
+import { principalFromSession } from "../../core/access/principal-from-session.js";
+import { venueScope } from "../../core/access/venue-scope.js";
+import { type Auth, BETTER_AUTH } from "../../core/auth/create-auth.js";
+import type { AppConfig } from "../../core/config/config.js";
+import { APP_CONFIG } from "../../core/config/config.module.js";
+import { PrismaService } from "../../core/database/prisma.service.js";
+import { captureFailure } from "../../core/observability/telemetry.js";
+import { onRouterLog, type RouterLogEvent } from "../mikrotik/router-log.js";
+import type { HotspotUpdate } from "../monitor/live-monitor.js";
 
 const LIVE_PATH = "/ws/live";
 

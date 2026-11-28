@@ -1,6 +1,7 @@
 import type { ServiceAccess, ServiceAccessReason } from "@hashinet/types";
+import { sellingStopped } from "../../core/access/service-pause.js";
 import type { EmailMessage } from "../../core/email/email-sender.js";
-import { type AccessByBills, sellingStopped } from "./access-rule.js";
+import { type AccessByBills } from "./access-rule.js";
 import { longDay, tsh } from "./invoice-emails.js";
 
 /** What each state means for the business, in its owner's words. */

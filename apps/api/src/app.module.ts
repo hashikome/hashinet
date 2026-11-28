@@ -1,6 +1,7 @@
 import { type DynamicModule, Module } from "@nestjs/common";
 import { AnalyticsModule } from "./analytics/analytics.module.js";
 import { AuditModule } from "./core/audit/audit.module.js";
+import { AuthModule } from "./core/auth/auth.module.js";
 import type { AppConfig } from "./core/config/config.js";
 import { configModule } from "./core/config/config.module.js";
 import { DatabaseModule } from "./core/database/database.module.js";
@@ -11,7 +12,7 @@ import { PortalModule } from "./guest/portal/portal.module.js";
 import { GuestModule } from "./guest/sign-in/guest.module.js";
 import { RadiusModule } from "./network/radius/radius.module.js";
 import { RoutersModule } from "./network/routers/routers.module.js";
-import { AuthModule } from "./people/auth/auth.module.js";
+import { AccountModule } from "./people/account/account.module.js";
 import { InvitationsModule } from "./people/invitations/invitations.module.js";
 import { TeamModule } from "./people/team/team.module.js";
 import { BillingModule } from "./platform/billing/billing.module.js";
@@ -41,6 +42,7 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
       SmsModule,
       AuditModule,
       AuthModule,
+      AccountModule,
       InvitationsModule,
       BusinessesModule,
       IssuesModule,

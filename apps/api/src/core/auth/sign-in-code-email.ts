@@ -1,4 +1,4 @@
-import type { EmailMessage } from "../../core/email/email-sender.js";
+import type { EmailMessage } from "../email/email-sender.js";
 
 export const SIGN_IN_CODE_MINUTES = 10;
 
