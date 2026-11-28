@@ -13,7 +13,7 @@ Cloudflare and Google Cloud, as infra's documents describe.
 | # | What | Source | Codified |
 | --- | --- | --- | --- |
 | 1 | The server: Dokploy, the deploy user, network, volumes, shared Docker secrets, PostgreSQL, Redis and backups | infra's rebuildable server, steps 1–4 | yes |
-| 2 | The host firewall for the management tunnel: `51820/udp`, and `wg0` to `10.88.0.1:8080/tcp` ([deploy.md](deploy.md), the management tunnel) | infra's server bootstrap | **no**: run by hand with `sudo` today |
+| 2 | The host firewall for the management tunnel: `51820/udp` from the internet, and `wg0` to the relay and RADIUS ([deploy.md](deploy.md#the-management-tunnel)) | `infra/scripts/prepare-host.py --open` | yes |
 | 3 | The database `hashinet`, its roles `hashinet_migrator` and `hashinet_runtime`, their grants and default privileges | `infra/deploy/data-services/allocate-hashinet.sql`, over the administrator's stdin with the two passwords from `hashikome/secrets` | yes |
 | 4 | HashiNet's Docker secrets, by the versioned names in `deploy/release.json` and `.env.example` | `hashikome/secrets`; the release creates the missing ones | yes |
 | 5 | The Dokploy stacks `hashinet-xxxxxx` and `hashinet-release-xxxxxx`, with the inputs in `.env.example` ([deploy.md](deploy.md)) | infra's rebuildable server, milestone 2 | **no**: made in Dokploy; their IDs are in `deploy/release.json` |

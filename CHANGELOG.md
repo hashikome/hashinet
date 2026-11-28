@@ -15,8 +15,7 @@
   traffic to it, and setup version 3 sets every router up again. A device comes back by its MAC address
   to a free place or its own. Blocking a device blocks the vouchers it used too. Setup is versioned:
   after a release, routers an older setup left are set up again, and one that stops opens a "needs
-  setting up again" issue for HashiNet's team. `PIN_KEY` is a new required secret; the host firewall
-  must allow UDP 1812-1813 on `wg0` (deploy runbook). Removed: the voucher push to routers, the
+  setting up again" issue for HashiNet's team. `PIN_KEY` is a new required secret. Removed: the voucher push to routers, the
   voucher reconciler and its backlog route, per-user router limits, kicks by code. A package's data
   limit is enforced as a cap, counted from its sessions.
 - The router sim runs two routers (or more) at one venue, `--router <n>`, on the management tunnel,

@@ -1146,16 +1146,17 @@ voucher's own columns for them went in `20261128900000_pin_attempts`); the accou
     `guest-test` 22/22 in 124 s with 12-digit codes.
   - [ ] (j) finish-work done on the branch (code and security reviews fixed, simplify applied, ADR-0008
     and ADR-0015 widened, the "Setup failed" issue checked in the app); left: the push on the owner's
-    go, the release items (PIN key secret, the RADIUS firewall rule), the handbook once pushed, and
+    go (the PIN key secret's commit in the secrets repository first), the handbook once pushed, and
     real phones.
 
-Before the release, outside the code: the host firewall allows UDP 1812-1813 from `wg0` to the
-platform's tunnel address (deploy runbook); the PIN key secret exists in the secrets repository and
+Before the release, outside the code: the host firewall lets `wg0` reach UDP 1812-1813 on the
+platform's tunnel address, which infra's firewall already does, since it accepts everything not on
+`eth0` (deploy runbook; checked in the source 28 November 2026); the PIN key secret exists in the secrets repository and
 the stack; and every router is set up again in the same release, since without local users a router
 that hasn't been set up again admits no one. Decided by the owner (27 November 2026): after the release
 starts, the API sets up again every router whose setup is older than it, and a router that fails
-raises an issue; this session adds the PIN key to the secrets repository and the stack and the
-firewall rule to the deploy runbook and infra, each shown to the owner before it is pushed or applied.
+raises an issue; this session adds the PIN key to the secrets repository and the stack, shown to the
+owner before it is pushed.
 The two portal states for the PIN's limits were approved (28 November 2026). Built: each passed setup
 records its version (`SETUP_VERSION`, 2 for RADIUS); a job at start, then hourly, sets up again every
 router a passed setup of an older version left, one at a time, and one that stops opens a platform

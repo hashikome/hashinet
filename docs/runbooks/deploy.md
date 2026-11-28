@@ -59,12 +59,14 @@ portal pages from `10.88.0.1:8080`, which relays those paths and nothing else, a
 login and session report by RADIUS to `10.88.0.1:1812-1813`, which it relays to
 `/api/internal/radius` ([ADR-0015](../engineering-decisions/0015-voucher-online-limit-through-radius.md)).
 
-The host's firewall needs three rules, set once by someone with `sudo`:
+The host firewall is infra's (`infra/scripts/prepare-host.py`, an nftables table of its own): it
+accepts everything that doesn't arrive on `eth0`, so `wg0` reaches the relay and RADIUS, and on an
+`--open` server it accepts UDP 51820 from the internet. Nothing is set by hand. When a port is
+blocked, the symptoms are:
 
-- `sudo ufw allow 51820/udp`: without it WireGuard receives nothing, and `wg show` on the service
-  reports no handshake and 0 bytes received.
-- `sudo ufw allow in on wg0 to 10.88.0.1 port 8080 proto tcp`: without it the tunnel connects and
-  the API reaches routers, but routers time out fetching their pages from the relay.
-- `sudo ufw allow in on wg0 to 10.88.0.1 port 1812:1813 proto udp`: without it every new sign-in
-  fails after the router's 3-second RADIUS timeout (6 seconds with its retry), and `/radius monitor`
-  on a router counts timeouts and no accepts.
+- 51820: WireGuard receives nothing, and `wg show` on the service reports no handshake and 0 bytes
+  received.
+- 8080 on `wg0`: the tunnel connects and the API reaches routers, but routers time out fetching their
+  pages from the relay.
+- 1812-1813 on `wg0`: every new sign-in fails after the router's 3-second RADIUS timeout (6 seconds
+  with its retry), and `/radius monitor` on a router counts timeouts and no accepts.
