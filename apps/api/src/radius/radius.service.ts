@@ -317,7 +317,16 @@ export class RadiusService {
         ...state,
       },
       // A Stop never reopens a session; a late Interim after its Stop changes nothing.
-      update: ended ? { ...counters, ...state } : counters,
+      update: counters,
     });
+    // HashiNet ends a session at the router (moved to another device, released, a new speed) and
+    // records why first; the router's Stop then says only "admin reset", so it ends just what is
+    // still open.
+    if (ended) {
+      await this.db.wifiSession.updateMany({
+        where: { routerId: router.id, acctSessionId, status: "connected" },
+        data: state,
+      });
+    }
   }
 }

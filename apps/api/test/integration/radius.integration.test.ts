@@ -237,4 +237,25 @@ describe("RADIUS from the routers (ADR-0015)", () => {
     expect(ended).toMatchObject({ status: "expired", terminationReason: "session_timeout" });
     expect(ended?.endedAt).not.toBeNull();
   });
+
+  test("a Stop for a session HashiNet ended keeps why it ended, and counts its bytes", async () => {
+    const { voucher } = await seed();
+    await relay(acct(1, "80000019", voucher.id));
+    // As the portal's sign-in does when the switch PIN moves the voucher to another device.
+    await t.db.wifiSession.updateMany({
+      data: { status: "terminated", terminationReason: "moved_to_another_device" },
+    });
+    await relay(
+      acct(2, "80000019", voucher.id, MAC, [
+        [ATTR.acctTerminateCause, u32(6)],
+        [ATTR.acctOutputOctets, u32(14001)],
+      ]),
+    );
+    const [moved] = await t.db.wifiSession.findMany();
+    expect(moved).toMatchObject({
+      status: "terminated",
+      terminationReason: "moved_to_another_device",
+      downloadBytes: 14001n,
+    });
+  });
 });
