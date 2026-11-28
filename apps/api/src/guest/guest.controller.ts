@@ -20,13 +20,13 @@ import { PrismaService } from "../core/database/prisma.service.js";
 import { apiError } from "../core/http/error-envelope.js";
 import { idParam } from "../core/http/id-param.js";
 import { parseInput } from "../core/http/validation.js";
-import { backendSettings } from "../routers/backend-settings.js";
-import { resolveBackendEndpoints } from "../services/router-provision/context.js";
+import { resolveBackendEndpoints } from "../network/provisioning/context.js";
 import {
   PORTAL_FILES,
   type PortalFileName,
   renderPortalFile,
-} from "../services/router-provision/portal-files.js";
+} from "../network/provisioning/portal-files.js";
+import { backendSettings } from "../network/routers/backend-settings.js";
 import { GuestService } from "./guest.service.js";
 import { contextInput, redeemInput, sessionInput } from "./guest-input.js";
 

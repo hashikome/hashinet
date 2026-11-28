@@ -15,6 +15,7 @@ import type {
   Voucher,
   WifiSession,
 } from "../../generated/prisma/client.js";
+import { DEFAULT_HOTSPOT_NETWORK } from "../../network/provisioning/context.js";
 import {
   conditionOf,
   routerJourney,
@@ -22,8 +23,7 @@ import {
   sellingOf,
   type VenueRouter,
   wifiNameOf,
-} from "../../routers/router-journey.js";
-import { DEFAULT_HOTSPOT_NETWORK } from "../../services/router-provision/context.js";
+} from "../../network/routers/router-journey.js";
 
 /**
  * The only place database rows become API records (`@hashinet/types`): decimals as strings,

@@ -15,7 +15,7 @@ import { PrismaService } from "../core/database/prisma.service.js";
 import { apiError } from "../core/http/error-envelope.js";
 import { addDays, BUSINESS_TIME_ZONE, businessNow } from "../core/time/business-day.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { sellingOf } from "../routers/router-journey.js";
+import { sellingOf } from "../network/routers/router-journey.js";
 import { instantsOf, type PeriodQuery, periodOf } from "./period.js";
 import { centsOf, money, REVENUE_EVENTS, shareOf, venueFilter } from "./revenue-events.js";
 

@@ -9,7 +9,7 @@ import { captureFailure } from "../core/observability/telemetry.js";
 import { bytes } from "../core/records/records.js";
 import type { Device } from "../generated/prisma/client.js";
 import type { DeviceWhereInput } from "../generated/prisma/models.js";
-import { RouterSync } from "../services/router-sync.js";
+import { RouterSync } from "../network/monitor/router-sync.js";
 import { sessionScope } from "../sessions/session-scope.js";
 import { SessionsService } from "../sessions/sessions.service.js";
 

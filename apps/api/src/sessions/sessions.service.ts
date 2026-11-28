@@ -8,7 +8,7 @@ import { apiError } from "../core/http/error-envelope.js";
 import { captureFailure } from "../core/observability/telemetry.js";
 import { bytes, sessionRecord } from "../core/records/records.js";
 import type { WifiSessionWhereInput } from "../generated/prisma/models.js";
-import { RouterSync } from "../services/router-sync.js";
+import { RouterSync } from "../network/monitor/router-sync.js";
 import { takeDevicesOff } from "../vouchers/voucher-devices.js";
 import { sessionScope } from "./session-scope.js";
 

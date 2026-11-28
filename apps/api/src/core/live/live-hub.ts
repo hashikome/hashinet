@@ -5,8 +5,8 @@ import { Inject, Injectable, type OnApplicationShutdown, type OnModuleInit } fro
 import { fromNodeHeaders } from "better-auth/node";
 import { type WebSocket, WebSocketServer } from "ws";
 import { type Auth, BETTER_AUTH } from "../../auth/create-auth.js";
-import type { HotspotUpdate } from "../../services/live-monitor.js";
-import { onRouterLog, type RouterLogEvent } from "../../services/router-log.js";
+import { onRouterLog, type RouterLogEvent } from "../../network/mikrotik/router-log.js";
+import type { HotspotUpdate } from "../../network/monitor/live-monitor.js";
 import { allows } from "../access/policy.js";
 import { principalFromSession } from "../access/principal-from-session.js";
 import { venueScope } from "../access/venue-scope.js";

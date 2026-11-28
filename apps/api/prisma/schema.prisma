@@ -568,7 +568,7 @@ model Router {
   tunnelPrivateKeyEncrypted String?      @map("tunnel_private_key_encrypted")
   /// The secret its RADIUS requests are signed with (ADR-0015), made at setup; encrypted.
   radiusSecretEncrypted     String?      @map("radius_secret_encrypted")
-  /// Cached capability probe (services/router-provision/probe.ts).
+  /// Cached capability probe (network/provisioning/probe.ts).
   rosVersion                String?      @map("ros_version") @db.VarChar(32)
   architecture              String?      @db.VarChar(32)
   capabilities              Json?

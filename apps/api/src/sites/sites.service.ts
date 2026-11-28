@@ -17,7 +17,7 @@ import { apiError } from "../core/http/error-envelope.js";
 import { oneLine } from "../core/http/validation.js";
 import { captureFailure } from "../core/observability/telemetry.js";
 import { Prisma } from "../generated/prisma/client.js";
-import { RouterSync } from "../services/router-sync.js";
+import { RouterSync } from "../network/monitor/router-sync.js";
 import { VenuesService } from "../venues/venues.service.js";
 import { openHosts, openSites, slotPaid } from "./open-sites.js";
 

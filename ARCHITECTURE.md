@@ -33,8 +33,8 @@ dashboard browser ──► apps/web (Next.js: dashboard + captive portal)
 | Path | Responsibility |
 | --- | --- |
 | `apps/api` | NestJS API on Bun: business rules, authorization, router provisioning and sync, background jobs, persistence (Prisma, `prisma/schema.prisma`) |
-| `apps/api/src/radius` | Every hotspot login and session report from the routers, relayed by the tunnel service (ADR-0015): the RADIUS codec, who may be online on which voucher, accounting into sessions |
-| `apps/api/src/services`, `routers`, `vouchers` | Router provisioning and dialects (setup versioned; a release's routers set up again), `RouterSync`, `LiveMonitor`, tunnel allocation, voucher expiry |
+| `apps/api/src/network` | The routers: their records and journey (`routers`), the management tunnel's addresses and peers (`tunnel`), provisioning and its dialects, setup versioned so a release's routers are set up again (`provisioning`), the RouterOS client (`mikrotik`), and the live monitor, `RouterSync` and outages (`monitor`); `radius` answers every hotspot login and session report from the routers, relayed by the tunnel service (ADR-0015): the RADIUS codec, who may be online on which voucher, accounting into sessions |
+| `apps/api/src/vouchers` | Voucher codes, their devices and expiry |
 | `apps/api/src/payments`, `vouchers`, `payment-ways`, `devices`, `sessions` | The counter: a sale makes its voucher (ADR-0017), refunds and release, a business's ways to pay and each venue's choice, devices blocked per business, and live sessions |
 | `apps/api/src/billing` | What businesses pay HashiNet (ADR-0013): fee terms and where to pay, the fee rules (`fee.ts`), invoices issued once a month and on a package's confirmation, payments allocated to invoices, reminders, each owner's bill issue, and service access by bills or by hand (`access-rule.ts`, `service-access.ts`, ADR-0014) |
 | `apps/api/src/team`, `invitations` | Sign-in protection, and the people of each workspace by invitation |

@@ -61,7 +61,7 @@ in 0.54 once the device had gone; a plain ping is not a usable check, as it time
 
 How it is built (slice 7): the tunnel service, which alone sees a router's tunnel address, relays
 each RADIUS packet to the API with that address; the API checks the router's own secret and answers
-from the database inside the router's 3-second timeout (`apps/api/src/radius`). The portal's sign-in
+from the database inside the router's 3-second timeout (`apps/api/src/network/radius`). The portal's sign-in
 leaves a one-minute admission that the router's request for that code and device takes; the slow
 checks (the PIN, its limits, ARP-pinging the device holding a place) happen at the sign-in, not in
 RADIUS. The switch PIN is made in the claim that starts the voucher and returned once the router

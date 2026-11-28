@@ -97,7 +97,7 @@ or discard user data without explicit approval.
   the router reads the user back; any new path that grants access follows the same rule.
 - **Never assume what a MikroTik supports: probe, then branch.** Board and RouterOS
   differences belong only in the provisioning dialect
-  (`apps/api/src/services/router-provision/dialect.ts` until the port moves it).
+  (`apps/api/src/network/provisioning/dialect.ts`).
 - **A voucher code is a credential** (it is the hotspot username and password). It goes only to
   the session that paid, proved by a secret, or to staff; never to a page the router serves. Only the API signs a device in
   ([ADR-0008](docs/engineering-decisions/0008-captive-portal.md)): the router accepts no login

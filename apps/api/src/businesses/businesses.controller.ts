@@ -15,8 +15,8 @@ import { apiError } from "../core/http/error-envelope.js";
 import { idParam } from "../core/http/id-param.js";
 import { parseInput } from "../core/http/validation.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { routerCondition, worstCondition } from "../network/routers/router-journey.js";
 import { VENUE_FACTS, type VenueFacts, venueStage } from "../onboarding/onboarding-stage.js";
-import { routerCondition, worstCondition } from "../routers/router-journey.js";
 
 const venueSelect = {
   orderBy: { createdAt: "asc" },

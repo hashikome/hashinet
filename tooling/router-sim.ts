@@ -15,44 +15,44 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
-import type { Principal } from "../apps/api/src/access/principal.js";
-import { AuditLog } from "../apps/api/src/audit/audit-log.js";
-import { SecretBox } from "../apps/api/src/crypto/secret-box.js";
-import { createPrismaClient, type PrismaClient } from "../apps/api/src/database/client.js";
-import type { PrismaService } from "../apps/api/src/database/prisma.service.js";
+import type { Principal } from "../apps/api/src/core/access/principal.js";
+import { AuditLog } from "../apps/api/src/core/audit/audit-log.js";
+import { SecretBox } from "../apps/api/src/core/crypto/secret-box.js";
+import { createPrismaClient, type PrismaClient } from "../apps/api/src/core/database/client.js";
+import type { PrismaService } from "../apps/api/src/core/database/prisma.service.js";
 import type { Prisma, Router } from "../apps/api/src/generated/prisma/client.js";
-import { bootstrapPlatform } from "../apps/api/src/platform/bootstrap.js";
-import { storedSetup } from "../apps/api/src/routers/router-journey.js";
 import {
   closeConnection,
   connectToRouter,
   type MikroTikConn,
-} from "../apps/api/src/services/mikrotik.js";
-import { RouterAccess } from "../apps/api/src/services/router-credentials.js";
-import { RouterLogger } from "../apps/api/src/services/router-log.js";
-import { buildBootstrapScript } from "../apps/api/src/services/router-provision/bootstrap.js";
+} from "../apps/api/src/network/mikrotik/mikrotik.js";
+import { RouterAccess } from "../apps/api/src/network/mikrotik/router-credentials.js";
+import { RouterLogger } from "../apps/api/src/network/mikrotik/router-log.js";
+import { RouterSync } from "../apps/api/src/network/monitor/router-sync.js";
+import { buildBootstrapScript } from "../apps/api/src/network/provisioning/bootstrap.js";
 import {
   type BackendSettings,
   buildHotspotPlan,
   portalOriginFor,
   resolveBackendEndpoints,
-} from "../apps/api/src/services/router-provision/context.js";
-import { dialectFor } from "../apps/api/src/services/router-provision/dialect.js";
+} from "../apps/api/src/network/provisioning/context.js";
+import { dialectFor } from "../apps/api/src/network/provisioning/dialect.js";
 import {
   PORTAL_FILES,
   type PortalFileName,
   renderPortalFile,
-} from "../apps/api/src/services/router-provision/portal-files.js";
-import { PrismaRouterStore } from "../apps/api/src/services/router-provision/prisma-store.js";
-import { probeRouter } from "../apps/api/src/services/router-provision/probe.js";
-import { toRows } from "../apps/api/src/services/router-provision/ros-client.js";
-import { setupRouter } from "../apps/api/src/services/router-provision/setup.js";
+} from "../apps/api/src/network/provisioning/portal-files.js";
+import { PrismaRouterStore } from "../apps/api/src/network/provisioning/prisma-store.js";
+import { probeRouter } from "../apps/api/src/network/provisioning/probe.js";
+import { toRows } from "../apps/api/src/network/provisioning/ros-client.js";
+import { setupRouter } from "../apps/api/src/network/provisioning/setup.js";
 import {
   generateWireguardKeyPair,
   type WireguardKeyPair,
-} from "../apps/api/src/services/router-provision/tunnel.js";
-import { probeVerify } from "../apps/api/src/services/router-provision/verify.js";
-import { RouterSync } from "../apps/api/src/services/router-sync.js";
+} from "../apps/api/src/network/provisioning/tunnel.js";
+import { probeVerify } from "../apps/api/src/network/provisioning/verify.js";
+import { storedSetup } from "../apps/api/src/network/routers/router-journey.js";
+import { bootstrapPlatform } from "../apps/api/src/platform/bootstrap.js";
 import { SessionsService } from "../apps/api/src/sessions/sessions.service.js";
 import { generateCode } from "../apps/api/src/vouchers/voucher-codes.js";
 import { VouchersService } from "../apps/api/src/vouchers/vouchers.service.js";

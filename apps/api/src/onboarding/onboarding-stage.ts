@@ -1,6 +1,6 @@
 import type { OnboardingStage } from "@hashinet/types";
 import type { Prisma } from "../generated/prisma/client.js";
-import { JOURNEY_SELECT, routerCondition } from "../routers/router-journey.js";
+import { JOURNEY_SELECT, routerCondition } from "../network/routers/router-journey.js";
 
 export interface OnboardingFacts {
   preferredAt: Date | null;

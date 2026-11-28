@@ -26,7 +26,7 @@ import {
 } from "../core/time/business-day.js";
 import { type InvoiceKind, Prisma } from "../generated/prisma/client.js";
 import { IssuesService } from "../issues/issues.service.js";
-import { passedSetup } from "../routers/router-journey.js";
+import { passedSetup } from "../network/routers/router-journey.js";
 import { BillingSettings, businessFeeTerms } from "./billing-settings.js";
 import { lockBusiness, paidOf } from "./business-lock.js";
 import { type Span, servedShare, venueFee } from "./fee.js";

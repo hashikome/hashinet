@@ -21,7 +21,9 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 - [x] (2026-11-28) M1 `core/`: what every area uses. 49 files moved (6 integration tests to
   `test/integration/core/`), 3 dead files removed; verify, 234 integration tests and the route and
   module map identical to the baseline.
-- [ ] M2 `network/`: the routers.
+- [x] (2026-11-28) M2 `network/`: the routers. 58 files moved (5 integration tests to
+  `test/integration/network/`); verify, 234 integration tests, the map identical, and the router sim's
+  `guest-test` 22/22 on two RouterOS 7.25 routers.
 - [ ] M3 `platform/`: HashiNet running businesses.
 - [ ] M4 `people/`.
 - [ ] M5 `venues/`.
@@ -39,6 +41,9 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
   tests); the web's `lib/duration.ts` only names the API copy in a stale comment. Removed in M1.
 - (2026-11-28) The web's `lib/duration.ts` still describes a `backend/` that rendered the portal
   (`DURATION_BUCKETS`); the API has no such code. Left for an upkeep pass, not a move.
+- (2026-11-28) The move tool let a folder's line override files named on their own lines; M2's
+  tunnel and outage files landed in `network/routers` and were moved on in the same slice. The tool
+  now lets an explicit file win.
 - (2026-11-28) `access` (96 imports from other folders) and `audit` (23) are used by every feature,
   so they are foundations, not "people" features: with them in `core/`, imports between areas fell
   from about 450 to about 100.

@@ -212,6 +212,6 @@ Most failures now name their own fix in the dialog. These are the ones it cannot
 - **[mikrotik-hotspot-reference.md](mikrotik-hotspot-reference.md)** — the reference: why each setting exists, every error we hit,
   and the manual equivalent of every provisioning step
 - **`../../TEST.md`** — full test matrix
-- **`apps/api/src/services/router-provision/`** — the implementation. `bootstrap.ts` generates Step 2;
+- **`apps/api/src/network/provisioning/`** — the implementation. `bootstrap.ts` generates Step 2;
   `probe.ts` + `readiness.ts` are phases 1–2; `steps.ts` is the ordered registry phases 3–5 run;
   `verify.ts` is phase 6; `setup.ts` orchestrates all of it

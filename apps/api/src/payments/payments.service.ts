@@ -34,10 +34,10 @@ import { countFailure, isLimited } from "../guest/attempts.js";
 import { GuestService, safeDestination } from "../guest/guest.service.js";
 import { isPayable } from "../guest/guest-context.js";
 import { SMS_SENDER, type SmsSender } from "../messaging/sms-sender.js";
+import { RouterSync } from "../network/monitor/router-sync.js";
+import { SERVING } from "../network/routers/router-journey.js";
 import { PackagesService } from "../packages/packages.service.js";
 import { PaymentWaysService } from "../payment-ways/payment-ways.service.js";
-import { SERVING } from "../routers/router-journey.js";
-import { RouterSync } from "../services/router-sync.js";
 import { generateCodes } from "../vouchers/voucher-codes.js";
 import { type ChargeState, MOBILE_MONEY, type MobileMoneyGateway } from "./mobile-money.js";
 import type {

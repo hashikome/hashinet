@@ -33,11 +33,11 @@ src/
   analytics/ portal/ team/ audit/
   live/                    the /ws/live hub
   http/                    error shape, wide events, origin check, validation
-  services/
-    mikrotik.ts            RouterOS API calls (hotspot users, live sessions)
-    router-provision/      everything that configures a router
-    router-sync.ts         pushes vouchers to a venue's routers
-    live-monitor.ts        polls routers for live clients and applies throttling
+  network/
+    mikrotik/              the RouterOS API client
+    provisioning/          everything that configures a router
+    monitor/               the live monitor, RouterSync and outages
+    radius/                every hotspot login and session report
 mikrotik-files/            login.html, alogin.html and status.html uploaded to routers
 ```
 
@@ -46,4 +46,4 @@ Router procedures are in [docs/runbooks](../../docs/runbooks/README.md).
 The tests pin the code where expensive bugs have lived: the generated bootstrap script (every
 statement at most 512 characters and self-contained), hotspot interface resolution, per-board
 command differences and the capability latch. Read the repository's
-[AGENTS.md](../../AGENTS.md) before changing `services/`.
+[AGENTS.md](../../AGENTS.md) before changing `network/`.

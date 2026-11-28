@@ -596,7 +596,7 @@ Key messages and what they mean:
 
 > **This is no longer a manual chore — press Set up router.** All four places below are
 > regenerated from the backend's current address, which the system discovers by finding its own
-> interface on the router's subnet (`resolveBackendUrl` in `router-provision/context.ts`). The
+> interface on the router's subnet (`resolveBackendUrl` in `network/provisioning/context.ts`). The
 > steps here remain as the reference for what changes and where, and for a board you are fixing
 > by hand.
 
@@ -779,11 +779,11 @@ credentials from the `routers` table.
 
 | File                                         | Purpose                                                                 |
 | -------------------------------------------- | ----------------------------------------------------------------------- |
-| `apps/api/src/services/mikrotik.ts`          | Low-level RouterOS API: sign a device in, end a session, block, read    |
-| `apps/api/src/services/router-sync.ts`       | A venue's routers outside setup: sessions, blocks, sites open           |
-| `apps/api/src/radius/`                       | The RADIUS codec and HashiNet's answer to every login and session report |
+| `apps/api/src/network/mikrotik/mikrotik.ts`  | Low-level RouterOS API: sign a device in, end a session, block, read    |
+| `apps/api/src/network/monitor/router-sync.ts` | A venue's routers outside setup: sessions, blocks, sites open           |
+| `apps/api/src/network/radius/`               | The RADIUS codec and HashiNet's answer to every login and session report |
 | `apps/tunnel/src/radius-relay.ts`            | Relays the routers' RADIUS from the tunnel address to the API           |
-| `apps/api/src/services/live-monitor.ts`      | Polls routers: counters, sessions a router no longer lists, throttling  |
+| `apps/api/src/network/monitor/live-monitor.ts` | Polls routers: counters, sessions a router no longer lists, throttling  |
 | `apps/api/src/vouchers/voucher-expiry.ts`    | Ends expired vouchers, their sessions and switch PINs                    |
 
 ### 13.5 Automatic triggers
@@ -1117,7 +1117,7 @@ guest sees at the router's own address.
 
 ### 19.2 Live monitor — how disconnect detection works
 
-`backend/src/services/live-monitor.ts` runs every 30 seconds:
+`apps/api/src/network/monitor/live-monitor.ts` runs every 30 seconds:
 
 1. For each venue, connect to each router and call `/ip/hotspot/active/print`
 2. Collect all currently active usernames into a `Set<string>` per venue

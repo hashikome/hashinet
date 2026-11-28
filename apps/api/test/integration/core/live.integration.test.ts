@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import WebSocket from "ws";
 import { LiveHub } from "../../../src/core/live/live-hub.js";
-import { RouterLogger } from "../../../src/services/router-log.js";
+import { RouterLogger } from "../../../src/network/mikrotik/router-log.js";
 import {
   browser,
   type Client,

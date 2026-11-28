@@ -30,7 +30,7 @@ import { captureFailure } from "../core/observability/telemetry.js";
 import { businessDayOf, dateOf } from "../core/time/business-day.js";
 import { Prisma, type PrismaClient } from "../generated/prisma/client.js";
 import type { IssueKind } from "../generated/prisma/enums.js";
-import { JOURNEY_SELECT, routerCondition } from "../routers/router-journey.js";
+import { JOURNEY_SELECT, routerCondition } from "../network/routers/router-journey.js";
 
 const DAY_MS = 86_400_000;
 

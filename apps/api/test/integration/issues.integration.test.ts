@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { IssueDetail, IssueList } from "@hashinet/types";
 import { IssuesService } from "../../src/issues/issues.service.js";
-import { setupIssueKey } from "../../src/routers/routers.service.js";
+import { setupIssueKey } from "../../src/network/routers/routers.service.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, testBusinessId } from "./people.js";

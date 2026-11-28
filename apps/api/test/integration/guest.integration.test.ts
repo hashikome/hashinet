@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { RouterSync } from "../../src/services/router-sync.js";
+import { RouterSync } from "../../src/network/monitor/router-sync.js";
 import { useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { protectedOwner, testBusinessId } from "./people.js";

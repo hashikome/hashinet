@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { groupedCode } from "@hashinet/types";
 import { SMS_SENDER, type SmsSender } from "../../src/messaging/sms-sender.js";
+import { RouterSync } from "../../src/network/monitor/router-sync.js";
 import { MOBILE_MONEY, type MobileMoneyGateway } from "../../src/payments/mobile-money.js";
 import { PaymentsService } from "../../src/payments/payments.service.js";
-import { RouterSync } from "../../src/services/router-sync.js";
 import { browser, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import {

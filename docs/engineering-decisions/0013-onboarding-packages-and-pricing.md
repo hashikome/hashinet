@@ -134,7 +134,7 @@ and the guests. Owners are not network technicians, so the team installs it.
 
 - The bootstrap script must take the MikroTik router's internet address from the ISP router by DHCP on
   port 1, keeping the fixed address as an option, so a router configured at the office works at
-  any venue (`apps/api/src/services/router-provision/bootstrap.ts`).
+  any venue (`apps/api/src/network/provisioning/bootstrap.ts`).
 - Readiness warns about a downstream router that hands out its own addresses.
 - A **Billing** page: per venue, the month's sales, refunds and net sales, the fee by band,
   the onboarding and router charges, what is due and how to pay; the platform sees every
