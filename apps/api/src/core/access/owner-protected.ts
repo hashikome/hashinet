@@ -1,5 +1,5 @@
-import { hasProtection } from "../../auth/create-auth.js";
 import type { PrismaClient } from "../../generated/prisma/client.js";
+import { hasProtection } from "../../people/auth/create-auth.js";
 
 /**
  * Whether a business's owner has protected their sign-in (`hasProtection`: an authenticator or a

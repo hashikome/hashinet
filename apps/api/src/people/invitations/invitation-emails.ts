@@ -1,4 +1,4 @@
-import type { EmailMessage } from "../core/email/email-sender.js";
+import type { EmailMessage } from "../../core/email/email-sender.js";
 import { INVITATION_HOURS } from "./invitation-token.js";
 
 /** The invitation to start a business on HashiNet. The link's fragment carries the token. */

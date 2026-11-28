@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../core/database/client.js";
+import type { PrismaClient } from "../../core/database/client.js";
 
 /** Codes sent to one person per window, whatever address asks. */
 export const SIGN_IN_CODES_PER_WINDOW = 5;

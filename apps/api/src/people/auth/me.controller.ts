@@ -17,14 +17,14 @@ import {
   Put,
 } from "@nestjs/common";
 import { z } from "zod";
-import { logoUrl } from "../brand/logos.js";
-import { AccountRoute, CurrentPrincipal } from "../core/access/access.guard.js";
-import { capabilitiesOf, needsProtectedSession } from "../core/access/policy.js";
-import { mustProtect, type Principal, SETUP_DAYS } from "../core/access/principal.js";
-import { AuditLog } from "../core/audit/audit-log.js";
-import { PrismaService } from "../core/database/prisma.service.js";
-import { apiError } from "../core/http/error-envelope.js";
-import { parseInput } from "../core/http/validation.js";
+import { logoUrl } from "../../brand/logos.js";
+import { AccountRoute, CurrentPrincipal } from "../../core/access/access.guard.js";
+import { capabilitiesOf, needsProtectedSession } from "../../core/access/policy.js";
+import { mustProtect, type Principal, SETUP_DAYS } from "../../core/access/principal.js";
+import { AuditLog } from "../../core/audit/audit-log.js";
+import { PrismaService } from "../../core/database/prisma.service.js";
+import { apiError } from "../../core/http/error-envelope.js";
+import { parseInput } from "../../core/http/validation.js";
 import {
   PROOF_ACTIONS,
   proofHoldsUntil,

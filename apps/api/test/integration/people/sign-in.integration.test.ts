@@ -6,9 +6,9 @@ import {
   signInWithCode,
   totp,
   useApi,
-} from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember } from "./people.js";
+} from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, platformMember } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi();

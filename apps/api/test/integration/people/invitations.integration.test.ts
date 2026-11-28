@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { onSalePackages } from "../../src/packages/on-sale.js";
-import { DEFAULT_PACKAGES } from "../../src/platform/bootstrap/bootstrap.js";
-import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "./api.js";
-import { useTestDatabase } from "./harness.js";
-import { businessMember, platformMember } from "./people.js";
+import { onSalePackages } from "../../../src/packages/on-sale.js";
+import { DEFAULT_PACKAGES } from "../../../src/platform/bootstrap/bootstrap.js";
+import { browser, type Client, enrollAuthenticatorFor, signInWithCode, useApi } from "../api.js";
+import { useTestDatabase } from "../harness.js";
+import { businessMember, platformMember } from "../people.js";
 
 const t = useTestDatabase();
 const api = useApi();

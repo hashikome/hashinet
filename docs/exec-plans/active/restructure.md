@@ -27,7 +27,8 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 - [x] (2026-11-28) M3 `platform/`: HashiNet running businesses. 36 files moved (6 integration
   tests to `test/integration/platform/`), the `platform:bootstrap` script repointed; verify, 234
   integration tests, the map identical, the bootstrap command starting from its new path.
-- [ ] M4 `people/`.
+- [x] (2026-11-28) M4 `people/`: auth, team, invitations. 18 files moved (3 integration tests);
+  verify, 234 integration tests, the map identical.
 - [ ] M5 `venues/`.
 - [ ] M6 `sales/`.
 - [ ] M7 `guest/`, and `analytics/` alone; the root holds only bootstrap.

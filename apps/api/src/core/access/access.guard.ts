@@ -11,7 +11,7 @@ import {
 import { Reflector } from "@nestjs/core";
 import { fromNodeHeaders } from "better-auth/node";
 import type { Request } from "express";
-import { type Auth, BETTER_AUTH } from "../../auth/create-auth.js";
+import { type Auth, BETTER_AUTH } from "../../people/auth/create-auth.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { apiError } from "../http/error-envelope.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
