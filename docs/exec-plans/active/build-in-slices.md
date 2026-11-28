@@ -1014,6 +1014,12 @@ Self-service purchase on the portal, payouts, SMS credits, and the owner's reque
 payments with the platform's review. Accepted as build-hashinet M6 says, then live with a real payment
 and a real message (M8). The paid receipt shows the switch PIN once, as the redeem does (built 28
 November 2026, ADR-0015, 4).
+Held whole until the providers' requirements are known (owner, 28 November 2026): the prototype's
+request for online payments is mostly the provider's own checks (the owner's national ID, the
+business documents it verifies, the payout destinations it supports), and payouts and SMS credits
+depend on its APIs, so the request, the review, payouts and SMS credits are built together against
+them. Built and ready meanwhile: self-service purchase behind swappable providers (ADR-0010, 8),
+the paid receipt's switch PIN.
 
 **Slice 7, a voucher across a venue's routers.** For every guest and the staff who help them.
 Backend: HashiNet answers every hotspot login through RADIUS over the management tunnel, counting a
