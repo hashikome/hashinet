@@ -11,10 +11,10 @@ import {
 } from "../core/time/business-day.js";
 
 /** The longest custom period, so a report's queries stay bounded. */
-export const MAX_CUSTOM_DAYS = 366;
+const MAX_CUSTOM_DAYS = 366;
 
 /** The periods each range offers, and the one it opens on. */
-export const PERIODS: Record<"last" | "current", PeriodName[]> = {
+const PERIODS: Record<"last" | "current", PeriodName[]> = {
   last: ["day", "7d", "30d", "90d", "month", "quarter", "year"],
   current: ["day", "week", "month", "quarter", "year"],
 };
@@ -96,7 +96,7 @@ export function showsFor(spanDays: number): AnalyticsShow[] {
 }
 
 /** The buckets of a span by a unit: each one's first day (or hour), and its last day. */
-export function bucketsOf(
+function bucketsOf(
   start: string,
   end: string,
   show: AnalyticsShow,

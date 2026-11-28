@@ -20,7 +20,6 @@ describe("loadConfig", () => {
     expect(config.brand.storeDir).toBe(join(root, "data/brand/"));
   });
 
-
   test("defaults fill everything optional", () => {
     const config = loadConfig(BASE);
     expect(config.port).toBe(4006);

@@ -32,7 +32,7 @@ export async function relay(): Promise<void> {
 
 // Hub: the platform side of the management tunnel.
 
-export function docker(cmd: string[], input: string | null = null): string {
+function docker(cmd: string[], input: string | null = null): string {
   const result = Bun.spawnSync(["docker", ...cmd], {
     stdin: input === null ? "ignore" : new TextEncoder().encode(input),
     stdout: "pipe",

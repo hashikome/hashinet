@@ -9,7 +9,7 @@
 
 import type { RouterProfile } from "./probe.js";
 
-export type FileWriteStrategy = "file-contents" | "tool-fetch" | "manual";
+type FileWriteStrategy = "file-contents" | "tool-fetch" | "manual";
 
 /**
  * How to talk to this board's radio.
@@ -44,7 +44,7 @@ export interface RadioDialect {
  * owner's own WiFi shares is never touched. Legacy wireless takes a security profile: setup gives
  * the guest radio one of its own with `mode=none`, and never changes `default`.
  */
-export type OpenRadio =
+type OpenRadio =
   | { kind: "interface"; field: string }
   | { kind: "profile"; menu: string; profile: string };
 

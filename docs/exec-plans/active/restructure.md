@@ -60,6 +60,11 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 
 - (2026-11-28) `utils/retry.ts` and `utils/duration.ts` have no users in the API (only their own
   tests); the web's `lib/duration.ts` only names the API copy in a stale comment. Removed in M1.
+- (2026-11-28) M1 moved `core/config/config.ts` a level deeper, and its defaults for the email and
+  SMS outboxes and the brand store found `data/` from the file's own place, so they pointed under
+  `apps/data/` (local development only; production sets Resend and R2). Found by the workspace
+  session after the release; fixed with a test against git's root. Every slice should grep its moved
+  files for `import.meta.url`, `import.meta.dir` and `__dirname` before moving them.
 - (2026-11-28) The router sim computed its root from its own folder and named its own path in two
   strings (the hub runs it in a container): splitting a file into a folder moves both one level.
   Its destructured `command` and `args` escaped the splitter's declaration pattern; they moved to

@@ -67,7 +67,7 @@ const withVenue = { venue: { select: { name: true } } } as const;
 /** The platform's issue for a router whose setup stopped after a release. */
 export const setupIssueKey = (routerId: string) => `router-setup:${routerId}`;
 
-export const routerNotFound = () =>
+const routerNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That router does not exist."));
 
 /** A probe of a saved router: what it is, and whether the site is ready for setup. */

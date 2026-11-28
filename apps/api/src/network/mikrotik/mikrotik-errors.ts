@@ -54,19 +54,19 @@ export abstract class RouterError extends Error {
 }
 
 /** TCP connect failed, timed out, or the socket dropped mid-command. */
-export class RouterUnreachableError extends RouterError {
+class RouterUnreachableError extends RouterError {
   readonly kind = "unreachable" as const;
   readonly retryable = true;
 }
 
 /** Credentials rejected. Retrying with the same credentials is pointless. */
-export class RouterAuthError extends RouterError {
+class RouterAuthError extends RouterError {
   readonly kind = "auth" as const;
   readonly retryable = false;
 }
 
 /** RouterOS understood the command and refused it (bad value, missing object, …). */
-export class RouterCommandError extends RouterError {
+class RouterCommandError extends RouterError {
   readonly kind = "command" as const;
   readonly retryable = false;
 }
@@ -79,12 +79,6 @@ export class RouterCommandError extends RouterError {
 export class RouterUnsupportedError extends RouterError {
   readonly kind = "unsupported" as const;
   readonly retryable = false;
-}
-
-/** The write was accepted but reading it back disagreed with what we asked for. */
-export class RouterVerifyError extends RouterError {
-  readonly kind = "verify" as const;
-  readonly retryable = true;
 }
 
 /** Params may carry voucher codes and API passwords — never log them raw. */
@@ -147,8 +141,4 @@ export function classifyRouterError(err: unknown, ctx: RouterErrorContext): Rout
   }
 
   return new RouterCommandError(`RouterOS rejected command on ${ctx.host}: ${rosMessage}`, full);
-}
-
-export function isRetryable(err: unknown): boolean {
-  return err instanceof RouterError ? err.retryable : false;
 }

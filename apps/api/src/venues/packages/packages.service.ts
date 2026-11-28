@@ -17,7 +17,7 @@ import { VenuesService } from "../venues/venues.service.js";
 import { onSalePackages, venueCatalogue } from "./on-sale.js";
 import type { PackageInput } from "./package-input.js";
 
-export const packageNotFound = () =>
+const packageNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That package does not exist."));
 
 /** A venue's own price for one of its business's packages, or not selling it there. */

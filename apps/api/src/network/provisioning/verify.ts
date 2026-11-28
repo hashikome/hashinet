@@ -407,7 +407,7 @@ async function radiusCheck(ros: RosClient, endpoints: BackendEndpoints): Promise
   return { ...base, status: "pass", detail };
 }
 
-export async function verifyRouter(ros: RosClient, input: VerifyInput): Promise<VerifyReport> {
+async function verifyRouter(ros: RosClient, input: VerifyInput): Promise<VerifyReport> {
   const { routerId, dialect, plan, endpoints } = input;
 
   const checks: ReadinessCheck[] = [];

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
  * Help (prototype help.js): guides and questions for the reader's role, each naming who it is
  * for. Each slice adds its own with its screens, so Help never explains a page that isn't there.
  */
-export type HelpRole =
+type HelpRole =
   | "owner"
   | "business-manager"
   | "venue-manager"
@@ -30,7 +30,7 @@ export interface Question {
   a: string;
 }
 
-export function helpRole(me: Me): HelpRole | null {
+function helpRole(me: Me): HelpRole | null {
   if (me.active.scope === "platform") {
     return me.active.role === "operator" ? "platform-operator" : "platform-staff";
   }
@@ -47,7 +47,7 @@ const BUSINESS_ROLE: Record<Me["active"]["role"], HelpRole | null> = {
   operator: null,
 };
 
-export const AREAS: Record<"business" | "platform", string[]> = {
+const AREAS: Record<"business" | "platform", string[]> = {
   business: [
     "Getting started",
     "Selling",
@@ -223,7 +223,7 @@ const COUNTER: Guide[] = [
   ),
 ];
 
-export const GUIDES: Guide[] = [
+const GUIDES: Guide[] = [
   {
     id: "start",
     area: "Getting started",
@@ -523,7 +523,7 @@ export const GUIDES: Guide[] = [
   PROTECT_OPERATOR,
 ];
 
-export const QUESTIONS: Question[] = [
+const QUESTIONS: Question[] = [
   {
     for: BUSINESS,
     area: "Guests and devices",

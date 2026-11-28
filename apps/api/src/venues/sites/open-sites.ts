@@ -11,7 +11,7 @@ export function slotPaid(slot: {
   return paidOf(slot.invoice) >= slot.invoice.totalTsh;
 }
 
-export const SLOT_SELECT = {
+const SLOT_SELECT = {
   id: true,
   createdAt: true,
   invoiceId: true,

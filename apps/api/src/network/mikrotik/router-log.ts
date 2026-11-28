@@ -18,9 +18,9 @@ import {
   redactParams,
 } from "./mikrotik-errors.js";
 
-export type RouterLogLevel = "debug" | "info" | "warn" | "error";
-export type RouterLogPhase = "connect" | "command" | "step" | "summary";
-export type RouterLogOutcome = "ok" | "failed" | "unsupported" | "skipped";
+type RouterLogLevel = "debug" | "info" | "warn" | "error";
+type RouterLogPhase = "connect" | "command" | "step" | "summary";
+type RouterLogOutcome = "ok" | "failed" | "unsupported" | "skipped";
 
 export interface RouterLogEvent {
   runId: string;

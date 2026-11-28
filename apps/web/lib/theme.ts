@@ -7,7 +7,7 @@ import type { ThemePreference } from "@hashinet/types";
 const KEY = "hashinet-theme";
 
 /** The pages someone sees before signing in. */
-export const SIGNED_OUT = /^\/(sign-in|invite)(\/|$)/;
+const SIGNED_OUT = /^\/(sign-in|invite)(\/|$)/;
 
 /** Runs before the first paint, in <head>: no flash of the wrong theme. */
 export const THEME_SCRIPT = `(function(){var d=document.documentElement;if(/${SIGNED_OUT.source}/.test(location.pathname)){d.dataset.theme="dark";return}try{var t=localStorage.getItem("${KEY}")||"system";d.dataset.theme=t==="system"?(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"):t}catch(e){}})()`;

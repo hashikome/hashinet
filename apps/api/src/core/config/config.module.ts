@@ -32,7 +32,7 @@ export const APP_CONFIG = Symbol("APP_CONFIG");
 /** The configuration and the outside services chosen from it; tests pass their own. */
 @Global()
 @Module({})
-export class ConfigModule {}
+class ConfigModule {}
 
 export function configModule(config: AppConfig, email: EmailSender | null): DynamicModule {
   return {

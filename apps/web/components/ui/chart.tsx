@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
  * Gridlines from a step of 1, 2 or 5 times a power of ten, so a chart keeps about six at any size
  * (prototype `niceMax`).
  */
-export function niceMax(peak: number): { max: number; ticks: number[] } {
+function niceMax(peak: number): { max: number; ticks: number[] } {
   const power = 10 ** Math.floor(Math.log10(Math.max(peak, 1) / 6));
   const step =
     peak <= 5
@@ -26,7 +26,7 @@ export function niceMax(peak: number): { max: number; ticks: number[] } {
 }
 
 /** "12k", "1.5M": an axis's money or count, short. */
-export function shortNumber(v: number): string {
+function shortNumber(v: number): string {
   if (v === 0) return "0";
   if (v >= 1_000_000) return `${+(v / 1_000_000).toFixed(1)}M`;
   if (v >= 1000) return `${+(v / 1000).toFixed(1)}k`;

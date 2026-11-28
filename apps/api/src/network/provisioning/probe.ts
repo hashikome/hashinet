@@ -16,20 +16,20 @@ import {
 import { RouterLogger } from "../mikrotik/router-log.js";
 import { toRows } from "./ros-client.js";
 
-export interface RosVersion {
+interface RosVersion {
   major: number;
   minor: number;
   patch: number;
   raw: string;
 }
 
-export interface RouterPackage {
+interface RouterPackage {
   name: string;
   version: string;
   disabled: boolean;
 }
 
-export interface RouterInterface {
+interface RouterInterface {
   name: string;
   type: string;
   running: boolean;
@@ -40,16 +40,16 @@ export interface RouterInterface {
  * An entry from `/ip/address`. Needed to tell which interface carries the address we
  * manage the router on — putting the hotspot gateway there would hijack that network.
  */
-export interface RouterAddress {
+interface RouterAddress {
   /** CIDR form, e.g. "192.168.0.161/24" */
   address: string;
   interface: string;
   disabled: boolean;
 }
 
-export type WirelessStack = "wireless" | "wifi" | "none";
+type WirelessStack = "wireless" | "wifi" | "none";
 
-export interface RouterCapabilities {
+interface RouterCapabilities {
   /** `/ip hotspot` menu exists — without this the product cannot work on this board */
   hotspot: boolean;
   /** `/tool fetch` available — how we upload login.html without FTP */
@@ -64,14 +64,14 @@ export interface RouterCapabilities {
  * "no such command or directory" as a build that genuinely lacks it — so the two must be
  * told apart before anyone reaches for Netinstall.
  */
-export interface DeviceMode {
+interface DeviceMode {
   mode: string;
   hotspotAllowed: boolean;
   /** Versions device-mode will permit installing — it can block a downgrade. */
   allowedVersions: string | null;
 }
 
-export interface RouterCompatibility {
+interface RouterCompatibility {
   ok: boolean;
   /** Blocking problems. Non-empty means provisioning must not run. */
   reasons: string[];
@@ -115,7 +115,7 @@ function bool(value: string | null): boolean {
 
 const MIB = 1024 * 1024;
 
-export function parseRosVersion(raw: string | null): RosVersion {
+function parseRosVersion(raw: string | null): RosVersion {
   const text = raw ?? "";
   // "7.23.2 (stable)" / "6.49.8 (long-term)" → 7.23.2 / 6.49.8
   const match = /(\d+)\.(\d+)(?:\.(\d+))?/.exec(text);

@@ -41,7 +41,8 @@ access, sign-in, invitations) and [redesign-admin](docs/exec-plans/active/redesi
 
 - `bun install` (generates Prisma Client); `bun run infra:up` starts PostgreSQL 18 on
   `127.0.0.1:5438`; `bun run db:deploy` and `bun run db:seed` prepare it; `bun run dev`.
-- `bun run verify`: formatting, lint, typecheck, unit tests and builds. It must pass before a
+- `bun run verify`: formatting, lint, the docs' links and index (`tooling/check-docs.ts`), unused
+  code (knip, `knip.json`), typecheck, unit tests and builds. It must pass before a
   commit. `bun run test:integration` runs the database tests against `hashinet_test`.
 - Schema changes: edit `apps/api/prisma/schema.prisma`, then `bun run db:migrate` (creates and
   applies a migration); never edit an applied migration. See `docs/runbooks/database.md`.

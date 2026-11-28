@@ -1,7 +1,7 @@
 import type { ApiError } from "@hashinet/types";
 
 /** The API's origin. Empty means the page's own origin, as in production. */
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4006";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4006";
 
 export class ApiRequestError extends Error {
   constructor(

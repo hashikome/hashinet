@@ -90,7 +90,7 @@ export function simRouter(n: number): SimRouter {
 }
 
 /** `--router <n>` picks the router a command acts on; without it, router 1. */
-export const ARGV = process.argv.slice(2);
+const ARGV = process.argv.slice(2);
 const ROUTER_FLAG = ARGV.indexOf("--router");
 const ROUTER_N = ROUTER_FLAG === -1 ? 1 : Number(ARGV[ROUTER_FLAG + 1]);
 if (!Number.isInteger(ROUTER_N) || ROUTER_N < 1 || ROUTER_N > 9) {

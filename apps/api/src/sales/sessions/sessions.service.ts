@@ -23,7 +23,7 @@ export const sessionQuery = z.object({
   order: z.enum(["newest", "ending"]).default("newest"),
 });
 
-export const sessionInclude = {
+const sessionInclude = {
   voucher: { select: { code: true, expiresAt: true } },
   package: { select: { name: true } },
   venue: { select: { name: true } },

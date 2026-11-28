@@ -42,7 +42,7 @@ const MONTH_DUE_DAY = 7;
 const CHARGE_DUE_DAYS = 7;
 
 /** The order a payment on a business settles its invoices in: the oldest due first. */
-export const OLDEST_FIRST = [
+const OLDEST_FIRST = [
   { dueOn: "asc" },
   { issuedAt: "asc" },
 ] as const satisfies Prisma.InvoiceOrderByWithRelationInput[];

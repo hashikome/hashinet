@@ -4,7 +4,7 @@ import type { PrismaClient } from "../../core/database/client.js";
 type Db = Pick<PrismaClient, "rateLimit" | "$executeRaw">;
 
 /** When `key`'s window ends, if it has used up `max` failures in it; null when it hasn't. */
-export async function limitedUntil(
+async function limitedUntil(
   db: Db,
   key: string,
   max: number,

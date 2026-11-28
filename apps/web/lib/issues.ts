@@ -186,7 +186,7 @@ export const actorOf = (e: Event) =>
 export const setupDay = (date: string) => dayName(calendarDay(date));
 
 /** How far a venue is on its way to serving guests, before its router serves. */
-export const STAGE: Record<Exclude<OnboardingStage, "done">, string> = {
+const STAGE: Record<Exclude<OnboardingStage, "done">, string> = {
   choose: "Choosing how its router comes",
   confirm: "Package to agree",
   pay: "Waiting for payment",

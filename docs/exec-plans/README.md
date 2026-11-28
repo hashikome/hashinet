@@ -24,7 +24,8 @@ A plan must make sense with `ref/` empty while it runs.
 
 | Plan | Status |
 | --- | --- |
-| [active/build-in-slices.md](active/build-in-slices.md) | The build order: six slices from the approved prototype; slice 1 next |
+| [active/build-in-slices.md](active/build-in-slices.md) | The build order: seven slices from the approved prototype; slices 1 to 5 and 7 released, 6 held for its providers |
 | [active/business-scopes.md](active/business-scopes.md) | Schema, access, sign-in and invitations; built within slices 1 to 3 and 5 |
 | [active/redesign-admin.md](active/redesign-admin.md) | Prototype approved; its screens built within the slices |
 | [active/build-hashinet.md](active/build-hashinet.md) | M1 to M5 done; M6 built, awaiting provider accounts (slice 6) |
+| [active/restructure.md](active/restructure.md) | The code grouped into eight areas: the moves done; the upward imports and large files left |

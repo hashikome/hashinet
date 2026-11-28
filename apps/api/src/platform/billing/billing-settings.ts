@@ -8,7 +8,7 @@ import { oneLine } from "../../core/http/validation.js";
 import type { BillingSetting } from "../../generated/prisma/client.js";
 
 /** Today's terms (ADR-0013, 3), until the platform admin saves others. */
-export const DEFAULT_FEE_TERMS: FeeTerms = {
+const DEFAULT_FEE_TERMS: FeeTerms = {
   rateBp: 500,
   lowerRateBp: 250,
   lowerRateAboveTsh: 2_000_000,

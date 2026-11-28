@@ -315,10 +315,7 @@ async function untaggedConfigCheck(ros: RosClient): Promise<ReadinessCheck> {
   };
 }
 
-export async function checkReadiness(
-  ros: RosClient,
-  input: ReadinessInput,
-): Promise<ReadinessReport> {
+async function checkReadiness(ros: RosClient, input: ReadinessInput): Promise<ReadinessReport> {
   const { profile, plan, planError, managementIp, managementError } = input;
 
   const checks: ReadinessCheck[] = [hotspotPackageCheck(profile)];

@@ -51,7 +51,7 @@ export async function addPasskey(): Promise<void> {
 }
 
 /** "Chrome on macOS", from the browser's own description of itself. */
-export function deviceName(): string {
+function deviceName(): string {
   const ua = navigator.userAgent;
   const browser = /Edg\//.test(ua)
     ? "Edge"

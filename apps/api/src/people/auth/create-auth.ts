@@ -259,7 +259,7 @@ const ADDS_PROTECTION: ReadonlySet<string> = new Set([
 const RECOVERY_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 /** Eight recovery codes such as K7QM-2XFD (40 bits each), each working once. */
-export function recoveryCodes(): string[] {
+function recoveryCodes(): string[] {
   return Array.from({ length: 8 }, () => {
     const chars = Array.from(
       { length: 8 },
@@ -270,7 +270,7 @@ export function recoveryCodes(): string[] {
 }
 
 /** A recovery code as typed, in the form it was issued. */
-export function normalRecoveryCode(typed: string): string {
+function normalRecoveryCode(typed: string): string {
   const clean = typed.toUpperCase().replace(/[^A-Z0-9]/g, "");
   return clean.length === 8 ? `${clean.slice(0, 4)}-${clean.slice(4)}` : typed.trim();
 }
@@ -336,7 +336,7 @@ async function maySendSignInCode(db: PrismaClient, address: string): Promise<boo
  * authenticator creates its session at the authenticator's route, so an `email_code` session
  * had nothing after the code. Anything unknown counts as the weakest.
  */
-export function signInMethodOf(path: string | undefined): SignInMethod {
+function signInMethodOf(path: string | undefined): SignInMethod {
   if (path === "/two-factor/verify-totp") return "authenticator";
   if (path === "/two-factor/verify-backup-code") return "recovery_code";
   if (path?.startsWith("/passkey/")) return "passkey";

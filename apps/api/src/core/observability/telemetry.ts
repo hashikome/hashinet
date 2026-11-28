@@ -137,7 +137,7 @@ function redactValue(value: unknown): unknown {
 }
 
 /** The record with its message parts, raw message and properties redacted. */
-export function redactRecord(record: LogRecord): LogRecord {
+function redactRecord(record: LogRecord): LogRecord {
   return {
     ...record,
     message: record.message.map(redactValue),

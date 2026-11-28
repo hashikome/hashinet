@@ -27,7 +27,7 @@ import { SitesModule } from "./venues/sites/sites.module.js";
 import { VenuesModule } from "./venues/venues/venues.module.js";
 
 @Module({})
-export class AppModule {}
+class AppModule {}
 
 export function appModule(config: AppConfig, email: EmailSender | null): DynamicModule {
   return {

@@ -4,7 +4,7 @@
  * what the API returns. A request the API drops, or can't answer in time, gets no reply, as a router
  * expects of a server that ignores it.
  */
-export const RADIUS_PORTS = [1812, 1813] as const;
+const RADIUS_PORTS = [1812, 1813] as const;
 /** Under the 3 seconds a router waits, so its retry finds the API's answer to the first try. */
 const API_TIMEOUT_MS = 2500;
 
@@ -37,7 +37,7 @@ export async function relayPacket(
  * Relays in flight at once. A router asks a few times a second at most, so more than this is a flood:
  * what arrives beyond it is dropped, as a router's retry covers a lost request.
  */
-export const MAX_IN_FLIGHT = 64;
+const MAX_IN_FLIGHT = 64;
 
 /** Runs each job while fewer than `max` are in flight; drops the rest, returning false. */
 export function limitInFlight(max: number): (job: () => Promise<void>) => boolean {

@@ -19,7 +19,7 @@ export function feeNote(t: FeeTerms): string {
 }
 
 /** An invoice's state, with what came in when it went overdue part paid (prototype `statusOf`). */
-export function InvoiceStatus({ invoice }: { invoice: InvoiceRecord }) {
+function InvoiceStatus({ invoice }: { invoice: InvoiceRecord }) {
   const [label, kind] = STATE[invoice.state];
   return (
     <>
@@ -32,7 +32,7 @@ export function InvoiceStatus({ invoice }: { invoice: InvoiceRecord }) {
 }
 
 /** Download PDF: the invoice as the API makes it, saved under its number. */
-export function DownloadPdf({ invoice }: { invoice: InvoiceRecord }) {
+function DownloadPdf({ invoice }: { invoice: InvoiceRecord }) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   return (

@@ -71,7 +71,7 @@ function ipToInt(ip: string): number {
 
 const intToIp = intToIpv4;
 
-export function parseCidr(cidr: string): { networkInt: number; prefix: number; size: number } {
+function parseCidr(cidr: string): { networkInt: number; prefix: number; size: number } {
   const [addr, prefixRaw] = cidr.split("/");
   if (!addr || !prefixRaw) throw new Error(`Invalid CIDR: ${cidr}`);
   const prefix = Number(prefixRaw);
@@ -83,7 +83,7 @@ export function parseCidr(cidr: string): { networkInt: number; prefix: number; s
 }
 
 /** Do two CIDRs share any address? Compared at the shorter (less specific) prefix. */
-export function cidrsOverlap(a: string, b: string): boolean {
+function cidrsOverlap(a: string, b: string): boolean {
   try {
     const left = parseCidr(a);
     const right = parseCidr(b);

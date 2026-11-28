@@ -28,7 +28,7 @@ const MINUTE = 60_000;
 
 /** Runs the routers' and vouchers' background jobs while the application is up. */
 @Injectable()
-export class BackgroundJobs extends ScheduledJobs {
+class BackgroundJobs extends ScheduledJobs {
   protected readonly jobs: IntervalJob[];
   private tick = 0;
 

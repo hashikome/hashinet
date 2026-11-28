@@ -26,7 +26,7 @@ export function longDay(day: string): string {
 }
 
 /** "November 2026" from YYYY-MM. */
-export const monthName = (period: string) => longDay(`${period}-01`).replace(/^1 /, "");
+const monthName = (period: string) => longDay(`${period}-01`).replace(/^1 /, "");
 
 /** What an invoice is for, in a sentence's words. */
 export function invoiceSubject(invoice: InvoiceRecord): string {

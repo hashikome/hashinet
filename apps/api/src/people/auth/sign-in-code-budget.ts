@@ -1,8 +1,8 @@
 import type { PrismaClient } from "../../core/database/client.js";
 
 /** Codes sent to one person per window, whatever address asks. */
-export const SIGN_IN_CODES_PER_WINDOW = 5;
-export const SIGN_IN_CODE_WINDOW_MINUTES = 15;
+const SIGN_IN_CODES_PER_WINDOW = 5;
+const SIGN_IN_CODE_WINDOW_MINUTES = 15;
 
 /**
  * Takes one code from the person's budget, atomically; false when it is spent. Better Auth's

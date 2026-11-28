@@ -19,7 +19,7 @@ const HOUR = 60 * 60 * 1000;
  * run the API missed while down is made up; and any onboarding invoice a crash left unissued.
  */
 @Injectable()
-export class BillingJobs extends ScheduledJobs {
+class BillingJobs extends ScheduledJobs {
   protected readonly jobs: IntervalJob[];
 
   constructor(

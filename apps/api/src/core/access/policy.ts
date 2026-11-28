@@ -11,7 +11,7 @@ const BUSINESS_ALL = ["owner", "business_manager", "venue_manager", "venue_opera
 const BUSINESS_MANAGERS = ["owner", "business_manager", "venue_manager"] as const;
 const WHOLE_BUSINESS = ["owner", "business_manager"] as const;
 
-export const POLICY = {
+const POLICY = {
   // Venues and routers: HashiNet adds and configures routers (ADR-0011, 5); its operators run
   // connection checks; a business reads its own.
   "venue.read": [...PLATFORM_ALL, ...BUSINESS_ALL],

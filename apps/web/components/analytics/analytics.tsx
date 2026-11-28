@@ -63,7 +63,7 @@ const shortDay = (day: string) =>
   });
 
 /** A bucket's label on the chart's axis. */
-export function bucketLabel(start: string, show: AnalyticsShow): string {
+function bucketLabel(start: string, show: AnalyticsShow): string {
   if (show === "hour") return `${start.slice(11)}:00`;
   if (show === "month")
     return new Date(`${start}T12:00:00Z`).toLocaleDateString("en-GB", {

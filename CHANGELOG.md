@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- The verify gate, and so CI, checks the docs (every local link and heading anchor resolves, every doc
+  under `docs/` is indexed: `bun run check:docs`) and unused code (knip: `bun run check:unused`). The
+  tree passes both: exports used only in their own file are no longer exported, and six names nothing
+  used are removed (`currentWideEvent`, `RouterVerifyError`, `isRetryable`, the web's
+  `durationShort`, `DURATION_PRESETS` and `bucketFor`), with `@nestjs/testing`.
+- Local development's email and SMS outboxes and brand store default to `data/` at the repository
+  root again (the restructure had moved them under `apps/data/`); production was not affected.
+- The code is grouped by what the product does: `apps/api/src` is eight areas (core, people,
+  platform, venues, sales, guest, network, analytics), and the integration tests, `@hashinet/types`,
+  the web's components and the router sim follow them. Moves only; `services/`, `utils/` and
+  `serializers/` are gone ([restructure plan](docs/exec-plans/active/restructure.md)).
+
 - Slice 7: one voucher across a venue's routers, through RADIUS (ADR-0015). Routers ask HashiNet for
   every hotspot login and report every session over RADIUS, relayed by the tunnel service on
   `10.88.0.1:1812-1813` to `/api/internal/radius`; no voucher sits on a router, and a voucher's limit

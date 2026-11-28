@@ -12,7 +12,7 @@
  */
 
 import { CODE_LENGTH } from "@hashinet/types";
-import { RouterError, RouterUnsupportedError } from "../mikrotik/mikrotik-errors.js";
+import { RouterUnsupportedError } from "../mikrotik/mikrotik-errors.js";
 import type { ProvisionContext } from "./context.js";
 import type { RadioDialect } from "./dialect.js";
 import {
@@ -38,7 +38,7 @@ function runningCheckFieldOf(ctx: ProvisionContext): string {
   return field;
 }
 
-export interface StepScope {
+interface StepScope {
   ros: RosClient;
   ctx: ProvisionContext;
 }
@@ -732,7 +732,7 @@ const venueAllowedSites: ProvisionStep = {
 };
 
 /** Whether a router's walled garden holds exactly these sites, of the ones HashiNet tagged. */
-export async function allowedSitesMatch(ros: RosClient, wanted: string[]): Promise<boolean> {
+async function allowedSitesMatch(ros: RosClient, wanted: string[]): Promise<boolean> {
   const onRouter = await allowedSiteRows(ros);
   return (
     onRouter.length === wanted.length &&
@@ -1027,5 +1027,3 @@ export const PROVISION_STEPS: ProvisionStep[] = [
   oldVoucherUsersRemoved,
   customCommands,
 ];
-
-export { RouterError };

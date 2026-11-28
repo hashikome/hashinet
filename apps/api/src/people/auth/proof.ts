@@ -27,7 +27,7 @@ export interface Proof {
 }
 
 /** Whether the session's proof counts for this change now. */
-export function proofFits(action: ProofAction, proof: Proof | null): boolean {
+function proofFits(action: ProofAction, proof: Proof | null): boolean {
   if (!proof?.provedAt || !proof.provedWith) return false;
   const rule = RULES[action];
   return (

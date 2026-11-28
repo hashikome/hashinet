@@ -21,7 +21,7 @@ export const HASHINET_PORTAL: PortalContent = {
 export const HASHINET_COLOURS = { pageColor: "#0D1B2A", buttonColor: "#F59E2A" };
 
 /** A colour as the colour picker gives it, kept in capitals so equal colours compare equal. */
-export const colour = z
+const colour = z
   .string()
   .trim()
   .regex(/^#[0-9A-Fa-f]{6}$/, "must be a colour such as #F59E2A")

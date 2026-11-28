@@ -15,10 +15,10 @@ import { APP_CONFIG } from "../config/config.module.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { captureFailure } from "../observability/telemetry.js";
 
-export const LIVE_PATH = "/ws/live";
+const LIVE_PATH = "/ws/live";
 
 /** How often an open socket's sign-in is checked again, so a suspension disconnects it. */
-export const REVALIDATE_MS = 60_000;
+const REVALIDATE_MS = 60_000;
 
 /** What one socket receives. */
 interface Reach {

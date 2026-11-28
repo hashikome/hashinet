@@ -21,7 +21,9 @@
     "typecheck": "tsc --noEmit -p tooling/tsconfig.json && bun run --filter '*' typecheck",
     "test": "bun run --filter '*' test && bun test tooling",
     "build": "bun run --filter '*' build",
-    "verify": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build",
+    "check:docs": "bun tooling/check-docs.ts",
+    "check:unused": "knip --no-progress",
+    "verify": "bun run format:check && bun run lint && bun run check:docs && bun run check:unused && bun run typecheck && bun run test && bun run build",
     "router-sim": "bun tooling/router-sim/main.ts",
     "db:deploy": "bun run --filter @hashinet/api db:deploy",
     "db:seed": "bun run --filter @hashinet/api db:seed",
@@ -30,6 +32,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
     "@types/bun": "1.4.4",
+    "knip": "6.49.0",
     "typescript": "7.0.2"
   }
 }

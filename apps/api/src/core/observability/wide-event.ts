@@ -10,7 +10,7 @@ import { redact } from "./redact.js";
  * Only allowlisted fields with primitive values are kept. References are ids, never personal
  * data: no voucher codes, phone numbers, emails or MAC addresses.
  */
-export const WIDE_EVENT_FIELDS = [
+const WIDE_EVENT_FIELDS = [
   "operation",
   "outcome",
   "duration_ms",
@@ -43,7 +43,7 @@ export const WIDE_EVENT_FIELDS = [
   "reconcile.retried",
 ] as const;
 
-export type WideEventField = (typeof WIDE_EVENT_FIELDS)[number];
+type WideEventField = (typeof WIDE_EVENT_FIELDS)[number];
 type Primitive = string | number | boolean;
 export type WideEventFields = Partial<Record<WideEventField, Primitive | null>>;
 export type WideEventOutcome = "success" | "failure";
@@ -96,11 +96,6 @@ export class WideEvent {
 }
 
 const storage = new AsyncLocalStorage<WideEvent>();
-
-/** The wide event of the work in progress, or null outside one. */
-export function currentWideEvent(): WideEvent | null {
-  return storage.getStore() ?? null;
-}
 
 /**
  * Runs `work` with `event` as the current wide event, for work that ends later than `work`

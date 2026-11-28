@@ -7,7 +7,7 @@ import { useSession } from "@/lib/session";
 import { Attention, Button, ButtonLink, Head, Panel, useToast } from "../ui/ui";
 
 /** The two ways to protect a sign-in, as one pair of actions. */
-export function ProtectChoices() {
+function ProtectChoices() {
   const { refresh } = useSession();
   const toast = useToast();
   const [busy, setBusy] = useState(false);

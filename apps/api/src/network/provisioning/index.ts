@@ -19,9 +19,9 @@ import { RosClient } from "./ros-client.js";
 import { PROVISION_STEPS, type ProvisionStep } from "./steps.js";
 import type { RouterStore } from "./store.js";
 
-export type StepState = "satisfied" | "applied" | "would-apply" | "skipped" | "failed";
+type StepState = "satisfied" | "applied" | "would-apply" | "skipped" | "failed";
 
-export interface StepResult {
+interface StepResult {
   id: string;
   title: string;
   state: StepState;
@@ -267,6 +267,3 @@ export async function provisionRouter(
 
   return report;
 }
-
-export type { RouterProfile } from "./probe.js";
-export { probeRouter } from "./probe.js";

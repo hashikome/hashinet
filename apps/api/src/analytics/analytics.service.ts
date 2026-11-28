@@ -32,7 +32,7 @@ const RECEIVED_PAGE = 100;
 /** A month, YYYY-MM. */
 export const monthParam = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "must be YYYY-MM");
 
-export const monthQuery = z.object({
+const monthQuery = z.object({
   month: monthParam.nullable().default(null),
 });
 

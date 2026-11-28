@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/knip@6.49.0/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["tooling/*.ts"],
+      "project": ["tooling/**/*.ts"]
+    },
+    "apps/api": {
+      "entry": ["prisma/*.ts", "test/**/*.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts", "prisma/**/*.ts", "*.ts"],
+      "ignoreDependencies": ["@fontsource/figtree"]
+    },
+    "apps/web": {
+      "project": [
+        "app/**/*.{ts,tsx}",
+        "components/**/*.{ts,tsx}",
+        "lib/**/*.{ts,tsx}",
+        "*.{ts,mjs}"
+      ]
+    },
+    "apps/tunnel": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/*": {
+      "project": ["src/**/*.ts"]
+    }
+  }
+}

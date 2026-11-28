@@ -29,9 +29,9 @@ import type { RouterStore } from "./store.js";
 import { probeVerify, type VerifyReport } from "./verify.js";
 
 export type SetupPhaseId = "probe" | "readiness" | "dry-run" | "provision" | "verify" | "self-test";
-export type SetupPhaseStatus = "pass" | "warn" | "fail" | "skipped";
+type SetupPhaseStatus = "pass" | "warn" | "fail" | "skipped";
 
-export interface SetupPhase {
+interface SetupPhase {
   id: SetupPhaseId;
   title: string;
   status: SetupPhaseStatus;
@@ -39,7 +39,7 @@ export interface SetupPhase {
   durationMs: number;
 }
 
-export interface SetupBlocker {
+interface SetupBlocker {
   reason: string;
   fix?: string;
 }

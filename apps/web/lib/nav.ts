@@ -1,19 +1,19 @@
 import type { Me, MembershipRole, VenueRecord } from "@hashinet/types";
 import type { IconName } from "@/components/ui/icons";
 
-export interface NavLink {
+interface NavLink {
   href: string;
   label: string;
   /** A space's own menu (Help, Account and security) is words alone. */
   icon?: IconName;
 }
-export interface NavGroup {
+interface NavGroup {
   label: string;
   icon: IconName;
   links: { href: string; label: string }[];
 }
 /** A plain heading over the links that follow (Help's areas). */
-export interface NavHeading {
+interface NavHeading {
   heading: string;
 }
 export type NavEntry = NavLink | NavGroup | NavHeading;

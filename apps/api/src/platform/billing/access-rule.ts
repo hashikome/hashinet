@@ -11,7 +11,7 @@ export const pauseOf = (b: { access: ServiceAccess; accessHeld: boolean }): Sell
   sellingStopped(b.access) ? (b.accessHeld ? "held" : "overdue") : null;
 
 /** Days from a bill's due date to read-only, for a business that was late before (ADR-0014, 2). */
-export const READ_ONLY_AFTER_DAYS = 14;
+const READ_ONLY_AFTER_DAYS = 14;
 
 /** A month's fees, as the rule reads them: one-off charges never count, as each is paid before what
  * it buys. Days are business days (YYYY-MM-DD). */
