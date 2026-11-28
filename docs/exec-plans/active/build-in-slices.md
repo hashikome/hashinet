@@ -1187,7 +1187,7 @@ bun run test:integration
 ```
 
 Expected result: every check passes. The prototype runs for comparison with
-`python3 -m http.server 8797` in `prototypes/hearth-design/prototype/`.
+the prototype skill's `serve.mjs start prototypes/hearth-design/prototype` (port 8797).
 
 **Production reset, slice 1 only, run with the owner just before its first deploy.** The baseline
 replaces the twelve applied migrations, so `prisma migrate deploy` cannot move the existing

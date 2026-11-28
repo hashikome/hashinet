@@ -10,7 +10,7 @@ here except this README is ignored by git.
   them only once the owner has approved it; what ships matches the prototype, and where it must
   differ the ExecPlan records why.
 - **Plain HTML in a browser.** One folder per piece of work, `prototypes/<name>/`, opened from disk
-  or served with `python3 -m http.server`. No build step and no product code.
+  or served with the prototype skill's `serve.mjs start <folder>` (Hearth keeps `http://localhost:8797/`). No build step and no product code.
 - **One persona per role,** with realistic invented data: never secrets, personal data or production
   data.
 - **Design and check each screen as you go.** Build it with design-build, audit it with design-audit,
