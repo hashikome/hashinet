@@ -13,8 +13,8 @@ import { api, messageOf } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useSubmit } from "@/lib/submit";
-import { Dialog } from "./dialog";
-import { Button, Field, Panel, Pill, Table, useToast } from "./ui";
+import { Dialog } from "../ui/dialog";
+import { Button, Field, Panel, Pill, Table, useToast } from "../ui/ui";
 
 const KINDS: [PaymentWayKind, string][] = [
   ["lipa_namba", "Lipa namba"],

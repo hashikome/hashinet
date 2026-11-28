@@ -4,9 +4,9 @@ import type { Me, MyPasskey, ProofAction, ProofRule } from "@hashinet/types";
 import { useSearchParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { type FormEvent, type ReactNode, Suspense, useEffect, useState } from "react";
-import { SUPPORT_EMAIL } from "@/components/hearth/auth-frame";
-import { Dialog, StepDialog } from "@/components/hearth/dialog";
-import { PasskeyAgain } from "@/components/hearth/protect";
+import { SUPPORT_EMAIL } from "@/components/people/auth-frame";
+import { PasskeyAgain } from "@/components/people/protect";
+import { Dialog, StepDialog } from "@/components/ui/dialog";
 import {
   Attention,
   Button,
@@ -17,7 +17,7 @@ import {
   Pill,
   SettingRow,
   useToast,
-} from "@/components/hearth/ui";
+} from "@/components/ui/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { longDate, todayIso } from "@/lib/dates";
 import { useLoad } from "@/lib/load";

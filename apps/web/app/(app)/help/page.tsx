@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Head } from "@/components/hearth/ui";
+import { Head } from "@/components/ui/ui";
 import { helpFor } from "@/lib/help";
 import { ROLE_NAME } from "@/lib/nav";
 import { useSession } from "@/lib/session";

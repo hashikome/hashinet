@@ -2,7 +2,7 @@
 
 import type { BusinessList } from "@hashinet/types";
 import { useState } from "react";
-import { Head, Panel, Pill, Table } from "@/components/hearth/ui";
+import { Head, Panel, Pill, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { venueStatus } from "@/lib/issues";
 import { LoadFailed, useLoad } from "@/lib/load";

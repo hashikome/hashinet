@@ -2,7 +2,7 @@
 
 import { type ReactNode, useRef, useState } from "react";
 import { messageOf } from "@/lib/api";
-import { Button, useToast } from "./ui";
+import { Button, useToast } from "../ui/ui";
 
 /**
  * Upload, replace or remove a logo: a venue's on Captive portal, the business's on General. The API

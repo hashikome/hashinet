@@ -10,9 +10,9 @@ import type {
   VenueRecord,
 } from "@hashinet/types";
 import Link from "next/link";
-import { GettingStarted } from "@/components/hearth/onboarding";
-import { ProtectNotice } from "@/components/hearth/protect";
-import { SellButton } from "@/components/hearth/sell";
+import { ProtectNotice } from "@/components/people/protect";
+import { GettingStarted } from "@/components/platform/onboarding";
+import { SellButton } from "@/components/sales/sell";
 import {
   Attention,
   ButtonLink,
@@ -23,7 +23,7 @@ import {
   Panel,
   SettingRow,
   Table,
-} from "@/components/hearth/ui";
+} from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { clock, dayName, weekday } from "@/lib/dates";
 import { timeLeft } from "@/lib/duration";

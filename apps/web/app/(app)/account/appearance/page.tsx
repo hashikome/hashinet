@@ -1,7 +1,7 @@
 "use client";
 
 import { type Me, THEME_PREFERENCES, type ThemePreference } from "@hashinet/types";
-import { Panel, SettingRow, useToast } from "@/components/hearth/ui";
+import { Panel, SettingRow, useToast } from "@/components/ui/ui";
 import { api, messageOf } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { applyTheme } from "@/lib/theme";

@@ -4,7 +4,7 @@ import type {
   InvoiceRecord,
   InvoiceState,
 } from "@hashinet/types";
-import type { PillKind } from "@/components/hearth/ui";
+import type { PillKind } from "@/components/ui/ui";
 import { calendarDay, longDate, monthName } from "./dates";
 import { tsh } from "./money";
 

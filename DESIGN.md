@@ -135,7 +135,7 @@ addresses and file names.
   row with no page of its own keeps its actions (an invitation's Resend and Revoke).
 - What a step needs is on its page, decided by the API: a person sees a step's form only when the API
   says they may take it (`may`, `canNote`, `canRelease`), and otherwise who is responsible and what to
-  ask them. A step's rail and its current step sit side by side (`components/hearth/onboarding.tsx`).
+  ask them. A step's rail and its current step sit side by side (`components/platform/onboarding.tsx`).
 
 ## Order in lists
 
@@ -263,7 +263,7 @@ respects `prefers-reduced-motion`.
   page on the same frame with an Account tag. Its page stays flat (a settings list), and every change opens a
   dialog over it: adding or removing a passkey, setting up or replacing the authenticator, new recovery
   codes.
-- A dialog with steps is the shared `StepDialog` (`components/hearth/dialog.tsx`; the prototype's
+- A dialog with steps is the shared `StepDialog` (`components/ui/dialog.tsx`; the prototype's
   `flowDialog`): one size through every step (480 by 600, the tallest step's) at one place on the screen,
   so moving on never resizes or moves it. That holds where the steps hand work to each other
   (confirm it's you, scan, then the codes it makes); a short flow whose steps stand alone (add a

@@ -11,7 +11,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
-import { Button, Panel } from "./ui";
+import { Button, Panel } from "../ui/ui";
 
 /** The filter as Analytics' address holds it. */
 export interface PeriodFilter {

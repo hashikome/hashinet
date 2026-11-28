@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useToast } from "@/components/hearth/ui";
+import { useToast } from "@/components/ui/ui";
 import { ApiRequestError, messageOf } from "./api";
 
 /**

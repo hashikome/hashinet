@@ -3,8 +3,8 @@
 import type { VenueTakings } from "@hashinet/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button, Head, Panel, Pill, Table } from "@/components/hearth/ui";
-import { STATUS, sellingPill, VenueDialog } from "@/components/hearth/venues";
+import { Button, Head, Panel, Pill, Table } from "@/components/ui/ui";
+import { STATUS, sellingPill, VenueDialog } from "@/components/venues/venues";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";

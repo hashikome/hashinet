@@ -3,8 +3,8 @@
 import type { PlatformPortal, PortalEditor } from "@hashinet/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { LookEditor, PlatformPortalEditor } from "@/components/hearth/portal-editor";
-import { Field, Head } from "@/components/hearth/ui";
+import { LookEditor, PlatformPortalEditor } from "@/components/guest/portal-editor";
+import { Field, Head } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan, useSession } from "@/lib/session";

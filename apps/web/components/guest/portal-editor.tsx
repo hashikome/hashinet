@@ -13,11 +13,11 @@ import { GuestPortal, type PreviewPage } from "@/app/join/portal";
 import { api, messageOf } from "@/lib/api";
 import { coloursTooClose } from "@/lib/portal-colours";
 import { useSubmit } from "@/lib/submit";
-import { ConfirmDialog } from "./confirm-dialog";
-import { Dialog } from "./dialog";
-import { Icon } from "./icons";
+import { ConfirmDialog } from "../ui/confirm-dialog";
+import { Dialog } from "../ui/dialog";
+import { Icon } from "../ui/icons";
+import { Button, Field, Panel, Pill, Table, useToast } from "../ui/ui";
 import { LogoPicker } from "./logo-picker";
-import { Button, Field, Panel, Pill, Table, useToast } from "./ui";
 
 /** The guest pages the preview steps through, grouped by path (prototype `portalTabs`). */
 const PAGES: [group: string, pages: [PreviewPage | "counter", string][]][] = [

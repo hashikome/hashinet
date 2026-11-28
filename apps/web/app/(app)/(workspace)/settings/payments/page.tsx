@@ -1,7 +1,7 @@
 "use client";
 
-import { PaymentWays } from "@/components/hearth/payment-ways";
-import { Head } from "@/components/hearth/ui";
+import { Head } from "@/components/ui/ui";
+import { PaymentWays } from "@/components/venues/payment-ways";
 import { useCan } from "@/lib/session";
 
 /** Settings › Payments (prototype `paydetails`): where guests pay the business at its counters. */

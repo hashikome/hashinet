@@ -7,8 +7,8 @@ import { fullDay, invoiceWhat, STATE } from "@/lib/billing";
 import { longDate } from "@/lib/dates";
 import { tsh } from "@/lib/money";
 import { useCan } from "@/lib/session";
+import { Button, CopyText, Panel, Pill, Table, useToast } from "../ui/ui";
 import { RecordPayment } from "./record-payment";
-import { Button, CopyText, Panel, Pill, Table, useToast } from "./ui";
 
 /** "5%", "2.5%". */
 export const percent = (bp: number) => `${bp / 100}%`;

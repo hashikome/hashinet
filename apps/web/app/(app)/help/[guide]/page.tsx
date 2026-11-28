@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { use } from "react";
-import { Button, Head, Panel, useToast } from "@/components/hearth/ui";
+import { Button, Head, Panel, useToast } from "@/components/ui/ui";
 import { helpFor } from "@/lib/help";
 import { useSession } from "@/lib/session";
 import { BackHome, GuideRow, ListCard, QuestionRow, StillStuck } from "../parts";

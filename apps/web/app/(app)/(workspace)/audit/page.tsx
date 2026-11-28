@@ -2,7 +2,7 @@
 
 import { AUDIT_ACTIONS, type AuditAction, type AuditEntry, type AuditList } from "@hashinet/types";
 import { useEffect, useState } from "react";
-import { Button, Head, Panel, Pill, Table } from "@/components/hearth/ui";
+import { Button, Head, Panel, Pill, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { ACTION_NAME, changeLines, OUTCOME, targetOf } from "@/lib/audit";
 import { when } from "@/lib/dates";

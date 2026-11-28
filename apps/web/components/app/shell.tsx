@@ -8,9 +8,9 @@ import { api, messageOf } from "@/lib/api";
 import { homeOf, type NavEntry, navOf, ROLE_NAME } from "@/lib/nav";
 import { useSession } from "@/lib/session";
 import { useVenues } from "@/lib/venues";
-import { BusinessMark, Icon, type IconName, Mark } from "./icons";
-import { SellProvider, useSell } from "./sell";
-import { useToast } from "./ui";
+import { SellProvider, useSell } from "../sales/sell";
+import { BusinessMark, Icon, type IconName, Mark } from "../ui/icons";
+import { useToast } from "../ui/ui";
 
 /** HashiNet's own spaces, the person's in every workspace: Help, and Account and security. */
 export type Space = "Help" | "Account";

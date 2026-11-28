@@ -4,17 +4,8 @@ import type { BillingAccount, IssueDetail, IssueMoved, VenueOnboarding } from "@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type ReactNode, use, useState } from "react";
-import { Dialog } from "@/components/hearth/dialog";
-import {
-  Attention,
-  Button,
-  Field,
-  Head,
-  Panel,
-  Pill,
-  Table,
-  useToast,
-} from "@/components/hearth/ui";
+import { Dialog } from "@/components/ui/dialog";
+import { Attention, Button, Field, Head, Panel, Pill, Table, useToast } from "@/components/ui/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { owedText, owedTitle, pausedByBill, pausedText } from "@/lib/billing";
 import { when } from "@/lib/dates";

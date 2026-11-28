@@ -9,8 +9,8 @@ import {
 } from "@hashinet/types";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { AuthFrame } from "@/components/hearth/auth-frame";
-import { OtpBoxes, otpComplete } from "@/components/hearth/ui";
+import { AuthFrame } from "@/components/people/auth-frame";
+import { OtpBoxes, otpComplete } from "@/components/ui/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { ROLE_NAME } from "@/lib/nav";
 

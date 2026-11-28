@@ -3,9 +3,9 @@
 import type { BusinessDetail, IssueList } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect } from "react";
-import { BusinessMark } from "@/components/hearth/icons";
-import { AccessFact, ServiceAccessPanels } from "@/components/hearth/service-access";
-import { CopyText, Panel, Pill, Table } from "@/components/hearth/ui";
+import { AccessFact, ServiceAccessPanels } from "@/components/platform/service-access";
+import { BusinessMark } from "@/components/ui/icons";
+import { CopyText, Panel, Pill, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { longDate } from "@/lib/dates";
 import { issueTitle, venueStatus } from "@/lib/issues";

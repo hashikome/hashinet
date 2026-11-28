@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type DependencyList, type ReactNode, useCallback, useState } from "react";
-import { Attention, Button } from "@/components/hearth/ui";
+import { Attention, Button } from "@/components/ui/ui";
 import { messageOf } from "./api";
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import type { IssueDetail } from "@hashinet/types";
-import { CopyText } from "@/components/hearth/ui";
+import { CopyText } from "@/components/ui/ui";
 
 /** The business's owner, to call or email: both copy when clicked, and a number calls on a phone. */
 export function Contact({ contact }: { contact: NonNullable<IssueDetail["contact"]> }) {

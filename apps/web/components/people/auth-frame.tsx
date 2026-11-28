@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Mark } from "./icons";
+import { Mark } from "../ui/icons";
 
 export const SUPPORT_EMAIL = "support@hashikome.com";
 

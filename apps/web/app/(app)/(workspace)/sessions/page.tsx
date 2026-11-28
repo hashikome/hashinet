@@ -2,8 +2,8 @@
 
 import { groupedCode, type SessionList, type SessionRecord } from "@hashinet/types";
 import { useEffect, useState } from "react";
-import { Dialog } from "@/components/hearth/dialog";
-import { Button, Head, Panel, Table } from "@/components/hearth/ui";
+import { Dialog } from "@/components/ui/dialog";
+import { Button, Head, Panel, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { dataSize } from "@/lib/data-size";
 import { clock } from "@/lib/dates";

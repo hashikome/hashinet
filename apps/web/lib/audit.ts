@@ -1,5 +1,5 @@
 import type { AuditAction, AuditChange, AuditEntry, AuditOutcome } from "@hashinet/types";
-import type { PillKind } from "@/components/hearth/ui";
+import type { PillKind } from "@/components/ui/ui";
 
 export const ACTION_NAME: Record<AuditAction, string> = {
   "membership.switch": "Switched workspace",

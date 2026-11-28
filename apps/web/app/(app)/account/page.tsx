@@ -2,7 +2,7 @@
 
 import type { Me } from "@hashinet/types";
 import { type FormEvent, useState } from "react";
-import { Button, CopyText, Field, Panel, useToast } from "@/components/hearth/ui";
+import { Button, CopyText, Field, Panel, useToast } from "@/components/ui/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { useSession } from "@/lib/session";
 

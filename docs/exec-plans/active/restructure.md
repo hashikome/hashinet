@@ -44,7 +44,9 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
   The files import each other with `.ts` specifiers (`allowImportingTsExtensions` in the root, API and
   web tsconfigs, all `noEmit`): the API's NodeNext needs an extension and Turbopack doesn't map `.js`
   to `.ts` inside a workspace package.
-- [ ] M9 The web's components: primitives and areas.
+- [x] (2026-11-28) M9 The web's components: `components/hearth/` into `ui/` (primitives, importing
+  no area), `app/shell.tsx` (the frame, which holds the sell flow) and one folder per area; 24 files
+  moved, 66 importers rewritten; verify, and `next build`'s 35 routes identical.
 - [ ] M10 `tooling/router-sim.ts` (1,816 lines) split into its parts.
 - [ ] Later, not moves (each its own milestone when reached): the upward imports `core/` keeps
   (below); the files over 500 lines split by job.
@@ -53,6 +55,9 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
 
 - (2026-11-28) `utils/retry.ts` and `utils/duration.ts` have no users in the API (only their own
   tests); the web's `lib/duration.ts` only names the API copy in a stale comment. Removed in M1.
+- (2026-11-28) The shell imports the sell flow (`SellProvider`), so it is not a primitive: it is the
+  app's frame, above the areas, in `components/app/`. The move tool's first M9 run rewrote nothing:
+  it tried `.ts` but not `.tsx` for an extensionless specifier; undone, fixed, rerun.
 - (2026-11-28) The web's `lib/duration.ts` still describes a `backend/` that rendered the portal
   (`DURATION_BUCKETS`); the API has no such code. Left for an upkeep pass, not a move.
 - (2026-11-28) The move tool let a folder's line override files named on their own lines; M2's

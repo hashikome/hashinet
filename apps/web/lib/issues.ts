@@ -7,7 +7,7 @@ import type {
   OnboardingStage,
   RouterCondition,
 } from "@hashinet/types";
-import { CONDITION, type PillKind } from "@/components/hearth/ui";
+import { CONDITION, type PillKind } from "@/components/ui/ui";
 import { fullDay } from "./billing";
 import { calendarDay, dayName } from "./dates";
 import { formatDuration } from "./duration";

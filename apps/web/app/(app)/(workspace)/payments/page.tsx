@@ -2,7 +2,7 @@
 
 import type { PaymentsReceived, RevenueSource, TodaySummary } from "@hashinet/types";
 import { useState } from "react";
-import { Button, CopyText, Figs, Head, Panel, Pill, Table } from "@/components/hearth/ui";
+import { Button, CopyText, Figs, Head, Panel, Pill, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { monthName, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";

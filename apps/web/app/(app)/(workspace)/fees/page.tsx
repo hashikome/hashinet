@@ -2,7 +2,7 @@
 
 import type { BillingSettingsRecord, BillingSettingsResponse } from "@hashinet/types";
 import { useEffect, useState } from "react";
-import { Button, Field, Head, Panel } from "@/components/hearth/ui";
+import { Button, Field, Head, Panel } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";

@@ -7,7 +7,8 @@ import {
   type VoucherStatus,
 } from "@hashinet/types";
 import { useEffect, useState } from "react";
-import { SellButton } from "@/components/hearth/sell";
+import { SellButton } from "@/components/sales/sell";
+import { RefundDialog, ReleaseDialog } from "@/components/sales/voucher-actions";
 import {
   Button,
   CopyText,
@@ -17,8 +18,7 @@ import {
   type PillKind,
   Table,
   Tabs,
-} from "@/components/hearth/ui";
-import { RefundDialog, ReleaseDialog } from "@/components/hearth/voucher-actions";
+} from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";

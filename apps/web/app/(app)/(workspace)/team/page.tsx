@@ -8,8 +8,8 @@ import {
   type VenueRecord,
 } from "@hashinet/types";
 import { type FormEvent, useState } from "react";
-import { Dialog } from "@/components/hearth/dialog";
-import { Button, CopyText, Field, Head, Panel, Table, useToast } from "@/components/hearth/ui";
+import { Dialog } from "@/components/ui/dialog";
+import { Button, CopyText, Field, Head, Panel, Table, useToast } from "@/components/ui/ui";
 import { api, messageOf } from "@/lib/api";
 import { shortDate, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { messageOf } from "@/lib/api";
 import { addPasskey, cancelled, passkeysSupported, signInWithPasskey } from "@/lib/passkeys";
 import { useSession } from "@/lib/session";
-import { Attention, Button, ButtonLink, Head, Panel, useToast } from "./ui";
+import { Attention, Button, ButtonLink, Head, Panel, useToast } from "../ui/ui";
 
 /** The two ways to protect a sign-in, as one pair of actions. */
 export function ProtectChoices() {

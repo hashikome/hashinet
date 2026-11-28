@@ -10,9 +10,9 @@ import {
 } from "@hashinet/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, type ReactNode, Suspense, useState } from "react";
-import { PausedDialog } from "@/components/hearth/bill-paused";
-import { Dialog } from "@/components/hearth/dialog";
-import { Button, Field, Head, Panel, Table, useToast } from "@/components/hearth/ui";
+import { PausedDialog } from "@/components/platform/bill-paused";
+import { Dialog } from "@/components/ui/dialog";
+import { Button, Field, Head, Panel, Table, useToast } from "@/components/ui/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { DURATION_UNITS, type DurationUnit, formatDuration, toMinutes } from "@/lib/duration";
 import { LoadFailed, useLoad } from "@/lib/load";

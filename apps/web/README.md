@@ -21,8 +21,11 @@ for CORS and for passkeys.
 ## Conventions
 
 - **The prototype is the reference.** Screens are built from `prototypes/hearth-design/prototype/`;
-  `app/hearth.css` is its stylesheet, and `components/hearth/` its building blocks (`Head`, `Panel`,
-  `Table`, `Figs`, `Dialog`, `OtpBoxes`, the shell). Check there before writing a new one.
+  `app/hearth.css` is its stylesheet. Its building blocks are in `components/ui/` (`Head`, `Panel`,
+  `Table`, `Figs`, `Dialog`, `OtpBoxes`, icons, the chart), the app's frame in `components/app/shell.tsx`,
+  and each area's components beside them (`components/sales/`, `platform/`, `venues/`, `guest/`,
+  `people/`, `analytics/`, as the API's areas). `ui/` imports no area. Check there before writing a
+  new one.
 - **The API decides; the web presents** ([ADR-0003](../../docs/engineering-decisions/0003-api-owns-logic-web-presents.md)).
   The menu and buttons come from `/api/me`'s `capabilities` (`useCan`), never from the role.
 - **One client:** `lib/api.ts`; a page loads with `useLoad`, and a failed load shows `LoadFailed`

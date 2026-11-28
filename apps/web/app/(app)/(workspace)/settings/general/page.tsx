@@ -2,9 +2,9 @@
 
 import { type BusinessProfile, REGIONS, type Region } from "@hashinet/types";
 import { useState } from "react";
-import { BusinessMark } from "@/components/hearth/icons";
-import { LogoPicker } from "@/components/hearth/logo-picker";
-import { Button, Field, Head, useToast } from "@/components/hearth/ui";
+import { LogoPicker } from "@/components/guest/logo-picker";
+import { BusinessMark } from "@/components/ui/icons";
+import { Button, Field, Head, useToast } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { useCan, useSession } from "@/lib/session";

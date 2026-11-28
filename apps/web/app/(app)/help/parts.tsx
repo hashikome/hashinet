@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { SUPPORT_EMAIL } from "@/components/hearth/auth-frame";
-import { Icon } from "@/components/hearth/icons";
-import { ButtonLink } from "@/components/hearth/ui";
+import { SUPPORT_EMAIL } from "@/components/people/auth-frame";
+import { Icon } from "@/components/ui/icons";
+import { ButtonLink } from "@/components/ui/ui";
 import type { Guide, Question } from "@/lib/help";
 import { homeOf } from "@/lib/nav";
 import { useSession } from "@/lib/session";

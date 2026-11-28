@@ -6,8 +6,8 @@ import { api } from "@/lib/api";
 import { when } from "@/lib/dates";
 import { tsh } from "@/lib/money";
 import { useSubmit } from "@/lib/submit";
-import { Dialog } from "./dialog";
-import { Button, Field } from "./ui";
+import { Dialog } from "../ui/dialog";
+import { Button, Field } from "../ui/ui";
 
 type Method = "cash" | "mobile_money";
 

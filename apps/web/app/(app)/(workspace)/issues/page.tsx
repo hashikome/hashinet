@@ -2,7 +2,7 @@
 
 import type { IssueKind, IssueList } from "@hashinet/types";
 import { useState } from "react";
-import { Button, Head, Panel, Pill, Table } from "@/components/hearth/ui";
+import { Button, Head, Panel, Pill, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { when } from "@/lib/dates";
 import { issuePill, issueTitle, issueWhere, KIND_NAME } from "@/lib/issues";

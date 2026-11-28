@@ -10,8 +10,8 @@ import {
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useSubmit } from "@/lib/submit";
-import { Dialog } from "./dialog";
-import { Button, CONDITION, Field, type PillKind } from "./ui";
+import { Dialog } from "../ui/dialog";
+import { Button, CONDITION, Field, type PillKind } from "../ui/ui";
 
 /** A venue's own status, as its owner sets it. */
 export const STATUS: Record<VenueStatus, [string, PillKind]> = {

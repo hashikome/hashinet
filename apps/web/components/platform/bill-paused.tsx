@@ -1,8 +1,8 @@
 "use client";
 
 import { useCan, useSession } from "@/lib/session";
-import { Dialog } from "./dialog";
-import { Button, ButtonLink } from "./ui";
+import { Dialog } from "../ui/dialog";
+import { Button, ButtonLink } from "../ui/ui";
 
 /** What the paused action would have done, said in the dialog. */
 const WHAT = {

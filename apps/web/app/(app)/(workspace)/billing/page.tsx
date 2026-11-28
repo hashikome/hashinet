@@ -2,8 +2,8 @@
 
 import type { BillingAccount, BillingOverview, BillingRow, BillState } from "@hashinet/types";
 import { useState } from "react";
-import { InvoicesPanel, percent } from "@/components/hearth/billing";
-import { Attention, Figs, Head, Panel, Pill, type PillKind, Table } from "@/components/hearth/ui";
+import { InvoicesPanel, percent } from "@/components/platform/billing";
+import { Attention, Figs, Head, Panel, Pill, type PillKind, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { fullDay, STATE as INVOICE_STATE, owedText, owedTitle } from "@/lib/billing";
 import { monthName } from "@/lib/dates";

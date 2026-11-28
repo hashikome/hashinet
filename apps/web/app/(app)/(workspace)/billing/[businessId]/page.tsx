@@ -3,8 +3,8 @@
 import type { BillingAccount } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect } from "react";
-import { BillActions, BilledTo, feeNote, InvoicesPanel } from "@/components/hearth/billing";
-import { BusinessMark } from "@/components/hearth/icons";
+import { BillActions, BilledTo, feeNote, InvoicesPanel } from "@/components/platform/billing";
+import { BusinessMark } from "@/components/ui/icons";
 import { api } from "@/lib/api";
 import { owesLine } from "@/lib/billing";
 import { LoadFailed, useLoad } from "@/lib/load";

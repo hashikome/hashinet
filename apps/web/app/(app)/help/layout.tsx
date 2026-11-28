@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Shell } from "@/components/hearth/shell";
+import { Shell } from "@/components/app/shell";
 import { helpFor } from "@/lib/help";
 import type { NavEntry } from "@/lib/nav";
 import { useSession } from "@/lib/session";

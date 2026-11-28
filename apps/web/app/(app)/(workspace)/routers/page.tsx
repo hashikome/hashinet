@@ -2,7 +2,7 @@
 
 import type { BusinessList, RouterCondition, RouterList } from "@hashinet/types";
 import { useState } from "react";
-import { CONDITION, Head, Panel, Pill, Table } from "@/components/hearth/ui";
+import { CONDITION, Head, Panel, Pill, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { matchesSearch } from "@/lib/search";

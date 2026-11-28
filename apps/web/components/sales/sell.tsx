@@ -19,10 +19,10 @@ import { tsh } from "@/lib/money";
 import { useCan, useSession } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
 import { useVenues } from "@/lib/venues";
-import { PausedDialog as AccessPausedDialog } from "./bill-paused";
-import { Dialog, DialogClose } from "./dialog";
-import { PayCard, paymentWayAt } from "./payment-ways";
-import { Button, ButtonLink, Field, Pill, type PillKind, useToast } from "./ui";
+import { PausedDialog as AccessPausedDialog } from "../platform/bill-paused";
+import { Dialog, DialogClose } from "../ui/dialog";
+import { Button, ButtonLink, Field, Pill, type PillKind, useToast } from "../ui/ui";
+import { PayCard, paymentWayAt } from "../venues/payment-ways";
 import { VoucherCard } from "./voucher-card";
 
 type Method = "cash" | "mobile_money";

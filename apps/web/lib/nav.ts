@@ -1,5 +1,5 @@
 import type { Me, MembershipRole, VenueRecord } from "@hashinet/types";
-import type { IconName } from "@/components/hearth/icons";
+import type { IconName } from "@/components/ui/icons";
 
 export interface NavLink {
   href: string;

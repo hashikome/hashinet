@@ -12,7 +12,7 @@ import type {
 } from "@hashinet/types";
 import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
-import { Dialog } from "@/components/hearth/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import {
   Button,
   CONDITION,
@@ -24,7 +24,7 @@ import {
   type PillKind,
   SettingRow,
   useToast,
-} from "@/components/hearth/ui";
+} from "@/components/ui/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { longDate, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";

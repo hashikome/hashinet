@@ -13,8 +13,8 @@ import { calendarDay, shortDate, when } from "@/lib/dates";
 import { tsh } from "@/lib/money";
 import { useCan } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
-import { Dialog } from "./dialog";
-import { Attention, Button, Field, Panel, Pill, type PillKind, Table } from "./ui";
+import { Dialog } from "../ui/dialog";
+import { Attention, Button, Field, Panel, Pill, type PillKind, Table } from "../ui/ui";
 
 const ACCESS: Record<ServiceAccess, [string, PillKind]> = {
   enabled: ["Enabled", "ok"],

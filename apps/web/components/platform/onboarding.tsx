@@ -12,7 +12,7 @@ import { fullDay } from "@/lib/billing";
 import { LINE_NAME, PLAN, setupDay } from "@/lib/issues";
 import { tsh } from "@/lib/money";
 import { useSubmit } from "@/lib/submit";
-import { Button, Panel } from "./ui";
+import { Button, Panel } from "../ui/ui";
 
 /* A venue's way to serving guests, as the team and the owner both see it (prototype `.setup`). */
 

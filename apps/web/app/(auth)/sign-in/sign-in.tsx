@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
-import { AuthFrame, SUPPORT_EMAIL } from "@/components/hearth/auth-frame";
-import { OtpBoxes, otpComplete } from "@/components/hearth/ui";
+import { AuthFrame, SUPPORT_EMAIL } from "@/components/people/auth-frame";
+import { OtpBoxes, otpComplete } from "@/components/ui/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { cancelled, cancelPasskeyWait, passkeysSupported, signInWithPasskey } from "@/lib/passkeys";
 

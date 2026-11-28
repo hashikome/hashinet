@@ -2,8 +2,8 @@
 
 import type { DeviceList, DeviceRecord } from "@hashinet/types";
 import { useEffect, useState } from "react";
-import { Dialog } from "@/components/hearth/dialog";
-import { Button, Head, Panel, Pill, type PillKind, Table, Tabs } from "@/components/hearth/ui";
+import { Dialog } from "@/components/ui/dialog";
+import { Button, Head, Panel, Pill, type PillKind, Table, Tabs } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { dataSize } from "@/lib/data-size";
 import { when } from "@/lib/dates";

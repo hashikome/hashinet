@@ -7,8 +7,8 @@ import { invoiceWhat, METHOD_NAME } from "@/lib/billing";
 import { todayIso as today } from "@/lib/dates";
 import { tsh } from "@/lib/money";
 import { useSubmit } from "@/lib/submit";
-import { Dialog } from "./dialog";
-import { Button, Field } from "./ui";
+import { Dialog } from "../ui/dialog";
+import { Button, Field } from "../ui/ui";
 
 /**
  * Record a payment (prototype `payForm`): the same dialog wherever it starts, a business's bill or

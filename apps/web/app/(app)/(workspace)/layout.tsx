@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ProtectGate } from "@/components/hearth/protect";
-import { Shell } from "@/components/hearth/shell";
+import { Shell } from "@/components/app/shell";
+import { ProtectGate } from "@/components/people/protect";
 import { useSession } from "@/lib/session";
 import { VenuesProvider } from "@/lib/venues";
 

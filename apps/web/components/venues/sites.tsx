@@ -8,9 +8,9 @@ import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";
 import { useCan } from "@/lib/session";
 import { useSubmit } from "@/lib/submit";
-import { ConfirmDialog } from "./confirm-dialog";
-import { Dialog } from "./dialog";
-import { Button, Field, Panel, Pill, Table, useToast } from "./ui";
+import { ConfirmDialog } from "../ui/confirm-dialog";
+import { Dialog } from "../ui/dialog";
+import { Button, Field, Panel, Pill, Table, useToast } from "../ui/ui";
 
 /** What a site costs, as its row says it. */
 function costOf(s: VenueSiteRecord): string {

@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Shell } from "@/components/hearth/shell";
-import { ButtonLink, Head } from "@/components/hearth/ui";
+import { Shell } from "@/components/app/shell";
+import { ButtonLink, Head } from "@/components/ui/ui";
 import { homeOf } from "@/lib/nav";
 import { useSession } from "@/lib/session";
 

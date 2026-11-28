@@ -2,7 +2,7 @@
 
 import type { BusinessList, InvitationList, InvitationRecord } from "@hashinet/types";
 import { type FormEvent, useState } from "react";
-import { Dialog } from "@/components/hearth/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import {
   Button,
   CONDITION,
@@ -13,7 +13,7 @@ import {
   Pill,
   Table,
   useToast,
-} from "@/components/hearth/ui";
+} from "@/components/ui/ui";
 import { ApiRequestError, api, messageOf } from "@/lib/api";
 import { shortDate, when } from "@/lib/dates";
 import { LoadFailed, useLoad } from "@/lib/load";

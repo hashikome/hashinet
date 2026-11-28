@@ -10,9 +10,9 @@ import {
   periodTitle,
   SHOW_PER,
   usePeriodFilter,
-} from "@/components/hearth/analytics";
-import { LineChart } from "@/components/hearth/chart";
-import { Figs, Head, Panel, Table } from "@/components/hearth/ui";
+} from "@/components/analytics/analytics";
+import { LineChart } from "@/components/ui/chart";
+import { Figs, Head, Panel, Table } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { LoadFailed, useLoad } from "@/lib/load";
 import { tsh } from "@/lib/money";

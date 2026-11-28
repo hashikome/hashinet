@@ -13,9 +13,9 @@ import {
 } from "@hashinet/types";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
-import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/hearth/onboarding";
-import { RecordPayment } from "@/components/hearth/record-payment";
-import { Button, Field, Panel } from "@/components/hearth/ui";
+import { Breakdown, ReadyList, SetupRail, type Step } from "@/components/platform/onboarding";
+import { RecordPayment } from "@/components/platform/record-payment";
+import { Button, Field, Panel } from "@/components/ui/ui";
 import { api } from "@/lib/api";
 import { fullDay, STATE } from "@/lib/billing";
 import { todayIso } from "@/lib/dates";

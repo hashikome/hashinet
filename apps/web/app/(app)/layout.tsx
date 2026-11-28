@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { ToastProvider } from "@/components/hearth/ui";
+import { ToastProvider } from "@/components/ui/ui";
 import { LoadProvider } from "@/lib/load";
 import { SessionProvider } from "@/lib/session";
 
