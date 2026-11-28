@@ -55,7 +55,7 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
   and after a hub restart that runs the relay from the new path.
 - [ ] Later, not moves (each its own milestone when reached): the upward imports `core/` keeps
   (below); the files over 500 lines split by job.
-- [ ] M11 The API's files over 500 lines, split by job (a long file with one job stays):
+- [x] (2026-11-28) M11 The API's files over 500 lines, split by job (a long file with one job stays):
   - [x] (2026-11-28) `network/provisioning/steps.ts` (1,029): the firewall rule-placement toolkit to
     `firewall-order.ts`, the RouterOS yes/no reader to `ros-client.ts`; the ordered step list (875
     lines, one job) stays. Every line unchanged but for `export` and two doc comments.
@@ -77,6 +77,13 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
     page, again after a release, the setup issue, the provision runs) to `router-setup.ts`
     (`RouterSetup`, with `setupIssueKey`); records and checks stay. The network, issue and
     onboarding integration tests pass; the map gains only `RouterSetup`.
+  - (2026-11-28) Kept whole: `guest/sign-in/guest.service.ts` (556), signing a device onto a voucher
+    (redeem, admit, the claim and the PIN checks, about 300 lines) with the portal's small reads that
+    share its router lookup; `packages/types/src/platform.ts` (539), one area's contract.
+- [ ] M12 The web's files over 500 lines (`join/portal.tsx` 959, the sign-in page 921, the packages
+  page 791, `components/guest/portal-editor.tsx` 773, the router page 636, `lib/help.tsx` 590, the
+  onboarding steps 562, the issue page 548, `components/sales/sell.tsx` 526), each read for its jobs
+  and split where it holds several, proved by verbatim lines, `next build` and a look at each screen.
 
 ## Surprises & Discoveries
 

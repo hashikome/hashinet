@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- The API's largest files are split by job: the firewall rule placement out of the setup steps;
+  invoices into issuing, reminders and Billing's reads; the counter sale and staff's payment lists
+  out of the online purchase; router issues out of the issues workflow; running a router's setup out
+  of the routers service. Drawing an unused voucher code is one helper. No behaviour changes.
+
 - A guest who pays on the portal sees the voucher's switch PIN once on the receipt, as a guest who
   types a code does: made when the paying device is signed in, kept sealed on the payment until the
   paying session's next status check, then cleared (migration `20261128940000_paid_switch_pin`).
