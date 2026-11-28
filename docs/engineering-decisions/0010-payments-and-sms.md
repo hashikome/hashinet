@@ -4,7 +4,8 @@ Status: accepted, 31 October 2026, as proved against test doubles and the router
 launches with sales at the counter (ADR-0017), and this turns on with the providers' credentials. Real mobile money
 and SMS have not run yet. ADR-0013 makes SMS something a business buys, so point 7 applies only to a
 business with credits. Narrowed 14 November 2026: ADR-0017 replaces point 6 (a voucher exists only by
-its sale; there is no printed stock).
+its sale; there is no printed stock). Widened 28 November 2026: point 8, a provider is one
+file, chosen by name, and a switch strands nothing in flight; point 9 follows.
 
 ## Context
 
@@ -42,14 +43,27 @@ holding a payment id.
    the guest's phone.
 7. **SMS cannot strand a guest.** A message is sent once per payment, and its text is not kept.
    One nobody reports on becomes `unconfirmed` at 10 minutes. The screen always has the code.
-8. **Providers sit behind interfaces** (`MobileMoneyGateway`, `SmsSender`). No background queue:
-   PostgreSQL holds the state, so `IntervalJob` is enough.
-9. **Held until set up.** Mobile money is on when Snippe's credentials are set, and SMS when BRIQ's
-   are; half a set-up stops startup. While off, guests see the voucher form and a price list, staff
+8. **Providers sit behind interfaces** (`MobileMoneyGateway`, `SmsSender`), and each is one file
+   under its area's `providers/` (`sales/payments/providers/`, `sales/sms/providers/`) that owns
+   everything about it: its API calls, its statuses, its webhook format, signature and replay
+   window, the amounts it takes, and its own settings, read through a reader that honours
+   `<NAME>_FILE`. Core keeps the rules: one transition to paid, TZS only, each event once (keyed by
+   area and provider, `payments:snippe`, since event ids are unique per provider only), delivered is
+   final, access only after the router confirms. Every provider whose settings are set is built;
+   `PAYMENTS_PROVIDER` and `SMS_PROVIDER` choose the one that takes new charges and texts. A
+   payment and a text record the provider that took them (`gateway`), and checks and webhooks
+   (`/webhooks/payments/:provider`, `/webhooks/sms/:provider`) go to that provider, so switching
+   strands nothing in flight: money that arrives late still counts. Adding a provider touches
+   nothing outside its file, its line in the area's `providers/index.ts` and its settings. The
+   provider's name never leaves the API (guests and staff read "mobile money"). Rejected: one
+   provider at a time, which would leave payments pending at a switch until they expired. No
+   background queue: PostgreSQL holds the state, so `IntervalJob` is enough.
+9. **Held until set up.** Mobile money is on when a provider is chosen, and SMS likewise; half a
+   provider's settings, or a chosen one without them, stops startup. While off, guests see the voucher form and a price list, staff
    see no Payments, and `POST /api/guest/payments` and `/api/sales` answer 503. Nothing here was
    built as a fake door: a button that does nothing is the wrong thing to show someone trying to
-   get online. `FAKE_PROVIDERS` turns on stand-ins for development, and production refuses it, so
-   no real guest can ever reach the fake gateway.
+   get online. The stand-ins are providers too (`PAYMENTS_PROVIDER=fake`, `SMS_PROVIDER=outbox`),
+   and production refuses them, so no real guest can ever reach the fake gateway.
 
 ## Evidence
 

@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { intToIpv4, ipv4ToInt } from "../../network/provisioning/ipv4.js";
@@ -35,18 +36,20 @@ export interface AppConfig {
   };
   /** What the tunnel service presents to read its peers; null turns that route off. */
   tunnelSyncSecret: string | null;
-  fakeProviders: boolean;
-  /** What a venue can offer: each turns on when its provider's credentials are set. */
-  features: { mobileMoney: boolean; sms: boolean };
-  payments: {
-    snippeApiKey: string | null;
-    snippeWebhookSecret: string | null;
-  };
-  sms: {
-    /** BRIQ. Unset, no text is sent; with `fakeProviders`, messages go to `outboxDir`. */
-    briq: { apiKey: string; appId: string; senderId: string } | null;
-    webhookSecret: string | null;
-    outboxDir: string;
+  /**
+   * The mobile money and SMS providers chosen (`PAYMENTS_PROVIDER`, `SMS_PROVIDER`; null: off), and
+   * what every provider is built from. Each provider reads and checks its own settings.
+   */
+  providers: {
+    payments: string | null;
+    sms: string | null;
+    context: {
+      /** A setting by name, honouring `<NAME>_FILE`; null if unset. */
+      setting(name: string): string | null;
+      production: boolean;
+      appUrl: string;
+      dataDir: string;
+    };
   };
   brand: {
     /** Cloudflare R2; required in production. Unset elsewhere, images go to `storeDir`. */
@@ -83,10 +86,8 @@ export interface AppConfig {
 
 const url = z.url({ protocol: /^https?$/ });
 
-/** `data/email/` at the repository root (git-ignored), wherever the API is started from. */
-const DEFAULT_OUTBOX_DIR = fileURLToPath(new URL("../../../../../data/email/", import.meta.url));
-const DEFAULT_SMS_DIR = fileURLToPath(new URL("../../../../../data/sms/", import.meta.url));
-const DEFAULT_BRAND_DIR = fileURLToPath(new URL("../../../../../data/brand/", import.meta.url));
+/** `data/` at the repository root (git-ignored), wherever the API is started from. */
+const DATA_DIR = fileURLToPath(new URL("../../../../../data/", import.meta.url));
 
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -104,21 +105,15 @@ const schema = z.object({
   TRUSTED_PROXIES: z.string().default(""),
   RESEND_API_KEY: z.string().min(1).nullable().default(null),
   EMAIL_FROM: z.string().min(3).default("HashiNet <no-reply@hashikome.com>"),
-  EMAIL_OUTBOX_DIR: z.string().min(1).default(DEFAULT_OUTBOX_DIR),
-  SNIPPE_API_KEY: z.string().min(1).nullable().default(null),
-  SNIPPE_WEBHOOK_SECRET: z.string().min(1).nullable().default(null),
-  BRIQ_API_KEY: z.string().min(1).nullable().default(null),
-  BRIQ_APP_ID: z.string().min(1).nullable().default(null),
-  BRIQ_SENDER_ID: z.string().min(1).nullable().default(null),
-  BRIQ_WEBHOOK_SECRET: z.string().min(1).nullable().default(null),
-  SMS_OUTBOX_DIR: z.string().min(1).default(DEFAULT_SMS_DIR),
-  /** Stand-ins for mobile money and SMS, to walk those paths. Refused in production. */
-  FAKE_PROVIDERS: z.enum(["true", "false"]).default("false"),
+  EMAIL_OUTBOX_DIR: z.string().min(1).default(join(DATA_DIR, "email/")),
+  /** The provider that takes new mobile money charges and sends texts; unset, each is off. */
+  PAYMENTS_PROVIDER: z.string().min(1).nullable().default(null),
+  SMS_PROVIDER: z.string().min(1).nullable().default(null),
   R2_ENDPOINT: url.nullable().default(null),
   R2_BUCKET: z.string().min(1).nullable().default(null),
   R2_ACCESS_KEY_ID: z.string().min(1).nullable().default(null),
   R2_SECRET_ACCESS_KEY: z.string().min(1).nullable().default(null),
-  BRAND_STORE_DIR: z.string().min(1).default(DEFAULT_BRAND_DIR),
+  BRAND_STORE_DIR: z.string().min(1).default(join(DATA_DIR, "brand/")),
   MIKROTIK_API_PORT: z.coerce.number().int().min(1).max(65535).default(8728),
   MIKROTIK_CONNECT_TIMEOUT: z.coerce.number().int().min(1).max(120).default(10),
   MIKROTIK_TARGET_OVERRIDE: z
@@ -156,10 +151,6 @@ const SECRETS = [
   "BETTER_AUTH_SECRET",
   "PIN_KEY",
   "RESEND_API_KEY",
-  "SNIPPE_API_KEY",
-  "SNIPPE_WEBHOOK_SECRET",
-  "BRIQ_API_KEY",
-  "BRIQ_WEBHOOK_SECRET",
   "TUNNEL_SYNC_SECRET",
   "R2_ACCESS_KEY_ID",
   "R2_SECRET_ACCESS_KEY",
@@ -186,22 +177,6 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   const trustedProxies = c.TRUSTED_PROXIES.split(",")
     .map((entry) => entry.trim())
     .filter((entry) => entry !== "");
-  const incomplete = [
-    ["SNIPPE_API_KEY", "SNIPPE_WEBHOOK_SECRET"],
-    ["BRIQ_API_KEY", "BRIQ_APP_ID", "BRIQ_SENDER_ID", "BRIQ_WEBHOOK_SECRET"],
-  ].flatMap((group) => {
-    const set = group.filter((key) => c[key as keyof typeof c] !== null);
-    return set.length > 0 && set.length < group.length ? group.filter((k) => !set.includes(k)) : [];
-  });
-  if (incomplete.length > 0) {
-    throw new Error(
-      `Invalid configuration:\n  ${incomplete.map((n) => `${n}: is also needed`).join("\n  ")}`,
-    );
-  }
-  const fake = c.FAKE_PROVIDERS === "true";
-  if (fake && c.NODE_ENV === "production") {
-    throw new Error("Invalid configuration:\n  FAKE_PROVIDERS: refused in production");
-  }
   if (c.NODE_ENV === "production") {
     const missing = [
       c.RESEND_API_KEY === null ? "RESEND_API_KEY" : null,
@@ -230,19 +205,15 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     auth: { secret: c.BETTER_AUTH_SECRET, trustedProxies },
     email: { resendApiKey: c.RESEND_API_KEY, from: c.EMAIL_FROM, outboxDir: c.EMAIL_OUTBOX_DIR },
     tunnelSyncSecret: c.TUNNEL_SYNC_SECRET,
-    fakeProviders: fake,
-    features: {
-      mobileMoney: fake || c.SNIPPE_API_KEY !== null,
-      sms: fake || c.BRIQ_API_KEY !== null,
-    },
-    payments: { snippeApiKey: c.SNIPPE_API_KEY, snippeWebhookSecret: c.SNIPPE_WEBHOOK_SECRET },
-    sms: {
-      briq:
-        c.BRIQ_API_KEY !== null && c.BRIQ_APP_ID !== null && c.BRIQ_SENDER_ID !== null
-          ? { apiKey: c.BRIQ_API_KEY, appId: c.BRIQ_APP_ID, senderId: c.BRIQ_SENDER_ID }
-          : null,
-      webhookSecret: c.BRIQ_WEBHOOK_SECRET,
-      outboxDir: c.SMS_OUTBOX_DIR,
+    providers: {
+      payments: c.PAYMENTS_PROVIDER,
+      sms: c.SMS_PROVIDER,
+      context: {
+        setting: (name) => readSecret(name, env),
+        production: c.NODE_ENV === "production",
+        appUrl: c.APP_URL,
+        dataDir: DATA_DIR,
+      },
     },
     brand: {
       r2:

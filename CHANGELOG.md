@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Mobile money and SMS providers are each one file behind a gateway (`sales/payments/providers/`,
+  `sales/sms/providers/`), owning their API, statuses, webhook format and signature, the amounts they
+  take and their settings. `PAYMENTS_PROVIDER` and `SMS_PROVIDER` choose the one in use; every
+  provider set up stays built, and a payment or text records the provider that took it (migration
+  `20261128930000_provider_gateways`), so a switch strands nothing in flight. Webhooks move to
+  `/webhooks/payments/:provider` and `/webhooks/sms/:provider`. `FAKE_PROVIDERS` is replaced by the
+  stand-in providers `fake` and `outbox`. `core/config` no longer builds the payment, SMS or brand
+  adapters (ADR-0010, widened).
+
 - The verify gate, and so CI, checks the docs (every local link and heading anchor resolves, every doc
   under `docs/` is indexed: `bun run check:docs`) and unused code (knip: `bun run check:unused`). The
   tree passes both: exports used only in their own file are no longer exported, and six names nothing

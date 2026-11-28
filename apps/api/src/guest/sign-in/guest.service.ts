@@ -23,6 +23,7 @@ import { ROUTER_REACH } from "../../network/mikrotik/router-credentials.js";
 import { RouterSync } from "../../network/monitor/router-sync.js";
 import { bytesUsed } from "../../network/radius/access-decision.js";
 import { sellingStopped } from "../../platform/billing/access-rule.js";
+import { MOBILE_MONEY, type MobileMoney } from "../../sales/payments/gateway.js";
 import { deviceLimitOf, takeDevicesOff } from "../../sales/vouchers/voucher-devices.js";
 import { PackagesService } from "../../venues/packages/packages.service.js";
 import { BrandService } from "../brand/brand.service.js";
@@ -102,6 +103,7 @@ export class GuestService {
     private readonly logos: Logos,
     private readonly packages: PackagesService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(MOBILE_MONEY) private readonly mobileMoney: MobileMoney,
   ) {}
 
   async context(input: z.infer<typeof contextInput>): Promise<GuestContext> {
@@ -117,7 +119,7 @@ export class GuestService {
     return guestContext({
       venueName: venue.name,
       internet: router.internetOk,
-      mobileMoney: this.config.features.mobileMoney,
+      payable: (price) => this.mobileMoney.payable(price),
       selling: !sellingStopped(venue.business.access),
       look,
       logoUrl,

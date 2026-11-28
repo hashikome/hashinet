@@ -3,13 +3,12 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { Principal } from "../../core/access/principal.js";
 import { venueScope } from "../../core/access/venue-scope.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
-import type { AppConfig } from "../../core/config/config.js";
-import { APP_CONFIG } from "../../core/config/config.module.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
 import { packageRecord } from "../../core/records/records.js";
 import type { Package, ServiceAccess, Venue } from "../../generated/prisma/client.js";
 import { sellingStopped } from "../../platform/billing/access-rule.js";
+import { MOBILE_MONEY, type MobileMoney } from "../../sales/payments/gateway.js";
 import { onSalePackages } from "../../venues/packages/on-sale.js";
 import { venueNotFound } from "../../venues/venues/venue-errors.js";
 import { platformLook, portalOf, templateOf } from "../portal/copy-down.js";
@@ -33,8 +32,8 @@ export class BrandService {
     private readonly db: PrismaService,
     private readonly portal: PortalService,
     private readonly audit: AuditLog,
-    @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly logos: Logos,
+    @Inject(MOBILE_MONEY) private readonly mobileMoney: MobileMoney,
   ) {}
 
   /** What a guest at a venue sees: its portal and the logo to show. */
@@ -180,7 +179,7 @@ export class BrandService {
     return guestContext({
       venueName,
       internet: true,
-      mobileMoney: this.config.features.mobileMoney,
+      payable: (price) => this.mobileMoney.payable(price),
       selling: !sellingStopped(access),
       look,
       logoUrl,

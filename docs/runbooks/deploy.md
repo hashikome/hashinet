@@ -44,8 +44,11 @@ The platform's first admin and the default packages are created with
 `bun run platform:bootstrap --email <email> --name <name>` in the API image; it changes nothing on a
 second run.
 
-Mobile money and SMS need nothing here until their providers exist: add `SNIPPE_*` or `BRIQ_*`
-and they turn on ([ADR-0010](../engineering-decisions/0010-payments-and-sms.md)).
+Mobile money and SMS need nothing here until their providers exist: add a provider's settings
+(`SNIPPE_*`, `BRIQ_*`) and choose it with `PAYMENTS_PROVIDER` or `SMS_PROVIDER`
+([ADR-0010](../engineering-decisions/0010-payments-and-sms.md)). BRIQ's dashboard takes the
+delivery-report URL, `https://<host>/webhooks/sms/briq`; Snippe gets
+`/webhooks/payments/snippe` with each charge.
 
 ## The management tunnel
 

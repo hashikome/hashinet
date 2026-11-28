@@ -18,8 +18,10 @@ import { BillingModule } from "./platform/billing/billing.module.js";
 import { BusinessesModule } from "./platform/businesses/businesses.module.js";
 import { IssuesModule } from "./platform/issues/issues.module.js";
 import { OnboardingModule } from "./platform/onboarding/onboarding.module.js";
+import { MobileMoneyModule } from "./sales/payments/mobile-money.module.js";
 import { PaymentsModule } from "./sales/payments/payments.module.js";
 import { SessionsModule } from "./sales/sessions/sessions.module.js";
+import { SmsModule } from "./sales/sms/sms.module.js";
 import { VouchersModule } from "./sales/vouchers/vouchers.module.js";
 import { PackagesModule } from "./venues/packages/packages.module.js";
 import { PaymentWaysModule } from "./venues/payment-ways/payment-ways.module.js";
@@ -35,6 +37,8 @@ export function appModule(config: AppConfig, email: EmailSender | null): Dynamic
     imports: [
       configModule(config, email),
       DatabaseModule,
+      MobileMoneyModule,
+      SmsModule,
       AuditModule,
       AuthModule,
       InvitationsModule,

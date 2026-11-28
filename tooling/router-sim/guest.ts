@@ -179,7 +179,8 @@ export async function startApi(
       PATH: process.env.PATH ?? "",
       NODE_ENV: "development",
       PORT: String(BACKEND_PORT),
-      FAKE_PROVIDERS: String(fakeProviders),
+      // The stand-ins, so the paid path can be walked with no provider.
+      ...(fakeProviders ? { PAYMENTS_PROVIDER: "fake", SMS_PROVIDER: "outbox" } : {}),
       DATABASE_URL: simDatabaseUrl(),
       ENCRYPTION_KEY: state.encryptionKey ?? "",
       // Derived like the auth secret, so a PIN given out survives a restart of the demo.

@@ -1,40 +1,28 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../core/database/prisma.service.js";
-import type { SmsStatus } from "../../generated/prisma/client.js";
-
-const STATUS: Record<string, SmsStatus> = {
-  "sms.sent": "sent",
-  "sms.delivered": "delivered",
-  "sms.failed": "failed",
-  "sms.expired": "failed",
-};
+import type { SmsReport } from "./sender.js";
 
 /**
  * Delivery reports. The send returns a job id and reports name a message id, so a message is
- * matched on either; one nothing reports on becomes `unconfirmed` at its deadline. These events
- * carry no timestamp, so the event id is what stops a replay.
+ * matched on either, among its provider's texts; one nothing reports on becomes `unconfirmed` at
+ * its deadline.
  */
 @Injectable()
 export class SmsReports {
   constructor(private readonly db: PrismaService) {}
 
-  async apply(report: {
-    id: string | null;
-    event: string | null;
-    jobId: string | null;
-    messageId: string | null;
-  }): Promise<void> {
-    const status = report.event === null ? null : (STATUS[report.event] ?? null);
-    const { id, jobId, messageId } = report;
-    if (id === null || status === null || (jobId === null && messageId === null)) return;
+  /** A report from `provider`: its texts only, and each of its events once. */
+  async apply(provider: string, report: SmsReport): Promise<void> {
+    const { eventId, status, jobId, messageId } = report;
     await this.db.$transaction(async (tx) => {
       const { count } = await tx.webhookEvent.createMany({
-        data: [{ provider: "sms", eventId: id }],
+        data: [{ provider: `sms:${provider}`, eventId }],
         skipDuplicates: true,
       });
       if (count === 0) return;
       const row = await tx.smsMessage.findFirst({
         where: {
+          gateway: provider,
           OR: [
             ...(jobId === null ? [] : [{ jobId }]),
             ...(messageId === null ? [] : [{ messageId }]),

@@ -119,9 +119,9 @@ Integration tests live in `apps/api/test/integration/` and import from `src`; un
 their source. `tooling/router-sim.ts` imports API internals by relative path. The web never imports
 the API (`ARCHITECTURE.md`, dependency rules); it reads `@hashinet/types`.
 
-What `core/` still imports from areas above it, kept by the moves and named for a later milestone:
-`config/config.module.ts` builds the payment, SMS and email adapters and the brand store (the seam the
-provider-neutral gateways will move into each area's module); `records/records.ts` reads billing and
+What `core/` still imports from areas above it, kept by the moves and named for a later milestone
+(`config/config.module.ts` building the payment and SMS adapters and the brand store went with the
+provider gateways, 28 November 2026; `config/config.ts` still reads `network/provisioning/ipv4.ts`); `records/records.ts` reads billing and
 router helpers; `http` reads the brand's upload limits; `access` reads auth and billing; `audit`
 reads analytics' periods. Two-way pairs between areas after the moves: platform and venues, guest and
 venues, counter and network, counter and guest, network and platform.

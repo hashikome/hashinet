@@ -97,7 +97,7 @@ the counter and the admin, not a device getting online. `guest-test` proves that
 A browser cannot prove what a phone does: real captive sheets are for M8.
 
 `demo` shows what launches: selling at the counter, with self-service mobile money held. `demo payments` adds the
-stand-ins (`FAKE_PROVIDERS`). A fake gateway then approves a purchase after about 6 seconds, a number
+stand-ins (`PAYMENTS_PROVIDER=fake`, `SMS_PROVIDER=outbox`). A fake gateway then approves a purchase after about 6 seconds, a number
 ending 0000 declines, and one ending 1111 never answers. Texts land in `data/sms/`.
 
 ## Guest

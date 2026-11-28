@@ -22,8 +22,6 @@ import {
 import type { Principal } from "../../core/access/principal.js";
 import { venueScope } from "../../core/access/venue-scope.js";
 import { AuditLog } from "../../core/audit/audit-log.js";
-import type { AppConfig } from "../../core/config/config.js";
-import { APP_CONFIG } from "../../core/config/config.module.js";
 import { sameBytes } from "../../core/crypto/same-bytes.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { apiError } from "../../core/http/error-envelope.js";
@@ -32,14 +30,18 @@ import { enrichWideEvent } from "../../core/observability/wide-event.js";
 import { Prisma } from "../../generated/prisma/client.js";
 import { countFailure, isLimited } from "../../guest/sign-in/attempts.js";
 import { GuestService, safeDestination } from "../../guest/sign-in/guest.service.js";
-import { isPayable } from "../../guest/sign-in/guest-context.js";
 import { RouterSync } from "../../network/monitor/router-sync.js";
 import { SERVING } from "../../network/routers/router-journey.js";
 import { PackagesService } from "../../venues/packages/packages.service.js";
 import { PaymentWaysService } from "../../venues/payment-ways/payment-ways.service.js";
-import { SMS_SENDER, type SmsSender } from "../sms/sms-sender.js";
+import { SMS_SENDER, type Texts } from "../sms/sender.js";
 import { generateCodes } from "../vouchers/voucher-codes.js";
-import { type ChargeState, MOBILE_MONEY, type MobileMoneyGateway } from "./mobile-money.js";
+import {
+  type ChargeState,
+  MOBILE_MONEY,
+  type MobileMoney,
+  type MobileMoneyGateway,
+} from "./gateway.js";
 import type {
   PaymentListInput,
   PaymentStatusInput,
@@ -99,14 +101,13 @@ export class PaymentsService {
     private readonly packages: PackagesService,
     private readonly audit: AuditLog,
     private readonly ways: PaymentWaysService,
-    @Inject(MOBILE_MONEY) private readonly gateway: MobileMoneyGateway,
-    @Inject(SMS_SENDER) private readonly sms: SmsSender,
-    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(MOBILE_MONEY) private readonly mobileMoney: MobileMoney,
+    @Inject(SMS_SENDER) private readonly texts: Texts,
   ) {}
 
-  /** Held until the provider's credentials are set; a sale at the counter needs none of this. */
-  private refuseWhileOff(): void {
-    if (this.config.features.mobileMoney) return;
+  /** The provider taking new charges; off until one is set up. A counter sale needs none. */
+  private activeGateway(): MobileMoneyGateway {
+    if (this.mobileMoney.active !== null) return this.mobileMoney.active;
     throw new ServiceUnavailableException(
       apiError("PAYMENTS_OFF", "Mobile money is not available here yet. Ask for a voucher."),
     );
@@ -114,7 +115,7 @@ export class PaymentsService {
 
   /** Starts a purchase: every check comes before a prompt reaches anybody's phone. */
   async start(input: StartPaymentInput, address: string | null): Promise<GuestPaymentStarted> {
-    this.refuseWhileOff();
+    const gateway = this.activeGateway();
     const limits = [
       { key: `pay:address:${address ?? "unknown"}`, max: PROMPTS_PER_ADDRESS },
       { key: `pay:device:${input.mac}`, max: PROMPTS_PER_DEVICE },
@@ -143,7 +144,7 @@ export class PaymentsService {
       );
     }
     const amount = Number(pkg.priceTsh);
-    if (!isPayable(pkg.priceTsh)) {
+    if (!this.mobileMoney.payable(pkg.priceTsh)) {
       throw new BadRequestException(
         apiError("PACKAGE_NOT_PAYABLE", "This package cannot be bought with mobile money."),
       );
@@ -164,6 +165,7 @@ export class PaymentsService {
     const payment = await this.db.payment.create({
       data: {
         provider: "mobile_money",
+        gateway: gateway.name,
         packageId: pkg.id,
         venueId: router.venueId,
         routerId: router.id,
@@ -178,7 +180,7 @@ export class PaymentsService {
     });
     enrichWideEvent({ "payment.id": payment.id });
     try {
-      const charge = await this.gateway.charge({
+      const charge = await gateway.charge({
         paymentId: payment.id,
         idempotencyKey: payment.idempotencyKey ?? "",
         phone: input.phone,
@@ -227,7 +229,9 @@ export class PaymentsService {
   /** Asks the provider about a payment: for a lost webhook, and where there is no webhook. */
   private async check(row: PaymentRow): Promise<void> {
     if (row.providerReference === null) return;
-    const remote = await this.gateway.state(row.providerReference);
+    // The provider that took it, even after a switch; one no longer set up can't be asked.
+    const gateway = this.mobileMoney.byName(row.gateway);
+    const remote = gateway === null ? null : await gateway.state(row.providerReference);
     if (remote !== null) await this.apply(row.id, remote, null);
     // Whatever the provider says, or if it says nothing: money that arrives later still counts.
     if (remote?.state !== "completed" && row.expiresAt !== null && row.expiresAt < new Date()) {
@@ -247,11 +251,19 @@ export class PaymentsService {
     }
   }
 
-  /** The payment a provider's report is about: by our id, since it can beat the reference. */
-  async findForReport(paymentId: string | null, reference: string | null): Promise<string | null> {
+  /**
+   * The payment a provider's report is about, among the payments it took: by our id, since it can
+   * beat the reference.
+   */
+  async findForReport(
+    provider: string,
+    paymentId: string | null,
+    reference: string | null,
+  ): Promise<string | null> {
     if (paymentId === null && reference === null) return null;
     const row = await this.db.payment.findFirst({
       where: {
+        gateway: provider,
         OR: [
           ...(paymentId !== null && /^[0-9a-f-]{36}$/.test(paymentId) ? [{ id: paymentId }] : []),
           ...(reference === null ? [] : [{ providerReference: reference }]),
@@ -394,9 +406,16 @@ export class PaymentsService {
 
   /** Once per payment: the unique row is the guard, so a repeat of `settle` sends nothing. */
   private async sendCode(row: PaymentRow): Promise<void> {
-    if (row.phone === null || row.voucher === null || !this.config.features.sms) return;
+    const sender = this.texts.active;
+    if (row.phone === null || row.voucher === null || sender === null) return;
     const { count } = await this.db.smsMessage.createMany({
-      data: [{ paymentId: row.id, confirmBy: new Date(Date.now() + SMS_CONFIRM_MS) }],
+      data: [
+        {
+          paymentId: row.id,
+          gateway: sender.name,
+          confirmBy: new Date(Date.now() + SMS_CONFIRM_MS),
+        },
+      ],
       skipDuplicates: true,
     });
     if (count === 0) return;
@@ -409,7 +428,7 @@ export class PaymentsService {
             select: { name: true },
           });
     try {
-      const { jobId } = await this.sms.send({
+      const { jobId } = await sender.send({
         to: row.phone,
         text: `${venue.name} WiFi code: ${groupedCode(row.voucher.code)}. Keep it to reconnect or add a device.`,
       });
@@ -565,11 +584,11 @@ export class PaymentsService {
     // The money is in hand, so the seller never waits on a router or a text: they settle after the
     // answer (ADR-0010, 2), and the guest's sign-in confirms the voucher with the router regardless.
     void this.settle(payment.id).catch(captureFailure);
-    return { paymentId: payment.id, code, texted: phone !== null && this.config.features.sms };
+    return { paymentId: payment.id, code, texted: phone !== null && this.texts.active !== null };
   }
 
   capabilities(): Capabilities {
-    return this.config.features;
+    return { mobileMoney: this.mobileMoney.active !== null, sms: this.texts.active !== null };
   }
 
   async list(staff: Principal, input: PaymentListInput): Promise<PaymentRecord[]> {

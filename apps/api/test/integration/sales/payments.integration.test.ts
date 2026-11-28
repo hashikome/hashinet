@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { createHmac } from "node:crypto";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { groupedCode } from "@hashinet/types";
 import { RouterSync } from "../../../src/network/monitor/router-sync.js";
-import { MOBILE_MONEY, type MobileMoneyGateway } from "../../../src/sales/payments/mobile-money.js";
+import {
+  MOBILE_MONEY,
+  type MobileMoney,
+  type MobileMoneyGateway,
+} from "../../../src/sales/payments/gateway.js";
 import { PaymentsService } from "../../../src/sales/payments/payments.service.js";
-import { SMS_SENDER, type SmsSender } from "../../../src/sales/sms/sms-sender.js";
+import { SMS_SENDER, type SmsSender, type Texts } from "../../../src/sales/sms/sender.js";
 import { browser, enrollAuthenticatorFor, useApi } from "../api.js";
 import { useTestDatabase } from "../harness.js";
 import {
@@ -24,14 +26,28 @@ const PHONE = "+255712345678";
 
 const t = useTestDatabase();
 const api = useApi({
+  PAYMENTS_PROVIDER: "snippe",
+  SMS_PROVIDER: "briq",
   SNIPPE_API_KEY: "key",
   SNIPPE_WEBHOOK_SECRET: PAY_SECRET,
   BRIQ_API_KEY: "key",
   BRIQ_APP_ID: "app",
   BRIQ_SENDER_ID: "HASHINET",
   BRIQ_WEBHOOK_SECRET: SMS_SECRET,
-  SMS_OUTBOX_DIR: join(tmpdir(), `hashinet-sms-${Date.now()}`),
 });
+
+/** The provider taking new charges: these tests patch its calls, as any provider's. */
+function activeGateway(): MobileMoneyGateway {
+  const active = api.app.get<MobileMoney>(MOBILE_MONEY, { strict: false }).active;
+  if (active === null) throw new Error("mobile money is not on");
+  return active;
+}
+
+function activeSender(): SmsSender {
+  const active = api.app.get<Texts>(SMS_SENDER, { strict: false }).active;
+  if (active === null) throw new Error("SMS is not on");
+  return active;
+}
 
 let charges: { phone: string; amount: number }[] = [];
 let texts: { to: string; text: string }[] = [];
@@ -52,13 +68,13 @@ beforeEach(() => {
   signedIn = 0;
   smsFails = false;
   remote = null;
-  const gateway = api.app.get<MobileMoneyGateway>(MOBILE_MONEY, { strict: false });
+  const gateway = activeGateway();
   gateway.charge = async (request) => {
     charges.push({ phone: request.phone, amount: request.amount });
     return { reference: `ref-${request.paymentId}`, expiresAt: new Date(Date.now() + 3_600_000) };
   };
   gateway.state = async () => remote;
-  const sender = api.app.get<SmsSender>(SMS_SENDER, { strict: false });
+  const sender = activeSender();
   sender.send = async (message) => {
     if (smsFails) throw new Error("refused");
     texts.push(message);
@@ -128,7 +144,7 @@ const status = (paymentId: string, secret: string) =>
 /** A signed report, as sent: `raw` is signed byte for byte. */
 function report(raw: string, stamp = Math.floor(Date.now() / 1000), secret = PAY_SECRET) {
   const signature = createHmac("sha256", secret).update(`${stamp}.${raw}`).digest("hex");
-  return fetch(`${api.url}/webhooks/snippe`, {
+  return fetch(`${api.url}/webhooks/payments/snippe`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -236,11 +252,22 @@ describe("buying on the portal", () => {
     expect((await post("/api/guest/payments/status", { paymentId })).status).toBe(400);
   });
 
+  test("only a provider set up here has a webhook", async () => {
+    for (const path of [
+      "/webhooks/payments/fake",
+      "/webhooks/payments/acme",
+      "/webhooks/sms/outbox",
+    ]) {
+      const answer = await fetch(`${api.url}${path}`, { method: "POST", body: "{}" });
+      expect(answer.status).toBe(404);
+    }
+  });
+
   test("a forged, unsigned, stale or replayed report changes nothing", async () => {
     const { paymentId } = await started();
     const raw = completed(paymentId);
     expect((await report(raw, undefined, "wrong")).status).toBe(400);
-    const unsigned = await fetch(`${api.url}/webhooks/snippe`, {
+    const unsigned = await fetch(`${api.url}/webhooks/payments/snippe`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: raw,
@@ -390,6 +417,7 @@ describe("when things take a while", () => {
     const { paymentId, venue, pkg } = await started();
     const stuck = Array.from({ length: 60 }, (_, i) => ({
       provider: "mobile_money" as const,
+      gateway: "snippe",
       providerReference: `stuck-${i}`,
       amountTsh: "2000",
       packageId: pkg.id,
@@ -403,7 +431,7 @@ describe("when things take a while", () => {
       where: { id: paymentId },
       data: { createdAt: new Date(Date.now() - 120_000) },
     });
-    const gateway = api.app.get<MobileMoneyGateway>(MOBILE_MONEY, { strict: false });
+    const gateway = activeGateway();
     gateway.state = async (reference) =>
       reference.startsWith("stuck")
         ? null
@@ -420,7 +448,7 @@ describe("when things take a while", () => {
     await settled();
     const raw = '{"id":"evt_x","event":"sms.delivered","data":{}}';
     const signature = createHmac("sha256", SMS_SECRET).update(raw).digest("hex");
-    await fetch(`${api.url}/webhooks/briq`, {
+    await fetch(`${api.url}/webhooks/sms/briq`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Briq-Signature": `sha256=${signature}` },
       body: raw,
@@ -432,7 +460,7 @@ describe("when things take a while", () => {
 describe("delivery reports", () => {
   function smsReport(raw: string, secret = SMS_SECRET) {
     const signature = createHmac("sha256", secret).update(raw).digest("hex");
-    return fetch(`${api.url}/webhooks/briq`, {
+    return fetch(`${api.url}/webhooks/sms/briq`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Briq-Signature": `sha256=${signature}` },
       body: raw,

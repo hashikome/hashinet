@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadConfig } from "./config.js";
 
@@ -16,7 +18,7 @@ describe("loadConfig", () => {
     const root = Bun.spawnSync(["git", "rev-parse", "--show-toplevel"]).stdout.toString().trim();
     const config = loadConfig(BASE);
     expect(config.email.outboxDir).toBe(join(root, "data/email/"));
-    expect(config.sms.outboxDir).toBe(join(root, "data/sms/"));
+    expect(config.providers.context.dataDir).toBe(join(root, "data/"));
     expect(config.brand.storeDir).toBe(join(root, "data/brand/"));
   });
 
@@ -35,20 +37,22 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ ...BASE, DATABASE_URL: "mysql://x" })).toThrow(/DATABASE_URL/);
   });
 
-  test("mobile money and SMS are off until set up, and half a set-up is refused", () => {
-    expect(loadConfig(BASE).features).toEqual({ mobileMoney: false, sms: false });
-    expect(
-      loadConfig({ ...BASE, SNIPPE_API_KEY: "key", SNIPPE_WEBHOOK_SECRET: "secret" }).features,
-    ).toEqual({ mobileMoney: true, sms: false });
-    expect(() => loadConfig({ ...BASE, SNIPPE_API_KEY: "key" })).toThrow(/SNIPPE_WEBHOOK_SECRET/);
-    expect(() => loadConfig({ ...BASE, BRIQ_API_KEY: "key" })).toThrow(/BRIQ_SENDER_ID/);
-  });
-
-  test("the stand-in providers can never run in production", () => {
-    expect(loadConfig({ ...BASE, FAKE_PROVIDERS: "true" }).features.mobileMoney).toBe(true);
-    expect(() => loadConfig({ ...BASE, NODE_ENV: "production", FAKE_PROVIDERS: "true" })).toThrow(
-      /FAKE_PROVIDERS: refused in production/,
-    );
+  test("providers are chosen by name, and their settings read as secrets are", () => {
+    const off = loadConfig(BASE).providers;
+    expect([off.payments, off.sms]).toEqual([null, null]);
+    const dir = mkdtempSync(join(tmpdir(), "hashinet-secret-"));
+    writeFileSync(join(dir, "key"), "from-a-file\n");
+    const chosen = loadConfig({
+      ...BASE,
+      PAYMENTS_PROVIDER: "snippe",
+      SMS_PROVIDER: "briq",
+      SNIPPE_API_KEY_FILE: join(dir, "key"),
+      BRIQ_APP_ID: "app",
+    }).providers;
+    expect([chosen.payments, chosen.sms]).toEqual(["snippe", "briq"]);
+    expect(chosen.context.setting("SNIPPE_API_KEY")).toBe("from-a-file");
+    expect(chosen.context.setting("BRIQ_APP_ID")).toBe("app");
+    expect(chosen.context.setting("BRIQ_API_KEY")).toBeNull();
   });
 
   test("production requires email delivery and the trusted proxies", () => {

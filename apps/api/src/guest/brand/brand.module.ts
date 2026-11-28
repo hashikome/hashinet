@@ -6,6 +6,7 @@ import { RoutersModule } from "../../network/routers/routers.module.js";
 import { PortalModule } from "../portal/portal.module.js";
 import { BusinessPortalController, VenuePortalController } from "./brand.controller.js";
 import { BrandService } from "./brand.service.js";
+import { BRAND_STORE, DiskBrandStore, R2BrandStore } from "./brand-store.js";
 import { BusinessProfileController, BusinessProfiles } from "./business-profile.js";
 import { Logos } from "./logos.js";
 
@@ -29,7 +30,19 @@ class BrandJobs extends ScheduledJobs {
 @Module({
   imports: [RoutersModule, PortalModule],
   controllers: [BusinessPortalController, VenuePortalController, BusinessProfileController],
-  providers: [BrandService, Logos, BusinessProfiles, BrandJobs],
+  providers: [
+    BrandService,
+    Logos,
+    BusinessProfiles,
+    BrandJobs,
+    {
+      // R2 in production; on disk elsewhere.
+      provide: BRAND_STORE,
+      inject: [APP_CONFIG],
+      useFactory: ({ brand }: AppConfig) =>
+        brand.r2 === null ? new DiskBrandStore(brand.storeDir) : new R2BrandStore(brand.r2),
+    },
+  ],
   exports: [BrandService, Logos],
 })
 export class BrandModule {}

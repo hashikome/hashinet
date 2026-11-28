@@ -1,26 +1,14 @@
 import type { GuestContext, PortalLook } from "@hashinet/types";
 
 /**
- * The lowest amount the mobile-money provider (Snippe) takes. Not confirmed with Snippe yet (owner,
- * 13 November 2026); it may be TSh 1,000. It is separate from a voucher's lowest price (TSh 500): a
- * package below it still sells as printed vouchers, and is not offered for payment online.
- */
-export const MINIMUM_PAYMENT_TSH = 500;
-
-/** The provider takes whole TSH, from its minimum. */
-export function isPayable(priceTsh: string): boolean {
-  const amount = Number(priceTsh);
-  return Number.isInteger(amount) && amount >= MINIMUM_PAYMENT_TSH;
-}
-
-/**
  * What the portal shows a guest, built once for the guest at a router and for the Captive portal
  * editor's preview, so the preview cannot show what the portal does not.
  */
 export function guestContext(input: {
   venueName: string;
   internet: boolean;
-  mobileMoney: boolean;
+  /** Whether a price can be paid online now (mobile money is on, and its provider takes it). */
+  payable: (priceTsh: string) => boolean;
   selling: boolean;
   look: PortalLook;
   /** The logo to show when the look shows one; null for none. */
@@ -37,8 +25,7 @@ export function guestContext(input: {
   return {
     venueName: input.venueName,
     internet: input.internet,
-    sellsOnline:
-      input.mobileMoney && input.selling && input.packages.some((p) => isPayable(p.priceTsh)),
+    sellsOnline: input.selling && input.packages.some((p) => input.payable(p.priceTsh)),
     selling: input.selling,
     settings: {
       ...input.look,
@@ -54,7 +41,7 @@ export function guestContext(input: {
       priceTsh: p.priceTsh,
       downloadSpeedMbps: p.downloadSpeedMbps,
       dataLimitGb: p.dataLimitGb,
-      payable: isPayable(p.priceTsh),
+      payable: input.payable(p.priceTsh),
     })),
   };
 }

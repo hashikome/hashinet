@@ -12,13 +12,12 @@ venue.
 
 ## What exists
 
-Commit `45ebd53` integrates Snippe
-(`apps/api/src/routes/snippe-webhook.ts` and `payments.ts`, `src/utils/snippe.ts`,
-`src/scripts/reconcile-pending-payments.ts`, and the payment half of
-`src/services/reconcile-daemon.ts`; read with `git show 45ebd53:<path>`): a payment request from
-the portal, a signed webhook, reconciliation of pending payments, and a voucher issued and
-pushed to the router once paid. Payments track `router_provisioned_at` separately from
-`status = "paid"`. The NestJS port left it out; the schema keeps the `payments` table.
+Self-service purchase is built in `apps/api/src/sales/payments`, with SMS in `apps/api/src/sales/sms`:
+a payment request from the portal, signed webhooks, reconciliation of pending payments, the voucher
+made once paid, and the code texted. Each provider is one file under the area's `providers/`
+(Snippe and BRIQ, and the development stand-ins), behind `MobileMoneyGateway` and `SmsSender`
+([ADR-0010](../engineering-decisions/0010-payments-and-sms.md)). It is held until the providers'
+credentials exist.
 
 ## Gate
 

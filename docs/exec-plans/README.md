@@ -29,3 +29,4 @@ A plan must make sense with `ref/` empty while it runs.
 | [active/redesign-admin.md](active/redesign-admin.md) | Prototype approved; its screens built within the slices |
 | [active/build-hashinet.md](active/build-hashinet.md) | M1 to M5 done; M6 built, awaiting provider accounts (slice 6) |
 | [active/restructure.md](active/restructure.md) | The code grouped into eight areas: the moves done; the upward imports and large files left |
+| [active/provider-gateways.md](active/provider-gateways.md) | Payment and SMS providers behind gateways, one file each: in progress |
