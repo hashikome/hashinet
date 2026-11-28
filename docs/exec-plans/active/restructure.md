@@ -69,6 +69,10 @@ those land in their final homes (`sales/payments/providers/`, `sales/sms/provide
     `payment-lists.ts` (`PaymentLists`). Drawing an unused voucher code, written twice, is one
     `unusedCode` in `sales/vouchers/voucher-codes.ts`. The sales integration tests pass; the map
     gains only the two providers.
+  - [x] (2026-11-28) `platform/issues/issues.service.ts` (657): router issues kept in step with the
+    routers, and their logged steps, to `router-issues.ts` (`RouterIssues`, the same job); the issues
+    workflow (590 lines, one job) stays. The issue and network integration tests pass; the map gains
+    only `RouterIssues`.
 
 ## Surprises & Discoveries
 

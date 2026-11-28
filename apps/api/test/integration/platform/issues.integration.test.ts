@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { IssueDetail, IssueList } from "@hashinet/types";
 import { setupIssueKey } from "../../../src/network/routers/routers.service.js";
 import { IssuesService } from "../../../src/platform/issues/issues.service.js";
+import { RouterIssues } from "../../../src/platform/issues/router-issues.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "../api.js";
 import { useTestDatabase } from "../harness.js";
 import { businessMember, platformMember, testBusinessId } from "../people.js";
@@ -58,7 +59,7 @@ async function opened(input: {
   return row.id;
 }
 
-const sync = () => api.app.get(IssuesService).syncRouterIssues();
+const sync = () => api.app.get(RouterIssues).syncRouterIssues();
 
 async function issues(c: Client, status = "open"): Promise<IssueList> {
   return (await c.request("GET", `/api/issues?status=${status}`)).body as IssueList;

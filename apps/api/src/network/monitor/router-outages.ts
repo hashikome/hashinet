@@ -3,7 +3,7 @@ import { AuditLog } from "../../core/audit/audit-log.js";
 import { PrismaService } from "../../core/database/prisma.service.js";
 import { captureFailure } from "../../core/observability/telemetry.js";
 import { Prisma } from "../../generated/prisma/client.js";
-import { IssuesService } from "../../platform/issues/issues.service.js";
+import { RouterIssues } from "../../platform/issues/router-issues.js";
 
 const MINUTE_MS = 60_000;
 
@@ -19,7 +19,7 @@ export class RouterOutages {
   constructor(
     private readonly db: PrismaService,
     private readonly audit: AuditLog,
-    private readonly issues: IssuesService,
+    private readonly routerIssues: RouterIssues,
   ) {}
 
   /** Opens and closes outages from what the live monitor last recorded about each router. */
@@ -133,7 +133,7 @@ export class RouterOutages {
         after: { guests: given.length, minutes: given.reduce((a, b) => a + b, 0) },
       },
     });
-    await this.issues.logRouterStep(outage.routerId, {
+    await this.routerIssues.logRouterStep(outage.routerId, {
       step: "time_given_back",
       guests: given.length,
       minutes: given.join(","),

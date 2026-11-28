@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { GuestContext, RouterList, VenueRecord } from "@hashinet/types";
 import { recordInternet } from "../../../src/network/monitor/live-monitor.js";
 import { RouterOutages } from "../../../src/network/monitor/router-outages.js";
-import { IssuesService } from "../../../src/platform/issues/issues.service.js";
+import { RouterIssues } from "../../../src/platform/issues/router-issues.js";
 import { browser, enrollAuthenticatorFor, useApi } from "../api.js";
 import { useTestDatabase } from "../harness.js";
 import { businessMember, protectedOwner, testBusinessId } from "../people.js";
@@ -87,7 +87,7 @@ describe("a router's own internet", () => {
     });
     expect(sale.body).toMatchObject({ code: "VENUE_NOT_SERVING" });
 
-    await api.app.get(IssuesService).syncRouterIssues();
+    await api.app.get(RouterIssues).syncRouterIssues();
     // One for HashiNet's team, one for the business, each saying why it went down.
     const issues = await t.db.issue.findMany({
       where: { kind: "router_offline", key: `router:${router.id}` },
@@ -173,7 +173,7 @@ describe("time given back", () => {
     await outages.track(new Date(now - 30 * MIN));
     const open = await t.db.routerOutage.findFirstOrThrow({ where: { routerId: router.id } });
     expect(open).toMatchObject({ kind: "no_internet", startedAt: start, endedAt: null });
-    await api.app.get(IssuesService).syncRouterIssues();
+    await api.app.get(RouterIssues).syncRouterIssues();
 
     // Its internet is back: the outage closes, and the time goes back.
     await t.db.router.update({ where: { id: router.id }, data: { internetOk: true } });
