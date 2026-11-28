@@ -8,8 +8,8 @@ import {
   type IssuePerson,
   type IssueRecord,
   type MembershipRole,
-  ROUTER_ISSUE_CAUSES,
-  type RouterIssueCause,
+  ROUTER_CONDITIONS,
+  type RouterCondition,
 } from "@hashinet/types";
 import {
   BadRequestException,
@@ -43,6 +43,8 @@ export const PLATFORM_WORKSPACE = { scope: "platform", businessId: null } as con
  */
 const KINDS: Record<IssueKind, { seenBy: Action | null; worked: boolean }> = {
   router_offline: { seenBy: null, worked: true },
+  // Opened only in the platform's workspace, so HashiNet's team alone sees it.
+  router_setup: { seenBy: null, worked: true },
   venue_package: { seenBy: null, worked: true },
   venue_setup: { seenBy: null, worked: true },
   bill_due: { seenBy: "issue.bill.read", worked: false },
@@ -58,7 +60,7 @@ type Workspace = { scope: "platform" | "business"; businessId: string | null };
 
 /** The kinds an issue can be handed to a platform operator in: a venue's package is for the
  * admin and managers only (ADR-0013, 2). */
-const PLATFORM_KINDS_FOR_OPERATORS: IssueKind[] = ["router_offline", "venue_setup"];
+const PLATFORM_KINDS_FOR_OPERATORS: IssueKind[] = ["router_offline", "router_setup", "venue_setup"];
 
 type Db = Prisma.TransactionClient;
 
@@ -297,10 +299,8 @@ export class IssuesService {
           ...JOURNEY_SELECT,
         },
       }),
-      // Only the issues this keeps (`router:<id>`): another kind of router issue, such as a setup
-      // that stopped (`router-setup:<id>`), is resolved by its own journey.
       this.db.issue.findMany({
-        where: { kind: "router_offline", status: "open", key: { startsWith: "router:" } },
+        where: { kind: "router_offline", status: "open" },
         select: { scope: true, businessId: true, key: true },
       }),
     ]);
@@ -590,7 +590,7 @@ export class IssuesService {
         : (row.venue?.business ?? null),
       venue: row.venue ? { id: row.venue.id, name: row.venue.name } : null,
       router: row.router,
-      cause: ROUTER_ISSUE_CAUSES.find((c) => c === row.cause) ?? null,
+      cause: ROUTER_CONDITIONS.find((c) => c === row.cause) ?? null,
       overdue: row.kind === "bill_due" && row.cause === "overdue",
       access:
         (row.kind === "bill_due" || row.kind === "selling_paused") && row.business
@@ -621,7 +621,7 @@ export type IssueOpening = Workspace & {
   routerId: string | null;
   holderId: string | null;
   /** What took a router issue's router down, or a bill's "due" or "overdue"; null for other kinds. */
-  cause: RouterIssueCause | "due" | "overdue" | null;
+  cause: RouterCondition | "due" | "overdue" | null;
 };
 
 /** Opens an issue unless one is open for its key in the workspace; idempotent. */

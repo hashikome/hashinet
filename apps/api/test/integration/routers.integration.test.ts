@@ -398,8 +398,8 @@ describe("a release's routers are set up again", () => {
     expect(issues).toEqual([
       expect.objectContaining({
         scope: "platform",
-        kind: "router_offline",
-        cause: "needs-setup",
+        kind: "router_setup",
+        cause: null,
         routerId: older.id,
         status: "open",
       }),

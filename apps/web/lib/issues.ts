@@ -17,6 +17,7 @@ import { ROLE_NAME } from "./nav";
 /** How each kind reads in a list's Kind column and filter. */
 export const KIND_NAME: Record<IssueKind, string> = {
   router_offline: "Router",
+  router_setup: "Setup failed",
   venue_package: "Package",
   venue_setup: "Setting up",
   bill_due: "Billing",
@@ -50,20 +51,24 @@ export const LINE_NAME: Record<OnboardingLineKind, string> = {
   other: "Other",
 };
 
+/** A router issue's title by its cause, open and resolved; any other cause reads as offline. */
+const ROUTER_DOWN: Partial<Record<RouterCondition, [string, string, string]>> = {
+  "no-internet": ["has", "had", "no internet"],
+  "needs-attention": ["needs", "needed", "attention"],
+};
+
 /** An issue's title, open or resolved. */
 export function issueTitle(i: IssueRecord): string {
   const open = i.status === "open";
   const venue = i.venue?.name ?? "A venue";
   switch (i.kind) {
-    case "router_offline":
+    case "router_offline": {
       // Said as what took it down: "has no internet" reads truer than "offline" for a router that answers.
-      return i.cause === "needs-setup"
-        ? `${i.router?.name ?? "A router"} ${open ? "needs" : "needed"} setting up again`
-        : i.cause === "no-internet"
-          ? `${i.router?.name ?? "A router"} ${open ? "has" : "had"} no internet`
-          : i.cause === "needs-attention"
-            ? `${i.router?.name ?? "A router"} ${open ? "needs" : "needed"} attention`
-            : `${i.router?.name ?? "A router"} ${open ? "is" : "was"} offline`;
+      const [now, then, what] = (i.cause && ROUTER_DOWN[i.cause]) || ["is", "was", "offline"];
+      return `${i.router?.name ?? "A router"} ${open ? now : then} ${what}`;
+    }
+    case "router_setup":
+      return `${i.router?.name ?? "A router"} ${open ? "needs" : "needed"} setting up again`;
     case "venue_package":
       return open ? `Confirm ${venue}'s package` : `${venue}'s package was agreed`;
     case "venue_setup":
@@ -111,7 +116,7 @@ export function issuePill(i: IssueRecord): [string, PillKind] {
   if (i.stalled) return ["Stalled", "bad"];
   if (i.kind === "bill_due") return i.overdue ? ["Overdue", "bad"] : ["Due", "wait"];
   if (i.kind === "selling_paused") return paused(i) ? ["Paused", "bad"] : ["Overdue", "wait"];
-  if (i.kind === "router_offline" && i.cause === "needs-setup") return ["Setup failed", "bad"];
+  if (i.kind === "router_setup") return ["Setup failed", "bad"];
   return i.kind === "router_offline" ? ["Offline", "bad"] : ["Waiting", "wait"];
 }
 

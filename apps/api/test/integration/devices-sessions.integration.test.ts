@@ -326,8 +326,9 @@ describe("releasing a voucher", () => {
     await t.db.pinAttempt.create({
       data: { voucherId: voucher.id, deviceId: w.only.id, wrongTries: 6, lockedAt: new Date() },
     });
-    await t.db.rateLimit.create({
-      data: { key: `pin:voucher:${voucher.id}`, count: 15, lastRequest: BigInt(Date.now()) },
+    await t.db.voucher.update({
+      where: { id: voucher.id },
+      data: { wrongPins: 15, wrongPinsSince: new Date(), pinWaitUntil: new Date(Date.now() + 9e5) },
     });
 
     const released = await c.request("POST", `/api/vouchers/${voucher.id}/release`);
@@ -335,7 +336,12 @@ describe("releasing a voucher", () => {
     expect(released.body).toMatchObject({ voucher: { status: "active" } });
     expect(await t.db.voucherDevice.count({ where: { voucherId: voucher.id } })).toBe(0);
     expect(await t.db.pinAttempt.count({ where: { voucherId: voucher.id } })).toBe(0);
-    expect(await t.db.rateLimit.count({ where: { key: { contains: voucher.id } } })).toBe(0);
+    expect(await t.db.voucher.findUniqueOrThrow({ where: { id: voucher.id } })).toMatchObject({
+      pinHmac: null,
+      wrongPins: 0,
+      wrongPinsSince: null,
+      pinWaitUntil: null,
+    });
     expect(
       await t.db.wifiSession.findUniqueOrThrow({ where: { id: w.atTheirs.id } }),
     ).toMatchObject({ status: "terminated", terminationReason: "voucher_released" });

@@ -51,7 +51,7 @@ export function sellingOf(routers: Omit<VenueRouter, "ssid">[]): VenueSelling {
   return { state, since: heard.length ? new Date(Math.max(...heard)).toISOString() : null };
 }
 
-export const passedSetup = (last: unknown) =>
+export const passedSetup = (last: unknown): last is { ok: true; version?: unknown } =>
   typeof last === "object" && last !== null && "ok" in last && last.ok === true;
 
 /**
@@ -71,8 +71,8 @@ export const SETUP_VERSION = 3;
 
 /** The setup a router last passed, by version; 1 for one set up before versions were kept. */
 export function setupVersionOf(last: unknown): number {
-  if (!passedSetup(last) || typeof last !== "object" || last === null) return 0;
-  return "version" in last && typeof last.version === "number" ? last.version : 1;
+  if (!passedSetup(last)) return 0;
+  return typeof last.version === "number" ? last.version : 1;
 }
 
 /** What a setup run leaves on the router, as the router's page and its condition read it. */

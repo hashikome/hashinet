@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { IssueDetail, IssueList } from "@hashinet/types";
 import { IssuesService } from "../../src/issues/issues.service.js";
+import { setupIssueKey } from "../../src/routers/routers.service.js";
 import { browser, type Client, enrollAuthenticatorFor, useApi } from "./api.js";
 import { useTestDatabase } from "./harness.js";
 import { businessMember, platformMember, testBusinessId } from "./people.js";
@@ -107,22 +108,22 @@ describe("Issues", () => {
     }
   });
 
-  test("a setup that stopped keeps its own issue: the router sync leaves keys it doesn't keep", async () => {
+  test("a setup that stopped keeps its own issue: the router sync leaves it alone", async () => {
     const cafe = await venue();
     const router = await servedRouter(cafe.id, "online");
     await api.app.get(IssuesService).open({
       scope: "platform",
       businessId: null,
-      kind: "router_offline",
-      key: `router-setup:${router.id}`,
+      kind: "router_setup",
+      key: setupIssueKey(router.id),
       venueId: cafe.id,
       routerId: router.id,
       holderId: null,
-      cause: "needs-setup",
+      cause: null,
     });
     await sync();
     expect(await t.db.issue.findFirstOrThrow()).toMatchObject({
-      key: `router-setup:${router.id}`,
+      key: setupIssueKey(router.id),
       status: "open",
     });
   });

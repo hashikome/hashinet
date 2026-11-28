@@ -726,6 +726,13 @@ model Voucher {
   /// the first sign-in and shown once; null before then and after a release. It outlives the
   /// voucher's expiry, as an outage's time given back can revive the voucher.
   pinHmac            String?       @map("pin_hmac") @db.VarChar(64)
+  /// Wrong switch PINs from any devices since `wrongPinsSince`, counted within the hour (CHECK 0 to
+  /// 15): a MAC address costs nothing to change, so a device's own count alone doesn't limit
+  /// guessing. The fifteenth makes every move to the voucher wait until `pinWaitUntil`. Written
+  /// under a lock on the voucher; a release clears them.
+  wrongPins          Int           @default(0) @map("wrong_pins")
+  wrongPinsSince     DateTime?     @map("wrong_pins_since") @db.Timestamptz(3)
+  pinWaitUntil       DateTime?     @map("pin_wait_until") @db.Timestamptz(3)
   /// Blocked with a device that used it (ADR-0015, 9): a MAC address can change, so the block is on
   /// the voucher too, refused on every device until the device is unblocked.
   blockedAt          DateTime?     @map("blocked_at") @db.Timestamptz(3)
@@ -1079,6 +1086,9 @@ model AuditLog {
 enum IssueKind {
   /// A router that has served stopped answering; it resolves when the router serves again.
   router_offline
+  /// A router HashiNet set up again after a release, whose setup stopped: for HashiNet's team; it
+  /// resolves when a setup passes.
+  router_setup
   /// A venue's package: call the owner and confirm, get it paid, schedule the setup.
   venue_package
   /// A venue's setup: add the router, install it, set it up; it resolves when a guest gets online.

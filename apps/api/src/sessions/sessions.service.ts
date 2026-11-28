@@ -9,6 +9,7 @@ import { apiError } from "../http/error-envelope.js";
 import { captureFailure } from "../observability/telemetry.js";
 import { bytes, sessionRecord } from "../serializers/records.js";
 import { RouterSync } from "../services/router-sync.js";
+import { takeDevicesOff } from "../vouchers/voucher-devices.js";
 import { sessionScope } from "./session-scope.js";
 
 export const sessionQuery = z.object({
@@ -110,17 +111,9 @@ export class SessionsService {
     }
     const row = await this.db.wifiSession.findUniqueOrThrow({
       where: { id },
-      select: { voucherId: true, deviceId: true, macAddress: true },
+      select: { voucherId: true, macAddress: true },
     });
-    if (row.voucherId !== null) {
-      await this.db.voucherDevice.deleteMany({
-        where: {
-          voucherId: row.voucherId,
-          // A removed device's sessions keep no device id: its address still names it.
-          device: row.deviceId === null ? { macAddress: row.macAddress } : { id: row.deviceId },
-        },
-      });
-    }
+    if (row.voucherId !== null) await takeDevicesOff(this.db, row.voucherId, [row.macAddress]);
     await this.audit.record(staff, {
       ...(await this.audit.atVenue(session.venueId)),
       action: "session.terminate",

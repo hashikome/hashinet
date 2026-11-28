@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import {
   type Capabilities,
   type CustomerRecord,
@@ -24,6 +24,7 @@ import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
 import type { AppConfig } from "../config/config.js";
 import { APP_CONFIG } from "../config/config.module.js";
+import { sameBytes } from "../crypto/same-bytes.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { countFailure, isLimited } from "../guest/attempts.js";
@@ -203,7 +204,10 @@ export class PaymentsService {
    */
   async status(input: PaymentStatusInput): Promise<GuestPaymentStatus> {
     let row = await this.db.payment.findUnique({ where: { id: input.paymentId }, include });
-    if (row?.sessionSecretHash == null || !sameHash(row.sessionSecretHash, hash(input.secret))) {
+    if (
+      row?.sessionSecretHash == null ||
+      !sameBytes(Buffer.from(row.sessionSecretHash), Buffer.from(hash(input.secret)))
+    ) {
       throw notFound();
     }
     const quiet =
@@ -360,7 +364,7 @@ export class PaymentsService {
       const ip = await this.sync.deviceAddress(row.router, row.macAddress);
       if (ip === null) return;
       const admitted = await this.guest
-        .admit(row.router, row.voucher, row.package?.deviceLimit ?? 1, {
+        .admit(row.router, row.voucher, {
           mac: row.macAddress,
           ip,
           // Self-service payment is held until slice 6, which shows the paid device its PIN.
@@ -630,10 +634,6 @@ async function firstTime(
     skipDuplicates: true,
   });
   return count > 0;
-}
-
-function sameHash(a: string, b: string): boolean {
-  return a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
 function guestStatus(row: PaymentRow): GuestPaymentStatus {

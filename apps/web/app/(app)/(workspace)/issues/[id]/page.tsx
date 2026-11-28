@@ -34,7 +34,8 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
   const { me } = useSession();
   const data = useLoad("issue", async () => {
     const detail = await api.get<IssueDetail>(`/api/issues/${id}`);
-    const venueId = detail.issue.kind !== "router_offline" ? detail.issue.venue?.id : null;
+    const onboards = detail.issue.kind !== "router_offline" && detail.issue.kind !== "router_setup";
+    const venueId = onboards ? detail.issue.venue?.id : null;
     const onboarding = venueId
       ? await api.get<VenueOnboarding>(`/api/venues/${venueId}/onboarding`)
       : null;
@@ -132,6 +133,9 @@ export default function IssuePage({ params }: { params: Promise<{ id: string }> 
         </Panel>
       ) : null}
       {issue.kind === "router_offline" && open ? <RouterSteps detail={detail} lock={lock} /> : null}
+      {issue.kind === "router_setup" && open ? (
+        <RouterSetupSteps detail={detail} lock={lock} />
+      ) : null}
       {issue.kind === "venue_package" && onboarding && open ? (
         <PackageSteps onboarding={onboarding} detail={detail} lock={lock} reload={data.reload} />
       ) : null}
@@ -362,75 +366,105 @@ function RouterSteps({ detail, lock }: { detail: IssueDetail; lock: ReactNode | 
   const can = useCan();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
-  const routerHref = issue.venue ? `/venues/${issue.venue.id}/router` : "/issues";
-  const openRouter = (
-    <Link key="r" className="btn secondary" href={routerHref}>
+  return (
+    <Steps
+      lock={lock}
+      steps={[
+        [
+          "Run the checks",
+          "HashiNet tries the tunnel and the router's API. Once it serves again, this issue closes by itself.",
+          can("router.check") && issue.router ? (
+            <Button
+              key="c"
+              kind="primary"
+              busy={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await api.post(`/api/routers/${issue.router?.id}/verify`);
+                  toast("Checked. The router page has each result.");
+                } catch (e) {
+                  toast(messageOf(e));
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Run checks
+            </Button>
+          ) : null,
+        ],
+        [
+          contact ? "Ask the venue" : "Check the venue",
+          <>
+            Power and internet line first: is the MikroTik router&apos;s light on, and is the ISP
+            router online?
+            {contact ? <Contact contact={contact} /> : null}
+          </>,
+          null,
+        ],
+        [
+          "If it comes back wrong",
+          "When it reconnects but a check fails, set it up again from its router page.",
+          <OpenRouter key="r" issue={issue} />,
+        ],
+      ]}
+    />
+  );
+}
+
+/**
+ * HashiNet set the router up again after a release and the setup stopped (prototype `setupFailed`):
+ * until it is set up, guests at this router can't get online.
+ */
+function RouterSetupSteps({ detail, lock }: { detail: IssueDetail; lock: ReactNode | null }) {
+  const { issue, contact } = detail;
+  return (
+    <Steps
+      lock={lock}
+      steps={[
+        [
+          "Set up again",
+          "HashiNet's update needs every router set up again, and this one stopped. Run it again from the router page: it applies only what is left.",
+          <OpenRouter key="r" issue={issue} />,
+        ],
+        [
+          contact ? "Ask the venue" : "Check the venue",
+          <>
+            Power and internet line first: a router that loses its line stops mid-setup.
+            {contact ? <Contact contact={contact} /> : null}
+          </>,
+          null,
+        ],
+        [
+          "If it stops at the same step",
+          "The router page's checks say what fails. Until it is set up, guests at this router can't get online.",
+          null,
+        ],
+      ]}
+    />
+  );
+}
+
+function OpenRouter({ issue }: { issue: IssueDetail["issue"] }) {
+  return (
+    <Link
+      className="btn secondary"
+      href={issue.venue ? `/venues/${issue.venue.id}/router` : "/issues"}
+    >
       <span>Open router</span>
     </Link>
   );
-  // HashiNet set it up again after an update and the setup stopped (prototype `setupFailed`): until it
-  // is set up, guests at this router can't get online.
-  const setupSteps: [string, ReactNode, ReactNode][] = [
-    [
-      "Set up again",
-      "HashiNet's update needs every router set up again, and this one stopped. Run it again from the router page: it applies only what is left.",
-      openRouter,
-    ],
-    [
-      contact ? "Ask the venue" : "Check the venue",
-      <>
-        Power and internet line first: a router that loses its line stops mid-setup.
-        {contact ? <Contact contact={contact} /> : null}
-      </>,
-      null,
-    ],
-    [
-      "If it stops at the same step",
-      "The router page's checks say what fails. Until it is set up, guests at this router can't get online.",
-      null,
-    ],
-  ];
-  const offlineSteps: [string, ReactNode, ReactNode][] = [
-    [
-      "Run the checks",
-      "HashiNet tries the tunnel and the router's API. Once it serves again, this issue closes by itself.",
-      can("router.check") && issue.router ? (
-        <Button
-          key="c"
-          kind="primary"
-          busy={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              await api.post(`/api/routers/${issue.router?.id}/verify`);
-              toast("Checked. The router page has each result.");
-            } catch (e) {
-              toast(messageOf(e));
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          Run checks
-        </Button>
-      ) : null,
-    ],
-    [
-      contact ? "Ask the venue" : "Check the venue",
-      <>
-        Power and internet line first: is the MikroTik router&apos;s light on, and is the ISP router
-        online?
-        {contact ? <Contact contact={contact} /> : null}
-      </>,
-      null,
-    ],
-    [
-      "If it comes back wrong",
-      "When it reconnects but a check fails, set it up again from its router page.",
-      openRouter,
-    ],
-  ];
-  const steps = issue.cause === "needs-setup" ? setupSteps : offlineSteps;
+}
+
+/** A router issue's steps: the first is now, and its actions wait while someone else holds it. */
+function Steps({
+  steps,
+  lock,
+}: {
+  steps: [string, ReactNode, ReactNode][];
+  lock: ReactNode | null;
+}) {
   return (
     <Panel title="What to do">
       <ol className="todo checklist setup-steps">

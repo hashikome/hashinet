@@ -64,6 +64,9 @@ import { TUNNEL_ALLOCATOR, type TunnelAllocator } from "./tunnel-allocator.js";
 
 const withVenue = { venue: { select: { name: true } } } as const;
 
+/** The platform's issue for a router whose setup stopped after a release. */
+export const setupIssueKey = (routerId: string) => `router-setup:${routerId}`;
+
 export const routerNotFound = () =>
   new NotFoundException(apiError("NOT_FOUND", "That router does not exist."));
 
@@ -382,12 +385,7 @@ export class RoutersService {
   /** Starts a setup and answers at once: it outlasts a request, and its state is on the row. */
   async startSetup(staff: Principal, id: string, force: boolean): Promise<RouterJourney> {
     await this.installRow(staff, id);
-    const stale = new Date(Date.now() - SETUP_STALE_MS);
-    const { count } = await this.db.router.updateMany({
-      where: { id, OR: [{ setupStartedAt: null }, { setupStartedAt: { lt: stale } }] },
-      data: { setupStartedAt: new Date(), setupPhase: null },
-    });
-    if (count === 0) {
+    if (!(await this.claimSetup(id))) {
       throw new ConflictException(apiError("ROUTER_SETUP_RUNNING", "Setup is already running."));
     }
     void this.runSetup(id, force);
@@ -407,19 +405,21 @@ export class RoutersService {
       select: { id: true, lastSetup: true },
       orderBy: { createdAt: "asc" },
     });
-    const stale = new Date(Date.now() - SETUP_STALE_MS);
     for (const router of routers) {
       // A run that stopped passed no version (0), so it is tried again.
       if (setupVersionOf(router.lastSetup) >= SETUP_VERSION) continue;
-      const { count } = await this.db.router.updateMany({
-        where: {
-          id: router.id,
-          OR: [{ setupStartedAt: null }, { setupStartedAt: { lt: stale } }],
-        },
-        data: { setupStartedAt: new Date(), setupPhase: null },
-      });
-      if (count === 1) await this.runSetup(router.id, false);
+      if (await this.claimSetup(router.id)) await this.runSetup(router.id, false);
     }
+  }
+
+  /** Marks a setup started, unless one is running; a run older than `SETUP_STALE_MS` has died. */
+  private async claimSetup(id: string): Promise<boolean> {
+    const stale = new Date(Date.now() - SETUP_STALE_MS);
+    const { count } = await this.db.router.updateMany({
+      where: { id, OR: [{ setupStartedAt: null }, { setupStartedAt: { lt: stale } }] },
+      data: { setupStartedAt: new Date(), setupPhase: null },
+    });
+    return count === 1;
   }
 
   private async runSetup(id: string, force: boolean): Promise<void> {
@@ -450,7 +450,7 @@ export class RoutersService {
       where: { id },
       select: { venueId: true, provisionedAt: true },
     });
-    const key = `router-setup:${id}`;
+    const key = setupIssueKey(id);
     const open = await this.db.issue.findFirst({
       where: { scope: "platform", key, status: "open" },
       select: { id: true, cause: true },
@@ -458,11 +458,11 @@ export class RoutersService {
     const wanted =
       !ok && router.provisionedAt !== null
         ? {
-            kind: "router_offline" as const,
+            kind: "router_setup" as const,
             venueId: router.venueId,
             routerId: id,
             holderId: null,
-            cause: "needs-setup" as const,
+            cause: null,
           }
         : null;
     await this.issues.keep(PLATFORM_WORKSPACE, key, open, wanted, { reason: "set_up" });

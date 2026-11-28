@@ -6,6 +6,7 @@ import { venueScope } from "../access/venue-scope.js";
 import { AuditLog } from "../audit/audit-log.js";
 import { PrismaService } from "../database/prisma.service.js";
 import type { VoucherWhereInput } from "../generated/prisma/models.js";
+import { PIN_RELEASED } from "../guest/switch-pin.js";
 import { apiError } from "../http/error-envelope.js";
 import { voucherRecord } from "../serializers/records.js";
 import { SessionsService } from "../sessions/sessions.service.js";
@@ -156,11 +157,8 @@ export class VouchersService {
     const freed = await this.db.voucherDevice.deleteMany({ where: { voucherId: id } });
     // Its PIN goes, and with it every device's wrong tries and the voucher's own count of them.
     await this.db.$transaction([
-      this.db.voucher.update({ where: { id }, data: { pinHmac: null } }),
+      this.db.voucher.update({ where: { id }, data: PIN_RELEASED }),
       this.db.pinAttempt.deleteMany({ where: { voucherId: id } }),
-      this.db.rateLimit.deleteMany({
-        where: { key: { in: [`pin:voucher:${id}`, `pin:voucher-wait:${id}`] } },
-      }),
     ]);
     await this.audit.record(staff, {
       ...(await this.audit.atVenue(voucher.venueId)),

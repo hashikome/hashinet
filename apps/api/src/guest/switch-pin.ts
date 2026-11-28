@@ -1,18 +1,39 @@
-import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { createHmac, randomInt } from "node:crypto";
+import { sameBytes } from "../crypto/same-bytes.js";
 
 /**
  * A device's wrong PINs in a row on a voucher that make it wait, and that lock it out of moving the
  * voucher until a release (ADR-0015, 4). Other devices, and those holding a place, go on.
  */
-export const PIN_WAIT_AFTER = 3;
-export const PIN_LOCK_AFTER = 6;
-export const PIN_WAIT_MINUTES = 15;
+const PIN_WAIT_AFTER = 3;
+const PIN_LOCK_AFTER = 6;
+const PIN_WAIT_MS = 15 * 60_000;
 /**
  * A voucher's wrong PINs from any devices within the hour that make every move to it wait: a MAC
  * address costs nothing to change, so the per-device count alone doesn't limit guessing.
  */
-export const VOUCHER_WRONG_PINS = 15;
-export const VOUCHER_WRONG_PIN_WINDOW_SECONDS = 3600;
+const VOUCHER_WRONG_PINS = 15;
+const VOUCHER_WRONG_PIN_WINDOW_MS = 3_600_000;
+
+/** What a release clears from a voucher: its PIN, and the count of wrong ones from any device. */
+export const PIN_RELEASED = {
+  pinHmac: null,
+  wrongPins: 0,
+  wrongPinsSince: null,
+  pinWaitUntil: null,
+} as const;
+
+/**
+ * Whether a device needs the switch PIN to take a place on the voucher: one in use whose PIN is
+ * set, for a device new to it, or a known one whose places all hold devices still there.
+ */
+export function needsPin(
+  voucher: { status: string; pinHmac: string | null },
+  known: boolean,
+  full: boolean,
+): boolean {
+  return voucher.status !== "unused" && voucher.pinHmac !== null && (!known || full);
+}
 
 /** All one digit, a straight run either way, or one pair twice: what someone would try first. */
 export function obviousPin(pin: string): boolean {
@@ -38,9 +59,7 @@ export function pinHmac(key: Buffer, voucherId: string, pin: string): string {
 }
 
 export function pinMatches(key: Buffer, voucherId: string, pin: string, stored: string): boolean {
-  const given = Buffer.from(pinHmac(key, voucherId, pin), "hex");
-  const kept = Buffer.from(stored, "hex");
-  return given.length === kept.length && timingSafeEqual(given, kept);
+  return sameBytes(Buffer.from(pinHmac(key, voucherId, pin), "hex"), Buffer.from(stored, "hex"));
 }
 
 /** After a device's wrong PIN: its count, and a wait or a lock when it reaches one. */
@@ -51,8 +70,26 @@ export function afterWrongPin(
   const count = Math.min(tries + 1, PIN_LOCK_AFTER);
   return {
     wrongTries: count,
-    waitUntil:
-      count === PIN_WAIT_AFTER ? new Date(now.getTime() + PIN_WAIT_MINUTES * 60_000) : null,
+    waitUntil: count === PIN_WAIT_AFTER ? new Date(now.getTime() + PIN_WAIT_MS) : null,
     lockedAt: count >= PIN_LOCK_AFTER ? now : null,
+  };
+}
+
+/**
+ * After a wrong PIN from any device, the voucher's count: from the first in the hour, starting
+ * again once that is over an hour old. The fifteenth, and each after it within the hour, makes
+ * every move wait 15 minutes; a right PIN doesn't take any back.
+ */
+export function afterVoucherWrongPin(
+  voucher: { wrongPins: number; wrongPinsSince: Date | null },
+  now: Date,
+): { wrongPins: number; wrongPinsSince: Date; pinWaitUntil: Date | null } {
+  const since = voucher.wrongPinsSince;
+  const counting = since !== null && now.getTime() - since.getTime() <= VOUCHER_WRONG_PIN_WINDOW_MS;
+  const count = Math.min((counting ? voucher.wrongPins : 0) + 1, VOUCHER_WRONG_PINS);
+  return {
+    wrongPins: count,
+    wrongPinsSince: counting ? since : now,
+    pinWaitUntil: count >= VOUCHER_WRONG_PINS ? new Date(now.getTime() + PIN_WAIT_MS) : null,
   };
 }

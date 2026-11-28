@@ -22,19 +22,21 @@ import type { Prisma, Router, Voucher } from "../generated/prisma/client.js";
 import { apiError } from "../http/error-envelope.js";
 import { enrichWideEvent } from "../observability/wide-event.js";
 import { PackagesService } from "../packages/packages.service.js";
+import { bytesUsed } from "../radius/access-decision.js";
 import { bytes } from "../serializers/records.js";
+import { ROUTER_REACH } from "../services/router-credentials.js";
 import { RouterSync } from "../services/router-sync.js";
-import { countFailure, isLimited, limitedUntil } from "./attempts.js";
+import { deviceLimitOf, takeDevicesOff } from "../vouchers/voucher-devices.js";
+import { countFailure, isLimited } from "./attempts.js";
 import { guestContext } from "./guest-context.js";
 import type { contextInput, redeemInput, sessionInput } from "./guest-input.js";
 import {
+  afterVoucherWrongPin,
   afterWrongPin,
   makePin,
-  PIN_WAIT_MINUTES,
+  needsPin,
   pinHmac,
   pinMatches,
-  VOUCHER_WRONG_PIN_WINDOW_SECONDS,
-  VOUCHER_WRONG_PINS,
 } from "./switch-pin.js";
 
 const WINDOW_SECONDS = 600;
@@ -48,18 +50,15 @@ const refuse = (code: string, message: string) => new BadRequestException(apiErr
 /** How long a sign-in's admission waits for the router's RADIUS request. */
 const ADMISSION_SECONDS = 60;
 
+/** What a holder's router is asked with: whether its device is still there, and to end it. */
+const HOLDER_ROUTER = { ...ROUTER_REACH, hotspotInterface: true } as const;
+
 type Holder = {
   id: string;
-  deviceId: string | null;
   macAddress: string;
   ipAddress: string | null;
-  router: Router | null;
+  router: Pick<Router, keyof typeof HOLDER_ROUTER> | null;
 };
-
-/** A voucher's wrong PINs from any device, within the hour, and the wait they start. */
-const voucherWrongPins = (voucherId: string) => `pin:voucher:${voucherId}`;
-const voucherPinWait = (voucherId: string) => `pin:voucher-wait:${voucherId}`;
-const PIN_WAIT_SECONDS = PIN_WAIT_MINUTES * 60;
 
 const pinLocked = () =>
   new HttpException(
@@ -155,10 +154,7 @@ export class GuestService {
     }
 
     const code = input.code.toUpperCase();
-    const voucher = await this.db.voucher.findUnique({
-      where: { code },
-      include: { package: { select: { deviceLimit: true } } },
-    });
+    const voucher = await this.db.voucher.findUnique({ where: { code } });
     if (!voucher || voucher.venueId !== router.venueId) {
       await Promise.all(limits.map(({ key }) => countFailure(this.db, key, WINDOW_SECONDS)));
       throw invalidVoucher();
@@ -171,7 +167,7 @@ export class GuestService {
       );
     }
 
-    const { pin } = await this.admit(router, voucher, voucher.package?.deviceLimit ?? 1, input);
+    const { pin } = await this.admit(router, voucher, input);
     const { expiresAt, givenBackMinutes } = await this.db.voucher.findUniqueOrThrow({
       where: { id: voucher.id },
     });
@@ -217,12 +213,12 @@ export class GuestService {
   async admit(
     router: Router,
     voucher: Voucher,
-    deviceLimit: number,
     device: { mac: string; ip: string; pin: string | null },
   ): Promise<{ pin: string | null }> {
     // A device that would need the PIN while it, or the voucher, waits or is locked is refused from
     // the database before any router is asked; the claim checks again under the voucher's lock.
-    if (voucher.status !== "unused" && voucher.pinHmac !== null) {
+    // Whether its places are all held is the routers' to say, so that waits for the claim.
+    if (needsPin(voucher, false, false)) {
       const known = await this.db.device.findUnique({
         where: { macAddress: device.mac },
         select: {
@@ -230,15 +226,38 @@ export class GuestService {
           vouchers: { where: { voucherId: voucher.id }, select: { deviceId: true } },
         },
       });
-      if (known === null || known.vouchers.length === 0) {
-        const barred = await this.pinBarrier(this.db, voucher.id, known?.id ?? null, new Date());
+      if (needsPin(voucher, (known?.vouchers.length ?? 0) > 0, false)) {
+        const barred = await this.pinBarrier(this.db, voucher, known?.id ?? null, new Date());
         if (barred.refused) throw barred.refused;
       }
     }
 
     // Asked only once a code is good, so the public route cannot be used to reach a router at will,
-    // and before the claim, so the clock never starts for a device that is not here.
-    const present = await this.sync.deviceOnNetwork(router, device);
+    // and before the claim, so the clock never starts for a device that is not here. Who holds the
+    // voucher's places, and which of them have gone, is asked of the routers at the same time, before
+    // the voucher is locked, so the lock is never held across a router call.
+    const [present, { holders, answers }] = await Promise.all([
+      this.sync.deviceOnNetwork(router, device),
+      this.db.wifiSession
+        .findMany({
+          where: { voucherId: voucher.id, status: "connected", macAddress: { not: device.mac } },
+          orderBy: { startedAt: "asc" },
+          select: {
+            id: true,
+            macAddress: true,
+            ipAddress: true,
+            router: { select: HOLDER_ROUTER },
+          },
+        })
+        .then(async (holders) => ({
+          holders,
+          answers: await Promise.all(
+            holders.map(async (h) =>
+              h.router && h.ipAddress ? this.sync.stillThere(h.router, h.ipAddress) : null,
+            ),
+          ),
+        })),
+    ]);
     if (present === null) throw notConfirmed();
     if (!present) {
       throw refuse(
@@ -246,26 +265,15 @@ export class GuestService {
         "We could not find your phone on this WiFi. Reconnect to it and try again.",
       );
     }
-
-    // Who holds the voucher's places, and which of them have gone: asked of the routers before the
-    // voucher is locked, so the lock is never held across a router call.
-    const holders = await this.db.wifiSession.findMany({
-      where: { voucherId: voucher.id, status: "connected", macAddress: { not: device.mac } },
-      orderBy: { startedAt: "asc" },
-      select: { id: true, deviceId: true, macAddress: true, ipAddress: true, router: true },
-    });
-    const answers = await Promise.all(
-      holders.map(async (h) =>
-        h.router && h.ipAddress ? this.sync.stillThere(h.router, h.ipAddress) : null,
-      ),
-    );
     const gone = new Set(holders.filter((_, i) => answers[i] === false).map((h) => h.id));
 
-    const claimed = await this.claim(voucher, device, deviceLimit, router, holders, gone);
+    const claimed = await this.claim(voucher, device, router, holders, gone);
     if (claimed.refused) throw claimed.refused;
-    for (const h of claimed.displaced) {
-      if (h.router) await this.sync.endSession(h.router, h.macAddress);
-    }
+    await Promise.allSettled(
+      claimed.displaced.flatMap((h) =>
+        h.router ? [this.sync.endSession(h.router, h.macAddress)] : [],
+      ),
+    );
 
     const client = { user: voucher.code, ip: device.ip, mac: device.mac };
     if (!(await this.sync.signInDevice(router, client))) throw notConfirmed();
@@ -306,7 +314,7 @@ export class GuestService {
       where: { voucherId: voucher.id },
       _sum: { uploadBytes: true, downloadBytes: true },
     });
-    const usedBytes = bytes((usage._sum.uploadBytes ?? 0n) + (usage._sum.downloadBytes ?? 0n));
+    const usedBytes = bytes(bytesUsed(usage._sum));
     const limitBytes = voucher.dataLimitGb === null ? null : voucher.dataLimitGb * GIB;
     return {
       active: true,
@@ -339,7 +347,6 @@ export class GuestService {
   private async claim(
     voucher: Voucher,
     input: { mac: string; ip: string; pin: string | null },
-    deviceLimit: number,
     router: Router,
     holders: Holder[],
     gone: Set<string>,
@@ -352,14 +359,18 @@ export class GuestService {
         create: { macAddress: input.mac, lastIpAddress: input.ip, lastActiveAt: now },
         update: { lastIpAddress: input.ip, lastActiveAt: now },
       });
-      const current = await tx.voucher.findUniqueOrThrow({ where: { id: voucher.id } });
+      const current = await tx.voucher.findUniqueOrThrow({
+        where: { id: voucher.id },
+        include: { package: { select: { deviceLimit: true } } },
+      });
       refuseIfFinished(current);
       const key = { voucherId_deviceId: { voucherId: voucher.id, deviceId: device.id } };
       const known = (await tx.voucherDevice.findUnique({ where: key })) !== null;
       const live = holders.filter((h) => !gone.has(h.id));
+      const deviceLimit = deviceLimitOf(current.package);
       const full = live.length >= deviceLimit;
 
-      if (current.status !== "unused" && current.pinHmac !== null && (!known || full)) {
+      if (needsPin(current, known, full)) {
         const refused = await this.checkPin(tx, current, device.id, input.pin, now);
         if (refused) return { refused, displaced: [], pin: null };
       }
@@ -376,15 +387,11 @@ export class GuestService {
             terminationReason: "moved_to_another_device",
           },
         });
-        await tx.voucherDevice.deleteMany({
-          where: {
-            voucherId: voucher.id,
-            OR: [
-              { deviceId: { in: displaced.flatMap((h) => (h.deviceId ? [h.deviceId] : [])) } },
-              { device: { macAddress: { in: displaced.map((h) => h.macAddress) } } },
-            ],
-          },
-        });
+        await takeDevicesOff(
+          tx,
+          voucher.id,
+          displaced.map((h) => h.macAddress),
+        );
       }
       if (!known)
         await tx.voucherDevice.create({ data: { voucherId: voucher.id, deviceId: device.id } });
@@ -433,7 +440,7 @@ export class GuestService {
    */
   private async pinBarrier(
     db: Prisma.TransactionClient,
-    voucherId: string,
+    voucher: Pick<Voucher, "id" | "pinWaitUntil">,
     deviceId: string | null,
     now: Date,
   ): Promise<{ refused: HttpException | null; wrongTries: number }> {
@@ -441,15 +448,17 @@ export class GuestService {
       deviceId === null
         ? null
         : await db.pinAttempt.findUnique({
-            where: { voucherId_deviceId: { voucherId, deviceId } },
+            where: { voucherId_deviceId: { voucherId: voucher.id, deviceId } },
           });
     const wrongTries = attempt?.wrongTries ?? 0;
     if (attempt?.lockedAt) return { refused: pinLocked(), wrongTries };
     if (attempt?.waitUntil && attempt.waitUntil > now) {
       return { refused: pinWait(attempt.waitUntil), wrongTries };
     }
-    const until = await limitedUntil(db, voucherPinWait(voucherId), 1, PIN_WAIT_SECONDS);
-    return { refused: until ? pinWait(until) : null, wrongTries };
+    if (voucher.pinWaitUntil && voucher.pinWaitUntil > now) {
+      return { refused: pinWait(voucher.pinWaitUntil), wrongTries };
+    }
+    return { refused: null, wrongTries };
   }
 
   /**
@@ -465,7 +474,7 @@ export class GuestService {
     pin: string | null,
     now: Date,
   ): Promise<HttpException | null> {
-    const barred = await this.pinBarrier(tx, voucher.id, deviceId, now);
+    const barred = await this.pinBarrier(tx, voucher, deviceId, now);
     if (barred.refused) return barred.refused;
     if (pin === null) {
       return new ConflictException(
@@ -492,20 +501,11 @@ export class GuestService {
       create: { voucherId: voucher.id, deviceId, ...after },
       update: after,
     });
-    await countFailure(tx, voucherWrongPins(voucher.id), VOUCHER_WRONG_PIN_WINDOW_SECONDS);
-    const voucherFull = await limitedUntil(
-      tx,
-      voucherWrongPins(voucher.id),
-      VOUCHER_WRONG_PINS,
-      VOUCHER_WRONG_PIN_WINDOW_SECONDS,
-    );
-    if (voucherFull) await countFailure(tx, voucherPinWait(voucher.id), PIN_WAIT_SECONDS);
+    const counted = afterVoucherWrongPin(voucher, now);
+    await tx.voucher.update({ where: { id: voucher.id }, data: counted });
     if (after.lockedAt) return pinLocked();
     if (after.waitUntil) return pinWait(after.waitUntil);
-    const until = voucherFull
-      ? await limitedUntil(tx, voucherPinWait(voucher.id), 1, PIN_WAIT_SECONDS)
-      : null;
-    if (until) return pinWait(until);
+    if (counted.pinWaitUntil) return pinWait(counted.pinWaitUntil);
     return refuse("PIN_WRONG", "That PIN isn't right. Check it and try again.");
   }
 
