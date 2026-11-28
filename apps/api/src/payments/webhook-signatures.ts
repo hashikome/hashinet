@@ -1,12 +1,9 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
+import { sameBytes } from "../crypto/same-bytes.js";
 
 const STALE_SECONDS = 300;
 
-function same(a: string, b: string): boolean {
-  const left = Buffer.from(a);
-  const right = Buffer.from(b);
-  return left.length === right.length && timingSafeEqual(left, right);
-}
+const same = (a: string, b: string) => sameBytes(Buffer.from(a), Buffer.from(b));
 
 /**
  * The mobile-money provider signs `{timestamp}.{raw body}`. An old timestamp is refused, so a

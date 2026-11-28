@@ -1,6 +1,6 @@
 import { getLogger } from "@logtape/logtape";
-import type { PrismaClient } from "../generated/prisma/client.js";
-import { throttledNow } from "../radius/access-decision.js";
+import type { Prisma, PrismaClient } from "../generated/prisma/client.js";
+import { bytesUsed, PACKAGE_SPEED_SELECT, throttledNow } from "../radius/access-decision.js";
 import {
   closeConnection,
   connectToRouter,
@@ -27,6 +27,17 @@ export const IDLE_POLL_EVERY_N_TICKS = 6;
 const THROTTLE_RETRY_MS = 10 * 60_000;
 /** Pings that fail in a row before a router counts as having no internet. */
 const INTERNET_FAILS_DOWN = 2;
+
+/** A router's connected sessions, as a poll reconciles them and checks their speed. */
+const SESSION_SELECT = {
+  id: true,
+  macAddress: true,
+  startedAt: true,
+  voucherId: true,
+  isThrottled: true,
+  package: { select: PACKAGE_SPEED_SELECT },
+} as const;
+type ConnectedSession = Prisma.WifiSessionGetPayload<{ select: typeof SESSION_SELECT }>;
 
 /** One router's live clients, for the admin live view. */
 export interface HotspotUpdate {
@@ -97,8 +108,16 @@ export class LiveMonitor {
           });
           await recordInternet(this.db, router.id, internet);
 
-          await recordClients(this.db, router.id, clients, readAt);
-          await this.applyThrottle(conn, router.id, clients);
+          const sessions = await this.db.wifiSession.findMany({
+            where: { routerId: router.id, status: "connected" },
+            select: SESSION_SELECT,
+          });
+          await recordClients(this.db, sessions, clients, readAt);
+          const listed = new Set(clients.map((c) => c.mac));
+          await this.applyThrottle(
+            conn,
+            sessions.filter((s) => listed.has(s.macAddress)),
+          );
         } catch (err) {
           logger.error("Poll failed for router {router}", {
             router: router.name,
@@ -148,40 +167,21 @@ export class LiveMonitor {
    * the device comes back by its address and RADIUS gives it the speed that holds now, by the same
    * rule (`throttledNow`); its new session carries that, so it isn't ended again.
    */
-  private async applyThrottle(
-    conn: MikroTikConn,
-    routerId: string,
-    clients: MikroTikActiveClient[],
-  ): Promise<void> {
-    if (clients.length === 0) return;
-    const sessions = await this.db.wifiSession.findMany({
-      where: { status: "connected", routerId, macAddress: { in: clients.map((c) => c.mac) } },
-      select: {
-        id: true,
-        macAddress: true,
-        voucherId: true,
-        isThrottled: true,
-        package: {
-          select: {
-            downloadSpeedMbps: true,
-            uploadSpeedMbps: true,
-            throttledDownloadMbps: true,
-            throttledUploadMbps: true,
-            peakStartHour: true,
-            peakEndHour: true,
-            throttleAfterGb: true,
-          },
-        },
-      },
-    });
+  private async applyThrottle(conn: MikroTikConn, sessions: ConnectedSession[]): Promise<void> {
+    if (sessions.length === 0) return;
     const now = new Date();
     // A session that fails and then disconnects never clears its own entry, and this process
     // runs for weeks, so expired entries are dropped each pass.
     for (const [sessionId, retryAt] of this.throttleBackoff) {
       if (retryAt <= now.getTime()) this.throttleBackoff.delete(sessionId);
     }
+    // Only a package that throttles after its data needs what its vouchers have used.
     const voucherIds = [
-      ...new Set(sessions.flatMap((s) => (s.voucherId === null ? [] : [s.voucherId]))),
+      ...new Set(
+        sessions.flatMap((s) =>
+          s.voucherId === null || s.package?.throttleAfterGb == null ? [] : [s.voucherId],
+        ),
+      ),
     ];
     const usage =
       voucherIds.length === 0
@@ -191,9 +191,7 @@ export class LiveMonitor {
             where: { voucherId: { in: voucherIds } },
             _sum: { uploadBytes: true, downloadBytes: true },
           });
-    const usedBy = new Map(
-      usage.map((u) => [u.voucherId, (u._sum.uploadBytes ?? 0n) + (u._sum.downloadBytes ?? 0n)]),
-    );
+    const usedBy = new Map(usage.map((u) => [u.voucherId, bytesUsed(u._sum)]));
     for (const session of sessions) {
       if (!session.package || session.voucherId === null) continue;
       const used = usedBy.get(session.voucherId) ?? 0n;
@@ -230,14 +228,10 @@ export class LiveMonitor {
  */
 export async function recordClients(
   db: Pick<PrismaClient, "wifiSession">,
-  routerId: string,
+  sessions: Pick<ConnectedSession, "id" | "macAddress" | "startedAt">[],
   clients: MikroTikActiveClient[],
   readAt: Date,
 ): Promise<void> {
-  const sessions = await db.wifiSession.findMany({
-    where: { routerId, status: "connected" },
-    select: { id: true, macAddress: true, startedAt: true },
-  });
   const byMac = new Map(clients.map((c) => [c.mac, c]));
   const gone = sessions
     .filter((s) => !byMac.has(s.macAddress) && s.startedAt < readAt)

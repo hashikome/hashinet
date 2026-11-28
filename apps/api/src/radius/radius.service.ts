@@ -1,11 +1,14 @@
 import type { SecretBox } from "../crypto/secret-box.js";
 import type { PrismaService } from "../database/prisma.service.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { normalMac } from "../utils/mac.js";
+import { deviceLimitOf } from "../vouchers/voucher-devices.js";
 import {
   type Answer,
   askOf,
+  bytesUsed,
   comesBack,
-  normalMac,
+  PACKAGE_SPEED_SELECT,
   terms,
   type VoucherFacts,
 } from "./access-decision.js";
@@ -28,28 +31,17 @@ import {
 } from "./codec.js";
 
 /** How often a router reports a session's bytes (Acct-Interim-Interval). */
-export const INTERIM_SECONDS = 60;
+const INTERIM_SECONDS = 60;
 /** A router repeats a request it got no answer to: the same answer, within this long. */
 const REPEAT_MS = 10_000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
-const SPEED_SELECT = {
-  deviceLimit: true,
-  downloadSpeedMbps: true,
-  uploadSpeedMbps: true,
-  throttledDownloadMbps: true,
-  throttledUploadMbps: true,
-  peakStartHour: true,
-  peakEndHour: true,
-  throttleAfterGb: true,
-} as const;
 
 const VOUCHER_SELECT = {
   id: true,
   expiresAt: true,
   dataLimitGb: true,
   blockedAt: true,
-  package: { select: SPEED_SELECT },
+  package: { select: { ...PACKAGE_SPEED_SELECT, deviceLimit: true } },
 } as const;
 
 type VoucherRow = Prisma.VoucherGetPayload<{ select: typeof VOUCHER_SELECT }>;
@@ -62,7 +54,7 @@ function factsOf(v: VoucherRow, usedBytes: bigint): VoucherFacts {
   return {
     id: v.id,
     expiresAt: v.expiresAt,
-    deviceLimit: p?.deviceLimit ?? 1,
+    deviceLimit: deviceLimitOf(p),
     dataLimitGb: v.dataLimitGb,
     usedBytes,
     blocked: v.blockedAt !== null,
@@ -87,7 +79,7 @@ async function usedBytesOf(
     where: { voucherId },
     _sum: { uploadBytes: true, downloadBytes: true },
   });
-  return (sum._sum.uploadBytes ?? 0n) + (sum._sum.downloadBytes ?? 0n);
+  return bytesUsed(sum._sum);
 }
 
 /** What a session ended for, from the router's Acct-Terminate-Cause (RFC 2866, 5.10). */
@@ -208,20 +200,24 @@ export class RadiusService {
       attr(packet, ATTR.userPassword) ? password(packet, secret) : null,
     );
     if (ask.kind === "unknown") return { accept: false, reason: "unknown" };
-    const device = await this.db.device.findUnique({
+    // Asked alongside the voucher: a blocked device is refused first, before an admission is taken.
+    const seen = this.db.device.findUnique({
       where: { macAddress: ask.mac },
       select: {
         id: true,
         blocks: { where: { businessId: router.businessId }, select: { deviceId: true } },
       },
     });
-    if (device && device.blocks.length > 0) return { accept: false, reason: "blocked" };
 
     if (ask.kind === "code") {
-      const voucher = await this.db.voucher.findFirst({
-        where: { code: ask.code, venueId: router.venueId },
-        select: VOUCHER_SELECT,
-      });
+      const [device, voucher] = await Promise.all([
+        seen,
+        this.db.voucher.findFirst({
+          where: { code: ask.code, venueId: router.venueId },
+          select: VOUCHER_SELECT,
+        }),
+      ]);
+      if (device && device.blocks.length > 0) return { accept: false, reason: "blocked" };
       if (!voucher) return { accept: false, reason: "unknown_code" };
       // Only a sign-in the API just made: its admission is taken, once.
       const taken = await this.db.radiusAdmission.deleteMany({
@@ -236,22 +232,29 @@ export class RadiusService {
       return terms(factsOf(voucher, await usedBytesOf(this.db, voucher.id)), now);
     }
 
+    const [device, used] = await Promise.all([
+      seen,
+      this.db.voucherDevice.findFirst({
+        where: {
+          device: { macAddress: ask.mac },
+          voucher: { venueId: router.venueId, status: "active", expiresAt: { gt: now } },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { voucher: { select: VOUCHER_SELECT } },
+      }),
+    ]);
     if (!device) return { accept: false, reason: "unknown_device" };
-    const used = await this.db.voucherDevice.findFirst({
-      where: {
-        deviceId: device.id,
-        voucher: { venueId: router.venueId, status: "active", expiresAt: { gt: now } },
-      },
-      orderBy: { createdAt: "desc" },
-      select: { voucher: { select: VOUCHER_SELECT } },
-    });
+    if (device.blocks.length > 0) return { accept: false, reason: "blocked" };
     if (!used) return { accept: false, reason: "no_voucher" };
-    const online = await this.db.wifiSession.findMany({
-      where: { voucherId: used.voucher.id, status: "connected" },
-      select: { macAddress: true },
-    });
+    const [online, usedBytes] = await Promise.all([
+      this.db.wifiSession.findMany({
+        where: { voucherId: used.voucher.id, status: "connected" },
+        select: { macAddress: true },
+      }),
+      usedBytesOf(this.db, used.voucher.id),
+    ]);
     return comesBack(
-      factsOf(used.voucher, await usedBytesOf(this.db, used.voucher.id)),
+      factsOf(used.voucher, usedBytes),
       online.map((s) => ({ mac: s.macAddress })),
       ask.mac,
       now,
@@ -283,29 +286,44 @@ export class RadiusService {
     ) {
       return;
     }
-    const named = text(packet, ATTR.class);
-    const throttled = named?.endsWith(THROTTLED) ?? false;
-    const voucherId = named === null ? null : throttled ? named.slice(0, -THROTTLED.length) : named;
-    const voucher =
-      voucherId !== null && UUID.test(voucherId)
-        ? await this.db.voucher.findFirst({
-            where: { id: voucherId, venueId: router.venueId },
-            select: { id: true, packageId: true },
-          })
-        : null;
     const ip = attr(packet, ATTR.framedIpAddress);
     const ipAddress = ip && ip.length === 4 ? [...ip].join(".") : null;
-    const device = await this.db.device.upsert({
-      where: { macAddress: mac },
-      create: { macAddress: mac, lastIpAddress: ipAddress, lastActiveAt: now },
-      update: { lastIpAddress: ipAddress, lastActiveAt: now },
-      select: { id: true },
-    });
     const counters = {
       uploadBytes: bytes(packet, ATTR.acctInputOctets, ATTR.acctInputGigawords),
       downloadBytes: bytes(packet, ATTR.acctOutputOctets, ATTR.acctOutputGigawords),
       durationSeconds: int(packet, ATTR.acctSessionTime) ?? 0,
     };
+    // Most reports are an Interim of a session already open: its counters, and the device seen now.
+    if (status === ACCT_STATUS.interim) {
+      const [{ count }] = await Promise.all([
+        this.db.wifiSession.updateMany({
+          where: { routerId: router.id, acctSessionId },
+          data: counters,
+        }),
+        this.db.device.updateMany({
+          where: { macAddress: mac },
+          data: { lastIpAddress: ipAddress, lastActiveAt: now },
+        }),
+      ]);
+      if (count > 0) return;
+    }
+    const named = text(packet, ATTR.class);
+    const throttled = named?.endsWith(THROTTLED) ?? false;
+    const voucherId = named === null ? null : throttled ? named.slice(0, -THROTTLED.length) : named;
+    const [voucher, device] = await Promise.all([
+      voucherId !== null && UUID.test(voucherId)
+        ? this.db.voucher.findFirst({
+            where: { id: voucherId, venueId: router.venueId },
+            select: { id: true, packageId: true },
+          })
+        : null,
+      this.db.device.upsert({
+        where: { macAddress: mac },
+        create: { macAddress: mac, lastIpAddress: ipAddress, lastActiveAt: now },
+        update: { lastIpAddress: ipAddress, lastActiveAt: now },
+        select: { id: true },
+      }),
+    ]);
     const ended = status === ACCT_STATUS.stop ? endOf(int(packet, ATTR.acctTerminateCause)) : null;
     const state = ended
       ? { status: ended.status, endedAt: now, terminationReason: ended.reason }

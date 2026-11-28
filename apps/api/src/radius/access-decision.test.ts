@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { askOf, comesBack, normalMac, terms, type VoucherFacts } from "./access-decision.js";
+import { normalMac } from "../utils/mac.js";
+import { askOf, comesBack, terms, type VoucherFacts } from "./access-decision.js";
 
 const NOW = new Date("2026-11-28T10:00:00Z");
 const MAC = "52:54:00:4A:00:10";

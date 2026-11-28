@@ -1,5 +1,6 @@
 import { normalCode } from "@hashinet/types";
 import { z } from "zod";
+import { normalMac } from "../utils/mac.js";
 
 const MAC = /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/;
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
@@ -10,7 +11,7 @@ const fromRouter = {
   mac: z
     .string()
     .regex(MAC, "must be a MAC address")
-    .transform((v) => v.toUpperCase()),
+    .transform((v) => normalMac(v) ?? v),
   ip: z.string().regex(IPV4, "must be an IPv4 address"),
 };
 

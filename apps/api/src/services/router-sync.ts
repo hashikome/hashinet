@@ -13,7 +13,7 @@ import {
   type MikroTikConn,
   setDeviceBlocked,
 } from "./mikrotik.js";
-import type { RouterAccess } from "./router-credentials.js";
+import { ROUTER_REACH, type RouterAccess, type RouterReach } from "./router-credentials.js";
 import { RouterLogger } from "./router-log.js";
 import { RosClient } from "./router-provision/ros-client.js";
 import { applyAllowedSites } from "./router-provision/steps.js";
@@ -35,27 +35,25 @@ export class RouterSync {
   async syncBlocks(routerId: string): Promise<void> {
     const router = await this.db.router.findUnique({ where: { id: routerId } });
     if (!router) return;
-    const creds = this.access.credentials(router);
-    if (!creds) return;
+    if (!this.access.credentials(router)) return;
     // The devices this venue's business has blocked; other businesses' blocks stay theirs.
     const blocked = await this.db.device.findMany({
       where: { blocks: { some: { business: { venues: { some: { id: router.venueId } } } } } },
       select: { macAddress: true },
     });
-    let conn: MikroTikConn | null = null;
-    try {
-      conn = await connectToRouter(creds);
+    const done = await this.onRouter(router, async (conn) => {
       for (const device of blocked) await setDeviceBlocked(conn, device.macAddress, true);
+      return true;
+    });
+    if (done) {
       await this.db.router.update({
         where: { id: routerId },
         data: { status: "online", lastSeenAt: new Date(), failedSyncs: 0 },
       });
-    } catch {
-      await this.db.router.update({ where: { id: routerId }, data: { status: "error" } });
-      await this.failed(router);
-    } finally {
-      if (conn) await closeConnection(conn);
+      return;
     }
+    await this.db.router.update({ where: { id: routerId }, data: { status: "error" } });
+    await this.failed(router);
   }
 
   /**
@@ -98,14 +96,17 @@ export class RouterSync {
   }
 
   /** Whether the device holding a place still answers on this router; null when it can't be asked. */
-  async stillThere(router: Router, ip: string): Promise<boolean | null> {
+  async stillThere(
+    router: RouterReach & Pick<Router, "hotspotInterface">,
+    ip: string,
+  ): Promise<boolean | null> {
     const iface = router.hotspotInterface;
     if (iface === null) return null;
     return this.onRouter(router, (conn) => answersArp(conn, ip, iface));
   }
 
   /** Ends one device's session on this router. Best effort: the session ends at its limit anyway. */
-  async endSession(router: Router, mac: string): Promise<void> {
+  async endSession(router: RouterReach, mac: string): Promise<void> {
     await this.onRouter(router, (conn) => endHotspotSession(conn, mac));
   }
 
@@ -114,9 +115,8 @@ export class RouterSync {
    * have moved between them. Best effort, like `endSession`.
    */
   async endDevice(venueId: string, mac: string): Promise<void> {
-    for (const router of await this.db.router.findMany({ where: { venueId } })) {
-      await this.endSession(router, mac);
-    }
+    const routers = await this.db.router.findMany({ where: { venueId }, select: ROUTER_REACH });
+    await Promise.allSettled(routers.map((router) => this.endSession(router, mac)));
   }
 
   /**
@@ -137,7 +137,7 @@ export class RouterSync {
   }
 
   private async onRouter<T>(
-    router: Router,
+    router: RouterReach,
     work: (conn: MikroTikConn) => Promise<T>,
   ): Promise<T | null> {
     const creds = this.access.credentials(router);

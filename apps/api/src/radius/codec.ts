@@ -1,4 +1,5 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
+import { sameBytes } from "../crypto/same-bytes.js";
 
 /**
  * RADIUS packets (RFC 2865 and 2866), as much as HashiNet's routers use: an Access-Request with a PAP
@@ -89,8 +90,6 @@ export function int(packet: Packet, type: number): number | null {
   return value && value.length === 4 ? value.readUInt32BE(0) : null;
 }
 
-const same = (a: Buffer, b: Buffer) => a.length === b.length && timingSafeEqual(a, b);
-
 /**
  * Whether a request was signed with `secret`: an Access-Request by its Message-Authenticator, which
  * is required; an Accounting-Request by its Request Authenticator (RFC 2866, 3), and by its
@@ -103,7 +102,7 @@ export function signedBy(buf: Buffer, packet: Packet, secret: Buffer): boolean {
     const sent = Buffer.from(raw.subarray(4, 20));
     raw.fill(0, 4, 20);
     const expected = createHash("md5").update(raw).update(secret).digest();
-    if (!same(expected, sent)) return false;
+    if (!sameBytes(expected, sent)) return false;
     // The Message-Authenticator, if present, is computed with the zeroed Request Authenticator.
     return messageAuthenticatorHolds(raw, secret, false);
   }
@@ -120,7 +119,7 @@ function messageAuthenticatorHolds(raw: Buffer, secret: Buffer, required: boolea
       if (len !== 18) return false;
       const sent = Buffer.from(raw.subarray(i + 2, i + 18));
       raw.fill(0, i + 2, i + 18);
-      return same(createHmac("md5", secret).update(raw).digest(), sent);
+      return sameBytes(createHmac("md5", secret).update(raw).digest(), sent);
     }
     i += len;
   }

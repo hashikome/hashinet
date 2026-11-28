@@ -2,6 +2,15 @@ import type { SecretBox } from "../crypto/secret-box.js";
 import type { Router } from "../generated/prisma/client.js";
 import type { RouterCredentials } from "./mikrotik.js";
 
+/** What reaching a router takes: its addresses and its API credentials. */
+export const ROUTER_REACH = {
+  tunnelAddress: true,
+  ipAddress: true,
+  apiUsername: true,
+  apiPasswordEncrypted: true,
+} as const;
+export type RouterReach = Pick<Router, keyof typeof ROUTER_REACH>;
+
 /**
  * How this API reaches a router: its management target and decrypted API credentials.
  *
@@ -16,14 +25,17 @@ export class RouterAccess {
     private readonly targetOverride: { host: string; port: number } | null = null,
   ) {}
 
-  managementTarget(router: Router): { host: string; port: number } {
+  managementTarget(router: Pick<Router, "tunnelAddress" | "ipAddress">): {
+    host: string;
+    port: number;
+  } {
     return (
       this.targetOverride ?? { host: router.tunnelAddress ?? router.ipAddress, port: this.apiPort }
     );
   }
 
   /** Credentials for the router, or null when it has none usable. */
-  credentials(router: Router): RouterCredentials | null {
+  credentials(router: RouterReach): RouterCredentials | null {
     if (!router.apiUsername || !router.apiPasswordEncrypted) return null;
     try {
       return {

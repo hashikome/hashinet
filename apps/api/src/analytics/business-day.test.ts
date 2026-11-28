@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { businessDayOf } from "./business-day.js";
+import { businessDayOf, businessHourOf } from "./business-day.js";
 
 describe("businessDayOf", () => {
   test("a business day ends at 21:00 UTC (midnight in Dar es Salaam)", () => {
@@ -15,5 +15,13 @@ describe("businessDayOf", () => {
     } finally {
       process.env.TZ = before;
     }
+  });
+});
+
+describe("businessHourOf", () => {
+  test("the hour in Dar es Salaam, midnight as 0", () => {
+    expect(businessHourOf(new Date("2026-10-28T21:00:00Z"))).toBe(0);
+    expect(businessHourOf(new Date("2026-10-28T20:59:59Z"))).toBe(23);
+    expect(businessHourOf(new Date("2026-10-28T05:30:00Z"))).toBe(8);
   });
 });

@@ -1,4 +1,6 @@
-import { rateLimitFor, throttledRateLimitFor } from "../services/mikrotik.js";
+import { businessHourOf } from "../analytics/business-day.js";
+import { packageCanThrottle, rateLimitFor, throttledRateLimitFor } from "../services/mikrotik.js";
+import { normalMac } from "../utils/mac.js";
 
 /** What an Access-Request asks: a code the API admitted, or a device coming back by its address. */
 export type AccessAsk =
@@ -21,13 +23,16 @@ export function askOf(
   return { kind: "code", code: userName.toUpperCase(), mac };
 }
 
-/** "52:54:00:4a:00:10" or "52-54-00-4A-00-10" as HashiNet keeps it, or null. */
-export function normalMac(value: string | null): string | null {
-  if (value === null) return null;
-  const hex = value.replace(/[^0-9a-fA-F]/g, "").toUpperCase();
-  if (hex.length !== 12) return null;
-  return hex.match(/.{2}/g)?.join(":") ?? null;
-}
+/** A package's speeds and when it is throttled, as a query selects them. */
+export const PACKAGE_SPEED_SELECT = {
+  downloadSpeedMbps: true,
+  uploadSpeedMbps: true,
+  throttledDownloadMbps: true,
+  throttledUploadMbps: true,
+  peakStartHour: true,
+  peakEndHour: true,
+  throttleAfterGb: true,
+} as const;
 
 /** A package's speeds and when it is throttled: in its peak hours, or past its data. */
 export interface PackageSpeed {
@@ -65,16 +70,19 @@ export type Answer =
 
 const GB = 1024n ** 3n;
 
-export function isPeakHour(start: number | null, end: number | null, eatHour: number): boolean {
+function isPeakHour(start: number | null, end: number | null, hour: number): boolean {
   if (start === null || end === null) return false;
-  if (start <= end) return eatHour >= start && eatHour < end;
+  if (start <= end) return hour >= start && hour < end;
   // Wraps past midnight (e.g. 22 to 06).
-  return eatHour >= start || eatHour < end;
+  return hour >= start || hour < end;
 }
 
-/** Tanzania is UTC+3 all year (no daylight saving). */
-export function eatHourOf(date: Date): number {
-  return (date.getUTCHours() + 3) % 24;
+/** What a voucher's sessions have used, up and down, from their summed counters. */
+export function bytesUsed(sum: {
+  uploadBytes: bigint | null;
+  downloadBytes: bigint | null;
+}): bigint {
+  return (sum.uploadBytes ?? 0n) + (sum.downloadBytes ?? 0n);
 }
 
 /**
@@ -83,10 +91,10 @@ export function eatHourOf(date: Date): number {
  * the live monitor, which ends a session whose speed no longer holds.
  */
 export function throttledNow(speed: PackageSpeed, usedBytes: bigint, now: Date): boolean {
-  if (speed.throttledDownloadMbps === null || speed.throttledDownloadMbps <= 0) return false;
+  if (!packageCanThrottle(speed)) return false;
   const overData =
     speed.throttleAfterGb !== null && usedBytes >= BigInt(speed.throttleAfterGb) * GB;
-  return overData || isPeakHour(speed.peakStartHour, speed.peakEndHour, eatHourOf(now));
+  return overData || isPeakHour(speed.peakStartHour, speed.peakEndHour, businessHourOf(now));
 }
 
 /**

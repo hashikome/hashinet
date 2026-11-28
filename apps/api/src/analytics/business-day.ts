@@ -12,6 +12,17 @@ export function businessDaySql(column: Prisma.Sql): Prisma.Sql {
   return Prisma.sql`(${column} AT TIME ZONE ${BUSINESS_TIME_ZONE})::date`;
 }
 
+const HOUR = new Intl.DateTimeFormat("en-GB", {
+  timeZone: BUSINESS_TIME_ZONE,
+  hour: "numeric",
+  hourCycle: "h23",
+});
+
+/** The hour of the business's day an instant falls in, 0 to 23. */
+export function businessHourOf(instant: Date): number {
+  return Number(HOUR.formatToParts(instant).find((p) => p.type === "hour")?.value ?? 0);
+}
+
 /** The business day of an instant, as YYYY-MM-DD. */
 export function businessDayOf(instant: Date): string {
   // en-CA formats dates as YYYY-MM-DD.

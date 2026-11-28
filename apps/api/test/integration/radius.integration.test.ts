@@ -330,7 +330,10 @@ describe("the live monitor and accounting", () => {
         startedAt: new Date(Date.now() - 60_000),
       },
     });
-    await recordClients(t.db, router.id, [], readAt);
+    const sessions = await t.db.wifiSession.findMany({
+      where: { routerId: router.id, status: "connected" },
+    });
+    await recordClients(t.db, sessions, [], readAt);
     expect((await t.db.wifiSession.findUniqueOrThrow({ where: { id: late.id } })).status).toBe(
       "connected",
     );
